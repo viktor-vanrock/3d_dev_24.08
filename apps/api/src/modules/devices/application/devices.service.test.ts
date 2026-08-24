@@ -97,9 +97,11 @@ describe("DevicesService relay revoke push", () => {
   it("pushes the revoked device-agent after its database revoke commits", async () => {
     const repository = { revokeDevice: vi.fn().mockResolvedValue({ kind: "ok", agentId: "agent-1" }) };
     const relayControl = { closeAgentSessions: vi.fn().mockResolvedValue(undefined) };
-    const service = new DevicesService(repository as never, {} as never, {} as never, relayControl);
+    const metrics = { incCredentialRevocation: vi.fn() };
+    const service = new DevicesService(repository as never, {} as never, {} as never, relayControl, metrics as never);
 
     await expect(service.revokeDevice(USER_ID as never, PRINTER_ID, "manual", "request-1")).resolves.toEqual({ ok: true });
     expect(relayControl.closeAgentSessions).toHaveBeenCalledWith(["agent-1"], "agent_revoked");
+    expect(metrics.incCredentialRevocation).toHaveBeenCalledWith("device_agent", "user_action");
   });
 });

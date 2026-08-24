@@ -17,6 +17,7 @@ import { ApiExceptionFilter } from "../../../nest/errors/api-exception.filter.ts
 import { CorrelationInterceptor } from "../../../nest/observability/correlation.interceptor.ts";
 import { RequestContext } from "../../../nest/observability/request-context.ts";
 import { RuntimeLogger } from "../../../nest/observability/runtime-logger.ts";
+import { MetricsModule } from "../../../nest/observability/metrics.module.ts";
 import { createApiValidationPipe } from "../../../nest/validation/api-validation.pipe.ts";
 import { AuthModule } from "../auth.module.ts";
 import { identifierHash } from "../infrastructure/auth-crypto.ts";
@@ -96,7 +97,7 @@ class TestProfileAuthPort implements ProfileAuthPort {
 class AuthTestPortsModule {}
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true }), SessionVerifierModule, DatabaseModule, AuthTestPortsModule, AuthModule],
+  imports: [ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true }), MetricsModule, SessionVerifierModule, DatabaseModule, AuthTestPortsModule, AuthModule],
   providers: [
     RequestContext,
     RuntimeLogger,

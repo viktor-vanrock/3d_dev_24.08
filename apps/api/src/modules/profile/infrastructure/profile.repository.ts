@@ -287,20 +287,19 @@ export class ProfileRepository implements ProfileReadPort, ProfileAdminPort, Pro
         };
   }
 
-  async banUser(userId: UserIdType): Promise<"banned" | "not_found"> {
-    const current = await this.pool.query<{ status: string }>(`select status from users where id = $1`, [userId]);
-    const row = current.rows[0];
-    if (row === undefined) return "not_found";
-    if (row.status === "banned") return "banned";
-    await this.pool.query(
+  async banUser(userId: UserIdType): Promise<{ readonly status: "banned"; readonly transitioned: boolean } | "not_found"> {
+    const transitioned = await this.pool.query(
       `update users
        set status = 'banned', username = $2, display_name = null, avatar_url = null,
            avatar_s3_key = null, bio = null, website_url = null, contacts = '[]'::jsonb,
            session_version = session_version + 1, updated_at = now()
-       where id = $1`,
+       where id = $1 and status <> 'banned'
+       returning id`,
       [userId, `deleted.${randomBytes(6).toString("hex")}`],
     );
-    return "banned";
+    if ((transitioned.rowCount ?? 0) > 0) return { status: "banned", transitioned: true };
+    const existing = await this.pool.query(`select 1 from users where id = $1`, [userId]);
+    return (existing.rowCount ?? 0) > 0 ? { status: "banned", transitioned: false } : "not_found";
   }
 
   async findProfilePage(username: string): Promise<ProfilePageRow | null> {

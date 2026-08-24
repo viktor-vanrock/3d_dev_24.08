@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { createResearchApiKeyVerifier, RESEARCH_API_KEY_PREFIX } from "./research-api-key.ts";
 
 const secret = `${RESEARCH_API_KEY_PREFIX}fixture-secret`;
-const row = { id: "key-1", user_id: "researcher-1", scope: "research" as const };
+const row = { id: "key-1", user_id: "researcher-1", scope: "research" as const, status: "active", revoked_at: null, expires_at: null };
 const profiles = { loadOwnerAuthState: vi.fn().mockResolvedValue({ status: "active", sessionVersion: 1 }) };
 
 function database(rows: (typeof row)[] = []) {
@@ -38,14 +38,16 @@ describe("проверка research API-ключа", () => {
     expect(params).toEqual([createHash("sha256").update(secret).digest()]);
     expect(params).not.toContain(secret);
     expect(sql).toContain("scope = 'research'");
-    expect(sql).toContain("status = 'active'");
-    expect(sql).toContain("revoked_at is null");
-    expect(sql).toContain("expires_at is null or expires_at > now()");
+    expect(sql).toContain("status");
+    expect(sql).toContain("revoked_at");
+    expect(sql).toContain("expires_at");
   });
 
   it("rejects an inactive key owner", async () => {
     const db = database([row]);
     const blockedProfiles = { loadOwnerAuthState: vi.fn().mockResolvedValue({ status: "banned", sessionVersion: 1 }) };
-    await expect(createResearchApiKeyVerifier(db as never, blockedProfiles as never).verify(secret)).resolves.toBeNull();
+    const metrics = { incRevokedCredentialUse: vi.fn() };
+    await expect(createResearchApiKeyVerifier(db as never, blockedProfiles as never, metrics as never).verify(secret)).resolves.toBeNull();
+    expect(metrics.incRevokedCredentialUse).toHaveBeenCalledWith("research_key", "user_blocked");
   });
 });

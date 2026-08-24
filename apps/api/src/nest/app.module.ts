@@ -9,6 +9,7 @@ import { validateRuntimeEnvironment } from "./config/runtime-config.ts";
 import { ApiExceptionFilter } from "./errors/api-exception.filter.ts";
 import { CorrelationInterceptor } from "./observability/correlation.interceptor.ts";
 import { LoggingInterceptor } from "./observability/logging.interceptor.ts";
+import { MetricsModule } from "./observability/metrics.module.ts";
 import { RequestContext } from "./observability/request-context.ts";
 import { RuntimeLogger } from "./observability/runtime-logger.ts";
 import { QueueModule } from "./queue/queue.module.ts";
@@ -73,6 +74,7 @@ import { createApiValidationPipe } from "./validation/api-validation.pipe.ts";
       validate: validateRuntimeEnvironment,
     }),
     SessionVerifierModule,
+    MetricsModule,
     DatabaseModule,
     QueueModule,
     AnalyticsModule,

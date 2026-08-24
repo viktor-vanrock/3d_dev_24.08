@@ -3,6 +3,7 @@ import { BadRequestException, ConflictException, ForbiddenException, HttpExcepti
 import { UserId, type UserId as UserIdType } from "../../_kernel/brandedIds.ts";
 import { PROFILE_AUTH_PORT, type ProfileAuthPort } from "../../profile/public/index.ts";
 import { PublicApiRepository } from "../infrastructure/publicapi.repository.ts";
+import { MetricsService } from "../../../nest/observability/metrics.service.ts";
 import {
   PUBLICAPI_EXTERNAL_PORT,
   PUBLIC_API_KEY_SCOPES,
@@ -41,6 +42,7 @@ export class PublicApiService implements PublicApiPort, AgentApiKeysPort {
     @Inject(PublicApiRepository) private readonly repository: PublicApiRepository,
     @Inject(PUBLICAPI_EXTERNAL_PORT) private readonly external: PublicApiExternalPort,
     @Inject(PROFILE_AUTH_PORT) private readonly profiles: ProfileAuthPort,
+    @Inject(MetricsService) private readonly metrics: MetricsService,
   ) {}
   private async limit(ownerId: string, context: PublicApiRequestContext) {
     await this.external.assertRateLimit(context.request, ownerId);
@@ -105,10 +107,16 @@ export class PublicApiService implements PublicApiPort, AgentApiKeysPort {
   }
   async revokeApiKey(ownerId: UserIdType, id: string, context: PublicApiRequestContext) {
     await this.limit(ownerId, context);
-    if (!isUuid(id) || (!(await this.repository.revokeApiKey(ownerId, id)) && !(await this.repository.hasApiKey(ownerId, id)))) {
+    if (!isUuid(id)) {
       this.audit("revoke", ownerId, id, "failure", "not_found", context.requestId);
       throw new NotFoundException();
     }
+    const transitioned = await this.repository.revokeApiKey(ownerId, id);
+    if (!transitioned && !(await this.repository.hasApiKey(ownerId, id))) {
+      this.audit("revoke", ownerId, id, "failure", "not_found", context.requestId);
+      throw new NotFoundException();
+    }
+    if (transitioned) this.metrics.incCredentialRevocation("public_api_key_v0", "user_action");
     this.audit("revoke", ownerId, id, "success", "revoked", context.requestId);
   }
   async rotateApiKey(ownerId: UserIdType, id: string, body: Readonly<Record<string, unknown>>, context: PublicApiRequestContext) {
@@ -135,6 +143,7 @@ export class PublicApiService implements PublicApiPort, AgentApiKeysPort {
       throw new ConflictException();
     }
     this.audit("rotate", ownerId, id, "success", "rotated", context.requestId);
+    this.metrics.incCredentialRevocation("public_api_key_v0", "rotate");
     return { id: row.id, key: made.key, key_prefix: row.key_prefix, name: row.name, scopes: row.scopes, created_at: row.created_at.toISOString() };
   }
 
@@ -170,9 +179,12 @@ export class PublicApiService implements PublicApiPort, AgentApiKeysPort {
   }
   async revokeUserApiKey(ownerId: UserIdType, id: string, context: PublicApiRequestContext) {
     await this.limit(ownerId, context);
-    if (!isUuid(id) || (!(await this.repository.revokeUserApiKey(ownerId, id, "public_api")) && !(await this.repository.hasUserApiKey(ownerId, id, "public_api")))) {
+    if (!isUuid(id)) {
       throw new NotFoundException();
     }
+    const transitioned = await this.repository.revokeUserApiKey(ownerId, id, "public_api");
+    if (!transitioned && !(await this.repository.hasUserApiKey(ownerId, id, "public_api"))) throw new NotFoundException();
+    if (transitioned) this.metrics.incCredentialRevocation("user_api_key", "user_action");
   }
   async authenticate(rawAuthorization: string | undefined, requiredScope: PublicApiKeyScope, context: PublicApiRequestContext) {
     const match = rawAuthorization === undefined ? null : /^Bearer\s+([^\s]+)$/i.exec(rawAuthorization.trim());
@@ -182,14 +194,17 @@ export class PublicApiService implements PublicApiPort, AgentApiKeysPort {
       throw new UnauthorizedException();
     }
     if (!raw.startsWith(API_PREFIX)) {
+      this.metrics.incRevokedCredentialUse("public_api_key_v0", "revoked");
       this.denial("invalid_api_key", requiredScope, context);
       throw new UnauthorizedException();
     }
-    const row = await this.repository.verifyApiKey(hash(raw));
-    if (row === null) {
+    const verified = await this.repository.verifyApiKey(hash(raw));
+    if (verified.kind !== "active") {
+      this.metrics.incRevokedCredentialUse("public_api_key_v0", verified.kind);
       this.denial("invalid_api_key", requiredScope, context);
       throw new UnauthorizedException();
     }
+    const row = verified.row;
     await this.limit(row.id, context);
     if (!row.scopes.every(isScope) || !row.scopes.includes(requiredScope)) {
       this.denial("missing_scope", requiredScope, context);
@@ -215,13 +230,15 @@ export class PublicApiService implements PublicApiPort, AgentApiKeysPort {
       revoked_at: row.revoked_at?.toISOString() ?? null,
     }));
   }
-  revokeAgentKey(ownerId: UserIdType, agentId: string, keyId: string) {
-    return this.repository.revokeAgentKey(ownerId, agentId, keyId);
+  async revokeAgentKey(ownerId: UserIdType, agentId: string, keyId: string) {
+    const transitioned = await this.repository.revokeAgentKey(ownerId, agentId, keyId);
+    if (transitioned) this.metrics.incCredentialRevocation("agent_content_key", "user_action");
+    return transitioned;
   }
   hasAgentKey(ownerId: UserIdType, agentId: string, keyId: string) {
     return this.repository.hasAgentKey(ownerId, agentId, keyId);
   }
-  revokeAllAgentKeys(agentId: string) {
+  async revokeAllAgentKeys(agentId: string) {
     return this.repository.revokeAllAgentKeys(agentId);
   }
 }

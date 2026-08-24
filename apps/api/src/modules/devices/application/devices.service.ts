@@ -38,6 +38,7 @@ import {
   type PublicDeviceStateRow,
   type TransferRow,
 } from "../infrastructure/devices.repository.ts";
+import { MetricsService } from "../../../nest/observability/metrics.service.ts";
 
 const PUBLIC_TELEMETRY_LIMIT = 500;
 const PUBLIC_TELEMETRY_DEFAULT = 100;
@@ -155,6 +156,7 @@ export class DevicesService implements DevicesPort, DeviceProfileOperationsPort,
     @Inject(DEVICE_EXTERNAL_PORT) private readonly external: DeviceExternalPort,
     @Inject(PROFILE_READ_PORT) private readonly profiles: ProfileReadPort,
     @Optional() @Inject(DEVICE_RELAY_PUSH_PORT) private readonly relayControl?: DeviceRelayPushPort,
+    @Optional() @Inject(MetricsService) private readonly metrics?: MetricsService,
   ) {}
 
   async createEnrollCode(actorId: UserIdType, body: Record<string, unknown>) {
@@ -192,6 +194,7 @@ export class DevicesService implements DevicesPort, DeviceProfileOperationsPort,
     if (result === "not_owner") throw new ForbiddenException();
     if (result === "no_agent") throw new NotFoundException();
     if (result === "already_revoked") throw new ConflictException();
+    this.metrics?.incCredentialRevocation("device_agent", "user_action");
     void this.relayControl?.closeAgentSessions([result.agentId], "agent_revoked").catch(() => undefined);
     return { ok: true as const };
   }

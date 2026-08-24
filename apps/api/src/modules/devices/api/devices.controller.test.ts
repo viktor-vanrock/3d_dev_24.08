@@ -12,6 +12,7 @@ import { ApiExceptionFilter } from "../../../nest/errors/api-exception.filter.ts
 import { CorrelationInterceptor } from "../../../nest/observability/correlation.interceptor.ts";
 import { RequestContext } from "../../../nest/observability/request-context.ts";
 import { RuntimeLogger } from "../../../nest/observability/runtime-logger.ts";
+import { MetricsService } from "../../../nest/observability/metrics.service.ts";
 import { createApiValidationPipe } from "../../../nest/validation/api-validation.pipe.ts";
 import routeManifest from "../../../characterization/routes.manifest.json" with { type: "json" };
 import { DevicesController } from "./devices.controller.ts";
@@ -119,8 +120,9 @@ const fakeDevices: DevicesPort = {
     { provide: DEVICES_PORT, useValue: fakeDevices },
     { provide: PROFILE_AUTH_PORT, useValue: { loadOwnerAuthState: () => Promise.resolve(null) } },
     { provide: RuntimeLogger, useValue: { info: vi.fn(), warn: vi.fn() } },
+    { provide: MetricsService, useValue: { incRevokedCredentialUse: vi.fn() } },
   ],
-  exports: [SessionVerifier, DEVICES_PORT, PROFILE_AUTH_PORT],
+  exports: [SessionVerifier, DEVICES_PORT, PROFILE_AUTH_PORT, MetricsService],
 })
 class DeviceTestPortsModule {}
 @Module({

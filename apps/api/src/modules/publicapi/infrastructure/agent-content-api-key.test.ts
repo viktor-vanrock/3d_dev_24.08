@@ -3,11 +3,14 @@ import { describe, expect, it, vi } from "vitest";
 import { AGENT_CONTENT_API_KEY_PREFIX, createAgentContentApiKeyVerifier } from "./agent-content-api-key.ts";
 
 const secret = `${AGENT_CONTENT_API_KEY_PREFIX}fixture-secret`;
-const row: { id: string; user_id: string; agent_id: string | null; scope: string } = {
+const row: { id: string; user_id: string; agent_id: string | null; scope: string; status: string; revoked_at: Date | null; expires_at: Date | null } = {
   id: "key-1",
   user_id: "owner-1",
   agent_id: "agent-1",
   scope: "agent_content",
+  status: "active",
+  revoked_at: null,
+  expires_at: null,
 };
 const profiles = { loadOwnerAuthState: vi.fn().mockResolvedValue({ status: "active", sessionVersion: 1 }) };
 
@@ -49,9 +52,9 @@ describe("проверка agent_content API-ключа", () => {
     expect(keyParams).toEqual([createHash("sha256").update(secret).digest()]);
     expect(keyParams).not.toContain(secret);
     expect(keySql).toContain("scope = 'agent_content'");
-    expect(keySql).toContain("status = 'active'");
-    expect(keySql).toContain("revoked_at is null");
-    expect(keySql).toContain("k.expires_at is null or k.expires_at > now()");
+    expect(keySql).toContain("k.status");
+    expect(keySql).toContain("k.revoked_at");
+    expect(keySql).toContain("k.expires_at");
 
     const [agentSql, agentParams] = db.query.mock.calls[1] as [string, unknown[]];
     expect(agentSql).toContain("from content_agents");
@@ -62,6 +65,8 @@ describe("проверка agent_content API-ключа", () => {
   it("rejects an inactive key owner", async () => {
     const db = database([row]);
     const blockedProfiles = { loadOwnerAuthState: vi.fn().mockResolvedValue({ status: "banned", sessionVersion: 1 }) };
-    await expect(createAgentContentApiKeyVerifier(db as never, blockedProfiles as never).verify(secret)).resolves.toBeNull();
+    const metrics = { incRevokedCredentialUse: vi.fn() };
+    await expect(createAgentContentApiKeyVerifier(db as never, blockedProfiles as never, metrics as never).verify(secret)).resolves.toBeNull();
+    expect(metrics.incRevokedCredentialUse).toHaveBeenCalledWith("agent_content_key", "user_blocked");
   });
 });

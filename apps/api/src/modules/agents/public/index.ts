@@ -68,7 +68,7 @@ export interface AgentsApiKeysPort {
   listAgentKeys(ownerId: UserId, agentId: string): Promise<readonly AgentContentKey[]>;
   revokeAgentKey(ownerId: UserId, agentId: string, keyId: string): Promise<boolean>;
   hasAgentKey(ownerId: UserId, agentId: string, keyId: string): Promise<boolean>;
-  revokeAllAgentKeys(agentId: string): Promise<void>;
+  revokeAllAgentKeys(agentId: string): Promise<number>;
 }
 export interface AgentsPort {
   create(user: { readonly id: UserId; readonly username: string }, body: AgentAccountInput, context: AgentRequestContext): Promise<AgentAccountResponse>;

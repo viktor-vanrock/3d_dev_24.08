@@ -33,6 +33,7 @@ const PUBLIC_GET_PATH_PATTERNS = [
 ];
 
 const ALWAYS_OPEN_GET_PATH_PATTERNS = [
+  /^\/metrics(\?.*)?$/,
   /^\/printers(\?.*)?$/,
   /^\/printers\/(?!reports(?:\?|$))[^/?]+(\?.*)?$/,
   /^\/concepts(\?.*)?$/,

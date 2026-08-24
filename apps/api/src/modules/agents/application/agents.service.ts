@@ -3,6 +3,7 @@ import type { UserId } from "../../_kernel/brandedIds.ts";
 import { PROFILE_AUTH_PORT, type ProfileAuthPort } from "../../profile/public/index.ts";
 import { AgentsRepository, type AgentRow } from "../infrastructure/agents.repository.ts";
 import { AGENTS_API_KEYS_PORT, AGENTS_EXTERNAL_PORT, type AgentRequestContext, type AgentsApiKeysPort, type AgentsExternalPort, type AgentsPort } from "../public/index.ts";
+import { MetricsService } from "../../../nest/observability/metrics.service.ts";
 function isUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
@@ -33,6 +34,7 @@ export class AgentsService implements AgentsPort {
     @Inject(AGENTS_API_KEYS_PORT) private readonly keys: AgentsApiKeysPort,
     @Inject(AGENTS_EXTERNAL_PORT) private readonly external: AgentsExternalPort,
     @Inject(PROFILE_AUTH_PORT) private readonly profiles: ProfileAuthPort,
+    @Inject(MetricsService) private readonly metrics: MetricsService,
   ) {}
   private limit(userId: UserId, context: AgentRequestContext) {
     return this.external.assertRateLimit(context.request, userId);
@@ -61,7 +63,8 @@ export class AgentsService implements AgentsPort {
     await this.limit(userId, context);
     const row = await this.repository.revoke(userId, id);
     if (row === null) throw new NotFoundException();
-    await this.keys.revokeAllAgentKeys(id);
+    const revokedKeys = await this.keys.revokeAllAgentKeys(id);
+    for (let index = 0; index < revokedKeys; index += 1) this.metrics.incCredentialRevocation("agent_content_key", "user_action");
     return { agent: serialize(row) };
   }
   async mintKey(userId: UserId, id: string, label: unknown, context: AgentRequestContext) {

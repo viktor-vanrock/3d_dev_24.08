@@ -1,4 +1,4 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, Optional } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { parseCookie } from "cookie";
 import type { Request } from "express";
@@ -6,6 +6,7 @@ import { jwtVerify } from "jose";
 import { UserId } from "../../modules/_kernel/brandedIds.ts";
 import { PROFILE_AUTH_PORT, type ProfileAuthPort } from "../../modules/profile/public/index.ts";
 import { RuntimeLogger } from "../observability/runtime-logger.ts";
+import { MetricsService } from "../observability/metrics.service.ts";
 
 export const SESSION_COOKIE_NAME = "portal_session";
 export const SESSION_USER = Symbol("SESSION_USER");
@@ -50,10 +51,12 @@ export class SessionVerifier {
     @Inject(ConfigService) private readonly config: ConfigService,
     @Inject(PROFILE_AUTH_PORT) private readonly profiles: ProfileAuthPort,
     @Inject(RuntimeLogger) private readonly logger: RuntimeLogger,
+    @Optional() @Inject(MetricsService) private readonly metrics?: MetricsService,
   ) {}
 
   private rejected(reason: "unknown" | "user_blocked" | "version_mismatch" | "invalid_token"): null {
     this.logger.warn({ event: "auth.session.rejected", credentialType: "session", reason }, "Session rejected");
+    this.metrics?.incRevokedCredentialUse("session", reason);
     return null;
   }
 

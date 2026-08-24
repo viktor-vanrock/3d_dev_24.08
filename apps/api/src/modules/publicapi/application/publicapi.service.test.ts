@@ -23,7 +23,8 @@ function setup() {
   };
   const external = { assertRateLimit: vi.fn().mockResolvedValue(undefined) };
   const profiles = { loadOwnerAuthState: vi.fn().mockResolvedValue({ status: "active", sessionVersion: 1 }) };
-  return { repository, external, profiles, service: new PublicApiService(repository as never, external, profiles as never) };
+  const metrics = { incRevokedCredentialUse: vi.fn(), incCredentialRevocation: vi.fn() };
+  return { repository, external, profiles, metrics, service: new PublicApiService(repository as never, external, profiles as never, metrics as never) };
 }
 describe("PublicApiService", () => {
   it("returns a printer key once and stores only its SHA-256", async () => {
@@ -51,9 +52,15 @@ describe("PublicApiService", () => {
   });
   it("checks key rate-limit before rejecting a missing scope", async () => {
     const { service, repository, external } = setup();
-    repository.verifyApiKey.mockResolvedValue({ id: "principal", owner_id: "00000000-0000-4000-8000-000000000001", scopes: ["read"] });
+    repository.verifyApiKey.mockResolvedValue({ kind: "active", row: { id: "principal", owner_id: "00000000-0000-4000-8000-000000000001", scopes: ["read"] } });
     await expect(service.authenticate("Bearer mf_pub_secret", "control", { request: request(), requestId: "request-id" })).rejects.toBeInstanceOf(ForbiddenException);
     expect(external.assertRateLimit).toHaveBeenCalledWith(expect.anything(), "principal");
+  });
+  it("counts a rejected revoked public API key", async () => {
+    const { service, repository, metrics } = setup();
+    repository.verifyApiKey.mockResolvedValue({ kind: "revoked" });
+    await expect(service.authenticate("Bearer mf_pub_secret", "read", { request: request(), requestId: "request-id" })).rejects.toBeDefined();
+    expect(metrics.incRevokedCredentialUse).toHaveBeenCalledWith("public_api_key_v0", "revoked");
   });
   it("mints agent_content keys through the publicapi owner repository", async () => {
     const { service, repository } = setup();

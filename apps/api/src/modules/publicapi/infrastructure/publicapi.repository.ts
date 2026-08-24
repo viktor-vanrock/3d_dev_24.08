@@ -25,6 +25,9 @@ export interface UserApiKeyRow {
   readonly created_at: Date;
   readonly revoked_at: Date | null;
 }
+export type ApiKeyVerification =
+  | { readonly kind: "active"; readonly row: { id: string; owner_id: string; scopes: PublicApiKeyScope[] } }
+  | { readonly kind: "revoked" | "unknown" | "user_blocked" };
 
 @Injectable()
 export class PublicApiRepository {
@@ -87,17 +90,19 @@ export class PublicApiRepository {
       c.release();
     }
   }
-  async verifyApiKey(hash: Buffer): Promise<{ id: string; owner_id: string; scopes: PublicApiKeyScope[] } | null> {
-    const r = await this.pool.query<{ id: string; owner_id: string; scopes: PublicApiKeyScope[] }>(
-      `select id,owner_id,scopes from api_keys where key_hash=$1 and revoked_at is null and (expires_at is null or expires_at>now())`,
+  async verifyApiKey(hash: Buffer): Promise<ApiKeyVerification> {
+    const r = await this.pool.query<{ id: string; owner_id: string; scopes: PublicApiKeyScope[]; revoked_at: Date | null; expires_at: Date | null }>(
+      `select id,owner_id,scopes,revoked_at,expires_at from api_keys where key_hash=$1`,
       [hash],
     );
     const row = r.rows[0];
-    if (row === undefined) return null;
+    if (row === undefined) return { kind: "revoked" };
+    if (row.revoked_at !== null || (row.expires_at !== null && row.expires_at <= new Date())) return { kind: "revoked" };
     const owner = await this.profiles.loadOwnerAuthState(row.owner_id as UserId);
-    if (owner === null || owner.status !== "active") return null;
+    if (owner === null) return { kind: "unknown" };
+    if (owner.status !== "active") return { kind: "user_blocked" };
     void this.pool.query(`update api_keys set last_used_at=now() where id=$1`, [row.id]).catch(() => {});
-    return row;
+    return { kind: "active", row };
   }
 
   async insertUserApiKey(input: {
@@ -155,7 +160,8 @@ export class PublicApiRepository {
       await this.pool.query(`select 1 from user_api_keys where id=$1 and user_id=$2 and agent_id=$3 and scope='agent_content'`, [keyId, ownerId, agentId])
     ).rowCount !== 0;
   }
-  async revokeAllAgentKeys(agentId: string): Promise<void> {
-    await this.pool.query(`update user_api_keys set status='revoked',revoked_at=now(),revoked_reason='agent_revoked' where agent_id=$1 and status='active'`, [agentId]);
+  async revokeAllAgentKeys(agentId: string): Promise<number> {
+    const result = await this.pool.query(`update user_api_keys set status='revoked',revoked_at=now(),revoked_reason='agent_revoked' where agent_id=$1 and status='active'`, [agentId]);
+    return result.rowCount ?? 0;
   }
 }

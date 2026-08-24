@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { createFeedIngestApiKeyVerifier, FEED_INGEST_API_KEY_PREFIX } from "./feed-ingest-api-key.ts";
 
 const secret = `${FEED_INGEST_API_KEY_PREFIX}fixture-secret`;
-const row = { id: "key-1", user_id: "vendor-bot-1", scope: "feed_ingest" as const };
+const row = { id: "key-1", user_id: "vendor-bot-1", scope: "feed_ingest" as const, status: "active", revoked_at: null, expires_at: null };
 const profiles = { loadOwnerAuthState: vi.fn().mockResolvedValue({ status: "active", sessionVersion: 1 }) };
 
 function database(rows: (typeof row)[] = []) {
@@ -39,14 +39,16 @@ describe("проверка feed_ingest API-ключа", () => {
     expect(params).toEqual([createHash("sha256").update(secret).digest()]);
     expect(params).not.toContain(secret);
     expect(sql).toContain("scope = 'feed_ingest'");
-    expect(sql).toContain("status = 'active'");
-    expect(sql).toContain("revoked_at is null");
-    expect(sql).toContain("expires_at is null or expires_at > now()");
+    expect(sql).toContain("status");
+    expect(sql).toContain("revoked_at");
+    expect(sql).toContain("expires_at");
   });
 
   it("rejects an inactive key owner", async () => {
     const db = database([row]);
     const blockedProfiles = { loadOwnerAuthState: vi.fn().mockResolvedValue({ status: "banned", sessionVersion: 1 }) };
-    await expect(createFeedIngestApiKeyVerifier(db as never, blockedProfiles as never).verify(secret)).resolves.toBeNull();
+    const metrics = { incRevokedCredentialUse: vi.fn() };
+    await expect(createFeedIngestApiKeyVerifier(db as never, blockedProfiles as never, metrics as never).verify(secret)).resolves.toBeNull();
+    expect(metrics.incRevokedCredentialUse).toHaveBeenCalledWith("feed_ingest_key", "user_blocked");
   });
 });

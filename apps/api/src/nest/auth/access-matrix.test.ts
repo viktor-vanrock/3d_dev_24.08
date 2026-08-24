@@ -26,8 +26,8 @@ function concreteUrl(route: RouteEntry): string {
 
 describe("Nest auth access matrix", () => {
   it("matches normal-mode decisions for every active route in the immutable manifest", () => {
-    expect(routes).toHaveLength(308);
-    expect(activeRoutes).toHaveLength(261);
+    expect(routes).toHaveLength(309);
+    expect(activeRoutes).toHaveLength(262);
     for (const route of activeRoutes) {
       expect(requiresSession({ method: route.method, url: concreteUrl(route), closedDev: false }), `${route.method} ${route.path}`).toBe(route.authMode === "authed");
     }
@@ -55,5 +55,11 @@ describe("Nest auth access matrix", () => {
   it("delegates relay v1 authentication to the relay-only service guard", () => {
     expect(requiresSession({ method: "POST", url: "/internal/relay/v1/sessions/authorize", closedDev: false })).toBe(false);
     expect(requiresSession({ method: "POST", url: "/internal/relay/v1/sessions/authorize", closedDev: true })).toBe(false);
+  });
+
+  it("opens only the exact metrics endpoint for its loopback controller gate", () => {
+    expect(requiresSession({ method: "GET", url: "/metrics", closedDev: false })).toBe(false);
+    expect(requiresSession({ method: "GET", url: "/metrics", closedDev: true })).toBe(false);
+    expect(requiresSession({ method: "GET", url: "/metrics/private", closedDev: false })).toBe(true);
   });
 });

@@ -28,6 +28,17 @@ import {
   type PrinterStoragePort,
 } from "../../modules/printers/public/index.ts";
 import { SessionVerifier } from "../auth/session-verifier.ts";
+import { MetricsService } from "../observability/metrics.service.ts";
+
+const API_KEY_PREFIXES = ["mf_research_", "mf_pub_", "mf_feedingest_", "mf_agent_", "mf_user_"] as const;
+
+function hasKnownApiKeyPrefix(token: string): boolean {
+  return API_KEY_PREFIXES.some((prefix) => token.startsWith(prefix));
+}
+
+function looksLikePortalSessionToken(token: string): boolean {
+  return !hasKnownApiKeyPrefix(token) && token.split(".").length === 3;
+}
 
 @Injectable()
 export class PrinterResearchAuthAdapter implements PrinterResearchAuthPort {
@@ -35,13 +46,16 @@ export class PrinterResearchAuthAdapter implements PrinterResearchAuthPort {
     @Inject(SessionVerifier) private readonly sessions: SessionVerifier,
     @Inject(PROFILE_CONTENT_PORT) private readonly profiles: ProfileContentPort,
     @Inject(PROFILE_AUTH_PORT) private readonly profileAuth: ProfileAuthPort,
+    @Inject(MetricsService) private readonly metrics: MetricsService,
   ) {}
 
   async resolveUser(identity: { readonly authorization: string | undefined; readonly cookie: string | undefined }): Promise<UserIdType | null> {
-    const session = await this.sessions.readSession({ headers: { authorization: identity.authorization, cookie: identity.cookie } } as Request);
-    if (session !== null) return UserId(session.id);
     const token = /^Bearer (\S+)$/.exec(identity.authorization ?? "")?.[1];
-    const principal = token === undefined ? null : await createResearchApiKeyVerifier(pool, this.profileAuth).verify(token);
+    if (identity.cookie !== undefined || (token !== undefined && looksLikePortalSessionToken(token))) {
+      const session = await this.sessions.readSession({ headers: { authorization: identity.authorization, cookie: identity.cookie } } as Request);
+      return session === null ? null : UserId(session.id);
+    }
+    const principal = token === undefined ? null : await createResearchApiKeyVerifier(pool, this.profileAuth, this.metrics).verify(token);
     return principal === null ? null : UserId(principal.userId);
   }
 

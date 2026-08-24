@@ -22,7 +22,7 @@ export interface ProfileReadPort {
 
 export interface ProfileAdminPort {
   isStaff(userId: UserId): Promise<boolean>;
-  banUser(userId: UserId): Promise<"banned" | "not_found">;
+  banUser(userId: UserId): Promise<{ readonly status: "banned"; readonly transitioned: boolean } | "not_found">;
 }
 
 export interface PublicContentAuthor {

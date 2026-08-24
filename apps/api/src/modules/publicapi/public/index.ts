@@ -108,7 +108,7 @@ export interface AgentApiKeysPort {
   listAgentKeys(ownerId: UserId, agentId: string): Promise<readonly AgentApiKey[]>;
   revokeAgentKey(ownerId: UserId, agentId: string, keyId: string): Promise<boolean>;
   hasAgentKey(ownerId: UserId, agentId: string, keyId: string): Promise<boolean>;
-  revokeAllAgentKeys(agentId: string): Promise<void>;
+  revokeAllAgentKeys(agentId: string): Promise<number>;
 }
 export interface PublicApiPort {
   createApiKey(ownerId: UserId, body: PublicApiKeyInput, context: PublicApiRequestContext): Promise<PublicApiKeySecret>;

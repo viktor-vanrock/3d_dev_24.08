@@ -3,6 +3,7 @@ import type { Pool, PoolClient } from "pg";
 import { isActiveContentAgent } from "../../agents/public/index.ts";
 import { UserId } from "../../_kernel/brandedIds.ts";
 import type { ProfileAuthPort } from "../../profile/public/index.ts";
+import type { MetricsService } from "../../../nest/observability/metrics.service.ts";
 
 // Ключ «доступ к сайту» для агентских аккаунтов (MF-2029, docs/epics/agent.accounts.md): тот же
 // приём, что research/feed_ingest (createResearchApiKeyVerifier/createFeedIngestApiKeyVerifier) —
@@ -23,37 +24,57 @@ export type AgentContentApiKeyPrincipal = {
   scope: typeof AGENT_CONTENT_API_KEY_SCOPE;
 };
 
-type AgentContentApiKeyRow = { id: string; user_id: string; agent_id: string | null; scope: typeof AGENT_CONTENT_API_KEY_SCOPE };
+type AgentContentApiKeyRow = { id: string; user_id: string; agent_id: string | null; scope: typeof AGENT_CONTENT_API_KEY_SCOPE; status: string; revoked_at: Date | null; expires_at: Date | null };
 
 function hashKey(key: string): Buffer {
   return createHash("sha256").update(key).digest();
 }
 
 /** Проверяет только ключ контура agent_content; plaintext в БД не попадает. */
-export function createAgentContentApiKeyVerifier(db: Pool | PoolClient, profiles: ProfileAuthPort) {
+export function createAgentContentApiKeyVerifier(db: Pool | PoolClient, profiles: ProfileAuthPort, metrics?: MetricsService) {
   return {
     async verify(rawKey: unknown): Promise<AgentContentApiKeyPrincipal | null> {
-      if (typeof rawKey !== "string" || !rawKey.startsWith(AGENT_CONTENT_API_KEY_PREFIX)) return null;
+      if (typeof rawKey !== "string") return null;
+      if (!rawKey.startsWith(AGENT_CONTENT_API_KEY_PREFIX)) {
+        metrics?.incRevokedCredentialUse("agent_content_key", "revoked");
+        return null;
+      }
 
       try {
         const result = await db.query<AgentContentApiKeyRow>(
-          `select k.id, k.user_id, k.agent_id, k.scope
+          `select k.id, k.user_id, k.agent_id, k.scope, k.status, k.revoked_at, k.expires_at
            from user_api_keys k
            where k.key_hash = $1 and k.scope = 'agent_content' and k.scopes = array['write']::text[]
-             and k.status = 'active' and k.revoked_at is null
-             and (k.expires_at is null or k.expires_at > now())
            limit 1`,
           [hashKey(rawKey)],
         );
         const row = result.rows[0];
-        if (!row || row.scope !== AGENT_CONTENT_API_KEY_SCOPE || !row.agent_id) return null;
+        if (!row || row.scope !== AGENT_CONTENT_API_KEY_SCOPE || !row.agent_id) {
+          metrics?.incRevokedCredentialUse("agent_content_key", "revoked");
+          return null;
+        }
+        if (row.status !== "active" || row.revoked_at !== null || (row.expires_at !== null && row.expires_at <= new Date())) {
+          metrics?.incRevokedCredentialUse("agent_content_key", "revoked");
+          return null;
+        }
         const owner = await profiles.loadOwnerAuthState(UserId(row.user_id));
-        if (owner === null || owner.status !== "active") return null;
-        if (!(await isActiveContentAgent(db, row.agent_id, row.user_id))) return null;
+        if (owner === null) {
+          metrics?.incRevokedCredentialUse("agent_content_key", "unknown");
+          return null;
+        }
+        if (owner.status !== "active") {
+          metrics?.incRevokedCredentialUse("agent_content_key", "user_blocked");
+          return null;
+        }
+        if (!(await isActiveContentAgent(db, row.agent_id, row.user_id))) {
+          metrics?.incRevokedCredentialUse("agent_content_key", "revoked");
+          return null;
+        }
 
         db.query(`update user_api_keys set last_used_at = now() where id = $1`, [row.id]).catch(() => {});
         return { id: row.id, ownerId: row.user_id, agentId: row.agent_id, scope: row.scope };
       } catch {
+        metrics?.incRevokedCredentialUse("agent_content_key", "unknown");
         return null;
       }
     },

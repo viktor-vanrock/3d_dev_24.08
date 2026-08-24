@@ -7,6 +7,7 @@ import { UserId } from "../../_kernel/brandedIds.ts";
 import { PROFILE_AUTH_PORT, type ProfileAuthPort } from "../../profile/public/index.ts";
 import { SESSION_USER, SessionVerifier, type RequestWithSession } from "../../../nest/auth/session-verifier.ts";
 import { getRequestId, type RequestWithId } from "../../../nest/observability/request-id.ts";
+import { MetricsService } from "../../../nest/observability/metrics.service.ts";
 import { assertNestRateLimit } from "../../../nest/integration/rate-limit.ts";
 import { APP_INTENT_COOKIE_NAME } from "../domain/auth.ts";
 import { AuthService } from "../application/auth.service.ts";
@@ -44,6 +45,7 @@ export class AuthController {
     @Inject(SessionVerifier) private readonly verifier: SessionVerifier,
     @Inject(PROFILE_AUTH_PORT) private readonly profiles: ProfileAuthPort,
     @Inject(ConfigService) private readonly config: ConfigService,
+    @Inject(MetricsService) private readonly metrics: MetricsService,
   ) {}
 
   @Get("session")
@@ -80,6 +82,7 @@ export class AuthController {
     const session = request[SESSION_USER];
     if (session === undefined) throw new UnauthorizedException();
     await this.sessions.logoutAll(UserId(session.id));
+    this.metrics.incCredentialRevocation("session", "logout_all");
     this.sessions.clear(response);
     return { ok: true };
   }

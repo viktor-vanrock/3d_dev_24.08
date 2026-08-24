@@ -29,11 +29,12 @@ function setup() {
     listAgentKeys: vi.fn().mockResolvedValue([]),
     revokeAgentKey: vi.fn().mockResolvedValue(true),
     hasAgentKey: vi.fn().mockResolvedValue(true),
-    revokeAllAgentKeys: vi.fn().mockResolvedValue(undefined),
+    revokeAllAgentKeys: vi.fn().mockResolvedValue(1),
   };
   const external = { assertRateLimit: vi.fn().mockResolvedValue(undefined) };
   const profiles = { loadOwnerAuthState: vi.fn().mockResolvedValue({ status: "active", sessionVersion: 1 }) };
-  return { repository, keys, external, profiles, service: new AgentsService(repository as never, keys, external, profiles as never) };
+  const metrics = { incCredentialRevocation: vi.fn() };
+  return { repository, keys, external, profiles, metrics, service: new AgentsService(repository as never, keys, external, profiles as never, metrics as never) };
 }
 afterEach(() => {
   delete process.env.AGENT_ACCOUNTS_BETA_USERNAMES;

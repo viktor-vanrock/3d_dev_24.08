@@ -59,21 +59,28 @@ import {
   type FeedVoteValue,
 } from "../../modules/feed/public/index.ts";
 import { UserId, type FeedPostId as FeedPostIdType, type ModelId, type UserId as UserIdType } from "../../modules/_kernel/brandedIds.ts";
+import { MetricsService } from "../observability/metrics.service.ts";
 
 @Injectable()
 export class FeedAgentAuthAdapter implements FeedAgentAuthPort {
-  constructor(@Inject(PROFILE_AUTH_PORT) private readonly profiles: ProfileAuthPort) {}
+  constructor(
+    @Inject(PROFILE_AUTH_PORT) private readonly profiles: ProfileAuthPort,
+    @Inject(MetricsService) private readonly metrics: MetricsService,
+  ) {}
   async verifyAgentContentToken(token: string): Promise<FeedActor | null> {
-    const principal = await createAgentContentApiKeyVerifier(pool, this.profiles).verify(token);
+    const principal = await createAgentContentApiKeyVerifier(pool, this.profiles, this.metrics).verify(token);
     return principal === null ? null : { userId: UserId(principal.ownerId), coAuthorAgentId: principal.agentId };
   }
 }
 
 @Injectable()
 export class FeedIngestAuthAdapter implements FeedIngestAuthPort {
-  constructor(@Inject(PROFILE_AUTH_PORT) private readonly profiles: ProfileAuthPort) {}
+  constructor(
+    @Inject(PROFILE_AUTH_PORT) private readonly profiles: ProfileAuthPort,
+    @Inject(MetricsService) private readonly metrics: MetricsService,
+  ) {}
   async verifyIngestToken(token: string) {
-    const principal = await createFeedIngestApiKeyVerifier(pool, this.profiles).verify(token);
+    const principal = await createFeedIngestApiKeyVerifier(pool, this.profiles, this.metrics).verify(token);
     return principal === null ? null : { userId: UserId(principal.userId), scope: principal.scope };
   }
 }
