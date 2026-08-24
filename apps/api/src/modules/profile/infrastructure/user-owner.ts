@@ -32,7 +32,8 @@ export async function claimBootstrapAdminUser(client: PoolClient, username: stri
 export async function activateBootstrapAdminUser(client: PoolClient, userId: string): Promise<void> {
   await client.query(
     `update users
-     set status = 'active', handle_confirmed = true, is_staff = true, updated_at = now()
+     set status = 'active', handle_confirmed = true, is_staff = true,
+         session_version = session_version + 1, updated_at = now()
      where id = $1`,
     [userId],
   );

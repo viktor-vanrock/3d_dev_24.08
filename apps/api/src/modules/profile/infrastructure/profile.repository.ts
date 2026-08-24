@@ -180,6 +180,19 @@ export class ProfileRepository implements ProfileReadPort, ProfileAdminPort, Pro
     return result.rows[0] === undefined ? null : mapSession(result.rows[0]);
   }
 
+  async loadOwnerAuthState(userId: UserIdType): Promise<{ readonly status: "active" | "banned" | "deleted"; readonly sessionVersion: number } | null> {
+    const result = await this.pool.query<{ status: "active" | "banned" | "deleted"; session_version: number }>(
+      `select status, session_version from users where id = $1`,
+      [userId],
+    );
+    const row = result.rows[0];
+    return row === undefined ? null : { status: row.status, sessionVersion: row.session_version };
+  }
+
+  async bumpSessionVersion(userId: UserIdType): Promise<boolean> {
+    return (await this.pool.query(`update users set session_version = session_version + 1, updated_at = now() where id = $1`, [userId])).rowCount !== 0;
+  }
+
   async createUserWithFreeHandle(seed: NewUserSeed): Promise<UserIdType> {
     const base = /^[a-z0-9](?:[a-z0-9.]{1,30}[a-z0-9])?$/.test(seed.handle) ? seed.handle : `user${Date.now()}`;
     for (let attempt = 0; attempt < 20; attempt += 1) {
@@ -282,7 +295,8 @@ export class ProfileRepository implements ProfileReadPort, ProfileAdminPort, Pro
     await this.pool.query(
       `update users
        set status = 'banned', username = $2, display_name = null, avatar_url = null,
-           avatar_s3_key = null, bio = null, website_url = null, contacts = '[]'::jsonb, updated_at = now()
+           avatar_s3_key = null, bio = null, website_url = null, contacts = '[]'::jsonb,
+           session_version = session_version + 1, updated_at = now()
        where id = $1`,
       [userId, `deleted.${randomBytes(6).toString("hex")}`],
     );

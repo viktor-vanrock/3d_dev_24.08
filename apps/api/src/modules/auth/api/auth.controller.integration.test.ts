@@ -48,7 +48,17 @@ class TestProfileAuthPort implements ProfileAuthPort {
           avatarUrl: row.avatar_url,
           handleConfirmed: row.handle_confirmed,
           role: row.role,
-        };
+      };
+  }
+
+  async loadOwnerAuthState(userId: UserIdType): Promise<{ readonly status: "active" | "banned" | "deleted"; readonly sessionVersion: number } | null> {
+    const result = await this.pool.query<{ status: "active" | "banned" | "deleted" }>(`select status from users where id = $1`, [userId]);
+    const row = result.rows[0];
+    return row === undefined ? null : { status: row.status, sessionVersion: 1 };
+  }
+
+  async bumpSessionVersion(userId: UserIdType): Promise<boolean> {
+    return (await this.pool.query(`select 1 from users where id = $1`, [userId])).rowCount !== 0;
   }
 
   async createUserWithFreeHandle(seed: NewUserSeed): Promise<UserIdType> {

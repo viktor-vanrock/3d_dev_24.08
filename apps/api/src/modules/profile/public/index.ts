@@ -79,6 +79,8 @@ export interface NewUserSeed {
 
 export interface ProfileAuthPort {
   findSessionUser(userId: UserId): Promise<SessionProfile | null>;
+  loadOwnerAuthState(userId: UserId): Promise<{ readonly status: "active" | "banned" | "deleted"; readonly sessionVersion: number } | null>;
+  bumpSessionVersion(userId: UserId): Promise<boolean>;
   createUserWithFreeHandle(seed: NewUserSeed): Promise<UserId>;
   upsertDevUser(): Promise<SessionProfile | null>;
 }
