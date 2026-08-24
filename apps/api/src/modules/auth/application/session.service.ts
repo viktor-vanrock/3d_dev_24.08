@@ -59,6 +59,11 @@ export class AuthSessionService {
     });
   }
 
+  async logoutAll(userId: AuthenticatedUser["id"]): Promise<void> {
+    if (!(await this.profiles.bumpSessionVersion(userId))) throw new UnauthorizedException("auth.session.issue_denied.v1");
+    this.logger.info({ event: "auth.logout_all", credentialType: "session" }, "All sessions logged out");
+  }
+
   clear(response: Response): void {
     const domain = this.cookieDomain();
     response.clearCookie(SESSION_COOKIE_NAME, {

@@ -33,6 +33,15 @@ export function ApiLogoutOperation(): MethodDecorator {
   return applyDecorators(ApiTags("auth"), ApiOperation({ summary: "Clear the browser session" }), ApiOkResponse({ type: OkResponseDto }));
 }
 
+export function ApiLogoutAllOperation(): MethodDecorator {
+  return applyDecorators(
+    ApiTags("auth"),
+    ApiOperation({ summary: "Revoke all active user sessions" }),
+    ApiOkResponse({ type: OkResponseDto }),
+    ApiUnauthorizedResponse({ type: ApiErrorEnvelopeDto }),
+  );
+}
+
 export function ApiEmailStartOperation(): MethodDecorator {
   return applyDecorators(ApiTags("auth"), ApiOperation({ summary: "Send a corporate email OTP" }), ApiOkResponse({ type: OkResponseDto }), ...errors);
 }

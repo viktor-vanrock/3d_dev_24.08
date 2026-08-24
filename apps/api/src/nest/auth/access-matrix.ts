@@ -40,6 +40,7 @@ const ALWAYS_OPEN_GET_PATH_PATTERNS = [
 ];
 
 const OPEN_EXACT_POST_PATH_PATTERNS = [/^\/feed\/ingest(\?.*)?$/, /^\/feed\/posts(\?.*)?$/, /^\/feed\/media(\?.*)?$/];
+const AUTHENTICATED_EXACT_POST_PATH_PATTERNS = [/^\/auth\/logout-all(\?.*)?$/];
 
 const CLOSED_OPEN_PATH_PREFIXES = ["/health", "/auth/", "/devices/agent/", "/internal/relay/", "/research/", "/v0/", "/billing/webhooks/"];
 
@@ -68,10 +69,12 @@ export function isClosedDev(environment: Readonly<Record<string, string | undefi
 }
 
 export function requiresSession({ method, url, closedDev }: AuthMatrixInput): boolean {
+  const normalizedMethod = method.toUpperCase();
+  if (normalizedMethod === "POST" && AUTHENTICATED_EXACT_POST_PATH_PATTERNS.some((pattern) => pattern.test(url))) return true;
+
   const openPrefixes = closedDev ? CLOSED_OPEN_PATH_PREFIXES : PUBLIC_OPEN_PATH_PREFIXES;
   if (openPrefixes.some((prefix) => url.startsWith(prefix))) return false;
 
-  const normalizedMethod = method.toUpperCase();
   if (
     normalizedMethod === "GET" &&
     (ALWAYS_OPEN_GET_PATH_PATTERNS.some((pattern) => pattern.test(url)) || (!closedDev && PUBLIC_GET_PATH_PATTERNS.some((pattern) => pattern.test(url))))

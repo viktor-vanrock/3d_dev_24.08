@@ -5,7 +5,7 @@ import { parseCookie } from "cookie";
 import { randomUUID } from "node:crypto";
 import { UserId } from "../../_kernel/brandedIds.ts";
 import { PROFILE_AUTH_PORT, type ProfileAuthPort } from "../../profile/public/index.ts";
-import { SessionVerifier } from "../../../nest/auth/session-verifier.ts";
+import { SESSION_USER, SessionVerifier, type RequestWithSession } from "../../../nest/auth/session-verifier.ts";
 import { getRequestId, type RequestWithId } from "../../../nest/observability/request-id.ts";
 import { assertNestRateLimit } from "../../../nest/integration/rate-limit.ts";
 import { APP_INTENT_COOKIE_NAME } from "../domain/auth.ts";
@@ -17,6 +17,7 @@ import {
   ApiEmailStartOperation,
   ApiEmailVerifyOperation,
   ApiLogoutOperation,
+  ApiLogoutAllOperation,
   ApiPasswordLoginOperation,
   ApiPlagIdCallbackOperation,
   ApiPlagIdStartOperation,
@@ -68,6 +69,17 @@ export class AuthController {
   @HttpCode(200)
   @ApiLogoutOperation()
   logout(@Res({ passthrough: true }) response: Response): { readonly ok: true } {
+    this.sessions.clear(response);
+    return { ok: true };
+  }
+
+  @Post("logout-all")
+  @HttpCode(200)
+  @ApiLogoutAllOperation()
+  async logoutAll(@Req() request: RequestWithSession, @Res({ passthrough: true }) response: Response): Promise<{ readonly ok: true }> {
+    const session = request[SESSION_USER];
+    if (session === undefined) throw new UnauthorizedException();
+    await this.sessions.logoutAll(UserId(session.id));
     this.sessions.clear(response);
     return { ok: true };
   }

@@ -1,6 +1,6 @@
 import { Global, Inject, Injectable, Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
-import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from "@nestjs/core";
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from "@nestjs/core";
 import type { NestExpressApplication } from "@nestjs/platform-express";
 import { SignJWT } from "jose";
 import type { Pool } from "pg";
@@ -10,6 +10,7 @@ import { ANALYTICS_PORT } from "../../analytics/public/index.ts";
 import { PROFILE_AUTH_PORT, type NewUserSeed, type ProfileAuthPort, type SessionProfile } from "../../profile/public/index.ts";
 import { createNestApp } from "../../../nest/bootstrap.ts";
 import { SessionVerifierModule } from "../../../nest/auth/session-verifier.module.ts";
+import { AuthGuard } from "../../../nest/auth/auth.guard.ts";
 import { DATABASE_POOL } from "../../../nest/database/database.constants.ts";
 import { DatabaseModule } from "../../../nest/database/database.module.ts";
 import { ApiExceptionFilter } from "../../../nest/errors/api-exception.filter.ts";
@@ -53,13 +54,13 @@ class TestProfileAuthPort implements ProfileAuthPort {
   }
 
   async loadOwnerAuthState(userId: UserIdType): Promise<{ readonly status: "active" | "banned" | "deleted"; readonly sessionVersion: number } | null> {
-    const result = await this.pool.query<{ status: "active" | "banned" | "deleted" }>(`select status from users where id = $1`, [userId]);
+    const result = await this.pool.query<{ status: "active" | "banned" | "deleted"; session_version: number }>(`select status, session_version from users where id = $1`, [userId]);
     const row = result.rows[0];
-    return row === undefined ? null : { status: row.status, sessionVersion: 1 };
+    return row === undefined ? null : { status: row.status, sessionVersion: row.session_version };
   }
 
   async bumpSessionVersion(userId: UserIdType): Promise<boolean> {
-    return (await this.pool.query(`select 1 from users where id = $1`, [userId])).rowCount !== 0;
+    return (await this.pool.query(`update users set session_version = session_version + 1 where id = $1`, [userId])).rowCount !== 0;
   }
 
   async createUserWithFreeHandle(seed: NewUserSeed): Promise<UserIdType> {
@@ -99,6 +100,7 @@ class AuthTestPortsModule {}
   providers: [
     RequestContext,
     RuntimeLogger,
+    { provide: APP_GUARD, useClass: AuthGuard },
     { provide: APP_INTERCEPTOR, useClass: CorrelationInterceptor },
     { provide: APP_FILTER, useClass: ApiExceptionFilter },
     { provide: APP_PIPE, useFactory: createApiValidationPipe },
@@ -161,6 +163,39 @@ describe("Nest auth domain migration", () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ ok: true });
     expect(response.headers.get("set-cookie")).toContain("portal_session=");
+  });
+
+  it("requires a session, clears the cookie, and revokes the current token on logout-all", async () => {
+    const database = app.get<Pool>(DATABASE_POOL);
+    const username = `logoutall.${Date.now()}`;
+    const password = "logout-all-password";
+    const passwordHash = await hashPassword(password);
+    const user = await database.query<{ id: string }>(`insert into users (username) values ($1) returning id`, [username]);
+    try {
+      await database.query(`insert into user_password_credentials (user_id, password_hash) values ($1, $2)`, [user.rows[0]!.id, passwordHash]);
+
+      const unauthenticated = await fetch(`${baseUrl}/auth/logout-all`, { method: "POST" });
+      expect(unauthenticated.status).toBe(401);
+
+      const login = await fetch(`${baseUrl}/auth/password`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+      expect(login.status).toBe(200);
+      const cookie = login.headers.get("set-cookie");
+      expect(cookie).toContain("portal_session=");
+
+      const logoutAll = await fetch(`${baseUrl}/auth/logout-all`, { method: "POST", headers: { cookie: cookie! } });
+      expect(logoutAll.status).toBe(200);
+      await expect(logoutAll.json()).resolves.toEqual({ ok: true });
+      expect(logoutAll.headers.get("set-cookie")).toContain("portal_session=;");
+
+      const session = await fetch(`${baseUrl}/auth/session`, { headers: { cookie: cookie! } });
+      expect(session.status).toBe(401);
+    } finally {
+      await database.query(`delete from users where id = $1`, [user.rows[0]!.id]);
+    }
   });
 
   it("preserves PlagID redirects and native-app intent cookie", async () => {
