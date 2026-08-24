@@ -1,7 +1,11 @@
-\restrict HXYY1RJ2CUv5dh4hDyoEei25ruxYXoNZSxa1iP0XeeIzpLuK6tWcO2BLRpv56x6
+--
+-- PostgreSQL database dump
+--
 
--- Dumped from database version 16.14 (Debian 16.14-1.pgdg12+1)
--- Dumped by pg_dump version 16.14 (Debian 16.14-1.pgdg12+1)
+\restrict 9pdRNTobY7dD8mH9RNJManEFhj92cDeviNFDtCnJ88LbWHOLoc9ExaJOgqj0GbC
+
+-- Dumped from database version 16.13 (Debian 16.13-1.pgdg12+1)
+-- Dumped by pg_dump version 16.13 (Debian 16.13-1.pgdg12+1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -68,6 +72,31 @@ CREATE EXTENSION IF NOT EXISTS vector WITH SCHEMA public;
 --
 
 COMMENT ON EXTENSION vector IS 'vector data type and ivfflat and hnsw access methods';
+
+
+--
+-- Name: bump_relay_device_authorization_revision(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.bump_relay_device_authorization_revision() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    IF TG_OP = 'DELETE' THEN
+        UPDATE public.agents SET authorization_revision = authorization_revision + 1 WHERE id = OLD.agent_id;
+        RETURN OLD;
+    END IF;
+    IF TG_OP = 'INSERT' THEN
+        UPDATE public.agents SET authorization_revision = authorization_revision + 1 WHERE id = NEW.agent_id;
+        RETURN NEW;
+    END IF;
+    IF OLD.agent_id IS DISTINCT FROM NEW.agent_id THEN
+        UPDATE public.agents SET authorization_revision = authorization_revision + 1 WHERE id = OLD.agent_id;
+        UPDATE public.agents SET authorization_revision = authorization_revision + 1 WHERE id = NEW.agent_id;
+    END IF;
+    RETURN NEW;
+END;
+$$;
 
 
 --
@@ -214,6 +243,22 @@ CREATE FUNCTION public.reject_project_publication_update() RETURNS trigger
 begin
   raise exception using errcode = '55000', message = 'project_publication_snapshot_is_immutable';
 end $$;
+
+
+--
+-- Name: relay_agent_revoke_revision(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.relay_agent_revoke_revision() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    IF NEW.revoked_at IS DISTINCT FROM OLD.revoked_at OR NEW.revoked_reason IS DISTINCT FROM OLD.revoked_reason THEN
+        NEW.authorization_revision := OLD.authorization_revision + 1;
+    END IF;
+    RETURN NEW;
+END;
+$$;
 
 
 SET default_tablespace = '';
@@ -858,7 +903,26 @@ CREATE TABLE public.device_enroll_codes (
     agent_id uuid,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     revoked_at timestamp with time zone,
+    credential_kind text DEFAULT 'enrollment'::text NOT NULL,
+    CONSTRAINT device_enroll_codes_credential_kind_check CHECK ((credential_kind = ANY (ARRAY['enrollment'::text, 'recovery'::text]))),
     CONSTRAINT device_enroll_codes_firmware_class_check CHECK ((firmware_class = ANY (ARRAY['klipper'::text, 'octoprint'::text, 'bambu'::text, 'prusa'::text, 'creality'::text])))
+);
+
+
+--
+-- Name: device_enrollment_audit; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.device_enrollment_audit (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    credential_id uuid,
+    owner_id uuid NOT NULL,
+    device_id uuid,
+    event_type text NOT NULL,
+    meta jsonb DEFAULT '{}'::jsonb NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT device_enrollment_audit_event_type_check CHECK ((event_type = ANY (ARRAY['credential.created'::text, 'credential.revoked'::text, 'credential.consumed'::text, 'identity.issued'::text]))),
+    CONSTRAINT device_enrollment_audit_meta_check CHECK ((jsonb_typeof(meta) = 'object'::text))
 );
 
 
@@ -1503,6 +1567,7 @@ CREATE TABLE public.users (
     maker_verified boolean DEFAULT false NOT NULL,
     is_master boolean DEFAULT false NOT NULL,
     master_profile jsonb,
+    session_version integer DEFAULT 1 NOT NULL,
     CONSTRAINT users_role_check CHECK ((role = ANY (ARRAY['user'::text, 'researcher'::text]))),
     CONSTRAINT users_status_check CHECK ((status = ANY (ARRAY['active'::text, 'banned'::text, 'deleted'::text]))),
     CONSTRAINT users_trust_level_check CHECK (((trust_level >= 0) AND (trust_level <= 4)))
@@ -3110,6 +3175,50 @@ CREATE TABLE public.push_subscriptions (
 
 
 --
+-- Name: relay_gateway_sessions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.relay_gateway_sessions (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    gateway_id uuid NOT NULL,
+    connection_id text NOT NULL,
+    certificate_fingerprint_sha256 text NOT NULL,
+    generation bigint NOT NULL,
+    authorization_revision bigint NOT NULL,
+    state text DEFAULT 'active'::text NOT NULL,
+    authorized_at timestamp with time zone DEFAULT now() NOT NULL,
+    last_heartbeat_at timestamp with time zone DEFAULT now() NOT NULL,
+    closed_at timestamp with time zone,
+    close_reason text,
+    CONSTRAINT relay_gateway_sessions_authorization_revision_check CHECK ((authorization_revision >= 0)),
+    CONSTRAINT relay_gateway_sessions_close_check CHECK ((((state = 'active'::text) AND (closed_at IS NULL) AND (close_reason IS NULL)) OR ((state = 'closed'::text) AND (closed_at IS NOT NULL) AND (close_reason IS NOT NULL)))),
+    CONSTRAINT relay_gateway_sessions_connection_id_check CHECK (((length(connection_id) >= 1) AND (length(connection_id) <= 128))),
+    CONSTRAINT relay_gateway_sessions_fingerprint_check CHECK ((certificate_fingerprint_sha256 ~ '^[a-f0-9]{64}$'::text)),
+    CONSTRAINT relay_gateway_sessions_generation_check CHECK ((generation >= 1)),
+    CONSTRAINT relay_gateway_sessions_state_check CHECK ((state = ANY (ARRAY['active'::text, 'closed'::text])))
+);
+
+
+--
+-- Name: relay_internal_operations; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.relay_internal_operations (
+    operation_type text NOT NULL,
+    operation_id text NOT NULL,
+    request_hash text NOT NULL,
+    response jsonb NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    expires_at timestamp with time zone DEFAULT (now() + '24:00:00'::interval) NOT NULL,
+    CONSTRAINT relay_internal_operations_expiry_check CHECK ((expires_at > created_at)),
+    CONSTRAINT relay_internal_operations_hash_check CHECK ((request_hash ~ '^[a-f0-9]{64}$'::text)),
+    CONSTRAINT relay_internal_operations_id_check CHECK (((length(operation_id) >= 8) AND (length(operation_id) <= 128))),
+    CONSTRAINT relay_internal_operations_response_check CHECK ((jsonb_typeof(response) = 'object'::text)),
+    CONSTRAINT relay_internal_operations_type_check CHECK (((length(operation_type) >= 1) AND (length(operation_type) <= 64)))
+);
+
+
+--
 -- Name: release_events; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -3362,6 +3471,20 @@ CREATE TABLE public.slice_jobs (
     CONSTRAINT slice_jobs_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'processing'::text, 'ready'::text, 'failed'::text]))),
     CONSTRAINT slice_jobs_trust_contract_version_check CHECK (((slice_trust_contract_version IS NULL) OR (slice_trust_contract_version = 'slice-trust.v1'::text)))
 );
+
+
+--
+-- Name: COLUMN slice_jobs.attempt_count; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.slice_jobs.attempt_count IS 'Domain/user retry number archived in slice_job_attempts; not a worker lease-acquisition counter.';
+
+
+--
+-- Name: COLUMN slice_jobs.lifecycle_attempts; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.slice_jobs.lifecycle_attempts IS 'Worker lifecycle acquisitions: first claim and each successful expired-lease takeover.';
 
 
 --
@@ -4162,6 +4285,14 @@ ALTER TABLE ONLY public.device_enroll_codes
 
 ALTER TABLE ONLY public.device_enroll_codes
     ADD CONSTRAINT device_enroll_codes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: device_enrollment_audit device_enrollment_audit_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.device_enrollment_audit
+    ADD CONSTRAINT device_enrollment_audit_pkey PRIMARY KEY (id);
 
 
 --
@@ -5077,6 +5208,22 @@ ALTER TABLE ONLY public.push_subscriptions
 
 
 --
+-- Name: relay_gateway_sessions relay_gateway_sessions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.relay_gateway_sessions
+    ADD CONSTRAINT relay_gateway_sessions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: relay_internal_operations relay_internal_operations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.relay_internal_operations
+    ADD CONSTRAINT relay_internal_operations_pkey PRIMARY KEY (operation_type, operation_id);
+
+
+--
 -- Name: release_events release_events_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5476,6 +5623,13 @@ CREATE INDEX agents_owner_idx ON public.agents USING btree (owner_id);
 
 
 --
+-- Name: agents_relay_certificate_fingerprint_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX agents_relay_certificate_fingerprint_idx ON public.agents USING btree (relay_certificate_fingerprint_sha256) WHERE (relay_certificate_fingerprint_sha256 IS NOT NULL);
+
+
+--
 -- Name: api_keys_active_lookup_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5525,13 +5679,6 @@ CREATE INDEX assistant_run_events_run_idx ON public.assistant_run_events USING b
 
 
 --
--- Name: assistant_runs_status_queued_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX assistant_runs_status_queued_idx ON public.assistant_runs USING btree (status) WHERE (status = 'queued'::text);
-
-
---
 -- Name: assistant_runs_queue_claim_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5543,6 +5690,13 @@ CREATE INDEX assistant_runs_queue_claim_idx ON public.assistant_runs USING btree
 --
 
 CREATE INDEX assistant_runs_queue_expiry_idx ON public.assistant_runs USING btree (lease_expires_at, id) WHERE (status = 'running'::text);
+
+
+--
+-- Name: assistant_runs_status_queued_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX assistant_runs_status_queued_idx ON public.assistant_runs USING btree (status) WHERE (status = 'queued'::text);
 
 
 --
@@ -5770,6 +5924,13 @@ CREATE INDEX device_enroll_codes_owner_idx ON public.device_enroll_codes USING b
 
 
 --
+-- Name: device_enrollment_audit_credential_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX device_enrollment_audit_credential_idx ON public.device_enrollment_audit USING btree (credential_id, created_at);
+
+
+--
 -- Name: device_incidents_open_dedupe_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5980,20 +6141,6 @@ CREATE INDEX generations_idempotency_created_idx ON public.generations_idempoten
 
 
 --
--- Name: generations_source_generation_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX generations_source_generation_idx ON public.generations USING btree (source_generation_id) WHERE (source_generation_id IS NOT NULL);
-
-
---
--- Name: generations_status_queued_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX generations_status_queued_idx ON public.generations USING btree (status) WHERE (status = 'queued'::text);
-
-
---
 -- Name: generations_queue_claim_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6005,6 +6152,20 @@ CREATE INDEX generations_queue_claim_idx ON public.generations USING btree (crea
 --
 
 CREATE INDEX generations_queue_expiry_idx ON public.generations USING btree (lease_expires_at, id) WHERE (status = 'running'::text);
+
+
+--
+-- Name: generations_source_generation_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX generations_source_generation_idx ON public.generations USING btree (source_generation_id) WHERE (source_generation_id IS NOT NULL);
+
+
+--
+-- Name: generations_status_queued_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX generations_status_queued_idx ON public.generations USING btree (status) WHERE (status = 'queued'::text);
 
 
 --
@@ -6988,6 +7149,27 @@ CREATE INDEX push_subscriptions_user_idx ON public.push_subscriptions USING btre
 
 
 --
+-- Name: relay_gateway_sessions_active_gateway_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX relay_gateway_sessions_active_gateway_idx ON public.relay_gateway_sessions USING btree (gateway_id) WHERE (state = 'active'::text);
+
+
+--
+-- Name: relay_gateway_sessions_revalidate_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX relay_gateway_sessions_revalidate_idx ON public.relay_gateway_sessions USING btree (state, gateway_id, generation);
+
+
+--
+-- Name: relay_internal_operations_expiry_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX relay_internal_operations_expiry_idx ON public.relay_internal_operations USING btree (expires_at);
+
+
+--
 -- Name: release_events_ship_at_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -7030,13 +7212,6 @@ CREATE INDEX search_index_jobs_claim_idx ON public.search_index_jobs USING btree
 
 
 --
--- Name: search_index_jobs_queue_expiry_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX search_index_jobs_queue_expiry_idx ON public.search_index_jobs USING btree (leased_until, id) WHERE (status = 'running'::text);
-
-
---
 -- Name: search_index_jobs_correlation_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -7048,6 +7223,13 @@ CREATE INDEX search_index_jobs_correlation_idx ON public.search_index_jobs USING
 --
 
 CREATE INDEX search_index_jobs_model_idx ON public.search_index_jobs USING btree (model_id);
+
+
+--
+-- Name: search_index_jobs_queue_expiry_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX search_index_jobs_queue_expiry_idx ON public.search_index_jobs USING btree (leased_until, id) WHERE (status = 'running'::text);
 
 
 --
@@ -7128,6 +7310,20 @@ CREATE INDEX slice_jobs_profile_idx ON public.slice_jobs USING btree (profile_id
 
 
 --
+-- Name: slice_jobs_queue_claim_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX slice_jobs_queue_claim_idx ON public.slice_jobs USING btree (created_at, id) WHERE (status = 'pending'::text);
+
+
+--
+-- Name: slice_jobs_queue_expiry_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX slice_jobs_queue_expiry_idx ON public.slice_jobs USING btree (lease_expires_at, id) WHERE (status = 'processing'::text);
+
+
+--
 -- Name: slice_jobs_requested_by_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -7146,20 +7342,6 @@ CREATE INDEX slice_jobs_slice_key_idx ON public.slice_jobs USING btree (slice_ke
 --
 
 CREATE INDEX slice_jobs_status_pending_idx ON public.slice_jobs USING btree (created_at) WHERE (status = 'pending'::text);
-
-
---
--- Name: slice_jobs_queue_claim_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX slice_jobs_queue_claim_idx ON public.slice_jobs USING btree (created_at, id) WHERE (status = 'pending'::text);
-
-
---
--- Name: slice_jobs_queue_expiry_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX slice_jobs_queue_expiry_idx ON public.slice_jobs USING btree (lease_expires_at, id) WHERE (status = 'processing'::text);
 
 
 --
@@ -7464,6 +7646,13 @@ CREATE INDEX votes_subject_idx ON public.votes USING btree (subject_type, subjec
 
 
 --
+-- Name: agents agents_relay_revoke_revision_trigger; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER agents_relay_revoke_revision_trigger BEFORE UPDATE ON public.agents FOR EACH ROW EXECUTE FUNCTION public.relay_agent_revoke_revision();
+
+
+--
 -- Name: device_audit_log device_audit_log_correlation_immutable; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -7517,6 +7706,13 @@ CREATE TRIGGER project_revision_models_immutable BEFORE UPDATE ON public.project
 --
 
 CREATE TRIGGER project_revisions_immutable BEFORE UPDATE ON public.project_revisions FOR EACH ROW EXECUTE FUNCTION public.reject_project_publication_update();
+
+
+--
+-- Name: user_printers user_printers_relay_authorization_revision_trigger; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER user_printers_relay_authorization_revision_trigger AFTER INSERT OR DELETE OR UPDATE OF agent_id ON public.user_printers FOR EACH ROW EXECUTE FUNCTION public.bump_relay_device_authorization_revision();
 
 
 --
@@ -7853,6 +8049,30 @@ ALTER TABLE ONLY public.device_enroll_codes
 
 ALTER TABLE ONLY public.device_enroll_codes
     ADD CONSTRAINT device_enroll_codes_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: device_enrollment_audit device_enrollment_audit_credential_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.device_enrollment_audit
+    ADD CONSTRAINT device_enrollment_audit_credential_id_fkey FOREIGN KEY (credential_id) REFERENCES public.device_enroll_codes(id) ON DELETE SET NULL;
+
+
+--
+-- Name: device_enrollment_audit device_enrollment_audit_device_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.device_enrollment_audit
+    ADD CONSTRAINT device_enrollment_audit_device_id_fkey FOREIGN KEY (device_id) REFERENCES public.user_printers(id) ON DELETE SET NULL;
+
+
+--
+-- Name: device_enrollment_audit device_enrollment_audit_owner_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.device_enrollment_audit
+    ADD CONSTRAINT device_enrollment_audit_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --
@@ -9080,6 +9300,14 @@ ALTER TABLE ONLY public.push_subscriptions
 
 
 --
+-- Name: relay_gateway_sessions relay_gateway_sessions_gateway_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.relay_gateway_sessions
+    ADD CONSTRAINT relay_gateway_sessions_gateway_id_fkey FOREIGN KEY (gateway_id) REFERENCES public.agents(id) ON DELETE CASCADE;
+
+
+--
 -- Name: release_events release_events_machine_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -9707,13 +9935,46 @@ ALTER TABLE ONLY public.zones
 -- PostgreSQL database dump complete
 --
 
-\unrestrict HXYY1RJ2CUv5dh4hDyoEei25ruxYXoNZSxa1iP0XeeIzpLuK6tWcO2BLRpv56x6
 
+--
+-- PostgreSQL database dump
+--
+
+\restrict 18hLxoHmGRrEJORYbT6UkweaENfwdnFY8iufXn8ehsZSNyx9Wu17bBp4LtSh5oi
+
+-- Dumped from database version 16.13 (Debian 16.13-1.pgdg12+1)
+-- Dumped by pg_dump version 16.13 (Debian 16.13-1.pgdg12+1)
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- Data for Name: schema_migrations; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+INSERT INTO public.schema_migrations VALUES ('20260810150000');
+INSERT INTO public.schema_migrations VALUES ('20260811120000');
+INSERT INTO public.schema_migrations VALUES ('20260811130000');
+INSERT INTO public.schema_migrations VALUES ('20260811140000');
+INSERT INTO public.schema_migrations VALUES ('20260811150000');
+INSERT INTO public.schema_migrations VALUES ('20260811160000');
+INSERT INTO public.schema_migrations VALUES ('20260811170000');
+INSERT INTO public.schema_migrations VALUES ('20260811180000');
+INSERT INTO public.schema_migrations VALUES ('20260812120000');
+INSERT INTO public.schema_migrations VALUES ('20260812130000');
+INSERT INTO public.schema_migrations VALUES ('20260812140000');
 
 
 --
--- Dbmate schema migrations
+-- PostgreSQL database dump complete
 --
 
-INSERT INTO public.schema_migrations (version) VALUES
-    ('20260810150000');
+
