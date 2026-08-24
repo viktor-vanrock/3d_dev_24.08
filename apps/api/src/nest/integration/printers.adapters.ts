@@ -125,7 +125,6 @@ export class PrinterActivationAdapter implements PrinterActivationPort {
 @Module({
   imports: [AnalyticsModule],
   providers: [
-    SessionVerifier,
     PrinterResearchAuthAdapter,
     PrinterPrusaAdapter,
     PrinterCatalogMatchAdapter,

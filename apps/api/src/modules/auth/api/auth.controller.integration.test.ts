@@ -9,6 +9,7 @@ import { UserId, type UserId as UserIdType } from "../../_kernel/brandedIds.ts";
 import { ANALYTICS_PORT } from "../../analytics/public/index.ts";
 import { PROFILE_AUTH_PORT, type NewUserSeed, type ProfileAuthPort, type SessionProfile } from "../../profile/public/index.ts";
 import { createNestApp } from "../../../nest/bootstrap.ts";
+import { SessionVerifierModule } from "../../../nest/auth/session-verifier.module.ts";
 import { DATABASE_POOL } from "../../../nest/database/database.constants.ts";
 import { DatabaseModule } from "../../../nest/database/database.module.ts";
 import { ApiExceptionFilter } from "../../../nest/errors/api-exception.filter.ts";
@@ -94,7 +95,7 @@ class TestProfileAuthPort implements ProfileAuthPort {
 class AuthTestPortsModule {}
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true }), DatabaseModule, AuthTestPortsModule, AuthModule],
+  imports: [ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true }), SessionVerifierModule, DatabaseModule, AuthTestPortsModule, AuthModule],
   providers: [
     RequestContext,
     RuntimeLogger,
@@ -397,7 +398,7 @@ describe("Nest auth domain migration", () => {
       userId = identity.rows[0]?.user_id;
       expect(userId).toBeTruthy();
 
-      const token = await new SignJWT({ username: localPart })
+      const token = await new SignJWT({ username: localPart, sv: 1 })
         .setProtectedHeader({ alg: "HS256" })
         .setSubject(userId!)
         .setExpirationTime("5m")

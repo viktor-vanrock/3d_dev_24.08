@@ -4,7 +4,6 @@ import { FeedController } from "./api/feed.controller.ts";
 import { FeedService } from "./application/feed.service.ts";
 import { FeedProfileRepository } from "./infrastructure/feed-profile.repository.ts";
 import { FEED_PORT, FEED_PROFILE_READ_PORT, FEED_RANKING_READ_PORT, FEED_SOCIAL_OWNER_PORT } from "./public/index.ts";
-import { SessionVerifier } from "../../nest/auth/session-verifier.ts";
 import { FeedRepository } from "./infrastructure/feed.repository.ts";
 
 @Global()
@@ -15,7 +14,6 @@ import { FeedRepository } from "./infrastructure/feed.repository.ts";
     FeedRepository,
     FeedProfileRepository,
     FeedService,
-    SessionVerifier,
     { provide: FEED_PORT, useExisting: FeedService },
     { provide: FEED_SOCIAL_OWNER_PORT, useExisting: FeedService },
     { provide: FEED_PROFILE_READ_PORT, useExisting: FeedProfileRepository },

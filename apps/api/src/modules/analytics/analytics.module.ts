@@ -4,13 +4,12 @@ import { AnalyticsController } from "./api/analytics.controller.ts";
 import { AnalyticsService } from "./application/analytics.service.ts";
 import { AnalyticsRepository } from "./infrastructure/analytics.repository.ts";
 import { ANALYTICS_PORT } from "./public/index.ts";
-import { SessionVerifier } from "../../nest/auth/session-verifier.ts";
 
 @Global()
 @Module({
   imports: [DatabaseModule],
   controllers: [AnalyticsController],
-  providers: [SessionVerifier, AnalyticsRepository, AnalyticsService, { provide: ANALYTICS_PORT, useExisting: AnalyticsService }],
+  providers: [AnalyticsRepository, AnalyticsService, { provide: ANALYTICS_PORT, useExisting: AnalyticsService }],
   exports: [ANALYTICS_PORT],
 })
 export class AnalyticsModule {}

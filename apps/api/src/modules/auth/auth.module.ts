@@ -1,6 +1,5 @@
 import { Module } from "@nestjs/common";
 import { DatabaseModule } from "../../nest/database/database.module.ts";
-import { SessionVerifier } from "../../nest/auth/session-verifier.ts";
 import { RuntimeLogger } from "../../nest/observability/runtime-logger.ts";
 import { AuthController } from "./api/auth.controller.ts";
 import { AuthService } from "./application/auth.service.ts";
@@ -15,7 +14,6 @@ import { AUTH_IDENTITY_READ_PORT } from "./public/index.ts";
   imports: [DatabaseModule],
   controllers: [AuthController],
   providers: [
-    SessionVerifier,
     RuntimeLogger,
     AuthRepository,
     OtpEmailAdapter,

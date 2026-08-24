@@ -52,9 +52,22 @@ export interface SafeLogRecord {
   readonly provider?: string;
   readonly outcome?: string;
   readonly reason?: string;
+  readonly credentialType?: "session";
 }
 
-const SAFE_LOG_KEYS = new Set<keyof SafeLogRecord>(["event", "request_id", "method", "path", "status_code", "latency_ms", "error_code", "provider", "outcome", "reason"]);
+const SAFE_LOG_KEYS = new Set<keyof SafeLogRecord>([
+  "event",
+  "request_id",
+  "method",
+  "path",
+  "status_code",
+  "latency_ms",
+  "error_code",
+  "provider",
+  "outcome",
+  "reason",
+  "credentialType",
+]);
 
 export function allowlistedLogRecord(record: SafeLogRecord): SafeLogRecord {
   return Object.fromEntries(Object.entries(record).filter(([key, value]) => SAFE_LOG_KEYS.has(key as keyof SafeLogRecord) && value !== undefined)) as unknown as SafeLogRecord;
@@ -70,6 +83,10 @@ export class RuntimeLogger {
 
   info(record: SafeLogRecord, message: string): void {
     this.logger.info(allowlistedLogRecord(record), message);
+  }
+
+  warn(record: SafeLogRecord, message: string): void {
+    this.logger.warn(allowlistedLogRecord(record), message);
   }
 
   error(record: SafeLogRecord, message: string): void {

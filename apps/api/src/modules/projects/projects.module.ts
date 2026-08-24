@@ -1,6 +1,5 @@
 import { Module } from "@nestjs/common";
 import { DatabaseModule } from "../../nest/database/database.module.ts";
-import { SessionVerifier } from "../../nest/auth/session-verifier.ts";
 import { ProjectsController } from "./api/projects.controller.ts";
 import { ProjectCommandService } from "./application/project-command.service.ts";
 import { ProjectProcessingService } from "./application/project-processing.service.ts";
@@ -12,7 +11,6 @@ import { PROJECT_COMMAND_SERVICE, PROJECT_PROCESSING_SERVICE, PROJECT_QUERY_SERV
   imports: [DatabaseModule],
   controllers: [ProjectsController],
   providers: [
-    SessionVerifier,
     PostgresProjectRepository,
     ProjectCommandService,
     ProjectQueryService,

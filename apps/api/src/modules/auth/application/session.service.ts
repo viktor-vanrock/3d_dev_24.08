@@ -1,14 +1,20 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, UnauthorizedException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import type { Response } from "express";
 import { SignJWT } from "jose";
+import { PROFILE_AUTH_PORT, type ProfileAuthPort } from "../../profile/public/index.ts";
+import { RuntimeLogger } from "../../../nest/observability/runtime-logger.ts";
 import { SESSION_COOKIE_NAME, type AuthenticatedUser } from "../domain/auth.ts";
 
 const THIRTY_DAYS_SECONDS = 30 * 24 * 60 * 60;
 
 @Injectable()
 export class AuthSessionService {
-  constructor(@Inject(ConfigService) private readonly config: ConfigService) {}
+  constructor(
+    @Inject(ConfigService) private readonly config: ConfigService,
+    @Inject(PROFILE_AUTH_PORT) private readonly profiles: ProfileAuthPort,
+    @Inject(RuntimeLogger) private readonly logger: RuntimeLogger,
+  ) {}
 
   private cookieDomain(): string | undefined {
     const configuredDomain = this.config.get<string>("COOKIE_DOMAIN")?.trim();
@@ -23,7 +29,17 @@ export class AuthSessionService {
   }
 
   async createToken(user: AuthenticatedUser): Promise<string> {
-    return new SignJWT({ username: user.username })
+    const state = await this.profiles.loadOwnerAuthState(user.id);
+    if (state === null) {
+      this.logger.warn({ event: "auth.session.issue_denied", credentialType: "session", reason: "unknown" }, "Session issue denied");
+      throw new UnauthorizedException("auth.session.issue_denied.v1");
+    }
+    if (state.status !== "active") {
+      this.logger.warn({ event: "auth.session.issue_denied", credentialType: "session", reason: "user_blocked" }, "Session issue denied");
+      throw new UnauthorizedException("auth.session.issue_denied.v1");
+    }
+
+    return new SignJWT({ username: user.username, sv: state.sessionVersion })
       .setProtectedHeader({ alg: "HS256" })
       .setSubject(user.id)
       .setIssuedAt()
