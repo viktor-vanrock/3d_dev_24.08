@@ -18,7 +18,7 @@ let vendorId: string;
 let profileId: string;
 
 async function bearer(): Promise<string> {
-  const token = await new SignJWT({ username: "slicer-tester" })
+  const token = await new SignJWT({ username: "slicer-tester", sv: 1 })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(userId)
     .setExpirationTime("5m")

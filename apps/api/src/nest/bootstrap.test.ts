@@ -244,7 +244,7 @@ describe("Nest dual-runtime bootstrap", () => {
       expect(deniedBody.error.code).toBe("auth.unauthorized.v1");
       expect(deniedBody.error.requestId).toBe(denied.headers.get("x-request-id"));
 
-      const token = await new SignJWT({ username: "tester" })
+      const token = await new SignJWT({ username: "tester", sv: 1 })
         .setProtectedHeader({ alg: "HS256" })
         .setSubject("11111111-1111-4111-8111-111111111111")
         .setExpirationTime("5m")

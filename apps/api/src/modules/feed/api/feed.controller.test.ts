@@ -138,7 +138,7 @@ function routeInventory(): string[] {
 }
 
 async function cookie(): Promise<string> {
-  const token = await new SignJWT({ username: "feed-tester" })
+  const token = await new SignJWT({ username: "feed-tester", sv: 1 })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject("11111111-1111-4111-8111-111111111111")
     .setExpirationTime("5m")

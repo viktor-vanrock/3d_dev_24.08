@@ -20,7 +20,7 @@ let machineCommunityId: string;
 let customCommunityId: string;
 
 async function cookie(userId: string, username: string): Promise<string> {
-  const token = await new SignJWT({ username }).setProtectedHeader({ alg: "HS256" }).setSubject(userId).setExpirationTime("5m").sign(new TextEncoder().encode(JWT_SECRET));
+  const token = await new SignJWT({ username, sv: 1 }).setProtectedHeader({ alg: "HS256" }).setSubject(userId).setExpirationTime("5m").sign(new TextEncoder().encode(JWT_SECRET));
   return `portal_session=${token}`;
 }
 

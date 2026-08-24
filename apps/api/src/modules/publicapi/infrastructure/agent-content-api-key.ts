@@ -1,7 +1,8 @@
 import { createHash } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
-import { pool } from "../../../db/client.ts";
 import { isActiveContentAgent } from "../../agents/public/index.ts";
+import { UserId } from "../../_kernel/brandedIds.ts";
+import type { ProfileAuthPort } from "../../profile/public/index.ts";
 
 // Ключ «доступ к сайту» для агентских аккаунтов (MF-2029, docs/epics/agent.accounts.md): тот же
 // приём, что research/feed_ingest (createResearchApiKeyVerifier/createFeedIngestApiKeyVerifier) —
@@ -29,7 +30,7 @@ function hashKey(key: string): Buffer {
 }
 
 /** Проверяет только ключ контура agent_content; plaintext в БД не попадает. */
-export function createAgentContentApiKeyVerifier(db: Pool | PoolClient = pool) {
+export function createAgentContentApiKeyVerifier(db: Pool | PoolClient, profiles: ProfileAuthPort) {
   return {
     async verify(rawKey: unknown): Promise<AgentContentApiKeyPrincipal | null> {
       if (typeof rawKey !== "string" || !rawKey.startsWith(AGENT_CONTENT_API_KEY_PREFIX)) return null;
@@ -46,6 +47,8 @@ export function createAgentContentApiKeyVerifier(db: Pool | PoolClient = pool) {
         );
         const row = result.rows[0];
         if (!row || row.scope !== AGENT_CONTENT_API_KEY_SCOPE || !row.agent_id) return null;
+        const owner = await profiles.loadOwnerAuthState(UserId(row.user_id));
+        if (owner === null || owner.status !== "active") return null;
         if (!(await isActiveContentAgent(db, row.agent_id, row.user_id))) return null;
 
         db.query(`update user_api_keys set last_used_at = now() where id = $1`, [row.id]).catch(() => {});
@@ -56,6 +59,3 @@ export function createAgentContentApiKeyVerifier(db: Pool | PoolClient = pool) {
     },
   };
 }
-
-const defaultAgentContentApiKeyVerifier = createAgentContentApiKeyVerifier();
-export const verifyAgentContentApiKey = (rawKey: unknown): Promise<AgentContentApiKeyPrincipal | null> => defaultAgentContentApiKeyVerifier.verify(rawKey);

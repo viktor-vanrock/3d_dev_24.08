@@ -9,6 +9,7 @@ const row: { id: string; user_id: string; agent_id: string | null; scope: string
   agent_id: "agent-1",
   scope: "agent_content",
 };
+const profiles = { loadOwnerAuthState: vi.fn().mockResolvedValue({ status: "active", sessionVersion: 1 }) };
 
 function database(rows: (typeof row)[] = []) {
   return { query: vi.fn().mockResolvedValue({ rows, rowCount: rows.length }) };
@@ -18,7 +19,7 @@ describe("проверка agent_content API-ключа", () => {
   it("принимает только активный ключ с agent_content scope, живым агентом и agent_id", async () => {
     const db = database([row]);
 
-    await expect(createAgentContentApiKeyVerifier(db as never).verify(secret)).resolves.toEqual({
+    await expect(createAgentContentApiKeyVerifier(db as never, profiles as never).verify(secret)).resolves.toEqual({
       id: "key-1",
       ownerId: "owner-1",
       agentId: "agent-1",
@@ -32,17 +33,17 @@ describe("проверка agent_content API-ключа", () => {
     ["research scope", secret],
   ])("отказывает: %s", async (name, rawKey) => {
     const db = database(name === "research scope" ? [{ ...row, scope: "research" as never }] : []);
-    await expect(createAgentContentApiKeyVerifier(db as never).verify(rawKey)).resolves.toBeNull();
+    await expect(createAgentContentApiKeyVerifier(db as never, profiles as never).verify(rawKey)).resolves.toBeNull();
   });
 
   it("отказывает, если agent_id отсутствует (симметрия с provider у printer-scope)", async () => {
     const db = database([{ ...row, agent_id: null }]);
-    await expect(createAgentContentApiKeyVerifier(db as never).verify(secret)).resolves.toBeNull();
+    await expect(createAgentContentApiKeyVerifier(db as never, profiles as never).verify(secret)).resolves.toBeNull();
   });
 
   it("передаёт в owner queries только SHA-256 и проверяет активного content agent", async () => {
     const db = database([row]);
-    await createAgentContentApiKeyVerifier(db as never).verify(secret);
+    await createAgentContentApiKeyVerifier(db as never, profiles as never).verify(secret);
 
     const [keySql, keyParams] = db.query.mock.calls[0] as [string, unknown[]];
     expect(keyParams).toEqual([createHash("sha256").update(secret).digest()]);
@@ -56,5 +57,11 @@ describe("проверка agent_content API-ключа", () => {
     expect(agentSql).toContain("from content_agents");
     expect(agentSql).toContain("status='active'");
     expect(agentParams).toEqual([row.agent_id, row.user_id]);
+  });
+
+  it("rejects an inactive key owner", async () => {
+    const db = database([row]);
+    const blockedProfiles = { loadOwnerAuthState: vi.fn().mockResolvedValue({ status: "banned", sessionVersion: 1 }) };
+    await expect(createAgentContentApiKeyVerifier(db as never, blockedProfiles as never).verify(secret)).resolves.toBeNull();
   });
 });

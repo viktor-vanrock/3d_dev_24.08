@@ -9,7 +9,7 @@ const JWT_SECRET = "nest-billing-domain-test-secret",
   canRun = Boolean(process.env.DATABASE_URL);
 let app: NestExpressApplication, baseUrl: string, userId: string;
 async function cookie() {
-  const token = await new SignJWT({ username: "billing" })
+  const token = await new SignJWT({ username: "billing", sv: 1 })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(userId)
     .setExpirationTime("5m")

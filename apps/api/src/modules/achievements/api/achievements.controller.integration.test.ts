@@ -22,7 +22,7 @@ async function createUser(): Promise<string> {
 }
 
 async function cookie(userId: string): Promise<string> {
-  const token = await new SignJWT({ username: "achievements-tester" })
+  const token = await new SignJWT({ username: "achievements-tester", sv: 1 })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(userId)
     .setExpirationTime("5m")

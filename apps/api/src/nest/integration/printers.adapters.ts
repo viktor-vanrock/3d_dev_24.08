@@ -4,13 +4,14 @@ import type { PoolClient } from "pg";
 import { decryptIdentity, encryptIdentity } from "../../modules/auth/public/index.ts";
 import { prusaConnectClient, PrusaAuthError } from "../../modules/printers/public/index.ts";
 import { matchPrusaModel } from "../../modules/catalog/public/index.ts";
-import { verifyResearchApiKey } from "../../modules/publicapi/public/legacy.ts";
+import { createResearchApiKeyVerifier } from "../../modules/publicapi/public/legacy.ts";
 import { getPrinterResearchObjectPresignedUrl, getPrinterResearchUploadPresignedUrl } from "../../storage/s3.ts";
 import { lockOwnedUser, markOwnedActivationHasPrinter } from "../../modules/profile/public/legacy.ts";
 import { AnalyticsModule } from "../../modules/analytics/analytics.module.ts";
 import { ANALYTICS_PORT, type AnalyticsPort } from "../../modules/analytics/public/index.ts";
 import { UserId, type UserId as UserIdType } from "../../modules/_kernel/brandedIds.ts";
-import { PROFILE_CONTENT_PORT, type ProfileContentPort } from "../../modules/profile/public/index.ts";
+import { PROFILE_AUTH_PORT, PROFILE_CONTENT_PORT, type ProfileAuthPort, type ProfileContentPort } from "../../modules/profile/public/index.ts";
+import { pool } from "../../db/client.ts";
 import {
   PRINTER_ACTIVATION_PORT,
   PRINTER_ANALYTICS_PORT,
@@ -33,13 +34,14 @@ export class PrinterResearchAuthAdapter implements PrinterResearchAuthPort {
   constructor(
     @Inject(SessionVerifier) private readonly sessions: SessionVerifier,
     @Inject(PROFILE_CONTENT_PORT) private readonly profiles: ProfileContentPort,
+    @Inject(PROFILE_AUTH_PORT) private readonly profileAuth: ProfileAuthPort,
   ) {}
 
   async resolveUser(identity: { readonly authorization: string | undefined; readonly cookie: string | undefined }): Promise<UserIdType | null> {
     const session = await this.sessions.readSession({ headers: { authorization: identity.authorization, cookie: identity.cookie } } as Request);
     if (session !== null) return UserId(session.id);
     const token = /^Bearer (\S+)$/.exec(identity.authorization ?? "")?.[1];
-    const principal = token === undefined ? null : await verifyResearchApiKey(token);
+    const principal = token === undefined ? null : await createResearchApiKeyVerifier(pool, this.profileAuth).verify(token);
     return principal === null ? null : UserId(principal.userId);
   }
 

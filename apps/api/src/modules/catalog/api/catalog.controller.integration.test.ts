@@ -181,7 +181,7 @@ describe.skipIf(!process.env.DATABASE_URL)("Nest catalog read DB integration", (
     const missingError = missingBody.error as { code?: unknown } | undefined;
     expect(missingError?.code).toBe("http.not_found.v1");
 
-    const token = await new SignJWT({ username: "catalog-test" })
+    const token = await new SignJWT({ username: "catalog-test", sv: 1 })
       .setProtectedHeader({ alg: "HS256" })
       .setSubject("00000000-0000-4000-8000-000000000001")
       .setIssuedAt()
@@ -197,7 +197,7 @@ describe.skipIf(!process.env.DATABASE_URL)("Nest catalog read DB integration", (
 
   it("preserves candidate create, queue, reject, approve, and community side effects", async () => {
     const userId = "00000000-0000-4000-8000-000000000001";
-    const token = await new SignJWT({ username: "catalog-candidate-test" })
+    const token = await new SignJWT({ username: "catalog-candidate-test", sv: 1 })
       .setProtectedHeader({ alg: "HS256" })
       .setSubject(userId)
       .setIssuedAt()

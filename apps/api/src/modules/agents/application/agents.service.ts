@@ -1,5 +1,6 @@
 import { ForbiddenException, Inject, Injectable, NotFoundException, UnprocessableEntityException } from "@nestjs/common";
 import type { UserId } from "../../_kernel/brandedIds.ts";
+import { PROFILE_AUTH_PORT, type ProfileAuthPort } from "../../profile/public/index.ts";
 import { AgentsRepository, type AgentRow } from "../infrastructure/agents.repository.ts";
 import { AGENTS_API_KEYS_PORT, AGENTS_EXTERNAL_PORT, type AgentRequestContext, type AgentsApiKeysPort, type AgentsExternalPort, type AgentsPort } from "../public/index.ts";
 function isUuid(value: string) {
@@ -31,6 +32,7 @@ export class AgentsService implements AgentsPort {
     @Inject(AgentsRepository) private readonly repository: AgentsRepository,
     @Inject(AGENTS_API_KEYS_PORT) private readonly keys: AgentsApiKeysPort,
     @Inject(AGENTS_EXTERNAL_PORT) private readonly external: AgentsExternalPort,
+    @Inject(PROFILE_AUTH_PORT) private readonly profiles: ProfileAuthPort,
   ) {}
   private limit(userId: UserId, context: AgentRequestContext) {
     return this.external.assertRateLimit(context.request, userId);
@@ -64,6 +66,8 @@ export class AgentsService implements AgentsPort {
   }
   async mintKey(userId: UserId, id: string, label: unknown, context: AgentRequestContext) {
     if (!isUuid(id)) throw new NotFoundException();
+    const owner = await this.profiles.loadOwnerAuthState(userId);
+    if (owner === null || owner.status !== "active") throw new ForbiddenException();
     await this.limit(userId, context);
     if (!(await this.repository.isActiveOwner(userId, id))) throw new NotFoundException();
     return this.keys.mintAgentKey(userId, id, label);
@@ -76,6 +80,6 @@ export class AgentsService implements AgentsPort {
   async revokeKey(userId: UserId, id: string, keyId: string, context: AgentRequestContext) {
     if (!isUuid(id) || !isUuid(keyId)) throw new NotFoundException();
     await this.limit(userId, context);
-    if (!(await this.keys.revokeAgentKey(userId, id, keyId))) throw new NotFoundException();
+    if (!(await this.keys.revokeAgentKey(userId, id, keyId)) && !(await this.keys.hasAgentKey(userId, id, keyId))) throw new NotFoundException();
   }
 }

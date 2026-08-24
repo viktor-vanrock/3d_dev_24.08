@@ -1,4 +1,4 @@
-import { NotFoundException } from "@nestjs/common";
+import { ForbiddenException, NotFoundException } from "@nestjs/common";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { UserId } from "../../_kernel/brandedIds.ts";
 import { AgentsService } from "./agents.service.ts";
@@ -28,10 +28,12 @@ function setup() {
     mintAgentKey: vi.fn().mockResolvedValue({ id: "key" }),
     listAgentKeys: vi.fn().mockResolvedValue([]),
     revokeAgentKey: vi.fn().mockResolvedValue(true),
+    hasAgentKey: vi.fn().mockResolvedValue(true),
     revokeAllAgentKeys: vi.fn().mockResolvedValue(undefined),
   };
   const external = { assertRateLimit: vi.fn().mockResolvedValue(undefined) };
-  return { repository, keys, external, service: new AgentsService(repository as never, keys, external) };
+  const profiles = { loadOwnerAuthState: vi.fn().mockResolvedValue({ status: "active", sessionVersion: 1 }) };
+  return { repository, keys, external, profiles, service: new AgentsService(repository as never, keys, external, profiles as never) };
 }
 afterEach(() => {
   delete process.env.AGENT_ACCOUNTS_BETA_USERNAMES;
@@ -54,6 +56,12 @@ describe("AgentsService", () => {
     const { service, repository, keys } = setup();
     repository.isActiveOwner.mockResolvedValue(false);
     await expect(service.mintKey(OWNER, AGENT, "x", { request: {} as never, requestId: "r" })).rejects.toBeInstanceOf(NotFoundException);
+    expect(keys.mintAgentKey).not.toHaveBeenCalled();
+  });
+  it("refuses to mint a key for an inactive owner", async () => {
+    const { service, keys, profiles } = setup();
+    profiles.loadOwnerAuthState.mockResolvedValue({ status: "banned", sessionVersion: 1 });
+    await expect(service.mintKey(OWNER, AGENT, "x", { request: {} as never, requestId: "r" })).rejects.toBeInstanceOf(ForbiddenException);
     expect(keys.mintAgentKey).not.toHaveBeenCalled();
   });
 });

@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
-import { pool } from "../../../db/client.ts";
+import { UserId } from "../../_kernel/brandedIds.ts";
+import type { ProfileAuthPort } from "../../profile/public/index.ts";
 
 // Ключ AI-ingest ленты (MF-1926): отдельный scope/префикс от research/public_api — карточка явно
 // требует не переиспользовать их машинный контур и не выдавать глобальный admin. Единственное
@@ -26,7 +27,7 @@ function hashKey(key: string): Buffer {
 }
 
 /** Проверяет только ключ машинного контура feed_ingest; plaintext в БД не попадает. */
-export function createFeedIngestApiKeyVerifier(db: Pool | PoolClient = pool) {
+export function createFeedIngestApiKeyVerifier(db: Pool | PoolClient, profiles: ProfileAuthPort) {
   return {
     async verify(rawKey: unknown): Promise<FeedIngestApiKeyPrincipal | null> {
       if (typeof rawKey !== "string" || !rawKey.startsWith(FEED_INGEST_API_KEY_PREFIX)) return null;
@@ -43,6 +44,8 @@ export function createFeedIngestApiKeyVerifier(db: Pool | PoolClient = pool) {
         );
         const row = result.rows[0];
         if (!row || row.scope !== FEED_INGEST_API_KEY_SCOPE) return null;
+        const owner = await profiles.loadOwnerAuthState(UserId(row.user_id));
+        if (owner === null || owner.status !== "active") return null;
 
         db.query(`update user_api_keys set last_used_at = now() where id = $1`, [row.id]).catch(() => {});
         return { id: row.id, userId: row.user_id, scope: row.scope };
@@ -52,6 +55,3 @@ export function createFeedIngestApiKeyVerifier(db: Pool | PoolClient = pool) {
     },
   };
 }
-
-const defaultFeedIngestApiKeyVerifier = createFeedIngestApiKeyVerifier();
-export const verifyFeedIngestApiKey = (rawKey: unknown): Promise<FeedIngestApiKeyPrincipal | null> => defaultFeedIngestApiKeyVerifier.verify(rawKey);

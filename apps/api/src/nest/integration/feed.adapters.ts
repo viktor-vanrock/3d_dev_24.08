@@ -2,8 +2,8 @@ import { Global, Inject, Injectable, Module, ServiceUnavailableException } from 
 import type { Request } from "express";
 import { randomUUID } from "node:crypto";
 import { Readable } from "node:stream";
-import { verifyAgentContentApiKey } from "../../modules/publicapi/public/legacy.ts";
-import { verifyFeedIngestApiKey } from "../../modules/publicapi/public/legacy.ts";
+import { createAgentContentApiKeyVerifier } from "../../modules/publicapi/public/legacy.ts";
+import { createFeedIngestApiKeyVerifier } from "../../modules/publicapi/public/legacy.ts";
 import { assertNestRateLimit } from "./rate-limit.ts";
 import { feedMediaObjectKey, feedPostImageObjectKey, getModelObjectStream, isModelsStorageConfigured, modelPublicUrl, putModelObjectStream } from "../../storage/s3.ts";
 import { AnalyticsModule } from "../../modules/analytics/analytics.module.ts";
@@ -11,7 +11,8 @@ import { ANALYTICS_PORT, type AnalyticsPort, type EventName } from "../../module
 import { ModelsModule } from "../../modules/models/models.module.ts";
 import { MODEL_MAKES_PORT, MODEL_READ_PORT, type ModelMakesPort, type ModelReadPort } from "../../modules/models/public/index.ts";
 import { ProfileModule } from "../../modules/profile/profile.module.ts";
-import { PROFILE_CONTENT_PORT, type ProfileContentPort } from "../../modules/profile/public/index.ts";
+import { PROFILE_AUTH_PORT, PROFILE_CONTENT_PORT, type ProfileAuthPort, type ProfileContentPort } from "../../modules/profile/public/index.ts";
+import { pool } from "../../db/client.ts";
 import { CommunityOwnerModule } from "../../modules/community/community-owner.module.ts";
 import { COMMUNITY_FEED_READ_PORT, COMMUNITY_SOCIAL_OWNER_PORT, type CommunityFeedReadPort, type CommunitySocialOwnerPort } from "../../modules/community/public/index.ts";
 import { FeedSocialOwnerModule } from "../../modules/feed/feed-social-owner.module.ts";
@@ -61,16 +62,18 @@ import { UserId, type FeedPostId as FeedPostIdType, type ModelId, type UserId as
 
 @Injectable()
 export class FeedAgentAuthAdapter implements FeedAgentAuthPort {
+  constructor(@Inject(PROFILE_AUTH_PORT) private readonly profiles: ProfileAuthPort) {}
   async verifyAgentContentToken(token: string): Promise<FeedActor | null> {
-    const principal = await verifyAgentContentApiKey(token);
+    const principal = await createAgentContentApiKeyVerifier(pool, this.profiles).verify(token);
     return principal === null ? null : { userId: UserId(principal.ownerId), coAuthorAgentId: principal.agentId };
   }
 }
 
 @Injectable()
 export class FeedIngestAuthAdapter implements FeedIngestAuthPort {
+  constructor(@Inject(PROFILE_AUTH_PORT) private readonly profiles: ProfileAuthPort) {}
   async verifyIngestToken(token: string) {
-    const principal = await verifyFeedIngestApiKey(token);
+    const principal = await createFeedIngestApiKeyVerifier(pool, this.profiles).verify(token);
     return principal === null ? null : { userId: UserId(principal.userId), scope: principal.scope };
   }
 }

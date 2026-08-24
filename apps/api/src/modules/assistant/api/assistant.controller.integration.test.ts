@@ -102,7 +102,7 @@ class AssistantTestAdaptersModule {}
 class AssistantTestAppModule {}
 
 async function sessionCookie(userId: string): Promise<string> {
-  const token = await new SignJWT({ username: "assistant-http" })
+  const token = await new SignJWT({ username: "assistant-http", sv: 1 })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(userId)
     .setExpirationTime("5m")

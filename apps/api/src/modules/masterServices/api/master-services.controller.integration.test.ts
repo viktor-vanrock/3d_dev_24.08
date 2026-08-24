@@ -9,7 +9,7 @@ import { createNestApp } from "../../../nest/bootstrap.ts";
 const JWT_SECRET = process.env.JWT_SECRET ?? "nest-master-services-test-secret";
 
 async function sessionCookie(userId: string): Promise<string> {
-  const token = await new SignJWT({ username: "master-services-http" })
+  const token = await new SignJWT({ username: "master-services-http", sv: 1 })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(userId)
     .setExpirationTime("5m")

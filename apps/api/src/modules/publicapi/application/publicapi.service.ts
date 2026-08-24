@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { BadRequestException, ConflictException, ForbiddenException, HttpException, Inject, Injectable, Logger, NotFoundException, UnauthorizedException } from "@nestjs/common";
 import { UserId, type UserId as UserIdType } from "../../_kernel/brandedIds.ts";
+import { PROFILE_AUTH_PORT, type ProfileAuthPort } from "../../profile/public/index.ts";
 import { PublicApiRepository } from "../infrastructure/publicapi.repository.ts";
 import {
   PUBLICAPI_EXTERNAL_PORT,
@@ -39,9 +40,14 @@ export class PublicApiService implements PublicApiPort, AgentApiKeysPort {
   constructor(
     @Inject(PublicApiRepository) private readonly repository: PublicApiRepository,
     @Inject(PUBLICAPI_EXTERNAL_PORT) private readonly external: PublicApiExternalPort,
+    @Inject(PROFILE_AUTH_PORT) private readonly profiles: ProfileAuthPort,
   ) {}
   private async limit(ownerId: string, context: PublicApiRequestContext) {
     await this.external.assertRateLimit(context.request, ownerId);
+  }
+  private async assertActiveOwner(ownerId: UserIdType): Promise<void> {
+    const owner = await this.profiles.loadOwnerAuthState(ownerId);
+    if (owner === null || owner.status !== "active") throw new ForbiddenException();
   }
   private audit(action: "create" | "revoke" | "rotate", actorId: string, keyId: string | null, outcome: "success" | "failure", reason: string, correlationId: string) {
     void action;
@@ -60,6 +66,7 @@ export class PublicApiService implements PublicApiPort, AgentApiKeysPort {
   }
 
   async createApiKey(ownerId: UserIdType, body: Readonly<Record<string, unknown>>, context: PublicApiRequestContext) {
+    await this.assertActiveOwner(ownerId);
     await this.limit(ownerId, context);
     const raw = Array.isArray(body.scopes) ? body.scopes : ["read"];
     if (!raw.every(isScope)) {
@@ -98,13 +105,14 @@ export class PublicApiService implements PublicApiPort, AgentApiKeysPort {
   }
   async revokeApiKey(ownerId: UserIdType, id: string, context: PublicApiRequestContext) {
     await this.limit(ownerId, context);
-    if (!isUuid(id) || !(await this.repository.revokeApiKey(ownerId, id))) {
+    if (!isUuid(id) || (!(await this.repository.revokeApiKey(ownerId, id)) && !(await this.repository.hasApiKey(ownerId, id)))) {
       this.audit("revoke", ownerId, id, "failure", "not_found", context.requestId);
       throw new NotFoundException();
     }
     this.audit("revoke", ownerId, id, "success", "revoked", context.requestId);
   }
   async rotateApiKey(ownerId: UserIdType, id: string, body: Readonly<Record<string, unknown>>, context: PublicApiRequestContext) {
+    await this.assertActiveOwner(ownerId);
     await this.limit(ownerId, context);
     if (!isUuid(id)) {
       this.audit("rotate", ownerId, id, "failure", "not_found", context.requestId);
@@ -131,6 +139,7 @@ export class PublicApiService implements PublicApiPort, AgentApiKeysPort {
   }
 
   async createUserApiKey(ownerId: UserIdType, body: Readonly<Record<string, unknown>>, context: PublicApiRequestContext): Promise<UserApiKeySecret> {
+    await this.assertActiveOwner(ownerId);
     await this.limit(ownerId, context);
     if (body.scope !== undefined && body.scope !== "public_api") throw new BadRequestException();
     const label = typeof body.label === "string" ? body.label.trim().slice(0, 128) || "API key" : "API key";
@@ -161,7 +170,9 @@ export class PublicApiService implements PublicApiPort, AgentApiKeysPort {
   }
   async revokeUserApiKey(ownerId: UserIdType, id: string, context: PublicApiRequestContext) {
     await this.limit(ownerId, context);
-    if (!isUuid(id) || !(await this.repository.revokeUserApiKey(ownerId, id, "public_api"))) throw new NotFoundException();
+    if (!isUuid(id) || (!(await this.repository.revokeUserApiKey(ownerId, id, "public_api")) && !(await this.repository.hasUserApiKey(ownerId, id, "public_api")))) {
+      throw new NotFoundException();
+    }
   }
   async authenticate(rawAuthorization: string | undefined, requiredScope: PublicApiKeyScope, context: PublicApiRequestContext) {
     const match = rawAuthorization === undefined ? null : /^Bearer\s+([^\s]+)$/i.exec(rawAuthorization.trim());
@@ -206,6 +217,9 @@ export class PublicApiService implements PublicApiPort, AgentApiKeysPort {
   }
   revokeAgentKey(ownerId: UserIdType, agentId: string, keyId: string) {
     return this.repository.revokeAgentKey(ownerId, agentId, keyId);
+  }
+  hasAgentKey(ownerId: UserIdType, agentId: string, keyId: string) {
+    return this.repository.hasAgentKey(ownerId, agentId, keyId);
   }
   revokeAllAgentKeys(agentId: string) {
     return this.repository.revokeAllAgentKeys(agentId);

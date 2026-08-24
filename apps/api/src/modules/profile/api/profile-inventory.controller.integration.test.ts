@@ -14,7 +14,7 @@ let app: NestExpressApplication;
 let baseUrl: string;
 
 async function sessionCookie(): Promise<string> {
-  const token = await new SignJWT({ username }).setProtectedHeader({ alg: "HS256" }).setSubject(userId).setExpirationTime("1h").sign(new TextEncoder().encode(JWT_SECRET));
+  const token = await new SignJWT({ username, sv: 1 }).setProtectedHeader({ alg: "HS256" }).setSubject(userId).setExpirationTime("1h").sign(new TextEncoder().encode(JWT_SECRET));
   return `${SESSION_COOKIE_NAME}=${token}`;
 }
 

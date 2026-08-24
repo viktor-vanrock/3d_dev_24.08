@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
-import { pool } from "../../../db/client.ts";
+import { UserId } from "../../_kernel/brandedIds.ts";
+import type { ProfileAuthPort } from "../../profile/public/index.ts";
 
 export const RESEARCH_API_KEY_PREFIX = "mf_research_";
 export const RESEARCH_API_KEY_SCOPE = "research" as const;
@@ -23,7 +24,7 @@ function hashKey(key: string): Buffer {
 }
 
 /** Проверяет только ключ машинного контура research; plaintext в БД не попадает. */
-export function createResearchApiKeyVerifier(db: Pool | PoolClient = pool) {
+export function createResearchApiKeyVerifier(db: Pool | PoolClient, profiles: ProfileAuthPort) {
   return {
     async verify(rawKey: unknown): Promise<ResearchApiKeyPrincipal | null> {
       if (typeof rawKey !== "string" || !rawKey.startsWith(RESEARCH_API_KEY_PREFIX)) return null;
@@ -40,6 +41,8 @@ export function createResearchApiKeyVerifier(db: Pool | PoolClient = pool) {
         );
         const row = result.rows[0];
         if (!row || row.scope !== RESEARCH_API_KEY_SCOPE) return null;
+        const owner = await profiles.loadOwnerAuthState(UserId(row.user_id));
+        if (owner === null || owner.status !== "active") return null;
 
         db.query(`update user_api_keys set last_used_at = now() where id = $1`, [row.id]).catch(() => {});
         return { id: row.id, userId: row.user_id, scope: row.scope };
@@ -49,6 +52,3 @@ export function createResearchApiKeyVerifier(db: Pool | PoolClient = pool) {
     },
   };
 }
-
-const defaultResearchApiKeyVerifier = createResearchApiKeyVerifier();
-export const verifyResearchApiKey = (rawKey: unknown): Promise<ResearchApiKeyPrincipal | null> => defaultResearchApiKeyVerifier.verify(rawKey);

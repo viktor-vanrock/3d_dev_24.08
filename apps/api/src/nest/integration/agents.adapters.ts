@@ -31,6 +31,9 @@ export class AgentsApiKeysAdapter implements AgentsApiKeysPort {
   revokeAgentKey(...args: Parameters<AgentsApiKeysPort["revokeAgentKey"]>) {
     return this.keys.revokeAgentKey(...args);
   }
+  hasAgentKey(...args: Parameters<AgentsApiKeysPort["hasAgentKey"]>) {
+    return this.keys.hasAgentKey(...args);
+  }
   revokeAllAgentKeys(...args: Parameters<AgentsApiKeysPort["revokeAllAgentKeys"]>) {
     return this.keys.revokeAllAgentKeys(...args);
   }

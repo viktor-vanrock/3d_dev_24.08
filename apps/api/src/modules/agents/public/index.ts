@@ -67,6 +67,7 @@ export interface AgentsApiKeysPort {
   mintAgentKey(ownerId: UserId, agentId: string, label: unknown): Promise<MintedAgentContentKey>;
   listAgentKeys(ownerId: UserId, agentId: string): Promise<readonly AgentContentKey[]>;
   revokeAgentKey(ownerId: UserId, agentId: string, keyId: string): Promise<boolean>;
+  hasAgentKey(ownerId: UserId, agentId: string, keyId: string): Promise<boolean>;
   revokeAllAgentKeys(agentId: string): Promise<void>;
 }
 export interface AgentsPort {

@@ -9,7 +9,7 @@ const JWT_SECRET = "nest-publicapi-test-secret",
   canRun = Boolean(process.env.DATABASE_URL);
 let app: NestExpressApplication, baseUrl: string, userId: string;
 async function cookie() {
-  const token = await new SignJWT({ username: "publicapi-nest" })
+  const token = await new SignJWT({ username: "publicapi-nest", sv: 1 })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(userId)
     .setExpirationTime("5m")
@@ -98,11 +98,21 @@ describe.skipIf(!canRun)("Nest publicapi migration", () => {
     });
     expect(denied.status).toBe(403);
     await expect(denied.json()).resolves.toMatchObject({ error: { code: "auth.forbidden.v1" } });
-    const rotated = await fetch(`${baseUrl}/me/api-keys/${first.id}/rotate`, { method: "POST", headers, body: "{}" });
+    expect((await fetch(`${baseUrl}/me/api-keys/${first.id}`, { method: "DELETE", headers })).status).toBe(204);
+    expect((await fetch(`${baseUrl}/me/api-keys/${first.id}`, { method: "DELETE", headers })).status).toBe(204);
+    const replacement = await fetch(`${baseUrl}/me/api-keys`, { method: "POST", headers, body: JSON.stringify({ name: "Replacement", scopes: ["read"] }) });
+    expect(replacement.status).toBe(201);
+    const replacementResult = (await replacement.json()) as { id: string; key: string };
+    const replacementKey = replacementResult.key;
+    const replacementId = replacementResult.id;
+    const rotated = await fetch(`${baseUrl}/me/api-keys/${replacementId}/rotate`, { method: "POST", headers, body: "{}" });
     expect(rotated.status).toBe(201);
     const second = (await rotated.json()) as { key: string };
-    expect((await fetch(`${baseUrl}/v0/printers`, { headers: { authorization: `Bearer ${first.key}` } })).status).toBe(401);
+    expect((await fetch(`${baseUrl}/v0/printers`, { headers: { authorization: `Bearer ${replacementKey}` } })).status).toBe(401);
     expect((await fetch(`${baseUrl}/v0/printers`, { headers: { authorization: `Bearer ${second.key}` } })).status).toBe(200);
+    await pool.query(`update users set status = 'banned' where id = $1`, [userId]);
+    expect((await fetch(`${baseUrl}/v0/printers`, { headers: { authorization: `Bearer ${second.key}` } })).status).toBe(401);
+    await pool.query(`update users set status = 'active' where id = $1`, [userId]);
   });
   it("keeps user_api_keys lifecycle under session auth", async () => {
     const headers = { cookie: await cookie(), "content-type": "application/json" };
@@ -112,6 +122,7 @@ describe.skipIf(!canRun)("Nest publicapi migration", () => {
     expect(key.key).toMatch(/^mf_user_/);
     const list = await fetch(`${baseUrl}/me/user-api-keys`, { headers });
     expect(await list.json()).toMatchObject({ keys: [{ id: key.id, scope: "public_api" }] });
+    expect((await fetch(`${baseUrl}/me/user-api-keys/${key.id}`, { method: "DELETE", headers })).status).toBe(204);
     expect((await fetch(`${baseUrl}/me/user-api-keys/${key.id}`, { method: "DELETE", headers })).status).toBe(204);
   });
 });

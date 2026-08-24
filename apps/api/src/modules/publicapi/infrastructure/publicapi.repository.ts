@@ -2,6 +2,7 @@ import { Inject, Injectable } from "@nestjs/common";
 import type { Pool } from "pg";
 import { DATABASE_POOL } from "../../../nest/database/database.constants.ts";
 import type { UserId } from "../../_kernel/brandedIds.ts";
+import { PROFILE_AUTH_PORT, type ProfileAuthPort } from "../../profile/public/index.ts";
 import type { PublicApiKeyScope } from "../public/index.ts";
 
 export interface ApiKeyRow {
@@ -27,7 +28,10 @@ export interface UserApiKeyRow {
 
 @Injectable()
 export class PublicApiRepository {
-  constructor(@Inject(DATABASE_POOL) private readonly pool: Pool) {}
+  constructor(
+    @Inject(DATABASE_POOL) private readonly pool: Pool,
+    @Inject(PROFILE_AUTH_PORT) private readonly profiles: ProfileAuthPort,
+  ) {}
 
   async activeApiKeyCount(ownerId: UserId): Promise<number> {
     const r = await this.pool.query<{ count: string }>(
@@ -50,6 +54,9 @@ export class PublicApiRepository {
   }
   async revokeApiKey(ownerId: UserId, id: string): Promise<boolean> {
     return (await this.pool.query(`update api_keys set revoked_at=now() where id=$1 and owner_id=$2 and revoked_at is null`, [id, ownerId])).rowCount !== 0;
+  }
+  async hasApiKey(ownerId: UserId, id: string): Promise<boolean> {
+    return (await this.pool.query(`select 1 from api_keys where id=$1 and owner_id=$2`, [id, ownerId])).rowCount !== 0;
   }
   async rotateApiKey(ownerId: UserId, id: string, input: { name?: string; prefix: string; hash: Buffer }): Promise<ApiKeyRow | "not_found" | "already_revoked"> {
     const c = await this.pool.connect();
@@ -86,8 +93,11 @@ export class PublicApiRepository {
       [hash],
     );
     const row = r.rows[0];
-    if (row) void this.pool.query(`update api_keys set last_used_at=now() where id=$1`, [row.id]).catch(() => {});
-    return row ?? null;
+    if (row === undefined) return null;
+    const owner = await this.profiles.loadOwnerAuthState(row.owner_id as UserId);
+    if (owner === null || owner.status !== "active") return null;
+    void this.pool.query(`update api_keys set last_used_at=now() where id=$1`, [row.id]).catch(() => {});
+    return row;
   }
 
   async insertUserApiKey(input: {
@@ -119,6 +129,9 @@ export class PublicApiRepository {
         .rowCount !== 0
     );
   }
+  async hasUserApiKey(ownerId: UserId, id: string, scope: string): Promise<boolean> {
+    return (await this.pool.query(`select 1 from user_api_keys where id=$1 and user_id=$2 and scope=$3`, [id, ownerId, scope])).rowCount !== 0;
+  }
   async listAgentKeys(ownerId: UserId, agentId: string): Promise<readonly UserApiKeyRow[]> {
     return (
       await this.pool.query<UserApiKeyRow>(
@@ -136,6 +149,11 @@ export class PublicApiRepository {
         )
       ).rowCount !== 0
     );
+  }
+  async hasAgentKey(ownerId: UserId, agentId: string, keyId: string): Promise<boolean> {
+    return (
+      await this.pool.query(`select 1 from user_api_keys where id=$1 and user_id=$2 and agent_id=$3 and scope='agent_content'`, [keyId, ownerId, agentId])
+    ).rowCount !== 0;
   }
   async revokeAllAgentKeys(agentId: string): Promise<void> {
     await this.pool.query(`update user_api_keys set status='revoked',revoked_at=now(),revoked_reason='agent_revoked' where agent_id=$1 and status='active'`, [agentId]);

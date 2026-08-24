@@ -34,7 +34,7 @@ const JWT_SECRET = "project-api-v1-integration-secret";
 class ProjectApiIntegrationModule {}
 
 async function token(userId: string, username: string): Promise<string> {
-  return new SignJWT({ username }).setProtectedHeader({ alg: "HS256" }).setSubject(userId).sign(new TextEncoder().encode(JWT_SECRET));
+  return new SignJWT({ username, sv: 1 }).setProtectedHeader({ alg: "HS256" }).setSubject(userId).sign(new TextEncoder().encode(JWT_SECRET));
 }
 
 describe.skipIf(!process.env.DATABASE_URL)("Project API v1 HTTP integration", () => {

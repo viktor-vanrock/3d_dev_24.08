@@ -10,7 +10,7 @@ const JWT_SECRET = "nest-agents-test-secret",
   canRun = Boolean(process.env.DATABASE_URL);
 let app: NestExpressApplication, baseUrl: string, userId: string;
 async function cookie() {
-  const token = await new SignJWT({ username: USERNAME })
+  const token = await new SignJWT({ username: USERNAME, sv: 1 })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(userId)
     .setExpirationTime("5m")
@@ -79,6 +79,7 @@ describe.skipIf(!canRun)("Nest agents migration", () => {
     expect(stored.rows[0]!.key_hash.toString()).not.toContain(key.key);
     const keys = await fetch(`${baseUrl}/me/agents/${agent.id}/keys`, { headers });
     expect(await keys.json()).toMatchObject({ keys: [{ id: key.id, status: "active" }] });
+    expect((await fetch(`${baseUrl}/me/agents/${agent.id}/keys/${key.id}/revoke`, { method: "POST", headers, body: "{}" })).status).toBe(204);
     expect((await fetch(`${baseUrl}/me/agents/${agent.id}/keys/${key.id}/revoke`, { method: "POST", headers, body: "{}" })).status).toBe(204);
     const revoked = await fetch(`${baseUrl}/me/agents/${agent.id}/revoke`, { method: "POST", headers, body: "{}" });
     expect(revoked.status).toBe(200);

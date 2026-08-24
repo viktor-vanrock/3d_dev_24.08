@@ -14,7 +14,7 @@ let app: NestExpressApplication;
 let baseUrl: string;
 
 async function bearer(id: string): Promise<string> {
-  const token = await new SignJWT({ username: "moderation-tester" })
+  const token = await new SignJWT({ username: "moderation-tester", sv: 1 })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(id)
     .setExpirationTime("5m")

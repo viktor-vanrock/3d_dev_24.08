@@ -104,7 +104,7 @@ async function createBinding(userId: string, connectionId: string): Promise<stri
 }
 
 async function cookie(userId: string): Promise<string> {
-  const token = await new SignJWT({ username: "import-connection-tester" })
+  const token = await new SignJWT({ username: "import-connection-tester", sv: 1 })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(userId)
     .setExpirationTime("5m")

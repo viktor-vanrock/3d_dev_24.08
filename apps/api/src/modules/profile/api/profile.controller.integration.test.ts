@@ -12,7 +12,7 @@ const userId = randomUUID();
 const username = `nest-profile-http-${randomUUID()}`;
 
 async function cookie(): Promise<string> {
-  const token = await new SignJWT({ username })
+  const token = await new SignJWT({ username, sv: 1 })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(userId)
     .setIssuedAt()

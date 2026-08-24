@@ -22,7 +22,8 @@ function setup() {
     insertUserApiKey: vi.fn().mockResolvedValue({ id: "agent-key", created_at: new Date("2026-01-01T00:00:00Z") }),
   };
   const external = { assertRateLimit: vi.fn().mockResolvedValue(undefined) };
-  return { repository, external, service: new PublicApiService(repository as never, external) };
+  const profiles = { loadOwnerAuthState: vi.fn().mockResolvedValue({ status: "active", sessionVersion: 1 }) };
+  return { repository, external, profiles, service: new PublicApiService(repository as never, external, profiles as never) };
 }
 describe("PublicApiService", () => {
   it("returns a printer key once and stores only its SHA-256", async () => {
@@ -39,6 +40,14 @@ describe("PublicApiService", () => {
     const { service, repository } = setup();
     await service.createApiKey(UserId("00000000-0000-4000-8000-000000000001"), { scopes: [] }, { request: request(), requestId: "request-id" });
     expect(repository.insertApiKey).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ scopes: ["read"] }));
+  });
+  it("refuses to issue a key for an inactive owner", async () => {
+    const { service, repository, profiles } = setup();
+    profiles.loadOwnerAuthState.mockResolvedValue({ status: "banned", sessionVersion: 1 });
+    await expect(service.createApiKey(UserId("00000000-0000-4000-8000-000000000001"), {}, { request: request(), requestId: "request-id" })).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
+    expect(repository.insertApiKey).not.toHaveBeenCalled();
   });
   it("checks key rate-limit before rejecting a missing scope", async () => {
     const { service, repository, external } = setup();

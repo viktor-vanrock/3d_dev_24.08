@@ -9,7 +9,7 @@ const JWT_SECRET = "nest-security-honeypot-test-secret";
 const USER_ID = "00000000-0000-4000-8000-0000000000f1";
 
 async function sessionCookie(): Promise<string> {
-  const token = await new SignJWT({ username: "honeypot-test" })
+  const token = await new SignJWT({ username: "honeypot-test", sv: 1 })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(USER_ID)
     .setExpirationTime("5m")
