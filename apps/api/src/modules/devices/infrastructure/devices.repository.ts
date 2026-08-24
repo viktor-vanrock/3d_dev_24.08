@@ -1,8 +1,9 @@
 import { createHash, randomBytes } from "node:crypto";
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, Optional } from "@nestjs/common";
 import type { Pool } from "pg";
 import { decodeJwt } from "jose";
 import { DATABASE_POOL } from "../../../nest/database/database.constants.ts";
+import { RuntimeLogger } from "../../../nest/observability/runtime-logger.ts";
 import { DeviceId, UserId, type DeviceId as DeviceIdType, type UserId as UserIdType } from "../../_kernel/brandedIds.ts";
 import { PRINTER_OWNER_PORT, type OwnedUserPrinter, type PrinterOwnerPort } from "../../printers/public/index.ts";
 import type { DeviceCommandResult, DeviceExternalPort, DeviceMetrics, DeviceOperatingStateInput, DeviceRole, DeviceShareResponse } from "../public/index.ts";
@@ -133,6 +134,7 @@ export class DevicesRepository implements DeviceIncidentEventReadPort, DeviceInc
   constructor(
     @Inject(DATABASE_POOL) private readonly pool: Pool,
     @Inject(PRINTER_OWNER_PORT) private readonly printers: PrinterOwnerPort,
+    @Optional() @Inject(RuntimeLogger) private readonly logger?: RuntimeLogger,
   ) {}
 
   async access(deviceId: DeviceIdType, userId: UserIdType): Promise<AccessRow | null> {
@@ -266,7 +268,7 @@ export class DevicesRepository implements DeviceIncidentEventReadPort, DeviceInc
     }
   }
 
-  async revokeDevice(deviceId: DeviceIdType, actorId: UserIdType, reason: string | null, requestId: string): Promise<"ok" | "not_owner" | "no_agent" | "already_revoked"> {
+  async revokeDevice(deviceId: DeviceIdType, actorId: UserIdType, reason: string | null, requestId: string): Promise<{ readonly kind: "ok"; readonly agentId: string } | "not_owner" | "no_agent" | "already_revoked"> {
     const client = await this.pool.connect();
     try {
       await client.query("begin");
@@ -295,7 +297,26 @@ export class DevicesRepository implements DeviceIncidentEventReadPort, DeviceInc
         JSON.stringify({ agent_id: printer.agent_id, reason, request_id: requestId }),
       ]);
       await client.query("commit");
-      return "ok";
+      return { kind: "ok", agentId: printer.agent_id };
+    } catch (error) {
+      await client.query("rollback").catch(() => undefined);
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async revokeAllActiveByOwner(ownerId: UserIdType, reason: string, actorId: UserIdType): Promise<readonly string[]> {
+    const client = await this.pool.connect();
+    try {
+      await client.query("begin");
+      const revoked = await client.query<{ id: string }>(
+        `update agents set revoked_at=now(),revoked_reason=$2,updated_at=now() where owner_id=$1 and revoked_at is null returning id::text as id`,
+        [ownerId, reason],
+      );
+      await client.query("commit");
+      this.logger?.info({ event: "device.admin_revoke_batch", ownerId, actorId, reason, count: revoked.rows.length }, "device agents revoked for owner");
+      return revoked.rows.map((row) => row.id);
     } catch (error) {
       await client.query("rollback").catch(() => undefined);
       throw error;

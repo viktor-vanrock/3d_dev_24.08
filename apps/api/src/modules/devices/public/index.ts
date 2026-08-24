@@ -14,6 +14,18 @@ export const DEVICE_INCIDENT_EVENT_READ_PORT = Symbol("DEVICE_INCIDENT_EVENT_REA
 export const DEVICE_INCIDENT_EVENT_WRITE_PORT = Symbol("DEVICE_INCIDENT_EVENT_WRITE_PORT");
 export const DEVICE_COMMAND_RELAY_PORT = Symbol("DEVICE_COMMAND_RELAY_PORT");
 export const DEVICE_RELAY_CONTROL_PORT = Symbol("DEVICE_RELAY_CONTROL_PORT");
+export const DEVICE_ADMIN_PORT = Symbol("DEVICE_ADMIN_PORT");
+export const DEVICE_RELAY_PUSH_PORT = Symbol("DEVICE_RELAY_PUSH_PORT");
+
+export type RelayControlCloseReason = "agent_revoked" | "owner_blocked" | "admin_action";
+
+export interface DeviceAdminPort {
+  revokeAllActiveByOwner(ownerId: UserId, reason: string, actorId: UserId): Promise<readonly string[]>;
+}
+
+export interface DeviceRelayPushPort {
+  closeAgentSessions(agentIds: readonly string[], reason: RelayControlCloseReason): Promise<void>;
+}
 
 export interface GatewayCertificate {
   readonly certificatePem: string;

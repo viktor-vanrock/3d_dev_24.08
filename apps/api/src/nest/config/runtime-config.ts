@@ -73,6 +73,19 @@ export function validateRuntimeEnvironment(environment: Record<string, unknown>)
   }
 
   const admin = resolveAdminBootstrapConfig(environment);
+  const relayControlBaseUrl = environment.RELAY_INTERNAL_BASE_URL;
+  if (environment.NODE_ENV === "production" && (typeof relayControlBaseUrl !== "string" || relayControlBaseUrl.trim() === "")) {
+    throw new Error("RELAY_INTERNAL_BASE_URL is required in production");
+  }
+  if (typeof relayControlBaseUrl === "string" && relayControlBaseUrl.trim() !== "") {
+    let parsed: URL;
+    try {
+      parsed = new URL(relayControlBaseUrl);
+    } catch {
+      throw new Error("RELAY_INTERNAL_BASE_URL must be an absolute HTTP(S) URL");
+    }
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") throw new Error("RELAY_INTERNAL_BASE_URL must use HTTP or HTTPS");
+  }
   return {
     ...environment,
     PORT: resolveNestPort(rawPort),

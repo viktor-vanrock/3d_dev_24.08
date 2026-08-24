@@ -53,6 +53,9 @@ export interface SafeLogRecord {
   readonly outcome?: string;
   readonly reason?: string;
   readonly credentialType?: "session";
+  readonly ownerId?: string;
+  readonly actorId?: string;
+  readonly count?: number;
 }
 
 const SAFE_LOG_KEYS = new Set<keyof SafeLogRecord>([
@@ -67,6 +70,9 @@ const SAFE_LOG_KEYS = new Set<keyof SafeLogRecord>([
   "outcome",
   "reason",
   "credentialType",
+  "ownerId",
+  "actorId",
+  "count",
 ]);
 
 export function allowlistedLogRecord(record: SafeLogRecord): SafeLogRecord {

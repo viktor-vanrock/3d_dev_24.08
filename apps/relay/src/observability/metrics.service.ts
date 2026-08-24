@@ -66,6 +66,7 @@ export class RelayMetrics {
   private readonly backpressure = new Counter("relay_backpressure_total", "Backpressure transitions and rejections.");
   private readonly commandLifecycle = new Counter("relay_command_lifecycle_total", "Command lifecycle transitions observed by relay.");
   private readonly internalApi = new Counter("relay_internal_api_requests_total", "Internal relay API request outcomes.");
+  private readonly controlClose = new Counter("relay_control_close_total", "Control-plane gateway session close requests completed.");
 
   setActiveSessions(value: number): void {
     this.activeSessions.set(value);
@@ -103,6 +104,10 @@ export class RelayMetrics {
     this.internalApi.increment({ operation: operation.slice(0, 96), outcome });
   }
 
+  recordControlClose(): void {
+    this.controlClose.increment();
+  }
+
   render(): string {
     return [
       ...this.activeSessions.render(),
@@ -112,6 +117,7 @@ export class RelayMetrics {
       ...this.backpressure.render(),
       ...this.commandLifecycle.render(),
       ...this.internalApi.render(),
+      ...this.controlClose.render(),
     ].join("\n") + "\n";
   }
 }

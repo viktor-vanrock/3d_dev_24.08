@@ -1,10 +1,12 @@
 import { Global, Module } from "@nestjs/common";
 import { DatabaseModule } from "../../nest/database/database.module.ts";
+import { RuntimeLogger } from "../../nest/observability/runtime-logger.ts";
 import { DevicesController } from "./api/devices.controller.ts";
 import { DevicesService } from "./application/devices.service.ts";
 import { DeviceCommandRelayRepository } from "./infrastructure/device-command-relay.repository.ts";
 import { DevicesRepository } from "./infrastructure/devices.repository.ts";
 import { RelayControlRepository } from "./infrastructure/relay-control.repository.ts";
+import { RelayControlClient } from "./infrastructure/relay-control-client.ts";
 import {
   DEVICES_PORT,
   DEVICE_COMMAND_RELAY_PORT,
@@ -13,6 +15,8 @@ import {
   DEVICE_PROFILE_OPERATIONS_PORT,
   DEVICE_PUBLIC_API_OPERATIONS_PORT,
   DEVICE_RELAY_CONTROL_PORT,
+  DEVICE_ADMIN_PORT,
+  DEVICE_RELAY_PUSH_PORT,
 } from "./public/index.ts";
 
 @Global()
@@ -20,9 +24,11 @@ import {
   imports: [DatabaseModule],
   controllers: [DevicesController],
   providers: [
+    RuntimeLogger,
     DevicesRepository,
     DeviceCommandRelayRepository,
     RelayControlRepository,
+    RelayControlClient,
     DevicesService,
     { provide: DEVICES_PORT, useExisting: DevicesService },
     { provide: DEVICE_PROFILE_OPERATIONS_PORT, useExisting: DevicesService },
@@ -31,6 +37,8 @@ import {
     { provide: DEVICE_INCIDENT_EVENT_WRITE_PORT, useExisting: DevicesRepository },
     { provide: DEVICE_COMMAND_RELAY_PORT, useExisting: DeviceCommandRelayRepository },
     { provide: DEVICE_RELAY_CONTROL_PORT, useExisting: RelayControlRepository },
+    { provide: DEVICE_ADMIN_PORT, useExisting: DevicesService },
+    { provide: DEVICE_RELAY_PUSH_PORT, useExisting: RelayControlClient },
   ],
   exports: [
     DEVICES_PORT,
@@ -40,6 +48,8 @@ import {
     DEVICE_INCIDENT_EVENT_WRITE_PORT,
     DEVICE_COMMAND_RELAY_PORT,
     DEVICE_RELAY_CONTROL_PORT,
+    DEVICE_ADMIN_PORT,
+    DEVICE_RELAY_PUSH_PORT,
   ],
 })
 export class DevicesModule {}

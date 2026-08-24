@@ -45,6 +45,7 @@ describe("loadRelayConfig", () => {
         },
       },
       observability: { host: "127.0.0.1", port: 9091 },
+      internal: { host: "127.0.0.1", port: 9092 },
     });
   });
 
@@ -78,5 +79,11 @@ describe("loadRelayConfig", () => {
         RELAY_OBSERVABILITY_PORT: "9091",
       }),
     ).toThrow("must use different addresses");
+  });
+
+  it("keeps the internal control listener separate from the other listeners", () => {
+    expect(() =>
+      loadRelayConfig({ ...BASE_ENV, RELAY_INTERNAL_LISTEN_HOST: "127.0.0.1", RELAY_INTERNAL_LISTEN_PORT: "9091" }),
+    ).toThrow("Observability and internal control listeners must use different addresses");
   });
 });

@@ -192,6 +192,7 @@ export async function createRelayE2eHarness(options: RelayE2eHarnessOptions): Pr
       },
     },
     observability: { host: "127.0.0.1", port: 0 },
+    internal: { host: "127.0.0.1", port: 0 },
   };
   const api = { v1: options.apiV1, revalidationV1: options.apiV1 } as unknown as RelayApiClient;
   const logger = { info: () => undefined, warn: () => undefined, error: () => undefined } as unknown as RelayLogger;

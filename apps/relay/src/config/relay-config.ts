@@ -38,6 +38,10 @@ export interface RelayConfig {
     readonly host: string;
     readonly port: number;
   };
+  readonly internal: {
+    readonly host: string;
+    readonly port: number;
+  };
 }
 
 type Environment = Readonly<Record<string, string | undefined>>;
@@ -106,10 +110,18 @@ export function loadRelayConfig(environment: Environment = process.env): RelayCo
 
   const gatewayPort = boundedInteger(environment, "RELAY_GATEWAY_PORT", 8443, 1, 65_535);
   const observabilityPort = boundedInteger(environment, "RELAY_OBSERVABILITY_PORT", 9091, 1, 65_535);
+  const internalPort = boundedInteger(environment, "RELAY_INTERNAL_LISTEN_PORT", 9092, 1, 65_535);
   const gatewayHost = validHost(environment, "RELAY_GATEWAY_HOST", "0.0.0.0");
   const observabilityHost = validHost(environment, "RELAY_OBSERVABILITY_HOST", "127.0.0.1");
+  const internalHost = validHost(environment, "RELAY_INTERNAL_LISTEN_HOST", "127.0.0.1");
   if (gatewayPort === observabilityPort && gatewayHost === observabilityHost) {
     throw new Error("Gateway WSS and observability listeners must use different addresses");
+  }
+  if (gatewayPort === internalPort && gatewayHost === internalHost) {
+    throw new Error("Gateway WSS and internal control listeners must use different addresses");
+  }
+  if (observabilityPort === internalPort && observabilityHost === internalHost) {
+    throw new Error("Observability and internal control listeners must use different addresses");
   }
 
   return {
@@ -145,5 +157,6 @@ export function loadRelayConfig(environment: Environment = process.env): RelayCo
       },
     },
     observability: { host: observabilityHost, port: observabilityPort },
+    internal: { host: internalHost, port: internalPort },
   };
 }

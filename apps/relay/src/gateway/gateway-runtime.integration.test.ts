@@ -152,6 +152,7 @@ describe("GatewayRuntime real TLS/session lifecycle", () => {
         tls: { certificateFile: certificates.serverCertificateFile, privateKeyFile: certificates.serverKeyFile, clientCaFile: join(certificates.directory, "ca.crt") },
       },
       observability: { host: "127.0.0.1", port: 0 },
+      internal: { host: "127.0.0.1", port: 0 },
     };
     const logger = { info: () => undefined, warn: () => undefined, error: () => undefined } as unknown as RelayLogger;
     const registry = new SessionRegistry();
@@ -238,6 +239,7 @@ describe("GatewayRuntime real TLS/session lifecycle", () => {
         tls: { certificateFile: "unused", privateKeyFile: "unused", clientCaFile: "unused" },
       },
       observability: { host: "127.0.0.1", port: 0 },
+      internal: { host: "127.0.0.1", port: 0 },
     };
     class FakeSocket implements SessionSocket {
       readyState: number = WebSocket.OPEN;

@@ -10,6 +10,7 @@ import {
   type Heartbeat,
   type RelayToGatewayFrame,
 } from "@portal/contracts/device-protocol/v1";
+import type { RelayControlCloseReason } from "@portal/contracts/http/relay-control.v1";
 import { WebSocket, WebSocketServer } from "ws";
 import { RelayApiClient } from "../api/relay-api-client.service.ts";
 import { CommandDeliveryService } from "../commands/command-delivery.service.ts";
@@ -117,6 +118,21 @@ export class GatewayRuntime implements OnApplicationBootstrap, OnApplicationShut
     this.revalidationSweep = setInterval(() => void this.revalidateActiveGateways(), this.config.gateway.revalidationIntervalMs);
     this.revalidationSweep.unref();
     this.logger.info({ event: "relay_gateway_listening", outcome: "ready" }, "relay gateway TLS listener started");
+  }
+
+  async closeSessions(agentIds: readonly string[], _reason: RelayControlCloseReason): Promise<{ readonly closed: readonly string[]; readonly notConnected: readonly string[] }> {
+    const closed: string[] = [];
+    const notConnected: string[] = [];
+    for (const agentId of agentIds) {
+      const session = this.registry.get(agentId);
+      if (session === undefined || session.closing) {
+        notConnected.push(agentId);
+        continue;
+      }
+      await this.closeSession(session, CLOSE_REVOKED, "gateway_revoked", "revoked");
+      closed.push(agentId);
+    }
+    return { closed, notConnected };
   }
 
   async shutdown(): Promise<void> {

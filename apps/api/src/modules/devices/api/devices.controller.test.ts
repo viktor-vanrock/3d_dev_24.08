@@ -4,7 +4,7 @@ import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from "@nestjs/core";
 import { METHOD_METADATA, PATH_METADATA } from "@nestjs/common/constants";
 import type { RequestMethod } from "@nestjs/common";
 import type { NestExpressApplication } from "@nestjs/platform-express";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { AuthGuard } from "../../../nest/auth/auth.guard.ts";
 import { SessionVerifier } from "../../../nest/auth/session-verifier.ts";
 import { createNestApp } from "../../../nest/bootstrap.ts";
@@ -16,6 +16,7 @@ import { createApiValidationPipe } from "../../../nest/validation/api-validation
 import routeManifest from "../../../characterization/routes.manifest.json" with { type: "json" };
 import { DevicesController } from "./devices.controller.ts";
 import { DEVICES_PORT, type DeviceTransferResponse, type DevicesPort } from "../public/index.ts";
+import { PROFILE_AUTH_PORT } from "../../profile/public/index.ts";
 
 const timestamp = "2026-01-01T00:00:00.000Z";
 const commandResponse = {
@@ -112,7 +113,15 @@ const fakeDevices: DevicesPort = {
 };
 
 @Global()
-@Module({ providers: [SessionVerifier, { provide: DEVICES_PORT, useValue: fakeDevices }], exports: [SessionVerifier, DEVICES_PORT] })
+@Module({
+  providers: [
+    SessionVerifier,
+    { provide: DEVICES_PORT, useValue: fakeDevices },
+    { provide: PROFILE_AUTH_PORT, useValue: { loadOwnerAuthState: () => Promise.resolve(null) } },
+    { provide: RuntimeLogger, useValue: { info: vi.fn(), warn: vi.fn() } },
+  ],
+  exports: [SessionVerifier, DEVICES_PORT, PROFILE_AUTH_PORT],
+})
 class DeviceTestPortsModule {}
 @Module({
   imports: [ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true }), DeviceTestPortsModule],

@@ -1,10 +1,11 @@
 import { createHash, randomUUID } from "node:crypto";
-import { BadRequestException, ConflictException, ForbiddenException, HttpException, Inject, Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
+import { BadRequestException, ConflictException, ForbiddenException, HttpException, Inject, Injectable, NotFoundException, Optional, UnauthorizedException } from "@nestjs/common";
 import { DeviceId, UserId, type DeviceId as DeviceIdType, type UserId as UserIdType } from "../../_kernel/brandedIds.ts";
 import { PROFILE_READ_PORT, type ProfileReadPort } from "../../profile/public/index.ts";
 import type { OwnedUserPrinter } from "../../printers/public/index.ts";
 import {
   DEVICE_EXTERNAL_PORT,
+  DEVICE_RELAY_PUSH_PORT,
   type DeviceExternalPort,
   type DeviceLiveState,
   type DeviceOperatingState,
@@ -13,6 +14,8 @@ import {
   type DevicePublicApiOperationsPort,
   type DeviceQueuedProfileCommand,
   type DeviceRequestContext,
+  type DeviceAdminPort,
+  type DeviceRelayPushPort,
   type DevicesPort,
 } from "../public/index.ts";
 import {
@@ -146,11 +149,12 @@ function publicPrinter(printer: OwnedUserPrinter, state: PublicDeviceStateRow | 
 }
 
 @Injectable()
-export class DevicesService implements DevicesPort, DeviceProfileOperationsPort, DevicePublicApiOperationsPort {
+export class DevicesService implements DevicesPort, DeviceProfileOperationsPort, DevicePublicApiOperationsPort, DeviceAdminPort {
   constructor(
     @Inject(DevicesRepository) private readonly repository: DevicesRepository,
     @Inject(DEVICE_EXTERNAL_PORT) private readonly external: DeviceExternalPort,
     @Inject(PROFILE_READ_PORT) private readonly profiles: ProfileReadPort,
+    @Optional() @Inject(DEVICE_RELAY_PUSH_PORT) private readonly relayControl?: DeviceRelayPushPort,
   ) {}
 
   async createEnrollCode(actorId: UserIdType, body: Record<string, unknown>) {
@@ -188,7 +192,11 @@ export class DevicesService implements DevicesPort, DeviceProfileOperationsPort,
     if (result === "not_owner") throw new ForbiddenException();
     if (result === "no_agent") throw new NotFoundException();
     if (result === "already_revoked") throw new ConflictException();
+    void this.relayControl?.closeAgentSessions([result.agentId], "agent_revoked").catch(() => undefined);
     return { ok: true as const };
+  }
+  async revokeAllActiveByOwner(ownerId: UserIdType, reason: string, actorId: UserIdType): Promise<readonly string[]> {
+    return this.repository.revokeAllActiveByOwner(ownerId, reason, actorId);
   }
   installScript() {
     const apiUrl = this.external.apiBaseUrl();

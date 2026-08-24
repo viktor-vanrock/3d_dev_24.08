@@ -60,3 +60,26 @@ describe.skipIf(!canRun)("DevicesRepository idempotent command queue", () => {
     expect(repeated.row.id).toBe(first.row.id);
   });
 });
+
+describe.skipIf(!canRun)("DevicesRepository administrative device-agent revoke", () => {
+  it("revokes only active owner agents and advances their authorization revision", async () => {
+    const ownerId = UserId(randomUUID());
+    const actorId = UserId(randomUUID());
+    const activeId = randomUUID();
+    const revokedId = randomUUID();
+    await pool.query(`insert into users(id,username) values($1,$2),($3,$4)`, [ownerId, `device-owner-${randomUUID()}`, actorId, `device-admin-${randomUUID()}`]);
+    await pool.query(`insert into agents(id,owner_id) values($1,$2),($3,$2)`, [activeId, ownerId, revokedId]);
+    await pool.query(`update agents set revoked_at=now(),revoked_reason='existing' where id=$1`, [revokedId]);
+    try {
+      await expect(repository.revokeAllActiveByOwner(ownerId, "owner_blocked", actorId)).resolves.toEqual([activeId]);
+      const rows = await pool.query<{ id: string; revoked_at: Date | null; authorization_revision: string }>(
+        `select id::text,revoked_at,authorization_revision::text from agents where id=any($1::uuid[]) order by id`,
+        [[activeId, revokedId]],
+      );
+      expect(rows.rows).toEqual(expect.arrayContaining([expect.objectContaining({ id: activeId, revoked_at: expect.any(Date), authorization_revision: "1" })]));
+      expect(rows.rows).toEqual(expect.arrayContaining([expect.objectContaining({ id: revokedId, authorization_revision: "1" })]));
+    } finally {
+      await pool.query(`delete from users where id=any($1::uuid[])`, [[ownerId, actorId]]);
+    }
+  });
+});

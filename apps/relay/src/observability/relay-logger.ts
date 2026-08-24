@@ -30,6 +30,7 @@ export interface RelayLogRecord {
   readonly status_code?: number;
   readonly attempt?: number;
   readonly latency_ms?: number;
+  readonly count?: number;
 }
 
 const ALLOWED_KEYS = new Set<keyof RelayLogRecord>([
@@ -45,6 +46,7 @@ const ALLOWED_KEYS = new Set<keyof RelayLogRecord>([
   "status_code",
   "attempt",
   "latency_ms",
+  "count",
 ]);
 
 export function allowlistedRelayLogRecord(record: RelayLogRecord): RelayLogRecord {
