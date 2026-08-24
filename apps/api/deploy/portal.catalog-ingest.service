@@ -1,0 +1,34 @@
+# systemd-юнит разового прогона всех структурных источников каталога станков apps/api
+# (MF-648, декомпозиция MF-406): scripts/ingest-run.ts без --adapter — обходит все
+# SourceAdapter (cura-definitions, sovol3d-store) по очереди, идемпотентный upsert
+# machine_candidates + аудит-лог ingest_runs (runIngest). Гоняется по расписанию через
+# portal.catalog-ingest.timer (по образцу portal.giga-catalog.timer).
+#
+# Установка на VDS (после pnpm install в корне монорепо):
+#   sudo cp apps/api/deploy/portal.catalog-ingest.service apps/api/deploy/portal.catalog-ingest.timer /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now portal.catalog-ingest.timer
+#   journalctl -u portal.catalog-ingest -f     # логи последнего прогона
+#
+# EnvironmentFile ~/portal.api.env (общий с portal.api.service) — DATABASE_URL (обяз.).
+# Current implementation: src/modules/catalog/infrastructure/ingest via the catalog public operations surface.
+#
+# Известный побочный факт (см. docs/epics/domain.model.md § «Агент-парсер свободного
+# HTML»): apps/scout — независимый параллельный пайплайн, тоже пишет в machine_candidates
+# своими источниками (vendor_whitelist/slicer_profiles/spoolman). Обе линии совместно
+# используют таблицу без конфликта на стороне ingest (unique(source, external_ref) per
+# adapter) — координация нужна только на стороне резолвера, см. portal.catalog-resolve.service.
+
+[Unit]
+Description=portal.ru catalog ingest agents (cura-definitions + sovol3d-store -> machine_candidates)
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=plag
+WorkingDirectory=/home/plag/portal.ru/apps/api
+EnvironmentFile=/home/plag/portal.api.env
+ExecStart=/usr/bin/pnpm run ingest:run
+StandardOutput=journal
+StandardError=journal

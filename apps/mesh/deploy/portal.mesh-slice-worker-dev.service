@@ -1,0 +1,46 @@
+# Dev-юнит очереди слайсинга apps/mesh для dev.3mf.tech (MF-1248-04).
+# Отдельный процесс от portal.mesh-worker-dev.service: первый обрабатывает
+# slice_jobs и пишет account-scoped g-code в 3mf-dev, второй конвертирует STL.
+# Установка на VDS:
+#   sudo cp apps/mesh/deploy/portal.mesh-slice-worker-dev.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now portal.mesh-slice-worker-dev.service
+#
+# Секреты находятся только в /home/plag/portal.mesh-dev.env. Этот unit не может
+# писать в прод-БД/бакет: рабочая копия и env относятся к dev-контур.
+#
+# MF-1992: /home/plag/portal.mesh-dev.env обязан содержать MESH_SLICE_TRUST_PRIVATE_KEY_PATH
+# (путь к отдельному dev Ed25519 PEM, chmod 600, вне git, НЕ прод-ключ) и
+# MESH_SLICE_TRUST_KEY_ID — без них воркер простаивает по ВСЕЙ очереди слайсинга
+# (обязательный slice-trust.v1, не только Orca/U1), см. SECURITY.md § «Секреты» и
+# docs/contracts/slice-trust.v1.md.
+#
+# OrcaSlicer/Snapmaker U1 (MF-1974/MF-1987/MF-1988): пиненный бинарь и вендорский
+# бандл профилей развёрнуты вне /tmp (переживают reboot), тем же способом, что CI
+# провижинит headless-раннер, см. docs/infra/slicer.ci.headless.md — версия/sha256
+# зафиксированы там же, путь ниже — extracted AppImage `--appimage-extract` в
+# /home/plag/opt/orcaslicer-v2.4.2/orca-appimage. `SLICER_ORCA_BINARY_PATH` не
+# секрет (просто путь на диске), поэтому объявлен здесь, а не в EnvironmentFile.
+
+[Unit]
+Description=portal.ru dev mesh slicing queue worker (slice_jobs pending->ready, dev.3mf.tech)
+After=network-online.target postgresql.service user@1000.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=plag
+WorkingDirectory=/home/plag/portal.ru-dev/apps/mesh
+Environment=PYTHONUNBUFFERED=1
+Environment=XDG_RUNTIME_DIR=/run/user/1000
+Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
+Environment=SLICER_BINARY_PATH=/usr/bin/prusa-slicer
+Environment=SLICER_ORCA_BINARY_PATH=/home/plag/opt/orcaslicer-v2.4.2/orca-appimage/AppRun
+Environment=MESH_ORCA_PROFILES_DIR=/home/plag/opt/orcaslicer-v2.4.2/orca-appimage/resources/profiles
+EnvironmentFile=/home/plag/portal.mesh-dev.env
+ExecStart=/home/plag/.local/bin/uv run --no-dev mesh-slice-worker
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

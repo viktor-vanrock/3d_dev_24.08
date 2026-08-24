@@ -1,0 +1,1070 @@
+/* Форум (docs/design/community.md, MF-931): список сообществ / сообщество / тред. Раскладка
+   наследует .home/.homeContent (home.css) — тот же каркас, что market/model/printers. Стекло/
+   токены — theme/tokens.css, ничего нового в палитре. */
+
+/* --- §1 Список сообществ --- */
+.cmtyContent {
+  width: min(1180px, calc(100% - 32px));
+  margin-inline: auto;
+  gap: 22px;
+}
+
+.cmtyIntro {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(250px, 0.65fr);
+  gap: clamp(28px, 6vw, 84px);
+  align-items: end;
+  overflow: hidden;
+  padding: clamp(28px, 5vw, 58px);
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  border-radius: clamp(28px, 4vw, 42px);
+  background:
+    radial-gradient(circle at 92% 18%, color-mix(in srgb, #5ab0ff 22%, transparent), transparent 30%),
+    radial-gradient(circle at 76% 88%, color-mix(in srgb, #6beac7 18%, transparent), transparent 36%),
+    linear-gradient(132deg, color-mix(in srgb, var(--surface) 88%, transparent), color-mix(in srgb, var(--surface) 62%, #515dad 10%));
+  box-shadow: 0 30px 80px color-mix(in srgb, var(--bg) 55%, transparent);
+}
+
+.cmtyIntro::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -42% -8% auto 46%;
+  height: 130%;
+  border: 1px solid color-mix(in srgb, #6beac7 26%, transparent);
+  border-radius: 50%;
+  transform: rotate(-14deg);
+  box-shadow:
+    0 0 0 34px color-mix(in srgb, #5ab0ff 5%, transparent),
+    0 0 0 68px color-mix(in srgb, #8253aa 4%, transparent);
+}
+
+.cmtyIntroCopy {
+  min-width: 0;
+  max-width: 720px;
+}
+
+.cmtyIntroEyebrow {
+  display: inline-block;
+  margin-bottom: 18px;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.cmtyIntroTitle {
+  margin: 0;
+  max-width: 760px;
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: clamp(34px, 5.4vw, 70px);
+  font-weight: 600;
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+}
+
+.cmtyIntroTitle span {
+  color: var(--text-dim);
+}
+
+.cmtyIntroLead {
+  max-width: 650px;
+  margin: 24px 0 0;
+  color: var(--text-dim);
+  font-size: clamp(16px, 1.8vw, 20px);
+  line-height: 1.5;
+}
+
+.cmtyRoute {
+  position: relative;
+  min-width: 0;
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cmtyRoute::before {
+  content: "";
+  position: absolute;
+  top: 24px;
+  bottom: 24px;
+  left: 18px;
+  width: 1px;
+  background: linear-gradient(var(--accent), color-mix(in srgb, var(--accent) 14%, transparent));
+}
+
+.cmtyRoute li {
+  position: relative;
+  display: grid;
+  grid-template-columns: 38px 1fr;
+  gap: 14px;
+  align-items: center;
+  min-height: 60px;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.cmtyRoute li span {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--border));
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--surface) 86%, transparent);
+  color: var(--accent);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+.cmtyDirectory {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  border-radius: 26px;
+  background: color-mix(in srgb, var(--surface) 45%, transparent);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.cmtySearchRow {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+}
+
+.cmtySearchBar {
+  flex: 0 1 680px;
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  color: var(--text-dim);
+}
+
+.cmtySearchInput {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 15px;
+  outline: none;
+}
+
+.cmtySearchInput:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.cmtyKindScroll {
+  min-width: 0;
+}
+
+.cmtyKindScroll::-webkit-scrollbar {
+  display: none;
+}
+
+.cmtyKindRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0 2px 2px;
+}
+
+.cmtyGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
+  gap: 18px;
+}
+
+.cmtyCard {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 218px;
+  padding: 22px;
+  border-radius: 28px;
+  border: 1px solid var(--border);
+  background:
+    linear-gradient(140deg, color-mix(in srgb, var(--surface) 90%, transparent), color-mix(in srgb, var(--surface) 66%, #515dad 8%));
+  text-align: left;
+  cursor: pointer;
+  min-width: 0;
+  width: 100%;
+  transition: transform var(--dur-toggle) var(--ease-out), border-color var(--dur-toggle) var(--ease-out), box-shadow var(--dur-toggle) var(--ease-out);
+}
+
+.cmtyCard::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  right: -52px;
+  bottom: -74px;
+  width: 164px;
+  height: 164px;
+  border: 1px solid color-mix(in srgb, var(--accent) 15%, transparent);
+  border-radius: 50%;
+  box-shadow: 0 0 0 28px color-mix(in srgb, var(--accent) 3%, transparent);
+}
+
+@media (hover: hover) {
+  .cmtyCard:hover {
+    transform: translateY(-4px);
+    border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
+    box-shadow: 0 18px 44px color-mix(in srgb, var(--bg) 48%, transparent);
+  }
+}
+
+.cmtyCardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 28px;
+  width: 100%;
+}
+
+.cmtyCardArrow {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  border-radius: 50%;
+  color: var(--text-dim);
+  font-size: 15px;
+}
+
+.cmtyCardName {
+  font-family: var(--font-display);
+  font-size: 20px;
+  line-height: 1.22;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.cmtyCardDesc {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  color: var(--text-dim);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.cmtyCardMeta {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.cmtyCardMetrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+}
+
+.cmtyCardMetrics span + span {
+  position: relative;
+}
+
+.cmtyCardMetrics span + span::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: -7px;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--accent);
+  transform: translateY(-50%);
+}
+
+.cmtyLoadError {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--accent-danger) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-danger) 40%, transparent);
+  color: var(--accent-danger);
+  font-size: 14px;
+}
+
+.cmtyLoadMore {
+  align-self: center;
+}
+
+.cmtySkeletonGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
+  gap: 16px;
+}
+
+.cmtySkeletonTile {
+  border-radius: 28px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  border: 1px solid var(--border);
+}
+
+.cmtySkeletonLine {
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(
+    100deg,
+    color-mix(in srgb, var(--surface) 70%, transparent) 30%,
+    color-mix(in srgb, var(--border) 60%, transparent) 50%,
+    color-mix(in srgb, var(--surface) 70%, transparent) 70%
+  );
+  background-size: 200% 100%;
+  animation: cmtyShimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes cmtyShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cmtySkeletonLine {
+    animation: none;
+  }
+}
+
+/* «Создать сообщество» — одна зелёная CTA (§1.1): инлайн в поисковой строке на десктопе,
+   плавающая внизу на мобиле (тот же приём, что «Предложить идею», ideas.md §7). */
+.cmtyCreateFab {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .cmtyContent {
+    width: min(100% - 24px, 1180px);
+  }
+
+  .cmtyIntro {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    padding: 26px 22px;
+  }
+
+  .cmtyIntroTitle {
+    font-size: clamp(28px, 9.2vw, 40px);
+    text-wrap: pretty;
+  }
+
+  .cmtyIntroLead {
+    margin-top: 18px;
+    font-size: 16px;
+  }
+
+  .cmtyRoute {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .cmtyRoute::before {
+    top: 18px;
+    right: 12%;
+    bottom: auto;
+    left: 12%;
+    width: auto;
+    height: 1px;
+  }
+
+  .cmtyRoute li {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 8px;
+    text-align: center;
+    font-size: 11px;
+    line-height: 1.25;
+  }
+
+  .cmtyDirectory {
+    padding: 12px;
+    border-radius: 22px;
+  }
+
+  .cmtyCreateBtn {
+    display: none;
+  }
+  .cmtySearchRow {
+    flex-wrap: wrap;
+  }
+  .cmtyCreateFab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    right: 16px;
+    bottom: calc(56px + env(safe-area-inset-bottom) + 16px);
+    z-index: var(--z-bottomnav);
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: none;
+    background: var(--accent);
+    color: var(--accent-contrast);
+    box-shadow: 0 12px 28px color-mix(in srgb, var(--accent) 45%, transparent);
+  }
+}
+
+/* --- §1.3 / §2.5 форма создания (сообщество/тред) --- */
+.cmtyForm {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+}
+
+.ovlModal:has(.cmtyThreadForm) {
+  width: min(720px, 100%);
+  max-height: min(760px, 92vh);
+}
+
+.cmtyThreadForm .mdTextarea {
+  min-height: 220px;
+  resize: vertical;
+}
+
+.cmtyFormLabel {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.cmtyVisibilityRow {
+  display: flex;
+  gap: 10px;
+}
+
+.cmtyFormActions {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.cmtyTagInputRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.cmtyTagInput {
+  flex: 1;
+  min-width: 120px;
+}
+
+/* --- §2 Страница сообщества --- */
+.cmtyHead {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: clamp(24px, 4vw, 42px);
+  border: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
+  border-radius: clamp(26px, 4vw, 38px);
+  background:
+    radial-gradient(circle at 90% 16%, color-mix(in srgb, #6beac7 14%, transparent), transparent 30%),
+    linear-gradient(135deg, color-mix(in srgb, var(--surface) 84%, transparent), color-mix(in srgb, var(--surface) 58%, #515dad 8%));
+}
+
+.cmtyHead::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  right: -90px;
+  bottom: -160px;
+  width: 300px;
+  height: 300px;
+  border: 1px solid color-mix(in srgb, var(--accent) 14%, transparent);
+  border-radius: 50%;
+  box-shadow: 0 0 0 48px color-mix(in srgb, var(--accent) 3%, transparent);
+}
+
+/* Логотип бренда + бейдж/название (MF-2039 продолжение, «полноценная страница бренда») —
+   .cmtyHeadTop пара логотип+копирайтинг, .cmtyLogo сам кружок (аналог .prnVendorMark/.feedSubMark,
+   но крупнее — тут это якорь шапки, а не мелкая метка в списке). */
+.cmtyHeadTop {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.cmtyLogo {
+  width: 64px;
+  height: 64px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--surface) 60%, var(--accent) 12%);
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  color: var(--accent);
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.cmtyLogo img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.cmtyHeadTopCopy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cmtyHeadNameRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.cmtyHeadDesc {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 15px;
+  line-height: 1.5;
+  max-width: 720px;
+}
+
+/* «Все сабы» — связанные вендор/машина-сабы того же бренда (§ related_communities). Тот же
+   pill-язык, что .feedRichSourceChip: скромная рамка в покое, акцентная подсветка на hover. */
+.cmtyRelatedRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cmtyRelatedLabel {
+  color: var(--text-dim);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* [data-variant="ghost"] в селекторе — не украшение, а перевес специфичности над
+   .uiButton[data-variant="ghost"] (ui.css), иначе базовые padding/min-height/radius кнопки
+   пробивают пилюлю в зависимости от порядка импорта CSS. */
+.cmtyRelatedRow .cmtyRelatedChip[data-variant="ghost"] {
+  min-height: 0;
+  gap: 0;
+  padding: 5px 12px 5px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 62%, transparent);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+  transition:
+    border-color var(--dur-toggle) var(--ease-out),
+    background var(--dur-toggle) var(--ease-out);
+}
+
+.cmtyRelatedRow .cmtyRelatedChip[data-variant="ghost"]:hover,
+.cmtyRelatedRow .cmtyRelatedChip[data-variant="ghost"]:focus-visible {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+}
+
+.cmtyRelatedChip > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cmtyHeadMetaRow {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.cmtyHeadMeta {
+  color: var(--text-dim);
+  font-size: 14px;
+}
+
+.cmtyThreadBar {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Переключатель "Новости"/"Обсуждения" на официальных сабах (2026-07-21) — та же строка, что
+   .cmtyThreadBar, но без правой кнопки (create-действие живёт внутри каждой вкладки отдельно). */
+.cmtyContentTabBar {
+  margin-top: 8px;
+}
+
+.cmtyThreadList {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 2px;
+}
+
+.cmtyThreadCard {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  border-radius: 24px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 68%, transparent);
+  overflow: hidden;
+}
+
+.cmtyThreadCardBody {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px 22px;
+  text-align: left;
+  cursor: pointer;
+  min-width: 0;
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.cmtyThreadCardBody:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: -4px;
+}
+
+.cmtyThreadCardHead {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cmtyPinned {
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.cmtyThreadCardTitle {
+  font-family: var(--font-display);
+  display: -webkit-box;
+  font-size: 19px;
+  line-height: 1.3;
+  color: var(--text);
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.cmtyThreadCardSnippet {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  color: var(--text-dim);
+  font-size: 14px;
+}
+
+.cmtyThreadCardContent {
+  flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cmtyThreadCardPostCount {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.cmtyThreadCardTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cmtyTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text-dim) 14%, transparent);
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.cmtyTagRemovable button {
+  border: none;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  font-size: 11px;
+}
+
+.cmtyThreadCardMeta {
+  color: var(--text-dim);
+  font-size: 12px;
+  letter-spacing: 0.01em;
+}
+
+.cmtyThreadPreview {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  max-width: 720px;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--surface) 68%, transparent);
+}
+
+.cmtyThreadPreviewMeta,
+.cmtyThreadPreviewBody {
+  margin: 0;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.cmtyThreadCardVote {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 104px;
+  padding: 14px;
+  border-left: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  background: color-mix(in srgb, var(--surface) 36%, transparent);
+  flex-shrink: 0;
+}
+
+.cmtyThreadCardVoteLabel {
+  color: var(--text-dim);
+  font-size: 12px;
+  line-height: 1;
+}
+
+@media (max-width: 640px) {
+  .cmtyThreadCard {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .cmtyThreadCardVote {
+    width: 100%;
+    flex-direction: row;
+    justify-content: flex-end;
+    min-width: 0;
+    padding: 8px 14px;
+    border-top: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+    border-left: none;
+    box-sizing: border-box;
+  }
+
+  .cmtyFormActions {
+    flex-wrap: wrap;
+  }
+
+  .cmtyFormActions > * {
+    flex: 1 1 140px;
+  }
+}
+
+/* --- §3 Страница треда --- */
+.cmtyThreadArticle {
+  position: relative;
+  display: grid;
+  gap: 18px;
+  overflow: hidden;
+  padding: clamp(24px, 4.5vw, 52px);
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  border-radius: clamp(26px, 4vw, 40px);
+  background:
+    radial-gradient(circle at 95% 4%, color-mix(in srgb, #5ab0ff 12%, transparent), transparent 30%),
+    color-mix(in srgb, var(--surface) 76%, transparent);
+}
+
+.cmtyThreadArticle > .uiHeading,
+.cmtyThreadArticle > .mdBody,
+.cmtyThreadArticle .cmtyThreadBody {
+  max-width: 820px;
+}
+
+.cmtyThreadEyebrowRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.cmtyEyebrowLink {
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  padding: 0;
+  cursor: pointer;
+}
+
+.cmtyEyebrowLink:hover,
+.cmtyEyebrowLink:active {
+  color: var(--accent);
+}
+
+.cmtyThreadBody {
+  margin-top: 0;
+  font-size: 17px;
+  line-height: 1.68;
+}
+
+.cmtyThreadVoteRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.cmtyFlagBtn {
+  margin-left: 12px;
+}
+
+.cmtyHiddenPost {
+  display: grid;
+  gap: 6px;
+  padding: 20px;
+  border: 1px dashed color-mix(in srgb, var(--text) 26%, transparent);
+  border-radius: 18px;
+  color: var(--text-dim);
+}
+
+.cmtyHiddenPost strong {
+  color: var(--text);
+}
+
+.cmtyPostsSection {
+  margin-top: 2px;
+  padding: clamp(20px, 3.5vw, 34px);
+  border: 1px solid color-mix(in srgb, var(--border) 74%, transparent);
+  border-radius: 28px;
+  background: color-mix(in srgb, var(--surface) 42%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cmtyThreadClosed {
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 14px;
+}
+
+.cmtyComposer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, var(--border) 66%, transparent);
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--surface) 62%, transparent);
+}
+
+.cmtyComposerReplyLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.cmtyComposerReplyLabel button {
+  border: none;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+
+.cmtyComposerActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cmtyComposerSwitch {
+  border: none;
+  background: none;
+  color: var(--text-dim);
+  font-size: 13px;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+}
+
+.cmtyPostList {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.cmtyPostCard {
+  position: relative;
+  padding: 20px;
+  border-radius: 22px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 74%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cmtyPostCard[data-nested] {
+  margin-left: 28px;
+  border-left: 3px solid color-mix(in srgb, var(--accent) 46%, var(--border));
+}
+
+.cmtyPostCardHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.cmtyPostAuthor {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.cmtyAcceptedBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.cmtyPostCardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.cmtyPostCardActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cmtyPostActionBtn {
+  border: none;
+  background: none;
+  color: var(--text-dim);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 8px 0;
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+}
+
+@media (max-width: 640px) {
+  .cmtyThreadArticle,
+  .cmtyPostsSection {
+    padding: 20px 16px;
+    border-radius: 24px;
+  }
+
+  .cmtyComposerActions,
+  .cmtyPostCardFooter {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .cmtyPostCardActions {
+    flex-wrap: wrap;
+    gap: 2px 14px;
+  }
+
+  .cmtyPostCard[data-nested] {
+    margin-left: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cmtyCard {
+    transition: none;
+  }
+}

@@ -1,0 +1,136 @@
+{
+  "description": "LeRobotDepot SO-101 fixture (docs/architecture/project.manifest.md §4 пример, расширенный до epic MF-1963 §13 п.3: минимум две конфигурации, BOM, сцены/соединения и все пять типов фаз включая solder). x-slicer-profile демонстрирует namespaced-расширение, обязанное пережить round-trip неизменным.",
+  "manifest": {
+    "schema": "https://schemas.3mf.tech/project/v1",
+    "project": {
+      "uid": "lerobotdepot",
+      "title": "LeRobotDepot SO-101 Arm",
+      "default-configuration": "so101-pair",
+      "units": { "length": "mm", "coordinates": "right-handed-z-up" },
+      "license": { "spdx": "Apache-2.0", "file": "docs/LICENSE.md" }
+    },
+    "artifacts": {
+      "follower-print": { "path": "print/SO101/follower.3mf", "kind": "print-model" },
+      "leader-print": { "path": "print/SO101/leader.3mf", "kind": "print-model" },
+      "firmware-code": { "path": "code/firmware.tar.gz", "kind": "firmware" }
+    },
+    "components": {
+      "follower-arm": {
+        "kind": "manufactured",
+        "artifact": "follower-print",
+        "interfaces": {
+          "base-mount": { "kind": "plane", "transform": { "translation": [0, 0, 0], "rotation": [0, 0, 0, 1] } }
+        }
+      },
+      "leader-arm": {
+        "kind": "manufactured",
+        "artifact": "leader-print",
+        "interfaces": {
+          "base-mount": { "kind": "plane", "transform": { "translation": [0, 0, 0], "rotation": [0, 0, 0, 1] } }
+        }
+      },
+      "motor-board": {
+        "kind": "purchased",
+        "catalog-ref": "portal:board:feetech-sts3215",
+        "interfaces": {
+          "bracket": { "kind": "holes", "transform": { "translation": [12, 0, 8], "rotation": [0, 0, 0, 1] } }
+        }
+      }
+    },
+    "configurations": {
+      "so101-pair": {
+        "title": "Пара SO-101 (leader + follower)",
+        "artifacts": ["follower-print", "leader-print"],
+        "components": ["follower-arm", "leader-arm", "motor-board"],
+        "workflow": "pair-build",
+        "requirements": { "machines": ["fdm-220"], "skills": ["basic-wiring"] },
+        "compatibility": [
+          { "subject": "printer.build_volume", "value": "220x220x250", "status": "compatible", "provenance": "author", "confidence": "high" }
+        ],
+        "bom": [
+          { "component": "follower-arm", "quantity": 1, "unit": null, "source": "printed", "notes": null },
+          { "component": "leader-arm", "quantity": 1, "unit": null, "source": "printed", "notes": null },
+          { "component": "motor-board", "quantity": 12, "unit": null, "source": "purchased", "notes": "6 сервоприводов на руку" },
+          { "component": null, "quantity": 24, "unit": null, "source": "purchased", "notes": "DIN 912 M3x10" }
+        ]
+      },
+      "so101-single": {
+        "title": "Только follower",
+        "artifacts": ["follower-print"],
+        "components": ["follower-arm", "motor-board"],
+        "workflow": "single-build",
+        "requirements": { "machines": ["fdm-220"] },
+        "bom": [
+          { "component": "follower-arm", "quantity": 1, "unit": null, "source": "printed", "notes": null },
+          { "component": "motor-board", "quantity": 6, "unit": null, "source": "purchased", "notes": null }
+        ]
+      }
+    },
+    "scenes": {
+      "exploded": {
+        "instances": {
+          "arm-1": { "component": "follower-arm", "transform": { "translation": [0, 0, 0], "rotation": [0, 0, 0, 1] } },
+          "board-1": { "component": "motor-board", "transform": { "translation": [0, 80, 20], "rotation": [0, 0, 0, 1] } }
+        }
+      },
+      "assembled": {
+        "instances": {
+          "arm-1": { "component": "follower-arm", "transform": { "translation": [0, 0, 0], "rotation": [0, 0, 0, 1] } },
+          "board-1": { "component": "motor-board", "transform": { "translation": [12, 0, 8], "rotation": [0, 0, 0, 1] } }
+        },
+        "active-connections": ["board-to-arm"]
+      }
+    },
+    "connections": {
+      "board-to-arm": {
+        "kind": "fastener",
+        "endpoints": [
+          { "instance": "arm-1", "interface": "base-mount" },
+          { "instance": "board-1", "interface": "bracket" }
+        ],
+        "parameters": { "fastener": "M3x10", "quantity": 2, "tool": "phillips-1" }
+      }
+    },
+    "workflows": {
+      "pair-build": {
+        "phases": {
+          "print": { "type": "print", "steps": ["print-follower", "print-leader"] },
+          "assembly": { "type": "assembly", "depends-on": ["print"], "steps": ["mount-board"] },
+          "flash": { "type": "flash", "depends-on": ["assembly"], "steps": ["install-lerobot"] },
+          "solder": { "type": "solder", "depends-on": ["flash"], "steps": ["solder-wiring"] },
+          "check": { "type": "check", "depends-on": ["solder"], "steps": ["calibrate"] }
+        },
+        "steps": {
+          "print-follower": { "title": "Напечатайте follower" },
+          "print-leader": { "title": "Напечатайте leader" },
+          "mount-board": {
+            "title": "Установите плату",
+            "instruction": "Закрепите плату двумя винтами M3×10.",
+            "transition": { "from-scene": "exploded", "to-scene": "assembled", "add-connections": ["board-to-arm"] },
+            "evidence": { "accepted": ["confirmation", "photo"] }
+          },
+          "install-lerobot": { "title": "Установите прошивку LeRobot", "requirements": ["firmware-code"] },
+          "solder-wiring": { "title": "Припаяйте жгут сервоприводов", "evidence": { "accepted": ["photo"] } },
+          "calibrate": { "title": "Откалибруйте диапазон движения", "evidence": { "accepted": ["confirmation", "measurement"] } }
+        }
+      },
+      "single-build": {
+        "phases": {
+          "print": { "type": "print", "steps": ["print-follower-only"] },
+          "assembly": { "type": "assembly", "depends-on": ["print"], "steps": ["mount-board-only"] },
+          "flash": { "type": "flash", "depends-on": ["assembly"], "steps": ["install-lerobot-only"] },
+          "solder": { "type": "solder", "depends-on": ["flash"], "steps": ["solder-only"] },
+          "check": { "type": "check", "depends-on": ["solder"], "steps": ["calibrate-only"] }
+        },
+        "steps": {
+          "print-follower-only": { "title": "Напечатайте follower" },
+          "mount-board-only": { "title": "Установите плату" },
+          "install-lerobot-only": { "title": "Установите прошивку" },
+          "solder-only": { "title": "Припаяйте жгут" },
+          "calibrate-only": { "title": "Откалибруйте" }
+        }
+      }
+    },
+    "x-slicer-profile": { "profile_id": "pla-generic-0.4", "layer_height_mm": 0.2 }
+  }
+}

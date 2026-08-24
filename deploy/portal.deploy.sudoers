@@ -1,0 +1,11 @@
+# sudoers drop-in для portal deploy scripts: passwordless sudo только на точные
+# restart-команды управляемых API и compiled Nest relay units, ничего шире.
+#
+# Установка на VDS:
+#   sudo cp deploy/portal.deploy.sudoers /etc/sudoers.d/portal.deploy
+#   sudo chmod 440 /etc/sudoers.d/portal.deploy
+#   sudo visudo -cf /etc/sudoers.d/portal.deploy
+
+plag ALL=(root) NOPASSWD: /usr/bin/systemctl restart portal.api
+plag ALL=(root) NOPASSWD: /usr/bin/systemctl restart portal.api-dev
+plag ALL=(root) NOPASSWD: /usr/bin/systemctl restart portal.relay-dev.service

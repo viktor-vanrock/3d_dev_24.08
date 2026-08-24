@@ -1,0 +1,62 @@
+{
+  "contract": "public_api.command_replay.v0",
+  "endpoint": "POST /v0/printers/:id/commands",
+  "request_id_header": "x-request-id",
+  "idempotency_header": "idempotency-key",
+  "safe_commands": ["pause", "resume"],
+  "scenarios": [
+    {
+      "name": "duplicate_request",
+      "first_command": "pause",
+      "retry_command": "pause",
+      "client_observation": "accepted",
+      "expected": {
+        "first_status": 202,
+        "retry_status": 202,
+        "same_response": true,
+        "command_effects": 1,
+        "audit_effects": 1
+      }
+    },
+    {
+      "name": "timeout_after_server_accept",
+      "first_command": "resume",
+      "retry_command": "resume",
+      "client_observation": "timeout_after_accept",
+      "expected": {
+        "first_status": 202,
+        "retry_status": 202,
+        "same_response": true,
+        "command_effects": 1,
+        "audit_effects": 1
+      }
+    },
+    {
+      "name": "retry_after_accept",
+      "first_command": "pause",
+      "retry_command": "pause",
+      "client_observation": "response_lost",
+      "expected": {
+        "first_status": 202,
+        "retry_status": 202,
+        "same_response": true,
+        "command_effects": 1,
+        "audit_effects": 1
+      }
+    },
+    {
+      "name": "conflicting_command",
+      "first_command": "pause",
+      "retry_command": "resume",
+      "client_observation": "accepted",
+      "expected": {
+        "first_status": 202,
+        "retry_status": 409,
+        "same_response": false,
+        "error": "idempotency_conflict",
+        "command_effects": 1,
+        "audit_effects": 1
+      }
+    }
+  ]
+}

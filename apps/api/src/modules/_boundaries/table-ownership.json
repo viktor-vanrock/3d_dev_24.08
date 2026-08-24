@@ -1,0 +1,1106 @@
+{
+  "tables": {
+    "agents": {
+      "owner": "devices",
+      "writers": [
+        "devices"
+      ],
+      "crossDomain": false
+    },
+    "api_keys": {
+      "owner": "publicapi",
+      "writers": [
+        "publicapi"
+      ],
+      "crossDomain": false
+    },
+    "assistant_messages": {
+      "owner": "assistant",
+      "writers": [
+        "assistant",
+        "devices"
+      ],
+      "crossDomain": true
+    },
+    "assistant_run_events": {
+      "owner": "assistant",
+      "writers": [
+        "assistant"
+      ],
+      "crossDomain": false
+    },
+    "assistant_runs": {
+      "owner": "assistant",
+      "writers": [
+        "assistant"
+      ],
+      "crossDomain": false
+    },
+    "assistant_thread_events": {
+      "owner": "devices",
+      "writers": [
+        "devices"
+      ],
+      "crossDomain": false
+    },
+    "assistant_threads": {
+      "owner": "assistant",
+      "writers": [
+        "assistant",
+        "devices"
+      ],
+      "crossDomain": true
+    },
+    "build_guides": {
+      "owner": "models",
+      "writers": [
+        "models"
+      ],
+      "crossDomain": false
+    },
+    "build_sessions": {
+      "owner": "models",
+      "writers": [
+        "models"
+      ],
+      "crossDomain": false
+    },
+    "build_step_photos": {
+      "owner": "models",
+      "writers": [
+        "models"
+      ],
+      "crossDomain": false
+    },
+    "build_steps": {
+      "owner": "models",
+      "writers": [
+        "models"
+      ],
+      "crossDomain": false
+    },
+    "comments": {
+      "owner": "feed",
+      "writers": [
+        "feed",
+        "makes",
+        "models"
+      ],
+      "crossDomain": true
+    },
+    "communities": {
+      "owner": "community",
+      "writers": [
+        "community"
+      ],
+      "crossDomain": false
+    },
+    "community_firmware": {
+      "owner": "printers",
+      "writers": [
+        "printers"
+      ],
+      "crossDomain": false
+    },
+    "community_members": {
+      "owner": "community",
+      "writers": [
+        "community",
+        "organizations"
+      ],
+      "crossDomain": true
+    },
+    "consent_records": {
+      "owner": "analytics",
+      "writers": [
+        "analytics"
+      ],
+      "crossDomain": false
+    },
+    "content_agents": {
+      "owner": "agents",
+      "writers": [
+        "agents"
+      ],
+      "crossDomain": false
+    },
+    "device_audit_log": {
+      "owner": "devices",
+      "writers": [
+        "devices",
+        "profile",
+        "publicapi"
+      ],
+      "crossDomain": true
+    },
+    "device_command_counters": {
+      "owner": "devices",
+      "writers": [
+        "devices"
+      ],
+      "crossDomain": false
+    },
+    "device_commands": {
+      "owner": "devices",
+      "writers": [
+        "devices",
+        "profile",
+        "publicapi"
+      ],
+      "crossDomain": true
+    },
+    "device_enroll_codes": {
+      "owner": "devices",
+      "writers": [
+        "devices"
+      ],
+      "crossDomain": false
+    },
+    "device_incidents": {
+      "owner": "devices",
+      "writers": [
+        "devices"
+      ],
+      "crossDomain": false
+    },
+    "device_jobs": {
+      "owner": "devices",
+      "writers": [
+        "devices"
+      ],
+      "crossDomain": false
+    },
+    "device_print_requests": {
+      "owner": "devices",
+      "writers": [
+        "devices"
+      ],
+      "crossDomain": false
+    },
+    "device_print_results": {
+      "owner": "models",
+      "writers": [
+        "models"
+      ],
+      "crossDomain": false
+    },
+    "device_reputation": {
+      "owner": "models",
+      "writers": [
+        "models"
+      ],
+      "crossDomain": false
+    },
+    "device_shares": {
+      "owner": "devices",
+      "writers": [
+        "devices"
+      ],
+      "crossDomain": false
+    },
+    "device_state": {
+      "owner": "devices",
+      "writers": [
+        "devices"
+      ],
+      "crossDomain": false
+    },
+    "device_telemetry": {
+      "owner": "devices",
+      "writers": [
+        "devices"
+      ],
+      "crossDomain": false
+    },
+    "device_transfers": {
+      "owner": "devices",
+      "writers": [
+        "devices"
+      ],
+      "crossDomain": false
+    },
+    "email_otp": {
+      "owner": "auth",
+      "writers": [
+        "auth"
+      ],
+      "crossDomain": false
+    },
+    "events": {
+      "owner": "analytics",
+      "writers": [
+        "analytics"
+      ],
+      "crossDomain": false
+    },
+    "feed_events": {
+      "owner": "feed",
+      "writers": [
+        "feed"
+      ],
+      "crossDomain": false
+    },
+    "feed_post_images": {
+      "owner": "feed",
+      "writers": [
+        "feed"
+      ],
+      "crossDomain": false
+    },
+    "feed_post_revisions": {
+      "owner": "feed",
+      "writers": [
+        "feed"
+      ],
+      "crossDomain": false
+    },
+    "feed_post_saves": {
+      "owner": "feed",
+      "writers": [
+        "feed"
+      ],
+      "crossDomain": false
+    },
+    "feed_posts": {
+      "owner": "feed",
+      "writers": [
+        "feed",
+        "makes",
+        "models"
+      ],
+      "crossDomain": true
+    },
+    "generated_concepts": {
+      "owner": "generations",
+      "writers": [
+        "generations"
+      ],
+      "crossDomain": false
+    },
+    "generations": {
+      "owner": "generations",
+      "writers": [
+        "generations"
+      ],
+      "crossDomain": false
+    },
+    "generations_idempotency": {
+      "owner": "generations",
+      "writers": [
+        "generations"
+      ],
+      "crossDomain": false
+    },
+    "guest_print_nonces": {
+      "owner": "printers",
+      "writers": [
+        "printers"
+      ],
+      "crossDomain": false
+    },
+    "idea_comments": {
+      "owner": "ideas",
+      "writers": [
+        "ideas"
+      ],
+      "crossDomain": false
+    },
+    "idea_enrichments": {
+      "owner": "ideas",
+      "writers": [
+        "ideas"
+      ],
+      "crossDomain": false
+    },
+    "idea_notifications": {
+      "owner": "ideas",
+      "writers": [
+        "ideas"
+      ],
+      "crossDomain": false
+    },
+    "idea_vote_log": {
+      "owner": "ideas",
+      "writers": [
+        "ideas"
+      ],
+      "crossDomain": false
+    },
+    "idea_votes": {
+      "owner": "ideas",
+      "writers": [
+        "ideas"
+      ],
+      "crossDomain": false
+    },
+    "ideas": {
+      "owner": "ideas",
+      "writers": [
+        "ideas"
+      ],
+      "crossDomain": false
+    },
+    "idempotency_records": {
+      "owner": "projects",
+      "writers": [
+        "projects"
+      ],
+      "crossDomain": false
+    },
+    "import_bindings": {
+      "owner": "imports",
+      "writers": [
+        "import",
+        "imports"
+      ],
+      "crossDomain": true
+    },
+    "import_connections": {
+      "owner": "import",
+      "writers": [
+        "import"
+      ],
+      "crossDomain": false
+    },
+    "import_job_items": {
+      "owner": "imports",
+      "writers": [
+        "imports"
+      ],
+      "crossDomain": false
+    },
+    "import_jobs": {
+      "owner": "imports",
+      "writers": [
+        "imports"
+      ],
+      "crossDomain": false
+    },
+    "ingest_runs": {
+      "owner": "catalog",
+      "writers": [
+        "catalog"
+      ],
+      "crossDomain": false
+    },
+    "ledger_entries": {
+      "owner": "billing",
+      "writers": [
+        "billing"
+      ],
+      "crossDomain": false
+    },
+    "machine_candidates": {
+      "owner": "catalog",
+      "writers": [
+        "catalog"
+      ],
+      "crossDomain": false
+    },
+    "machines": {
+      "owner": "catalog",
+      "writers": [
+        "catalog"
+      ],
+      "crossDomain": false
+    },
+    "make_materials": {
+      "owner": "makes",
+      "writers": [
+        "makes"
+      ],
+      "crossDomain": false
+    },
+    "maker_profiles": {
+      "owner": "makers",
+      "writers": [
+        "makers"
+      ],
+      "crossDomain": false
+    },
+    "makes": {
+      "owner": "makes",
+      "writers": [
+        "makes"
+      ],
+      "crossDomain": false
+    },
+    "master_equipment": {
+      "owner": "masterEquipment",
+      "writers": [
+        "masterEquipment"
+      ],
+      "crossDomain": false
+    },
+    "master_equipment_materials": {
+      "owner": "masterEquipment",
+      "writers": [
+        "masterEquipment"
+      ],
+      "crossDomain": false
+    },
+    "master_service_materials": {
+      "owner": "masterServices",
+      "writers": [
+        "masterServices"
+      ],
+      "crossDomain": false
+    },
+    "master_services": {
+      "owner": "masterServices",
+      "writers": [
+        "masterServices"
+      ],
+      "crossDomain": false
+    },
+    "material_candidates": {
+      "owner": "catalog",
+      "writers": [
+        "catalog"
+      ],
+      "crossDomain": false
+    },
+    "material_types": {
+      "owner": "catalog",
+      "writers": [
+        "catalog"
+      ],
+      "crossDomain": false
+    },
+    "material_variants": {
+      "owner": "catalog",
+      "writers": [
+        "catalog"
+      ],
+      "crossDomain": false
+    },
+    "materials": {
+      "owner": "catalog",
+      "writers": [
+        "catalog"
+      ],
+      "crossDomain": false
+    },
+    "model_download_log": {
+      "owner": "models",
+      "writers": [
+        "models"
+      ],
+      "crossDomain": false
+    },
+    "model_embeddings": {
+      "owner": "models",
+      "writers": [
+        "models"
+      ],
+      "crossDomain": false
+    },
+    "model_meshes": {
+      "owner": "models",
+      "writers": [
+        "models"
+      ],
+      "crossDomain": false
+    },
+    "model_revision_files": {
+      "owner": "projects",
+      "writers": [
+        "projects",
+        "models"
+      ],
+      "crossDomain": true
+    },
+    "model_revisions": {
+      "owner": "projects",
+      "writers": [
+        "projects",
+        "models"
+      ],
+      "crossDomain": true
+    },
+    "model_tags": {
+      "owner": "projects",
+      "writers": [
+        "projects",
+        "models"
+      ],
+      "crossDomain": true
+    },
+    "model_votes": {
+      "owner": "models",
+      "writers": [
+        "models"
+      ],
+      "crossDomain": false
+    },
+    "models": {
+      "owner": "projects",
+      "writers": [
+        "generations",
+        "imports",
+        "makes",
+        "models",
+        "projects"
+      ],
+      "crossDomain": true
+    },
+    "order_events": {
+      "owner": "orders",
+      "writers": [
+        "orders"
+      ],
+      "crossDomain": false
+    },
+    "orders": {
+      "owner": "orders",
+      "writers": [
+        "orders"
+      ],
+      "crossDomain": false
+    },
+    "organization_members": {
+      "owner": "organizations",
+      "writers": [
+        "organizations"
+      ],
+      "crossDomain": false
+    },
+    "organizations": {
+      "owner": "organizations",
+      "writers": [
+        "organizations"
+      ],
+      "crossDomain": false
+    },
+    "outbox_events": {
+      "owner": "projects",
+      "writers": [
+        "projects"
+      ],
+      "crossDomain": false
+    },
+    "payment_webhook_events": {
+      "owner": "billing",
+      "writers": [
+        "billing"
+      ],
+      "crossDomain": false
+    },
+    "payouts": {
+      "owner": "billing",
+      "writers": [
+        "billing"
+      ],
+      "crossDomain": false
+    },
+    "post_attachments": {
+      "owner": "community",
+      "writers": [
+        "community"
+      ],
+      "crossDomain": false
+    },
+    "post_score": {
+      "owner": "feed",
+      "writers": [
+        "feed"
+      ],
+      "crossDomain": false
+    },
+    "posts": {
+      "owner": "community",
+      "writers": [
+        "community"
+      ],
+      "crossDomain": false
+    },
+    "print_requests": {
+      "owner": "printRequests",
+      "writers": [
+        "printRequests"
+      ],
+      "crossDomain": false
+    },
+    "printer_connections": {
+      "owner": "printers",
+      "writers": [
+        "printers"
+      ],
+      "crossDomain": false
+    },
+    "printer_reports": {
+      "owner": "printers",
+      "writers": [
+        "printers"
+      ],
+      "crossDomain": false
+    },
+    "printers": {
+      "owner": "printers",
+      "writers": [
+        "printers"
+      ],
+      "crossDomain": false
+    },
+    "project_manifest_resolutions": {
+      "owner": "projects",
+      "writers": [
+        "projects"
+      ],
+      "crossDomain": false
+    },
+    "project_revision_models": {
+      "owner": "projects",
+      "writers": [
+        "projects"
+      ],
+      "crossDomain": false
+    },
+    "project_revisions": {
+      "owner": "projects",
+      "writers": [
+        "projects"
+      ],
+      "crossDomain": false
+    },
+    "projects": {
+      "owner": "projects",
+      "writers": [
+        "projects"
+      ],
+      "crossDomain": false
+    },
+    "purchases": {
+      "owner": "billing",
+      "writers": [
+        "billing"
+      ],
+      "crossDomain": false
+    },
+    "push_preferences": {
+      "owner": "push",
+      "writers": [
+        "push"
+      ],
+      "crossDomain": false
+    },
+    "push_subscriptions": {
+      "owner": "push",
+      "writers": [
+        "push"
+      ],
+      "crossDomain": false
+    },
+    "reports": {
+      "owner": "moderation",
+      "writers": [
+        "makes",
+        "models"
+      ],
+      "crossDomain": true
+    },
+    "reputation_events": {
+      "owner": "community",
+      "writers": [
+        "community"
+      ],
+      "crossDomain": false
+    },
+    "search_index_jobs": {
+      "owner": "models",
+      "writers": [
+        "models"
+      ],
+      "crossDomain": false
+    },
+    "slice_job_attempts": {
+      "owner": "models",
+      "writers": [
+        "models"
+      ],
+      "crossDomain": false
+    },
+    "slice_job_plate_instances": {
+      "owner": "models",
+      "writers": [
+        "models"
+      ],
+      "crossDomain": false
+    },
+    "slice_jobs": {
+      "owner": "models",
+      "writers": [
+        "models"
+      ],
+      "crossDomain": false
+    },
+    "slice_reputation": {
+      "owner": "models",
+      "writers": [
+        "models"
+      ],
+      "crossDomain": false
+    },
+    "slicer_profile_calibrations": {
+      "owner": "slicerProfiles",
+      "writers": [
+        "slicerProfiles"
+      ],
+      "crossDomain": false
+    },
+    "slicer_profiles": {
+      "owner": "slicerProfiles",
+      "writers": [
+        "slicerProfiles"
+      ],
+      "crossDomain": false
+    },
+    "storage_blobs": {
+      "owner": "projects",
+      "writers": [
+        "models",
+        "projects"
+      ],
+      "crossDomain": true
+    },
+    "taggings": {
+      "owner": "community",
+      "writers": [
+        "community"
+      ],
+      "crossDomain": false
+    },
+    "tags": {
+      "owner": "community",
+      "writers": [
+        "community",
+        "models",
+        "projects"
+      ],
+      "crossDomain": true
+    },
+    "threads": {
+      "owner": "community",
+      "writers": [
+        "community"
+      ],
+      "crossDomain": false
+    },
+    "uploader_reputation_ledger": {
+      "owner": "models",
+      "writers": [
+        "models"
+      ],
+      "crossDomain": false
+    },
+    "user_achievements": {
+      "owner": "achievements",
+      "writers": [
+        "achievements"
+      ],
+      "crossDomain": false
+    },
+    "user_activation": {
+      "owner": "profile",
+      "writers": [
+        "printers",
+        "profile"
+      ],
+      "crossDomain": true
+    },
+    "user_api_keys": {
+      "owner": "publicapi",
+      "writers": [
+        "agents",
+        "publicapi"
+      ],
+      "crossDomain": true
+    },
+    "user_avatar": {
+      "owner": "profile",
+      "writers": [
+        "profile"
+      ],
+      "crossDomain": false
+    },
+    "user_filaments": {
+      "owner": "profile",
+      "writers": [
+        "profile"
+      ],
+      "crossDomain": false
+    },
+    "user_follows": {
+      "owner": "makers",
+      "writers": [
+        "makers"
+      ],
+      "crossDomain": false
+    },
+    "user_identities": {
+      "owner": "auth",
+      "writers": [
+        "auth"
+      ],
+      "crossDomain": false
+    },
+    "user_materials": {
+      "owner": "profile",
+      "writers": [
+        "profile"
+      ],
+      "crossDomain": false
+    },
+    "user_printers": {
+      "owner": "printers",
+      "writers": [
+        "devices",
+        "models",
+        "printers",
+        "profile"
+      ],
+      "crossDomain": true
+    },
+    "user_password_credentials": {
+      "owner": "auth",
+      "writers": [
+        "auth"
+      ],
+      "crossDomain": false
+    },
+    "user_uploader_reputation": {
+      "owner": "models",
+      "writers": [
+        "models"
+      ],
+      "crossDomain": false
+    },
+    "users": {
+      "owner": "profile",
+      "writers": [
+        "auth",
+        "community",
+        "master",
+        "moderation",
+        "profile"
+      ],
+      "crossDomain": true
+    },
+    "vendor_claim_events": {
+      "owner": "organizations",
+      "writers": [
+        "organizations"
+      ],
+      "crossDomain": false
+    },
+    "vendor_claims": {
+      "owner": "organizations",
+      "writers": [
+        "organizations"
+      ],
+      "crossDomain": false
+    },
+    "vendors": {
+      "owner": "catalog",
+      "writers": [
+        "catalog"
+      ],
+      "crossDomain": false
+    },
+    "votes": {
+      "owner": "community",
+      "writers": [
+        "community",
+        "feed",
+        "makes"
+      ],
+      "crossDomain": true
+    }
+  },
+  "domains": {
+    "achievements": [
+      "user_achievements"
+    ],
+    "agents": [
+      "content_agents"
+    ],
+    "analytics": [
+      "consent_records",
+      "events"
+    ],
+    "assistant": [
+      "assistant_messages",
+      "assistant_run_events",
+      "assistant_runs",
+      "assistant_threads"
+    ],
+    "auth": [
+      "email_otp",
+      "user_identities",
+      "user_password_credentials"
+    ],
+    "billing": [
+      "ledger_entries",
+      "payment_webhook_events",
+      "payouts",
+      "purchases"
+    ],
+    "catalog": [
+      "ingest_runs",
+      "machine_candidates",
+      "machines",
+      "material_candidates",
+      "material_types",
+      "material_variants",
+      "materials",
+      "vendors"
+    ],
+    "community": [
+      "communities",
+      "community_members",
+      "post_attachments",
+      "posts",
+      "reputation_events",
+      "taggings",
+      "tags",
+      "threads",
+      "votes"
+    ],
+    "devices": [
+      "agents",
+      "assistant_thread_events",
+      "device_audit_log",
+      "device_command_counters",
+      "device_commands",
+      "device_enroll_codes",
+      "device_incidents",
+      "device_jobs",
+      "device_print_requests",
+      "device_shares",
+      "device_state",
+      "device_telemetry",
+      "device_transfers"
+    ],
+    "feed": [
+      "comments",
+      "feed_events",
+      "feed_post_images",
+      "feed_post_revisions",
+      "feed_post_saves",
+      "feed_posts",
+      "post_score"
+    ],
+    "generations": [
+      "generated_concepts",
+      "generations",
+      "generations_idempotency"
+    ],
+    "ideas": [
+      "idea_comments",
+      "idea_enrichments",
+      "idea_notifications",
+      "idea_vote_log",
+      "idea_votes",
+      "ideas"
+    ],
+    "import": [
+      "import_connections"
+    ],
+    "imports": [
+      "import_bindings",
+      "import_job_items",
+      "import_jobs"
+    ],
+    "makers": [
+      "maker_profiles",
+      "user_follows"
+    ],
+    "makes": [
+      "make_materials",
+      "makes"
+    ],
+    "masterEquipment": [
+      "master_equipment",
+      "master_equipment_materials"
+    ],
+    "masterServices": [
+      "master_service_materials",
+      "master_services"
+    ],
+    "models": [
+      "build_guides",
+      "build_sessions",
+      "build_step_photos",
+      "build_steps",
+      "device_print_results",
+      "device_reputation",
+      "model_download_log",
+      "model_embeddings",
+      "model_meshes",
+      "model_votes",
+      "search_index_jobs",
+      "slice_job_attempts",
+      "slice_job_plate_instances",
+      "slice_jobs",
+      "slice_reputation",
+      "uploader_reputation_ledger",
+      "user_uploader_reputation"
+    ],
+    "moderation": [
+      "reports"
+    ],
+    "orders": [
+      "order_events",
+      "orders"
+    ],
+    "organizations": [
+      "organization_members",
+      "organizations",
+      "vendor_claim_events",
+      "vendor_claims"
+    ],
+    "printRequests": [
+      "print_requests"
+    ],
+    "printers": [
+      "community_firmware",
+      "guest_print_nonces",
+      "printer_connections",
+      "printer_reports",
+      "printers",
+      "user_printers"
+    ],
+    "projects": [
+      "idempotency_records",
+      "model_revision_files",
+      "model_revisions",
+      "model_tags",
+      "models",
+      "outbox_events",
+      "project_manifest_resolutions",
+      "project_revision_models",
+      "project_revisions",
+      "projects",
+      "storage_blobs"
+    ],
+    "profile": [
+      "user_activation",
+      "user_avatar",
+      "user_filaments",
+      "user_materials",
+      "users"
+    ],
+    "publicapi": [
+      "api_keys",
+      "user_api_keys"
+    ],
+    "push": [
+      "push_preferences",
+      "push_subscriptions"
+    ],
+    "slicerProfiles": [
+      "slicer_profile_calibrations",
+      "slicer_profiles"
+    ]
+  }
+}

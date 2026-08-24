@@ -1,0 +1,17 @@
+[Unit]
+Description=Safe garbage collection for terminal Multica workspaces
+After=docker.service multica-daemon.service
+Requires=docker.service
+ConditionPathIsDirectory=/home/plag/multica_workspaces
+
+[Service]
+Type=oneshot
+Environment=APPLY=1
+Environment=TERMINAL_TTL_HOURS=48
+Environment=ARTIFACT_TTL_HOURS=3
+ExecStart=/usr/local/sbin/multica-workspace-gc
+Nice=10
+IOSchedulingClass=idle
+IOSchedulingPriority=7
+StandardOutput=journal
+StandardError=journal

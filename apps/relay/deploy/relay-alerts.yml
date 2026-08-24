@@ -1,0 +1,29 @@
+groups:
+  - name: relay-nest-runtime
+    rules:
+      - alert: RelayNotReady
+        expr: probe_success{job="relay-readiness"} == 0
+        for: 2m
+        labels: {severity: critical}
+        annotations:
+          summary: Compiled Nest relay readiness probe is failing
+      - alert: RelayAuthorizationFailures
+        expr: increase(relay_auth_total{outcome=~"denied|error"}[5m]) > 10
+        for: 5m
+        labels: {severity: warning}
+      - alert: RelayHeartbeatTimeouts
+        expr: increase(relay_heartbeat_total{outcome="timeout"}[5m]) > 0
+        for: 2m
+        labels: {severity: critical}
+      - alert: RelayRejectedFrames
+        expr: increase(relay_protocol_frames_total{outcome="rejected"}[5m]) > 10
+        for: 5m
+        labels: {severity: warning}
+      - alert: RelayBackpressureRejecting
+        expr: increase(relay_backpressure_total{outcome="rejected"}[5m]) > 0
+        for: 2m
+        labels: {severity: warning}
+      - alert: RelayControlPlaneFailures
+        expr: increase(relay_internal_api_requests_total{outcome=~"timeout|error"}[5m]) > 5
+        for: 5m
+        labels: {severity: critical}

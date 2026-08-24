@@ -1,0 +1,10 @@
+# Таймер автодеплоя main, раз в минуту (см. portal.deploy.service). MF-479.
+# Установка — см. заголовок portal.deploy.service.
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=1min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,27 @@
+{
+  "profile_class": "filament",
+  "slicer": "orcaslicer",
+  "setting_id": "GF_BBL_PLA_BASIC_X1C",
+  "name": "Bambu PLA Basic @BBL X1C",
+  "vendor_slug": "bambulab",
+  "material_ref": { "vendor_slug": "bambulab", "material_slug": "pla-basic" },
+  "params": {
+    "nozzle_temperature_c": { "first_layer": 220, "other": 210 },
+    "bed_temperature_c": { "first_layer": 55, "other": 45 },
+    "max_volumetric_speed_mm3_s": 21,
+    "flow_ratio": 0.98,
+    "cooling_fan_speed_pct": { "min": 30, "max": 100 },
+    "retraction_length_mm": 0.8,
+    "retraction_speed_mm_s": 30,
+    "density_g_cm3": 1.24,
+    "diameter_mm": 1.75
+  },
+  "source": {
+    "name": "softfever_orcaslicer",
+    "url": "https://github.com/SoftFever/OrcaSlicer",
+    "ref": "resources/profiles/BBL/filament/Bambu PLA Basic @BBL X1C.json",
+    "license": "AGPL-3.0"
+  },
+  "confidence": 1,
+  "schema_version": 1
+}

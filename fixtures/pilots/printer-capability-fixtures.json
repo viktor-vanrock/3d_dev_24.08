@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "records": [
+    {
+      "id": "creality.ender-3-v3-ke",
+      "model": "Ender-3 V3 KE",
+      "status": "shipping",
+      "support_level": "custom",
+      "connector_type": "moonraker",
+      "capability": ["moonraker", "lan_mode"],
+      "provenance": {"source": "pilot-passport", "source_url": "fixtures/pilots/ender3v3ke.json", "confidence": "high"}
+    },
+    {
+      "id": "flsun.v400",
+      "model": "V400",
+      "status": "shipping",
+      "support_level": "custom",
+      "connector_type": "moonraker",
+      "capability": ["moonraker", "lan_mode"],
+      "provenance": {"source": "pilot-passport", "source_url": "fixtures/pilots/flsun-v400.json", "confidence": "high"}
+    },
+    {
+      "id": "vulcan.one",
+      "model": "One",
+      "status": "announced",
+      "support_level": "list",
+      "connector_type": null,
+      "capability": [],
+      "provenance": {"source": "announcement-fixture", "source_url": "apps/web/src/printers/fixtures.ts", "confidence": "low"}
+    }
+  ]
+}

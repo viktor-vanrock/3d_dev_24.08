@@ -1,0 +1,54 @@
+# web — статика SPA за nginx. Секретов нет, Vault не нужен.
+# VITE_API_URL вшивается при сборке образа (.gitlab-ci.yml → DEV_API_URL).
+
+replicaCount: 1
+
+image:
+  repository: registry.sberdevices.ru/rndml/additive-ai-portal/3d-ai-portal/web
+  pullPolicy: IfNotPresent
+
+imagePullSecrets:
+  - name: gitlab-registry-secret
+
+serviceAccount:
+  create: false
+  name: ""
+
+securityContext: {}
+podSecurityContext: {}
+
+service:
+  enabled: true
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 8080
+
+# OpenShift Route после helm: web-d-rndml-aiportal.apps.advosd.sberdevices.ru
+ingress:
+  enabled: true
+  openshift: true
+  route:
+    path: "/"
+    annotations:
+      haproxy.router.openshift.io/rewrite-target: /
+      openshift.io/host.generated: "true"
+
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: http
+readinessProbe:
+  httpGet:
+    path: /healthz
+    port: http
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi

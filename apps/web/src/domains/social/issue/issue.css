@@ -1,0 +1,392 @@
+/* Страница идеи `/issue/:id` (docs/design/ideas.md §3, MF-946). Раскладка держится на тех же
+   примитивах, что тред форума (community.css, cmty*) — та же композиция «eyebrow + заголовок +
+   тело + голосовалка + тред», но собственный неймспейс (issue*), т.к. модуль отдельный. */
+
+.issueEyebrowRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.issueEyebrowLink {
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  padding: 0;
+  cursor: pointer;
+}
+
+.issueEyebrowLink:hover,
+.issueEyebrowLink:active {
+  color: var(--accent);
+}
+
+.issueReasonWrap {
+  margin-top: 16px;
+}
+
+.issueBody {
+  margin-top: 16px;
+}
+
+.issueVoteRow {
+  margin-top: 24px;
+}
+
+.issueDiscussionSection {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.issueGuestComposer {
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 14px;
+}
+
+.issueComposer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.issueComposerActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.issueCommentList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.issueLoadEarlier {
+  align-self: center;
+}
+
+.issueCommentCard {
+  padding: 16px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.issueCommentHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.issueCommentMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.issueCommentAuthor {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.issueCommentDeleted {
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+.issueDeleteBtn {
+  border: none;
+  background: none;
+  color: var(--danger, #ff6b6b);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 0;
+}
+
+.issueSkeletonGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.issueSkeletonLine {
+  height: 14px;
+  border-radius: 8px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--surface) 60%, transparent) 25%,
+    color-mix(in srgb, var(--surface) 85%, transparent) 50%,
+    color-mix(in srgb, var(--surface) 60%, transparent) 75%
+  );
+  background-size: 200% 100%;
+  animation: issueSkeletonShimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes issueSkeletonShimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .issueSkeletonLine {
+    animation: none;
+  }
+}
+
+/* Лента идей `/issue` (MF-945, docs/design/ideas.md §1/§2/§7). Wide-контейнер/шапка —
+   projects.css/home.css (переиспользованы как есть, projectsWide/projectsWideBody). Собственный
+   класс тела ленты (issueFeedBody), не issueBody выше — тот занят версткой страницы идеи (MF-946,
+   общий module-less CSS-неймспейс issue*). */
+
+.issueFeedBody {
+  gap: 20px;
+}
+
+.issueHead {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.issueControls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Чипы-фильтры (§1.4): горизонтальный momentum-скролл + scroll-snap на узких экранах, не
+   перенос в несколько строк (тач-паттерн §7). */
+.issueChipRow {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  padding-bottom: 2px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.issueChipRow > * {
+  scroll-snap-align: start;
+  flex: none;
+}
+
+.issueList {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Reveal догруженных карточек — CSS-переход, триггер по setTimeout из issuescreen.tsx (motion.md
+   грабля: НЕ requestAnimationFrame, см. комментарий в issuescreen.tsx). */
+.issueCardReveal {
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.24s ease, transform 0.24s ease;
+}
+
+.issueCardReveal[data-revealed] {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .issueCardReveal {
+    transition: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Карточка-действие (§2): горизонтальная gradient-заливка, radius≈28, кликабельна целиком кроме
+   голосовалки в торце. */
+.issueCard {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 16px;
+  border-radius: 28px;
+  border: 1px solid var(--border);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--surface) 80%, transparent), color-mix(in srgb, var(--accent) 6%, var(--surface)));
+  padding: 18px 20px;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.issueCard[data-archived] {
+  opacity: 0.6;
+}
+
+.issueCardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+
+.issueCardEyebrow {
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.issueCardTitle {
+  font-family: var(--font-display, inherit);
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.issueCardSnippet {
+  font-size: 14px;
+  color: var(--text-dim);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.issueCardStatus {
+  margin-top: 4px;
+}
+
+.issueCardVote {
+  flex: none;
+  display: flex;
+  align-items: center;
+}
+
+/* Ранг-акцент трендовой вкладки (§1.3) — тонкая amber-обводка счётчика, только первые 3 карточки. */
+.issueCardVote[data-rank="top"] .uiVoteCompact {
+  box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--accent-warn, #e2a63b) 70%, transparent);
+  border-radius: var(--ref-radius-md, 14px);
+}
+
+.issueCardSkeleton {
+  height: 96px;
+  border-radius: 28px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  position: relative;
+  overflow: hidden;
+}
+
+.issueCardSkeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--text) 14%, transparent) 50%, transparent 70%);
+  animation: issueCardShimmer 1.6s linear infinite;
+}
+
+@keyframes issueCardShimmer {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .issueCardSkeleton::after {
+    animation: none;
+  }
+}
+
+/* Тач-fallback догрузки (§1.5) — нейтральное стекло, не зелёная (единственная CTA — «Предложить
+   идею»). */
+.issueShowMore {
+  align-self: center;
+  min-height: 48px;
+  padding: 0 24px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  color: var(--text);
+  font-size: 14px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.issueShowMore:disabled {
+  opacity: 0.6;
+}
+
+.issueLoadMoreError {
+  align-self: center;
+  color: var(--text-dim);
+  font-size: 14px;
+}
+
+.issueRetryInline {
+  color: var(--accent);
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+.issueCtaDesktop {
+  display: block;
+}
+
+.issueCtaMobile {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .issueCtaDesktop {
+    display: none;
+  }
+
+  /* CTA фиксируется внизу на мобайле (§1.6/§7), поверх контента, не раздвигает ленту. */
+  .issueCtaMobile {
+    display: flex;
+    position: fixed;
+    left: 16px;
+    right: 16px;
+    bottom: calc(56px + env(safe-area-inset-bottom) + 12px);
+    z-index: 40;
+  }
+
+  .issueCtaMobile .uiButton {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .issueCardTitle {
+    font-size: 16px;
+  }
+}

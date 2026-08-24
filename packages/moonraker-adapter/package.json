@@ -1,0 +1,22 @@
+{
+  "name": "@portal/moonraker-adapter",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@portal/config": "workspace:*",
+    "@types/node": "^22.10.0",
+    "@types/ws": "^8.5.13",
+    "typescript": "^5.7.0",
+    "vitest": "^3.2.6",
+    "ws": "^8.18.0"
+  }
+}

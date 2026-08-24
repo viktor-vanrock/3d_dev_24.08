@@ -1,0 +1,10 @@
+# См. CONTRIBUTING.md § «Pull Request». Каждый PR должен иметь ≥1 approve от владельца
+# затронутых путей. Пока команда — один человек, все пути закрыты на @plag.
+#
+# По мере роста команды — раскомментировать/расписать по зонам, например:
+# apps/web/    @frontend-lead
+# apps/api/    @backend-lead
+# apps/mesh/   @mesh-owner
+# apps/giga/   @ai-owner
+
+*   @plag

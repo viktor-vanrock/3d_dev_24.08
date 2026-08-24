@@ -1,0 +1,153 @@
+{
+  "contract": "printer_operating.v1",
+  "source": "MF-1198/MF-1202 Fleet inventory on origin/dev",
+  "endpoint": "GET /me/printers/:id/live",
+  "response": {
+    "live": true,
+    "state": "printing",
+    "progress": 42.5,
+    "metrics": { "nozzleTempC": 210.4 },
+    "job_id": null,
+    "state_updated_at": "2026-07-15T10:00:00.000Z",
+    "last_seen_at": "2026-07-15T10:00:00.000Z",
+    "seq": 42,
+    "connection_mode": "managed-bridge",
+    "live_availability_reason": "available",
+    "last_confirmed_at": "2026-07-15T10:00:00.000Z",
+    "command_capabilities": {
+      "gcode": false,
+      "start": false,
+      "pause": true,
+      "resume": true,
+      "stop": false,
+      "cancel": true
+    }
+  },
+  "negative_reasons": [
+    "no_telemetry_channel",
+    "offline",
+    "stale",
+    "permission_denied",
+    "server_error"
+  ],
+  "guarantees": [
+    "managed-local is browser-to-LAN only; the server never probes lan_endpoint",
+    "unknown command capability is false",
+    "response contains no IP, token, credential, secret, or raw capability payload",
+    "202 queued is not command acknowledgement"
+  ],
+  "examples": {
+    "_comment": "Deterministic fixtures per connection_mode x taxonomy, MF-1199 (docs/contracts/printer.operating.v1.md §3/§7). Additive to this file; does not change the shape asserted by apps/api/src/profile/contract.test.ts.",
+    "list_structural": {
+      "taxonomy": "unsupported (structural: list has no telemetry channel by definition)",
+      "response": {
+        "live": false,
+        "state": "offline",
+        "progress": null,
+        "metrics": {},
+        "job_id": null,
+        "state_updated_at": null,
+        "last_seen_at": null,
+        "seq": 0,
+        "connection_mode": "list",
+        "live_availability_reason": "no_telemetry_channel",
+        "last_confirmed_at": null,
+        "command_capabilities": { "gcode": false, "start": false, "pause": false, "resume": false, "stop": false, "cancel": false }
+      }
+    },
+    "managed_local_structural": {
+      "taxonomy": "unsupported (structural: managed-local is browser-to-LAN only, server never has a channel — printer.surface-states.md)",
+      "response": {
+        "live": false,
+        "state": "offline",
+        "progress": null,
+        "metrics": {},
+        "job_id": null,
+        "state_updated_at": null,
+        "last_seen_at": null,
+        "seq": 0,
+        "connection_mode": "managed-local",
+        "live_availability_reason": "no_telemetry_channel",
+        "last_confirmed_at": null,
+        "command_capabilities": { "gcode": false, "start": false, "pause": false, "resume": false, "stop": false, "cancel": false }
+      }
+    },
+    "managed_bridge_not_yet_connected": {
+      "taxonomy": "unknown (channel exists, agent never sent a heartbeat yet — shares the same wire code no_telemetry_channel as the structural cases above, see printer.operating.v1.md §3 gap)",
+      "response": {
+        "live": false,
+        "state": "offline",
+        "progress": null,
+        "metrics": {},
+        "job_id": null,
+        "state_updated_at": null,
+        "last_seen_at": null,
+        "seq": 0,
+        "connection_mode": "managed-bridge",
+        "live_availability_reason": "no_telemetry_channel",
+        "last_confirmed_at": null,
+        "command_capabilities": { "gcode": false, "start": false, "pause": false, "resume": false, "stop": false, "cancel": false }
+      }
+    },
+    "managed_bridge_offline": {
+      "taxonomy": "unavailable (evidence exists, device reported offline)",
+      "response": {
+        "live": false,
+        "state": "offline",
+        "progress": null,
+        "metrics": {},
+        "job_id": null,
+        "state_updated_at": "2026-07-18T09:58:00.000Z",
+        "last_seen_at": "2026-07-18T09:58:00.000Z",
+        "seq": 17,
+        "connection_mode": "managed-bridge",
+        "live_availability_reason": "offline",
+        "last_confirmed_at": "2026-07-18T09:58:00.000Z",
+        "command_capabilities": { "gcode": false, "start": false, "pause": true, "resume": false, "stop": false, "cancel": true }
+      }
+    },
+    "managed_bridge_stale": {
+      "taxonomy": "unavailable (evidence exists but older than DEVICE_STATE_STALE_AFTER_MS=45000ms)",
+      "response": {
+        "live": false,
+        "state": "ready",
+        "progress": null,
+        "metrics": { "nozzleTempC": 24.1 },
+        "job_id": null,
+        "state_updated_at": "2026-07-18T09:00:00.000Z",
+        "last_seen_at": "2026-07-18T09:00:00.000Z",
+        "seq": 9,
+        "connection_mode": "managed-bridge",
+        "live_availability_reason": "stale",
+        "last_confirmed_at": "2026-07-18T09:00:00.000Z",
+        "command_capabilities": { "gcode": false, "start": false, "pause": true, "resume": true, "stop": false, "cancel": true }
+      }
+    },
+    "managed_bridge_permission_denied": {
+      "taxonomy": "unavailable (agent credential revoked; state_updated_at kept as last-known, not the confirmed reachable state)",
+      "response": {
+        "live": false,
+        "state": "ready",
+        "progress": null,
+        "metrics": {},
+        "job_id": null,
+        "state_updated_at": "2026-07-17T12:00:00.000Z",
+        "last_seen_at": "2026-07-17T12:00:00.000Z",
+        "seq": 5,
+        "connection_mode": "managed-bridge",
+        "live_availability_reason": "permission_denied",
+        "last_confirmed_at": "2026-07-17T12:00:00.000Z",
+        "command_capabilities": { "gcode": false, "start": false, "pause": false, "resume": false, "stop": false, "cancel": false }
+      }
+    },
+    "managed_bridge_available": {
+      "taxonomy": "available — see the top-level `response` in this file",
+      "ref": "response"
+    },
+    "server_error": {
+      "taxonomy": "unavailable, but an infra failure of the request itself — not a domain fact about the printer (apps/api/src/profile/activation.ts, GET /me/printers/:id/live catch branch); shape differs from the other examples (no telemetry fields at all)",
+      "http_status": 503,
+      "response": { "error": "temporary_server_error", "live_availability_reason": "server_error" }
+    }
+  }
+}

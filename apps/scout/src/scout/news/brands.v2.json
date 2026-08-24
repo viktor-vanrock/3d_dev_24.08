@@ -1,0 +1,68 @@
+{
+  "schema_version": "feed-news-brands.v2",
+  "brands": [
+    {
+      "brand_id": "bambu.lab",
+      "name": "Bambu Lab",
+      "official_hosts": ["blog.bambulab.com"],
+      "discovery_urls": [{"url": "https://blog.bambulab.com/bambu-lab-a2l-creative-playground-extra-large", "publisher": "Bambu Lab Blog"}],
+      "community_subject_hint": {"subject_type": "vendor", "subject_id": null, "subject_slug": "bambu-lab", "display_name": "Bambu Lab", "confidence": 1, "evidence_claim_ids": []}
+    },
+    {
+      "brand_id": "ultimaker",
+      "name": "UltiMaker",
+      "official_hosts": ["ultimaker.com"],
+      "discovery_urls": [{"url": "https://ultimaker.com/learn/introducing-cura-5-13", "publisher": "UltiMaker"}],
+      "community_subject_hint": {"subject_type": "vendor", "subject_id": null, "subject_slug": "ultimaker", "display_name": "UltiMaker", "confidence": 1, "evidence_claim_ids": []}
+    },
+    {
+      "brand_id": "prusa.research",
+      "name": "Prusa Research",
+      "official_hosts": ["blog.prusa3d.com"],
+      "discovery_urls": [{"url": "https://blog.prusa3d.com/indx_july_2026_update_137377", "publisher": "Prusa Research Blog"}],
+      "community_subject_hint": {"subject_type": "vendor", "subject_id": null, "subject_slug": "prusa-research", "display_name": "Prusa Research", "confidence": 0.9, "evidence_claim_ids": []}
+    },
+    {
+      "brand_id": "raise3d",
+      "name": "Raise3D",
+      "official_hosts": ["raise3d.com"],
+      "discovery_urls": [{"url": "https://www.raise3d.com/news/raise3d-unveils-the-b520-sandblaster-at-rapid-tct-2026-enabling-scalable-and-automated-sls-post-processing", "publisher": "Raise3D News"}],
+      "community_subject_hint": {"subject_type": "vendor", "subject_id": null, "subject_slug": "raise3d", "display_name": "Raise3D", "confidence": 0.9, "evidence_claim_ids": []}
+    },
+    {
+      "brand_id": "anycubic",
+      "name": "Anycubic",
+      "official_hosts": ["store.anycubic.com"],
+      "discovery_urls": [{"url": "https://store.anycubic.com/blogs/news/anycubic-tripo-from-ai-ideas-to-physical-creations", "publisher": "Anycubic Store Blog"}],
+      "community_subject_hint": {"subject_type": "vendor", "subject_id": null, "subject_slug": "anycubic", "display_name": "Anycubic", "confidence": 0.9, "evidence_claim_ids": []}
+    },
+    {
+      "brand_id": "elegoo",
+      "name": "ELEGOO",
+      "official_hosts": ["prnewswire.com"],
+      "discovery_urls": [{"url": "https://www.prnewswire.com/news-releases/elegoo-to-showcase-new-products-and-real-world-3d-printing-applications-at-rapid--tct-2026-302732501.html", "publisher": "ELEGOO via PR Newswire"}],
+      "community_subject_hint": {"subject_type": "vendor", "subject_id": null, "subject_slug": "elegoo", "display_name": "ELEGOO", "confidence": 0.9, "evidence_claim_ids": []}
+    },
+    {
+      "brand_id": "creality",
+      "name": "Creality",
+      "official_hosts": ["creality.com"],
+      "discovery_urls": [{"url": "https://www.creality.com/blog/klitek-nozzle-changing-3d-printer-coming-2026", "publisher": "Creality Blog"}],
+      "community_subject_hint": {"subject_type": "vendor", "subject_id": null, "subject_slug": "creality", "display_name": "Creality", "confidence": 0.9, "evidence_claim_ids": []}
+    },
+    {
+      "brand_id": "snapmaker",
+      "name": "Snapmaker",
+      "official_hosts": ["snapmaker.com"],
+      "discovery_urls": [{"url": "https://www.snapmaker.com/blog/snapmaker-u1-ready-for-you", "publisher": "Snapmaker Official Blog"}],
+      "community_subject_hint": {"subject_type": "vendor", "subject_id": null, "subject_slug": "snapmaker", "display_name": "Snapmaker", "confidence": 0.9, "evidence_claim_ids": []}
+    },
+    {
+      "brand_id": "qidi",
+      "name": "QIDI",
+      "official_hosts": ["us.qidi3d.com"],
+      "discovery_urls": [{"url": "https://us.qidi3d.com/pages/qidi-max4-techspecs", "publisher": "QIDI US Store"}],
+      "community_subject_hint": {"subject_type": "vendor", "subject_id": null, "subject_slug": "qidi", "display_name": "QIDI", "confidence": 0.9, "evidence_claim_ids": []}
+    }
+  ]
+}

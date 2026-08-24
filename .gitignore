@@ -1,0 +1,54 @@
+# dependencies
+node_modules/
+.pnpm-store/
+__pycache__/
+*.pyc
+.venv/
+.ruff_cache/
+
+# build output
+dist/
+build/
+.release-dist/
+.turbo/
+.next/
+.nuxt/
+
+# autodeploy atomic-swap releases (MF-734) — apps/web/releases/<id>/ + apps/web/dist-live symlink
+apps/web/releases/
+apps/web/dist-live
+
+# env / secrets
+.env
+.env.*
+!.env.example
+
+# Ops-local compose overrides (per-host infra ownership, e.g. MF-938) — never shared/committed
+docker-compose.override.yml
+
+# editors / os
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# test / coverage
+coverage/
+.pytest_cache/
+
+# Playwright generated artifacts
+apps/web/test-results/
+apps/web/playwright-report/
+apps/web/blob-report/
+
+# misc
+*.tsbuildinfo
+
+# референсы для дизайна (видео/скриншоты-вдохновение) — не коммитим, тяжёлые бинарники
+inspiration.*
+/db/

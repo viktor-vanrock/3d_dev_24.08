@@ -1,0 +1,510 @@
+/*
+  Слой всплывашек (эпик MF-440/441, epics/overlay.system.md §3/§6). Один портал
+  в document.body, position: fixed, не раздвигает контент (design/readme.md
+  §Философия п.4). Визуал — из ui/ (MF-40: стекло/градиент/тач ≥48px), здесь —
+  только поведение/раскладка/severity-цвет.
+*/
+
+.ovlHost {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: var(--z-toast);
+}
+
+/* --- Тосты: стек в правом верхнем углу, максимум 2 видимых (toaster.tsx) --- */
+.ovlToaster {
+  position: fixed;
+  top: max(16px, env(safe-area-inset-top));
+  right: max(16px, env(safe-area-inset-right));
+  z-index: var(--z-toast);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(360px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+/* На экранах с закреплённым верхним хромом тост растёт из-под капсулы, а не поверх
+   часов/навигации. */
+body:has(.homeTopbar) .ovlToaster {
+  top: calc(var(--header-safe) + 16px);
+}
+
+.ovlToast {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: 48px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--surface) 82%, transparent) 0%,
+    color-mix(in srgb, var(--surface) 68%, var(--accent) 7%) 100%
+  );
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 12px 32px var(--shadow);
+  color: var(--text);
+  pointer-events: auto;
+  /* Enter/exit — примитив .modal-in-out (tokens.css, motion.md «Примитивы»), класс
+     проставлен вместе с .ovlToast в toaster.tsx; reduced-motion идёт бесплатно от токена. */
+}
+
+.ovlToastDot {
+  flex-shrink: 0;
+  width: 9px;
+  height: 9px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: var(--text-dim);
+}
+
+.ovlToast[data-severity="success"] .ovlToastDot { background: var(--accent); }
+.ovlToast[data-severity="warn"] .ovlToastDot { background: var(--accent-warn); }
+.ovlToast[data-severity="critical"] .ovlToastDot { background: var(--accent-danger); }
+
+.ovlToast[data-severity="warn"] { --toast-flash: var(--accent-warn); border-color: color-mix(in srgb, var(--accent-warn) 40%, transparent); }
+.ovlToast[data-severity="critical"] { --toast-flash: var(--accent-danger); border-color: color-mix(in srgb, var(--accent-danger) 45%, transparent); }
+
+/* Успех — hero-кружок вместо точки: спринговый scale-in (0.7→1.05→1 — овершут уже в кривой
+   --ease-spring) + галочка «дорисовывается» stroke-dashoffset (motion.md §4). */
+.ovlToastIcon {
+  flex-shrink: 0;
+  margin-top: 2px;
+  transform: scale(0.7);
+  opacity: 0;
+  transition:
+    transform var(--dur-pop) var(--ease-spring),
+    opacity var(--dur-pop) var(--ease-spring);
+}
+
+.ovlToastIcon[data-visible="true"] {
+  transform: scale(1);
+  opacity: 1;
+}
+
+.ovlToastCheck {
+  stroke-dasharray: 20;
+  stroke-dashoffset: 20;
+  transition: stroke-dashoffset var(--dur-nav) var(--ease-out) 80ms;
+}
+
+.ovlToastIcon[data-visible="true"] .ovlToastCheck {
+  stroke-dashoffset: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ovlToastIcon {
+    transition: opacity 0.12s linear;
+    transform: none;
+  }
+  .ovlToastCheck {
+    transition: none;
+  }
+}
+
+/* Ошибка/предупреждение — приглушённый shake + цвет-пульс на въезде тоста (motion.md §4).
+   Ось shake — независимое CSS-свойство `translate` (уже в ходу в wisp.css), не конфликтует
+   с `transform`, которым въезжает вся карточка (opacity/translateY выше). */
+.ovlToast[data-severity="warn"][data-visible="true"],
+.ovlToast[data-severity="critical"][data-visible="true"] {
+  animation: ovlShake var(--dur-burst) ease-in-out 0.22s;
+}
+
+@keyframes ovlShake {
+  0%, 100% { translate: 0 0; box-shadow: 0 12px 32px var(--shadow); }
+  16.66%, 50%, 83.33% { translate: -2px 0; }
+  33.33%, 66.66% { translate: 2px 0; }
+  40%, 60% {
+    box-shadow: 0 12px 32px var(--shadow), 0 0 18px color-mix(in srgb, var(--toast-flash) 55%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Shake пропускается целиком, не «замедляется» — остаются только цвет+иконка (motion.md §4) */
+  .ovlToast[data-severity="warn"][data-visible="true"],
+  .ovlToast[data-severity="critical"][data-visible="true"] {
+    animation: none;
+  }
+}
+
+/* Пульс — только critical (design/status-alerts.md «яркость=важность») */
+.ovlToast[data-pulse="true"] {
+  animation: ovlPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes ovlPulse {
+  0%, 100% { box-shadow: 0 12px 32px var(--shadow), 0 0 0 0 color-mix(in srgb, var(--accent-danger) 45%, transparent); }
+  50% { box-shadow: 0 12px 32px var(--shadow), 0 0 0 6px transparent; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Критичное остаётся заметно цветом+точкой, но без анимации (§ «Готово когда») */
+  .ovlToast[data-pulse="true"] { animation: none; }
+}
+
+.ovlToastBody {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ovlToastTitle {
+  font-size: 14px;
+  line-height: 1.3;
+}
+
+.ovlToastMessage {
+  font-size: 12.5px;
+  color: var(--text-dim);
+  line-height: 1.35;
+}
+
+.ovlToastAction {
+  flex-shrink: 0;
+  min-height: 32px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--accent);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ovlToastClose {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+/* 10-foot TV: расширяем только фокусируемую область close-control. Кнопка вынесена
+   из flex-потока, поэтому тост не становится выше, а знак «✕» остаётся прежнего
+   размера и в прежнем визуальном месте (tv.10foot.md §§3–6, MF-1551). */
+@media (min-width: 1200px) and (min-height: 640px) {
+  .ovlToast {
+    position: relative;
+    padding-right: 48px;
+  }
+
+  .ovlToastClose {
+    position: absolute;
+    top: -8px;
+    right: -5px;
+    min-width: var(--tv-target-min);
+    min-height: var(--tv-target-min);
+    overflow: visible;
+  }
+
+  .ovlToastClose:focus-visible {
+    outline: 3px solid var(--focus-ring-color);
+    outline-offset: 4px;
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--focus-ring-color) 35%, transparent);
+  }
+}
+
+/* --- Модалки/confirm: затемнение + панель, фокус-трап в modal.tsx. Enter — .modal-in-out
+   (tokens.css), класс проставлен на .ovlModal в modal.tsx. --- */
+.ovlModalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(16px, env(safe-area-inset-top)) 20px max(16px, env(safe-area-inset-bottom));
+  background: color-mix(in srgb, black 55%, transparent);
+  pointer-events: auto;
+}
+
+.ovlModalFrame {
+  --ovl-modal-width: 480px;
+
+  position: relative;
+  width: min(var(--ovl-modal-width), calc(100vw - 96px));
+}
+
+.ovlModalFrame[data-size="form"] { --ovl-modal-width: 640px; }
+.ovlModalFrame[data-size="wide"] { --ovl-modal-width: 860px; }
+
+.ovlModal {
+  position: relative;
+  width: 100%;
+  max-height: min(720px, calc(100dvh - 32px));
+  overflow-y: auto;
+  padding: clamp(20px, 3vw, 32px);
+  border-radius: 24px;
+  border: 1px solid var(--border);
+  background: var(--bg-raised);
+  box-shadow: 0 24px 64px var(--shadow);
+  color: var(--text);
+}
+
+.ovlModal[data-severity="warn"] { border-color: color-mix(in srgb, var(--accent-warn) 45%, transparent); }
+.ovlModal[data-severity="critical"] { border-color: color-mix(in srgb, var(--accent-danger) 50%, transparent); }
+.ovlModal[data-pulse="true"] { animation: ovlPulse 1.4s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ovlModal[data-pulse="true"] { animation: none; }
+}
+
+.ovlModalTitle {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.ovlModalMessage {
+  font-size: 14px;
+  color: var(--text-dim);
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
+.ovlModalContent {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ovlModalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.ovlModalCancel,
+.ovlModalConfirm {
+  min-height: 48px;
+  padding: 0 20px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ovlModalCancel {
+  background: transparent;
+  color: var(--text);
+}
+
+.ovlModalConfirm {
+  background: var(--accent);
+  border-color: transparent;
+  color: var(--accent-contrast);
+}
+
+.ovlModalConfirm[data-destructive="true"] {
+  background: var(--accent-danger);
+}
+
+.ovlModalClose {
+  position: absolute;
+  top: 0;
+  left: calc(100% + 8px);
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+.ovlModalClose:focus-visible {
+  outline: 3px solid var(--focus-ring-color);
+  outline-offset: 3px;
+}
+
+@media (max-width: 600px) {
+  .ovlModalBackdrop {
+    align-items: flex-start;
+    overflow-y: auto;
+  }
+
+  .ovlModalFrame {
+    width: min(var(--ovl-modal-width), calc(100vw - 80px));
+    margin-inline-end: 56px;
+  }
+
+  .ovlModal {
+    max-height: calc(100dvh - 32px);
+    padding: 20px;
+  }
+}
+
+@media (min-width: 1200px) and (min-height: 640px) {
+  .ovlModalClose {
+    width: var(--tv-target-min);
+    height: var(--tv-target-min);
+    left: calc(100% + 12px);
+  }
+}
+
+/* --- Правая панель/шит. Enter — .modal-in-out (tokens.css), класс проставлен
+   на .ovlSheet в sheet.tsx. --- */
+.ovlSheetBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-sheet);
+  background: color-mix(in srgb, black 45%, transparent);
+  pointer-events: auto;
+}
+
+.ovlSheet {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(400px, 100vw);
+  padding: 24px;
+  overflow-y: auto;
+  background: var(--bg-raised);
+  border-left: 1px solid var(--border);
+  box-shadow: -24px 0 64px var(--shadow);
+  color: var(--text);
+}
+
+.ovlSheetHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+/* --- Алерты печати (MF-442, docs/epics/overlay.system.md §3/§6): верхний слой,
+   виден поверх модалок — принцип «яркость=важность» требует, чтобы поломку
+   печати нельзя было не заметить, даже за открытым диалогом. --- */
+.ovlAlertHost {
+  position: fixed;
+  top: max(16px, env(safe-area-inset-top));
+  left: 50%;
+  translate: -50% 0;
+  z-index: var(--z-alert);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(480px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+.ovlAlert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: 48px;
+  padding: 14px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--bg-raised);
+  box-shadow: 0 16px 40px var(--shadow);
+  color: var(--text);
+  pointer-events: auto;
+  /* Enter/exit — примитив .modal-in-out (tokens.css, motion.md «Примитивы»), класс
+     проставлен вместе с .ovlAlert в alerthost.tsx; reduced-motion идёт бесплатно от токена. */
+}
+
+.ovlAlert[data-severity="warn"] { border-color: color-mix(in srgb, var(--accent-warn) 50%, transparent); }
+.ovlAlert[data-severity="critical"] { border-color: color-mix(in srgb, var(--accent-danger) 55%, transparent); }
+
+/* Пульс — только critical, деградирует до статичного цвета+иконки при reduce-motion
+   (переиспользуем ovlPulse — единая ось пульса для тостов/модалок/алертов). */
+.ovlAlert[data-pulse="true"] {
+  animation: ovlPulse 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ovlAlert[data-pulse="true"] { animation: none; }
+}
+
+.ovlAlertDot {
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: var(--accent-warn);
+}
+
+.ovlAlert[data-severity="critical"] .ovlAlertDot { background: var(--accent-danger); }
+
+.ovlAlertBody {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ovlAlertWhat {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.ovlAlertWhy {
+  font-size: 12.5px;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+
+.ovlAlertActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.ovlAlertAction {
+  min-height: var(--button-height);
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ovlAlertClose {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+/* Приглушённая сводка «печатают N» (alerthost.tsx PrintSummaryPill) — обычный
+   инлайн-текст в шапке, НЕ на слое --z-alert: без пульса/тени, «не шумит». */
+.ovlPrintSummary {
+  font-size: 12.5px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}

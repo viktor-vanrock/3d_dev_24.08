@@ -1,0 +1,56 @@
+[project]
+name = "mesh"
+version = "0.0.0"
+description = "STL/3MF конвертация, обработка и оптимизация 3D-геометрии"
+requires-python = ">=3.12"
+dependencies = [
+    "portal-queue-lifecycle",
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "trimesh>=4.5.0",
+    "numpy>=2.1.0",
+    "networkx>=3.3",
+    "lxml>=5.0.0",
+    "lib3mf>=2.5.0",
+    "manifold3d>=3.1.1",
+    "boto3>=1.35.0",
+    "psycopg[binary]>=3.2.0",
+    "fast-simplification>=0.1.13",
+    "pillow>=12.3.0",
+    "python-multipart>=0.0.9",
+    "cryptography>=43.0.0",
+]
+
+[tool.uv.sources]
+portal-queue-lifecycle = { path = "../../packages/python/portal-queue-lifecycle" }
+
+[project.scripts]
+mesh-worker = "mesh.revision_worker:run_loop"
+mesh-backfill = "mesh.backfill:main"
+mesh-slice-worker = "mesh.slicing_worker:run_slice_loop"
+mesh-seed-snapmaker-u1 = "mesh.snapmaker_u1_profile_seed:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.0",
+    "httpx>=0.28.0",
+    "ruff>=0.8.0",
+    "pip-audit>=2.7.0",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mesh"]

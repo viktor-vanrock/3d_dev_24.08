@@ -1,0 +1,40 @@
+{
+  "name": "@portal/contracts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Реестр ШВОВ между сервисами. Только типы/схемы контрактов, НИКАКОЙ бизнес-логики. Менять = один PR, апрув CTO; обе стороны шва адаптируются независимо.",
+  "exports": {
+    "./http/*": "./http/*.ts",
+    "./http/openapi.v1": "./http/openapi.v1.json",
+    "./http/relay-internal.v1.openapi": "./http/relay-internal.v1.openapi.json",
+    "./http/relay-internal.v1.client": "./http/generated/relay-internal.v1.client.ts",
+    "./jobs/*": "./jobs/*.ts",
+    "./device-protocol/v1": "./device-protocol/v1/index.ts",
+    "./device-agent-runtime/v1": "./device-agent-runtime/v1/index.ts",
+    "./printer-driver": "./printer-driver/index.ts",
+    "./device-dispatch": "./device-dispatch/index.ts",
+    "./db-rows/*": "./db-rows/*.ts",
+    "./printer-api": "./printer-api/openapi.yaml",
+    "./project-manifest": "./project-manifest/index.ts",
+    "./project-manifest/*": "./project-manifest/*"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json",
+    "device-protocol:generate": "node device-protocol/v1/generate-types.mjs",
+    "device-protocol:check": "node device-protocol/v1/generate-types.mjs --check && vitest run device-protocol/v1/contract.test.ts",
+    "relay-internal:generate": "node http/generate-relay-internal-v1.mjs",
+    "relay-internal:check": "node http/generate-relay-internal-v1.mjs --check && vitest run http/relay-internal.v1.test.ts http/relay-internal.v1.openapi.test.ts"
+  },
+  "dependencies": {
+    "ajv": "8.20.0"
+  },
+  "devDependencies": {
+    "@portal/config": "workspace:*",
+    "@types/node": "^22.10.0",
+    "openapi-typescript": "7.13.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.2.6"
+  }
+}

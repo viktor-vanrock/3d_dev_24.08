@@ -1,0 +1,239 @@
+/* Markdown-редактор (docs/design/projects.multiformat.md §3.1) — стеклянная панель:
+   тулбар + вкладки + textarea/предпросмотр. Публичная типографика — §3.4, .markdownBody. */
+
+.mdEditor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 22px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 35%, transparent);
+}
+
+.mdToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  color: var(--text-dim);
+}
+
+.mdToolbarButtons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.mdToolbarBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0 8px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.mdToolbarBtn:active {
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
+  border-color: var(--border);
+}
+
+.mdCounter {
+  font-size: 12px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.mdCounter[data-over="true"] {
+  color: var(--accent-danger);
+}
+
+.mdHelper {
+  color: var(--text-dim);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.mdTabs {
+  display: flex;
+  gap: 8px;
+}
+
+.mdTextarea {
+  font-family: var(--font-sans);
+  line-height: 1.6;
+}
+
+.mdPreview {
+  min-height: 96px;
+  padding: 12px 16px;
+  border-radius: 22px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 40%, transparent);
+  color: var(--text-dim);
+  font-size: 14px;
+}
+
+.mdPreview[data-empty="true"] {
+  display: flex;
+  align-items: center;
+  font-style: italic;
+  opacity: 0.7;
+}
+
+@media (max-width: 640px) {
+  .mdToolbar {
+    justify-content: flex-start;
+  }
+}
+
+/* --- Типографика рендера GFM-подмножества (§3.4) — вкладка «Предпросмотр» и публичная страница --- */
+.markdownBody {
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 14.5px;
+  line-height: 1.6;
+  overflow-wrap: break-word;
+}
+
+.markdownBody > *:first-child {
+  margin-top: 0;
+}
+
+.markdownBody > *:last-child {
+  margin-bottom: 0;
+}
+
+.markdownBody h1,
+.markdownBody h2,
+.markdownBody h3,
+.markdownBody h4,
+.markdownBody h5,
+.markdownBody h6 {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  color: var(--text);
+  text-transform: none;
+  margin: 1.1em 0 0.5em;
+}
+
+.markdownBody h1 {
+  font-size: 1.4em;
+}
+.markdownBody h2 {
+  font-size: 1.2em;
+}
+.markdownBody h3 {
+  font-size: 1.05em;
+}
+.markdownBody h4,
+.markdownBody h5,
+.markdownBody h6 {
+  font-size: 1em;
+}
+
+.markdownBody p {
+  margin: 0.7em 0;
+}
+
+.markdownBody ul,
+.markdownBody ol {
+  margin: 0.5em 0;
+  padding-left: 1.4em;
+  color: var(--text);
+}
+
+.markdownBody li {
+  margin: 0.25em 0;
+}
+
+.markdownBody li::marker {
+  color: var(--text-dim);
+}
+
+.markdownBody table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.8em 0;
+  overflow-x: auto;
+  display: block;
+}
+
+.markdownBody th,
+.markdownBody td {
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+  text-align: left;
+}
+
+.markdownBody th {
+  color: var(--text-dim);
+  font-weight: 600;
+}
+
+.markdownBody code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  padding: 0.15em 0.4em;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+}
+
+.markdownBody pre {
+  overflow-x: auto;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--bg-raised) 85%, transparent);
+  border: 1px solid var(--border);
+}
+
+.markdownBody pre code {
+  background: none;
+  padding: 0;
+}
+
+.markdownBody a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.markdownBody a:active {
+  text-decoration: underline;
+}
+
+.markdownBody img {
+  max-width: 100%;
+  border-radius: 12px;
+  box-shadow: 0 10px 24px var(--shadow);
+}
+
+.markdownBody blockquote {
+  margin: 0.7em 0;
+  padding-left: 14px;
+  border-left: 2px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  color: var(--text-dim);
+}
+
+.markdownBody hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 1.2em 0;
+}
+
+.markdownBody strong {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.markdownBody em {
+  font-style: italic;
+}

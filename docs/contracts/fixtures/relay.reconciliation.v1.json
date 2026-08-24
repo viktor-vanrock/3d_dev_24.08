@@ -1,0 +1,56 @@
+{
+  "contract": "relay.reconciliation.v1",
+  "owner": "Relay/Back",
+  "purpose": "Проверяемый сценарий восстановления relay: sequenced telemetry и durable command после reconnect.",
+  "telemetry": {
+    "device_id": "00000000-0000-0000-0000-000000000101",
+    "events": [
+      {
+        "event": "heartbeat",
+        "seq": 41,
+        "status": "printing",
+        "progress": 37.5,
+        "metrics": { "nozzleTempC": 210.4 }
+      },
+      {
+        "event": "heartbeat",
+        "seq": 42,
+        "status": "paused",
+        "progress": 40.0,
+        "metrics": { "nozzleTempC": 211.1 }
+      },
+      {
+        "event": "heartbeat",
+        "seq": 41,
+        "status": "error",
+        "progress": 1.0,
+        "metrics": { "nozzleTempC": 999.0 }
+      }
+    ],
+    "expected": {
+      "state_seq": 42,
+      "state_status": "paused",
+      "telemetry_history_seq": [41, 42],
+      "stale_event_accepted": false
+    }
+  },
+  "command": {
+    "device_id": "00000000-0000-0000-0000-000000000101",
+    "command_id": "00000000-0000-0000-0000-000000000201",
+    "command": "pause",
+    "offline": {
+      "event": "commands/poll",
+      "response_status": "delivered",
+      "redeliver_on_reconnect": true
+    },
+    "result": {
+      "event": "commands/:id/result",
+      "ok": false,
+      "error_code": "device_offline",
+      "response_status": "rejected",
+      "duplicate_result_is_stable": true,
+      "redelivery_count": 2,
+      "audit_entry_count": 1
+    }
+  }
+}

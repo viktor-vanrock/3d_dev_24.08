@@ -1,0 +1,465 @@
+/* Экран «Генерация по тексту» (docs/design/generation.md, MF-353 Фаза 3, MF-659).
+   Форма/промпт переиспользуют .homeGhostInput/.homeSendButton (home.css) 1:1 (§2 п.3), рамки
+   превью/стекло-кнопки — .modelGlassBtn/.modelViewerStage (market/model.css). Здесь — только
+   раскладка экрана и состояния, которых нет в существующих примитивах. */
+
+.generatePage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  padding-bottom: 48px;
+}
+
+/* Место под bottom-tab (touch.nav.md §1/§4, MF-758 design-ревью) — тот же приём, что
+   .homeContent (home.css)/.projectsWideBody (projects.css). Без этого правила .homeContent'ов
+   media-запрос проигрывает: `.generatePage` идёт позже в каскаде (generate.css импортится после
+   home.css) с той же специфичностью, поэтому его безусловный padding-bottom побеждал даже на
+   ≤640px, и последняя карточка истории пряталась под таббаром. */
+@media (max-width: 640px) {
+  .generatePage {
+    padding-bottom: calc(56px + env(safe-area-inset-bottom) + 16px);
+  }
+}
+
+.generateForm {
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.generateBranchRow {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* Режимы — единый pill-паттерн табов дизайн-системы: круглая геометрия, line-иконка слева,
+   выбранное состояние читается и по заливке, и через data-selected SelectionTile. */
+.generateBranchTile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 48px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  color: var(--text);
+  font-size: 13px;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-toggle) var(--ease-out),
+    border-color var(--dur-toggle) var(--ease-out),
+    box-shadow var(--dur-toggle) var(--ease-out);
+}
+
+.generateBranchTile[data-selected="true"] {
+  background: var(--accent);
+  border-color: transparent;
+  color: var(--accent-contrast);
+  box-shadow: 0 0 24px color-mix(in srgb, var(--accent) 35%, transparent);
+  animation: generateTileSelect var(--dur-reveal) var(--ease-spring) both;
+}
+
+@keyframes generateTileSelect {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+
+@media (hover: hover) {
+  .generateBranchTile:not([data-selected]):hover {
+    background: color-mix(in srgb, var(--surface) 90%, var(--accent) 6%);
+    border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .generateBranchTile[data-selected="true"] {
+    animation: none;
+  }
+}
+
+.generateBranchIcon {
+  font-size: 18px;
+  display: flex;
+}
+
+.generateBranchSummary {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 42px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, transparent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  color: var(--text);
+  font-size: 13px;
+}
+
+.generateBranchSummary svg {
+  width: 18px;
+  height: 18px;
+  color: var(--accent);
+}
+
+.generatePromptRow {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.generatePromptInput {
+  flex: 1;
+  font-size: clamp(22px, 3.6vw, 36px);
+}
+
+.generatePromptInput:disabled {
+  opacity: 0.55;
+}
+
+/* Кольцо-прогресс: send-кнопка морфит на месте, без скачка макета (§3) — тот же .homeSendButton,
+   форма/цвет содержимого меняются через data-status. */
+.generateSendButton {
+  position: relative;
+  flex: none;
+  width: auto;
+  min-width: 144px;
+  height: 52px;
+  padding: 0 22px;
+  border-radius: 999px;
+  font: 600 14px/1 var(--font-sans);
+  white-space: nowrap;
+}
+
+.generateSendButton[data-status="queued"] {
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  color: var(--text-dim);
+  box-shadow: none;
+  border: 2px dashed color-mix(in srgb, var(--text-dim) 55%, transparent);
+}
+
+.generateSendButton[data-status="running"] {
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  color: var(--accent);
+  box-shadow: none;
+  border: 2px solid transparent;
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+.generateSendButton[data-status="running"]::before {
+  content: "";
+  width: 14px;
+  height: 14px;
+  margin-right: 8px;
+  border: 2px solid color-mix(in srgb, var(--accent) 28%, transparent);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: generateSpin 0.9s linear infinite;
+}
+
+@keyframes generateSpin { to { transform: rotate(360deg); } }
+
+.generateSendButton[data-status="error"] {
+  background: color-mix(in srgb, var(--accent-danger) 20%, var(--surface));
+  color: var(--accent-danger);
+  box-shadow: 0 0 24px color-mix(in srgb, var(--accent-danger) 30%, transparent);
+  animation: generateShake var(--dur-callout) var(--ease-spring);
+}
+
+@keyframes generateShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  50% { transform: translateX(5px); }
+  75% { transform: translateX(-3px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .generateSendButton[data-status="running"]::before,
+  .generateSendButton[data-status="error"] {
+    animation: none;
+  }
+}
+
+.generateStatusRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  font-size: 13.5px;
+  color: var(--text-dim);
+}
+
+.generateErrorText {
+  color: var(--text-dim);
+}
+
+.generateInlineError {
+  color: var(--accent-danger);
+  font-size: 13.5px;
+}
+
+.generateParamsToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: color-mix(in srgb, var(--surface) 42%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+  border-radius: 999px;
+  color: var(--text-dim);
+  font-size: 13px;
+  cursor: pointer;
+  min-height: 48px;
+  padding: 0 16px;
+}
+
+.generateParamsToggle[aria-expanded="true"] {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.generateParamsChevron {
+  font-size: 18px;
+  line-height: 1;
+  transform: translateY(-2px);
+  transition: transform var(--dur-toggle) var(--ease-out);
+}
+
+.generateParamsToggle[aria-expanded="true"] .generateParamsChevron {
+  transform: rotate(180deg) translateY(2px);
+}
+
+.generateParamsPanel {
+  width: 100%;
+  max-width: 360px;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
+  background: color-mix(in srgb, var(--surface) 30%, transparent);
+}
+
+.generateParamField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-dim);
+  width: 100%;
+  max-width: none;
+}
+
+.generateCompactStrip {
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+  background: color-mix(in srgb, var(--surface) 45%, transparent);
+}
+
+.generateCompactPrompt {
+  color: var(--text-dim);
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.generatePreview {
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.generateSuccessBadge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--accent);
+  font-family: var(--font-display);
+  font-size: 15px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .generateSuccessBadge {
+    animation: generateSuccessPop var(--dur-callout) var(--ease-spring);
+  }
+}
+
+@keyframes generateSuccessPop {
+  0% { transform: scale(0.7); opacity: 0; }
+  60% { transform: scale(1.05); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+.generateImageFrame {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 22px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  padding: 0;
+  cursor: zoom-in;
+}
+
+.generateImageFrame img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.generatePreviewActions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.generatePreviewFullscreen {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 90vw;
+  max-height: 85vh;
+}
+
+.generatePreviewFullscreen img {
+  max-width: 90vw;
+  max-height: 85vh;
+  object-fit: contain;
+  border-radius: 12px;
+}
+
+.generatePreviewClose {
+  position: absolute;
+  top: -12px;
+  right: -12px;
+  background: var(--surface);
+}
+
+.generateHistory {
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.generateHistoryList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.generateHistoryRow {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto minmax(72px, auto);
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
+  background: color-mix(in srgb, var(--surface) 35%, transparent);
+  text-align: left;
+  min-height: 48px;
+}
+
+.generateHistoryThumb {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dim);
+}
+
+.generateHistoryThumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.generateHistoryThumbGlyph {
+  font-size: 20px;
+}
+
+.generateHistoryPrompt {
+  font-size: 14px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.generateHistoryTime {
+  font-size: 12px;
+  color: var(--text-dim);
+  text-align: right;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .generatePromptRow {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .generateSendButton {
+    width: 100%;
+  }
+
+  .generateHistoryRow {
+    grid-template-columns: 40px minmax(0, 1fr) auto;
+    gap: 8px 10px;
+    padding: 12px;
+  }
+
+  .generateHistoryThumb {
+    width: 40px;
+    height: 40px;
+    grid-row: 1 / 3;
+  }
+
+  .generateHistoryPrompt {
+    grid-column: 2 / 4;
+  }
+
+  .generateHistoryRow > .uiStatusPill {
+    grid-column: 2;
+    justify-self: start;
+    height: 32px;
+    padding: 0 11px;
+  }
+
+  .generateHistoryTime {
+    grid-column: 3;
+  }
+}

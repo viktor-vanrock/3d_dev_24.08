@@ -1,0 +1,239 @@
+/*
+  Главный экран (эпик MF-435). Поиск-первый (фидбек 2026-07-04): нейро-строка
+  встречает юзера, ниже галерея популярного, онбординг — компактно после.
+  Композиция по design/layout.md: контент по центру, поля clamp(→80px @1440),
+  тир-адаптивность через data-tier (токены, не хардкод).
+*/
+
+.home {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  /*
+    Общий рабочий коридор full-shell: его границы совпадают не с абстрактным
+    --content-max, а с фактическими якорями шапки — началом часов и правым краем
+    капсулы персонажа (outer gutter + симметричный reserve 62px).
+  */
+  --workspace-inline: calc(clamp(16px, 4vw, 48px) + 62px);
+}
+
+/* Постоянный chrome — сосед route payload, а не его ребёнок. Поэтому React сохраняет один
+   HomeHeader/Canvas при смене четырёх основных разделов; нулевой wrapper не влияет на поток. */
+.appSectionChrome {
+  position: relative;
+  z-index: 30;
+  height: 0;
+}
+
+/* В appShell интенсивность задаёт постоянный .appShellAurora (aurorabg.css). Эти правила
+   сохраняют тот же standalone-вид у экранов в component-тестах и Storybook-подобных стендах. */
+.home > .aurorabg:not(.appShellAurora) .aurorabgBlob1 { opacity: 0.32; }
+.home > .aurorabg:not(.appShellAurora) .aurorabgBlob2 { opacity: 0.28; }
+.home > .aurorabg:not(.appShellAurora) .aurorabgBlob3 { opacity: 0.2; }
+
+.homeContent {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: var(--content-max);
+  margin: 0 auto;
+  /* Шапка закреплена (position: fixed ниже) — контент резервирует её высоту паддингом сверху
+     (header-capsule.md § «Закреплено — что это значит технически»), не 8px «на глазок». */
+  padding: calc(var(--header-safe) + 16px) clamp(16px, 5.6vw, 80px) 48px;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(20px, 3.5vw, 32px);
+  /* Переход Дом⇄Проекты (motion.md §2) — свой view-transition-name у контента (не root),
+     чтобы задержать его на 40ms относительно пилюли (см. ниже) — тот же класс есть только
+     на ОДНОМ из двух экранов одновременно, .projectsWideBody даёт его второму (projects.css). */
+  view-transition-name: page-content;
+}
+
+/*
+  Каталоги и лента — рабочие поверхности, а не длинные статьи. На широком экране они
+  занимают весь коридор между часами и персонажем; собственный padding у
+  payload-контейнеров здесь снимается, чтобы поиск, фильтры, посты и сетки
+  имели одну левую и правую ось. Класс общий для /printers и /project.
+*/
+.homeContent.homeWorkspaceBody,
+.projectsWideBody.homeWorkspaceBody,
+.feedWideBody.homeWorkspaceBody {
+  width: calc(100% - var(--workspace-inline) - var(--workspace-inline));
+  max-width: none;
+  margin-inline: auto;
+  padding-inline: 0;
+  box-sizing: border-box;
+}
+
+/* Расширенный FAB подключения принтера (MF-1726): фиксированная подпись не прячет смысл
+   за hover, 56px хватает для touch, а нейтральное стекло сохраняет единственный зелёный
+   primary у генерации. На mobile FAB поднимается над bottom-tab и safe-area. */
+.homePrinterFab.uiButton {
+  position: fixed;
+  right: clamp(16px, 4vw, 48px);
+  bottom: clamp(24px, 4vw, 48px);
+  z-index: 20;
+  min-height: 56px;
+  border-color: color-mix(in srgb, var(--accent) 38%, var(--border));
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  color: var(--text);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 34%, transparent),
+    0 14px 40px color-mix(in srgb, var(--shadow) 75%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--accent) 8%, transparent);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  transition:
+    transform var(--dur-toggle) var(--ease-out),
+    border-color var(--dur-toggle) var(--ease-out),
+    box-shadow var(--dur-toggle) var(--ease-out),
+    background-color var(--dur-toggle) var(--ease-out);
+}
+
+.homePrinterFab .uiButtonIconPlain {
+  color: var(--accent);
+}
+
+/* На первом визите нижний consent-баннер выше FAB и bottom-tab. Пока он смонтирован,
+   переносим действие в свободную зону под каталогами: оно остаётся видимым и не закрывает
+   юридический текст/кнопку согласия. После принятия баннер исчезает — FAB возвращается вниз. */
+body:has(.consentBannerHost) .homePrinterFab.uiButton {
+  top: calc(var(--header-safe) + 160px);
+  bottom: auto;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .homePrinterFab.uiButton:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--accent) 68%, var(--border));
+    background: color-mix(in srgb, var(--surface) 94%, transparent);
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, white 42%, transparent),
+      0 18px 46px color-mix(in srgb, var(--shadow) 82%, transparent),
+      0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent);
+  }
+}
+
+.homePrinterFab.uiButton:focus-visible {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+}
+
+.homePrinterFab.uiButton:active {
+  transform: scale(0.97);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 26%, transparent),
+    0 8px 24px color-mix(in srgb, var(--shadow) 68%, transparent);
+}
+
+@media (max-width: 640px) {
+  .homePrinterFab.uiButton {
+    right: 16px;
+    bottom: calc(56px + env(safe-area-inset-bottom) + 16px);
+    max-width: calc(100vw - 32px);
+  }
+
+  body:has(.consentBannerHost) .homePrinterFab.uiButton {
+    bottom: auto;
+  }
+}
+
+@media (min-width: 1200px) and (min-height: 640px) {
+  .homePrinterFab.uiButton {
+    right: var(--tv-safe-inline);
+    bottom: var(--tv-safe-block);
+    min-height: var(--tv-target-min);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .homePrinterFab.uiButton {
+    transition: none;
+  }
+
+  .homePrinterFab.uiButton:hover,
+  .homePrinterFab.uiButton:focus-visible,
+  .homePrinterFab.uiButton:active {
+    transform: none;
+  }
+}
+
+/* Место под bottom-tab (touch.nav.md §1/§4) — фикс-хром оверлей, не раздвигает раскладку сам,
+   но контент обязан оставить под него место, тот же принцип, что overlay/consent. */
+@media (max-width: 640px) {
+  .home {
+    --workspace-inline: 16px;
+  }
+
+  .homeContent {
+    padding-bottom: calc(56px + env(safe-area-inset-bottom) + 16px);
+  }
+}
+
+/* Общий 10-foot shell для payload routes (tv.10foot.md §§3–6). Внешняя рамка —
+   часть контракта safe-area, поэтому на TV контейнер становится border-box: при
+   1280px это не создаёт горизонтальный overflow, а полезная область остаётся
+   симметрично внутри 5% слева/справа. */
+@media (min-width: 1200px) and (min-height: 640px) {
+  [data-input-mode="dpad"] .homeTopbar {
+    box-sizing: border-box;
+    padding: max(var(--tv-safe-block), env(safe-area-inset-top)) var(--tv-safe-inline) 24px;
+  }
+
+  [data-input-mode="dpad"] .homeTopbar:is([data-shell="full"], [data-shell="mixed"]) {
+    padding-left: var(--tv-safe-inline);
+    padding-right: var(--tv-safe-inline);
+  }
+
+  [data-input-mode="dpad"] .homeTopbarInner {
+    min-height: var(--tv-target-min);
+  }
+
+  /* Header controls are part of the D-pad route, not decorative chrome. Keep
+     their focus area on the same 64px rhythm as catalog actions. */
+  [data-input-mode="dpad"] .homeTopbar .homeCapsuleControl,
+  [data-input-mode="dpad"] .homeTopbar .homeCapsuleAvatar {
+    width: var(--tv-target-min);
+    height: var(--tv-target-min);
+  }
+
+  [data-input-mode="dpad"] .homeTopbar .wispToggle {
+    height: var(--tv-target-min);
+  }
+
+  [data-input-mode="dpad"] .homeTopbar .homeSectionTabs .uiSegmentToggleOption {
+    min-height: var(--tv-target-min);
+  }
+
+  [data-input-mode="dpad"] .homeContent {
+    box-sizing: border-box;
+    max-width: 100%;
+    padding: calc(var(--header-safe) + var(--tv-safe-block)) var(--tv-safe-inline) var(--tv-safe-block);
+    gap: clamp(28px, 3vw, 48px);
+  }
+
+  [data-input-mode="dpad"] .homeContent.homeWorkspaceBody,
+  [data-input-mode="dpad"] .projectsWideBody.homeWorkspaceBody,
+  [data-input-mode="dpad"] .feedWideBody.homeWorkspaceBody {
+    width: calc(100% - var(--tv-safe-inline) - var(--tv-safe-inline));
+    max-width: none;
+    margin-inline: auto;
+    padding-inline: 0;
+  }
+}
+
+.home[data-tier="farm"],
+.home[data-tier="business"] {
+  --accent2: #34d399;
+}
+
+/* Tablet уступает дату до того, как начинает теснить центральную навигацию и капсулу
+   (header.capsule.md § «Столкновение с часами и капсулой»): на 641–1024px остаётся
+   только HH:MM, а все четыре таба и tier-1/tier-2 капсулы ещё доступны. */
+@media (max-width: 1024px) {
+  .homeClockDate {
+    display: none;
+  }
+}

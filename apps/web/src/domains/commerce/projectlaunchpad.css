@@ -1,0 +1,243 @@
+.projectLaunchpad {
+  display: grid;
+  gap: clamp(24px, 4vw, 42px);
+  scroll-margin-top: calc(var(--header-safe) + 18px);
+  padding: clamp(26px, 4vw, 48px);
+  border: 1px solid color-mix(in srgb, var(--border) 62%, transparent);
+  border-radius: 34px;
+  background:
+    radial-gradient(circle at 12% 18%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 34%),
+    color-mix(in srgb, var(--surface) 74%, transparent);
+  box-shadow: 0 24px 70px color-mix(in srgb, var(--shadow) 48%, transparent);
+}
+
+.projectLaunchpadHead {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 24px;
+  align-items: end;
+}
+
+.projectLaunchpadHead > div:first-child > span {
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 780;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.projectLaunchpadHead h2 {
+  margin: 10px 0 0;
+  max-width: 760px;
+  font-size: clamp(30px, 4.4vw, 54px);
+  line-height: 0.98;
+  letter-spacing: -0.05em;
+}
+
+.projectLaunchpadHead p {
+  max-width: 720px;
+  margin: 16px 0 0;
+  color: var(--text-dim);
+  font-size: clamp(15px, 1.5vw, 18px);
+  line-height: 1.55;
+}
+
+.projectLaunchpadFlow {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.projectLaunchpadFlow span {
+  padding: 8px 11px;
+  border: 1px solid color-mix(in srgb, var(--border) 62%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.projectLaunchpadGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.projectConfigCard {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  border-radius: 26px;
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 36%, transparent);
+}
+
+.projectConfigCard[data-recommended] {
+  border-color: color-mix(in srgb, var(--accent) 58%, var(--border));
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 42%, transparent),
+    0 18px 48px color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.projectConfigMedia {
+  position: relative;
+  min-height: 210px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+}
+
+.projectConfigMedia::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 36%, color-mix(in srgb, var(--text) 74%, transparent));
+}
+
+.projectConfigMedia img {
+  width: 100%;
+  height: 100%;
+  min-height: 210px;
+  display: block;
+  object-fit: cover;
+}
+
+.projectConfigMedia span,
+.projectConfigMedia strong {
+  position: absolute;
+  z-index: 1;
+  left: 18px;
+}
+
+.projectConfigMedia span {
+  bottom: 18px;
+  color: white;
+  font-size: 14px;
+  font-weight: 740;
+}
+
+.projectConfigMedia strong {
+  top: 16px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-size: 11px;
+}
+
+.projectConfigBody {
+  display: grid;
+  gap: 20px;
+  padding: 22px;
+}
+
+.projectConfigBody h3 {
+  margin: 0;
+  font-size: 24px;
+  letter-spacing: -0.035em;
+}
+
+.projectConfigBody p {
+  margin: 8px 0 0;
+  color: var(--text-dim);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.projectConfigBody dl {
+  display: grid;
+  gap: 0;
+  margin: 0;
+}
+
+.projectConfigBody dl > div {
+  display: grid;
+  grid-template-columns: 0.7fr 1.3fr;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid color-mix(in srgb, var(--border) 48%, transparent);
+}
+
+.projectConfigBody dt,
+.projectConfigBody dd {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.projectConfigBody dt {
+  color: var(--text-dim);
+}
+
+.projectConfigBody dd {
+  color: var(--text);
+  font-weight: 660;
+}
+
+.projectConfigResult {
+  padding: 14px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.projectConfigResult span {
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 780;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.projectConfigResult p {
+  margin-top: 5px;
+  color: var(--text);
+}
+
+.projectConfigStart {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 52px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-weight: 760;
+}
+
+.projectConfigStart small {
+  color: inherit;
+  font-size: 11px;
+  opacity: 0.78;
+}
+
+@media (max-width: 1080px) {
+  .projectLaunchpadGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .projectConfigCard {
+    display: grid;
+    grid-template-columns: minmax(240px, 0.42fr) 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .projectLaunchpad {
+    padding: 22px;
+    border-radius: 26px;
+  }
+
+  .projectLaunchpadHead {
+    grid-template-columns: 1fr;
+  }
+
+  .projectLaunchpadFlow {
+    justify-content: flex-start;
+  }
+
+  .projectConfigCard {
+    display: block;
+  }
+}

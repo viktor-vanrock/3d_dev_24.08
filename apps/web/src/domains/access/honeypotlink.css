@@ -1,0 +1,17 @@
+/* Honeypot-ссылка (MF-737, Фаза 3 эпика MF-39): должна быть невидима человеку и недостижима
+   мышью/тачем/Tab, но остаться настоящим <a href> в DOM — иначе бот, читающий разметку без
+   рендера CSS, до неё не доберётся. Классический visually-hidden паттерн (не display:none —
+   элемент честно есть в потоке, просто вынесен за пределы вьюпорта и схлопнут до 1px).
+   tabIndex=-1 и aria-hidden в honeypotlink.tsx страхуют клавиатурную/AT-навигацию. */
+.honeypotLink {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+  left: -9999px;
+}

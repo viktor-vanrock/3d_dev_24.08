@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="g" x1="0" y1="24" x2="48" y2="24" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#863bff"/>
+      <stop offset=".5" stop-color="#22c55e"/>
+      <stop offset="1" stop-color="#06b6d4"/>
+    </linearGradient>
+  </defs>
+  <!-- data pulse line — без blur-фильтра оригинала: на 20px в кнопке "glow" читался мылом,
+       здесь чёткая линия, цвет тот же градиент -->
+  <polyline points="2,28 10,28 14,18 18,34 22,12 26,36 30,20 34,28 38,24 46,24" stroke="url(#g)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- center peak dot -->
+  <circle cx="22" cy="12" r="3" fill="#22c55e" opacity=".9"/>
+</svg>

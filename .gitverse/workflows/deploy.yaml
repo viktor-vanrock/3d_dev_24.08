@@ -1,0 +1,40 @@
+# ⚠️ LEGACY CD — ПОД ЗАМЕНУ (backend-nest-migration, design.md §9). Целевой деплой переезжает во
+# внутренний GitLab + kaniko + k8s/OpenShift (образец device-review). Этот GitVerse workflow и
+# systemd-деплой на VDS (portal.deploy.timer) будут удалены при переезде — отдельный инфра-change.
+#
+# STUB — НЕ АКТИВЕН. Требует self-hosted раннер с меткой [deploy] на VDS (не зарегистрирован, см. docs/infra/readme.md § «CI/CD-раннер»).
+#
+# ТЕКУЩИЙ КАНОНИЧЕСКИЙ CD: systemd-таймер portal.deploy.timer на VDS (polling origin/main → build → restart).
+# Деплоить вручную или прочитать схему деплоя → docs/infra/readme.md § «Деплой main».
+#
+# Этот workflow — БУДУЩИЙ механизм ручного деплоя выбранного тега (когда раннер будет зарегистрирован).
+#
+# TODO: как только подтвердится поддержка GitVerse "environments" с обязательным ревью —
+# завести environment: production с required reviewer, чтобы прод нельзя было задеплоить в одиночку.
+
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Куда деплоить"
+        required: true
+        type: choice
+        options: [staging, production]
+      tag:
+        description: "Тег версии (например v26.1.1) — пусто = последний тег"
+        required: false
+
+jobs:
+  deploy:
+    # Раннер с меткой [deploy] сейчас не зарегистрирован — job не исполняется.
+    # git checkout/fetch --tags удалены (MF-545): ~/portal.ru принадлежит только
+    # portal.deploy.timer, CD-заглушки не должны его трогать.
+    # Реальные шаги деплоя добавить, когда появится финальная схема запуска сервисов.
+    runs-on: [self-hosted, deploy]
+    steps:
+      - name: Заглушка деплоя (нет staging/prod-контура, MF-545)
+        run: |
+          echo "no-op: deploy not yet implemented"
+          echo "target: ${{ gitverse.event.inputs.environment }}, tag: ${{ gitverse.event.inputs.tag }}"

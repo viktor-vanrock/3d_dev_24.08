@@ -1,0 +1,12 @@
+{
+  "extends": "@portal/config/tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": "..",
+    "allowImportingTsExtensions": true,
+    "types": ["node"],
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  },
+  "include": ["**/*.ts"]
+}

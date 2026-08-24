@@ -1,0 +1,73 @@
+/*
+ * Фирменные шрифты Sber AI — SB Sans Display / SB Sans Text (self-hosted).
+ * Файлы: apps/web/public/brand/fonts/*.woff2 (отдаются с /brand/fonts/...).
+ * Полный кит (TTF/OTF/WEB, все начертания) + лицензия — docs/brand/assets/fonts/,
+ * дока — docs/brand/typography.md.
+ *
+ * Self-hosted, НЕ Google Fonts CDN — устойчивость в РФ + офлайн PWA.
+ *
+ * Решение оператора 2026-07-18 (docs/brand/typography.md § «Реконсиляция»): портал
+ * переключён на SB Sans — --ref-font-display/--ref-font-sans (tokens.css) ссылаются
+ * на --font-brand-display/--font-brand-text ниже. Токены --font-brand-* остаются и для
+ * точечного использования на брендовых поверхностях в обход алиасов tokens.css.
+ */
+
+/* ---- SB Sans Display (заголовки/дисплей) ---- */
+@font-face {
+  font-family: "SB Sans Display";
+  font-weight: 300; font-style: normal; font-display: swap;
+  src: url("/brand/fonts/SBSansDisplay-Light.woff2") format("woff2");
+}
+@font-face {
+  font-family: "SB Sans Display";
+  font-weight: 400; font-style: normal; font-display: swap;
+  src: url("/brand/fonts/SBSansDisplay-Regular.woff2") format("woff2");
+}
+@font-face {
+  font-family: "SB Sans Display";
+  font-weight: 500; font-style: normal; font-display: swap;
+  src: url("/brand/fonts/SBSansDisplay-Medium.woff2") format("woff2");
+}
+@font-face {
+  font-family: "SB Sans Display";
+  font-weight: 600; font-style: normal; font-display: swap;
+  src: url("/brand/fonts/SBSansDisplay-SemiBold.woff2") format("woff2");
+}
+@font-face {
+  font-family: "SB Sans Display";
+  font-weight: 700; font-style: normal; font-display: swap;
+  src: url("/brand/fonts/SBSansDisplay-Bold.woff2") format("woff2");
+}
+
+/* ---- SB Sans Text (тело/интерфейс) ---- */
+@font-face {
+  font-family: "SB Sans Text";
+  font-weight: 300; font-style: normal; font-display: swap;
+  src: url("/brand/fonts/SBSansText-Light.woff2") format("woff2");
+}
+@font-face {
+  font-family: "SB Sans Text";
+  font-weight: 400; font-style: normal; font-display: swap;
+  src: url("/brand/fonts/SBSansText-Regular.woff2") format("woff2");
+}
+@font-face {
+  font-family: "SB Sans Text";
+  font-weight: 500; font-style: normal; font-display: swap;
+  src: url("/brand/fonts/SBSansText-Medium.woff2") format("woff2");
+}
+@font-face {
+  font-family: "SB Sans Text";
+  font-weight: 600; font-style: normal; font-display: swap;
+  src: url("/brand/fonts/SBSansText-Semibold.woff2") format("woff2");
+}
+@font-face {
+  font-family: "SB Sans Text";
+  font-weight: 700; font-style: normal; font-display: swap;
+  src: url("/brand/fonts/SBSansText-Bold.woff2") format("woff2");
+}
+
+/* Бренд-токены: доступны сразу, дефолтный UI не трогают. */
+:root {
+  --font-brand-display: "SB Sans Display", "Inter", -apple-system, sans-serif;
+  --font-brand-text: "SB Sans Text", "Inter", -apple-system, sans-serif;
+}

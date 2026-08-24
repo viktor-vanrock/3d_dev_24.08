@@ -1,0 +1,34 @@
+name: Баг
+description: Что-то работает не так, как должно
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: app
+    attributes:
+      label: Приложение
+      options: [web, api, mesh, giga, infra, другое]
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: Что произошло
+      description: Что ожидалось и что получилось на самом деле
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Как воспроизвести
+      placeholder: |
+        1. ...
+        2. ...
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Логи/скриншоты/окружение
+    validations:
+      required: false

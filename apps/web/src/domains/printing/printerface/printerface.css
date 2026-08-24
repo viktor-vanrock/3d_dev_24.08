@@ -1,0 +1,451 @@
+/*
+  Морда принтера (MF-926, docs/design/printer.face.md §2). Один responsive слой для двух
+  вьюпортов (§2.1/2.2: киоск-тачскрин 480×320…1024×600 landscape и обычный браузер) — размеры
+  текучие (clamp/vw), без отдельной kiosk/browser ветки в разметке.
+
+  Контраст idle-текста поднят с ~.66 (портал) до ~.8 (§2.2 «Экран стоит у станка, не диван») —
+  переопределяем локально ту же пару классов из ui.css, только внутри .printerFace, портал не
+  трогаем.
+*/
+
+.printerFace {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.printerFace .uiStatusPill[data-tone="dim"],
+.printerFace .uiActionCardSub {
+  opacity: 0.8;
+}
+
+/* --- Шапка-капсула (§2.4) — фикс, без скролла/сворачивания (§2.2, отличие от header-capsule.md) --- */
+.faceCapsule {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: clamp(8px, 2vw, 16px);
+  height: clamp(48px, 9vh, 64px);
+  padding: 0 clamp(10px, 2.5vw, 20px);
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.faceCapsuleHome {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.faceCapsuleName {
+  font-family: var(--font-display);
+  font-size: clamp(12px, 1.8vw, 14px);
+  color: var(--text-dim);
+  opacity: 0.8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.faceCapsuleAccount {
+  margin-left: auto;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+.faceCapsuleAccount:disabled {
+  cursor: default;
+}
+
+.faceClock {
+  flex-shrink: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(15px, 2.4vw, 20px);
+}
+
+/* --- Сцена/стейдж --- */
+.faceStage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.faceScene {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: clamp(14px, 3vh, 28px);
+  padding: clamp(16px, 4vw, 32px);
+  max-width: 720px;
+  width: 100%;
+  margin: 0 auto;
+  overflow-y: auto;
+}
+
+/* Список файлов (e) — растёт сверху, скроллится, не тянется резиновым центром по пустому месту. */
+.faceScene--files {
+  justify-content: flex-start;
+}
+
+/* Сцены с hero + рядом действий внизу (a, b/c) — тело центрируется В своей половине, ряд
+   действий остаётся прижат к низу сцены отдельным блоком (не одним общим justify-content). */
+.faceSceneBody {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: clamp(14px, 3vh, 24px);
+}
+
+/* Меньше одновременных элементов (§2.2): один hero по центру + один ряд действий внизу. */
+.faceHero {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.faceActionRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(8px, 2vw, 14px);
+}
+
+.faceActionCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: clamp(64px, 14vh, 96px);
+  border-radius: var(--card-radius-sm);
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: clamp(13px, 1.8vw, 15px);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.faceActionCard[data-variant="primary"] {
+  border-color: transparent;
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.faceActionCard[data-variant="ghost"] {
+  border-color: transparent;
+  background: transparent;
+  color: var(--text-dim);
+}
+
+.faceActionCardIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: clamp(32px, 6vw, 40px);
+  height: clamp(32px, 6vw, 40px);
+  border-radius: 50%;
+  background: color-mix(in srgb, currentcolor 14%, transparent);
+}
+
+.faceActionCardIcon[data-variant="primary"] {
+  color: var(--accent-contrast);
+}
+
+/* --- Печать (b/c, §2.3.b/c) --- */
+.faceProcessRow {
+  display: flex;
+  gap: clamp(8px, 2vw, 16px);
+  align-items: stretch;
+}
+
+/* Разворот контраста (palette-typography.md «Hero-панель») — ЕДИНСТВЕННОЕ применение приёма на
+   морде, только пока активно печатает (data-active); на паузе гаснет до обычной тёмной карточки. */
+.faceHeroPanel {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: clamp(120px, 28vh, 220px);
+  border-radius: var(--card-radius);
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
+  border: 1px solid var(--border);
+  padding: 16px;
+  text-align: center;
+}
+
+.faceHeroPanel[data-active] {
+  background: linear-gradient(135deg, #68e2a2, #9eeec3);
+  border-color: transparent;
+}
+
+.faceHeroPanelValue {
+  font-family: var(--font-display);
+  font-size: clamp(40px, 11vw, 72px);
+  font-weight: 600;
+  line-height: 1;
+  color: #0a1512;
+}
+
+.faceHeroPanelPaused {
+  font-family: var(--font-display);
+  font-size: clamp(20px, 4vw, 28px);
+  color: var(--text);
+}
+
+.faceHeroPanelFile {
+  font-size: clamp(12px, 1.8vw, 14px);
+  opacity: 0.8;
+}
+
+.faceHeroPanel[data-active] .faceHeroPanelFile {
+  color: #0a1512;
+  opacity: 0.72;
+}
+
+.faceCameraTile {
+  flex-shrink: 0;
+  width: clamp(72px, 18vw, 120px);
+  border-radius: var(--card-radius-sm);
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, black 30%, var(--surface) 70%);
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.faceTempRow {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.faceStopButton {
+  flex-shrink: 0;
+  width: clamp(56px, 12vw, 64px);
+  height: clamp(56px, 12vw, 64px);
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--accent-danger) 40%, transparent);
+  background: color-mix(in srgb, var(--accent-danger) 16%, transparent);
+  color: var(--accent-danger);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* --- Алерт (d, §2.3.d) — полноэкранный баннер поверх текущей сцены --- */
+.faceAlertScene {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-alert);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: clamp(20px, 5vw, 40px);
+  text-align: center;
+  background: var(--bg);
+}
+
+.faceAlertScene[data-severity="warn"] {
+  color: var(--accent-warn);
+}
+
+.faceAlertScene[data-severity="critical"] {
+  color: var(--accent-danger);
+}
+
+.faceAlertScene[data-severity="critical"] .faceAlertGlyph {
+  animation: facePulse 1.4s ease-in-out infinite;
+}
+
+@keyframes facePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .faceAlertScene[data-severity="critical"] .faceAlertGlyph {
+    animation: none;
+  }
+}
+
+.faceAlertWhat {
+  font-family: var(--font-display);
+  font-size: clamp(20px, 4vw, 28px);
+  color: var(--text);
+}
+
+.faceAlertWhy {
+  max-width: 46ch;
+  color: var(--text-dim);
+  opacity: 0.8;
+}
+
+.faceAlertActions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+/* --- Выбор файла (e, §2.3.e) --- */
+.faceFileList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.faceGhostLink {
+  border: none;
+  background: transparent;
+  color: var(--accent);
+  font-size: 14px;
+  min-height: 48px;
+  cursor: pointer;
+}
+
+/* --- Enroll (f, §2.3.f) — переиспользует .parkEnrollCode (park/park.css) 1:1 --- */
+.faceEnrollSuccess {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+}
+
+.faceEnrollCheck {
+  color: var(--accent);
+}
+
+.faceEnrollSuccessText {
+  font-family: var(--font-display);
+  font-size: clamp(18px, 3.6vw, 24px);
+}
+
+.faceEnrollCheckPath {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: faceCheckDraw var(--dur-slow) var(--ease-out) 80ms forwards;
+}
+
+@keyframes faceCheckDraw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .faceEnrollCheckPath {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}
+
+/* --- Настройки (g, §2.3.g) --- */
+.faceSettingsList {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--card-radius-sm);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.faceSettingsRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+
+.faceSettingsRow:last-child {
+  border-bottom: none;
+}
+
+.faceSettingsValue {
+  color: var(--text-dim);
+  opacity: 0.8;
+  text-align: right;
+}
+
+.faceUnlinkButton {
+  align-self: center;
+  border: none;
+  background: transparent;
+  color: var(--accent-danger);
+  font-size: 14px;
+  min-height: 48px;
+  padding: 0 12px;
+  cursor: pointer;
+}
+
+/* --- Dev-панель прямых переходов (только `?dev=1`, не продукт) --- */
+.faceDevTools {
+  position: fixed;
+  left: 8px;
+  bottom: 8px;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+}
+
+.faceDevTools button {
+  min-width: 28px;
+  min-height: 28px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: transparent;
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.faceDevToolsNav {
+  color: #fff;
+  font-size: 11px;
+  opacity: 0.7;
+  padding-left: 4px;
+  white-space: nowrap;
+}

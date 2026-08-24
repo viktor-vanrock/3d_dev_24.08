@@ -1,0 +1,40 @@
+# systemd-юнит воркера генерации apps/giga (generations.status: queued->running->done|error).
+# По образцу portal.mesh-worker.service (см. infra.md). Секреты — только в EnvironmentFile
+# (chmod 600, НЕ в git). Юнит копируется на VDS в /etc/systemd/system/.
+#
+# Установка на VDS (Ubuntu noble, пользователь plag):
+#   cd apps/giga && uv sync --no-dev
+#   sudo cp deploy/portal.giga-worker.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now portal.giga-worker.service
+#   journalctl -u portal.giga-worker -f     # логи воркера
+#
+# EnvironmentFile ~/portal.giga-dev.env (chmod 600, не в git) — DATABASE_URL(dev, portal_dev),
+# S3_*, S3_BUCKET_GENERATIONS, GIGACHAT_CREDENTIALS, HYPERPC_FAST_URL, COMFYUI_URL,
+# ZIMAGE_UNET_NAME/ZIMAGE_CLIP_NAME/ZIMAGE_VAE_NAME (см. .env.example, секция apps/giga).
+# Без GIGACHAT_CREDENTIALS ветки генерации отвечают status=error по конкретной
+# генерации, воркер не падает (src/giga/worker.py). Без DATABASE_URL/S3 — воркер
+# запускается и простаивает, тоже не падает.
+#
+# MF-661/2026-07-20 находка: POST/GET /generations (apps/api) пока только на dev
+# (portal_dev, не смержено в main) — реальный трафик генераций есть только там. Юнит
+# переключён с portal.giga.env (прод-БД, куда никто не пишет) на portal.giga-dev.env.
+# Когда Фаза 3 сольётся в main, перенастроить на прод-чекаут ~/portal.ru + прод
+# DATABASE_URL/бакет generations (см. portal.mesh-worker.service).
+
+[Unit]
+Description=portal.ru giga generation worker (text-to-model/image, queued->done)
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=plag
+WorkingDirectory=/home/plag/portal.ru-dev/apps/giga
+EnvironmentFile=/home/plag/portal.giga-dev.env
+ExecStart=/home/plag/.local/bin/uv run --no-dev giga-worker
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

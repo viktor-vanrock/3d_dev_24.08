@@ -1,0 +1,220 @@
+# ⚠️ LEGACY CI — ПОД ЗАМЕНУ (backend-nest-migration, операторское требование 2026-08-05).
+# Целевой деплой переезжает во внутренний GitLab (git.sberdevices.ru) + kaniko-сборка в
+# registry.sberdevices.ru + k8s/OpenShift (по образцу проекта device-review, см. design.md §9
+# «Целевая схема деплоя»). Этот GitVerse Actions workflow и systemd-деплой на VDS (deploy/portal.*)
+# будут удалены при переезде — это отдельный инфра-change (design.md §8 «CI/deploy миграция»).
+# Гейты в этом файле (boundaries, no-fastify-residue, миграции) — CI-агностичны (обычные pnpm-скрипты),
+# при переезде переносятся в GitLab `test`-stage без изменения логики. НЕ вкладываться в развитие этого
+# файла сверх поддержки зелёного состояния до переезда.
+#
+# CI: lint/typecheck/test/build. Триггерится на PR и push в main.
+#
+# Подтверждено на реальных прогонах (2026-07-07, run #1066824 и др.):
+#   1. Облачный раннер ubuntu-latest работает — Node/Python ставим явно (голый образ без предустановок), это правильно.
+#   2. actions/checkout@v4 смонтирован и работает (gitverse.ru/actions/checkout как зеркало).
+#   3. gitverse.event.* — синтаксис подтверждён, переименован из github.* по аналогии.
+
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      node: ${{ steps.filter.outputs.node }}
+      python: ${{ steps.filter.outputs.python }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Определить затронутые части монорепо
+        id: filter
+        run: |
+          if [ "${{ gitverse.event_name }}" = "pull_request" ]; then
+            BASE="${{ gitverse.event.pull_request.base.sha }}"
+          else
+            BASE="HEAD~1"
+          fi
+          CHANGED=$(git diff --name-only "$BASE" HEAD || true)
+          echo "changed files:"
+          echo "$CHANGED"
+
+          if echo "$CHANGED" | grep -qE '^(apps/web/|apps/api/|apps/device-agent/|apps/relay/|packages/|package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml|turbo\.json)'; then
+            echo "node=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "node=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          if echo "$CHANGED" | grep -qE '^(apps/mesh/|apps/giga/|apps/scout/)'; then
+            echo "python=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "python=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  node:
+    needs: changes
+    if: needs.changes.outputs.node == 'true'
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        # Схема API использует расширение vector (миграция 20260711210000).
+        # Обычный postgres:16 поднимает SCRAM, но не может воспроизвести полный DDL.
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: portal_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/portal_test?sslmode=disable
+      # Тестовый ключ шифрования (не прод-секрет) — нужен src/auth/crypto.ts::encryptIdentity
+      # для тестов src/auth/crypto.test.ts и src/printers/prusaConnect.sync.test.ts.
+      AUTH_ENCRYPTION_KEY: AdlNr9uAIEVtrN9+UdQT6W7YAMkyW+7VMenS3aZu2ow=
+    steps:
+      - uses: actions/checkout@v4
+      - name: Установить Node + pnpm
+        run: |
+          curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+          apt-get install -y nodejs
+          corepack enable
+          corepack prepare pnpm@9.15.0 --activate
+      - name: Установить зависимости
+        run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - name: API operational entrypoint inventory and launch-surface consistency
+        run: pnpm --filter @portal/api run test:operational-entrypoints
+      - name: OpenAPI contract drift gate (backend-nest-migration §4.2)
+        run: pnpm --filter @portal/api run openapi:check
+      - name: Frontend API types drift gate (backend-nest-migration §4.2)
+        run: pnpm --filter @portal/web run api:types:check
+      - name: Гейт границ доменов (backend-nest-migration §2b, spec domain-boundaries) — dependency-cruiser (нет циклов, домен→домен только через public) + SQL-ownership/branded-id тесты
+        run: pnpm --filter @portal/api run boundaries
+      - name: Nest-only artifact gate (backend-nest-migration §7.4/8.5) — source, manifest, lockfile, scripts, dist и clean installed state без Fastify
+        run: pnpm --filter @portal/api run no-fastify-residue:strict
+      - name: Nest relay residue gate — без Go/Rust source, legacy binary/deploy и unversioned relay routes
+        run: pnpm run check:no-go-relay-residue
+      - name: Гейт миграций (MF-836) — дубли timestamp-префикса в db/migrations/
+        run: pnpm --filter @portal/api run db:check-migrations-dup
+      - name: Гейт миграций (MF-836) — dbmate up на пустой БД воспроизводит db/schema.sql
+        run: pnpm --filter @portal/api run db:check-schema-sync
+      - name: Delivery-гейт миграций (MF-1260/MF-1559) — db:migrate и replay поверх duplicate-fixture answer_accepted без 23505
+        run: pnpm --filter @portal/api run db:check-migrate-replay-gate
+      - name: Project/Model split reconciliation — 0 orphan, 0 loss, совместимый rollback
+        run: pnpm --filter @portal/api run test:project-model-split
+      - run: pnpm test
+      - run: pnpm build
+      - name: PWA-гейт (MF-432 — installable manifest, зарегистрированный SW, офлайн app-shell)
+        run: pnpm --filter @portal/web run pwa:audit
+      - name: Аудит зависимостей
+        run: pnpm audit --audit-level=high
+      - name: Разбудить Test при падении CI
+        if: failure()
+        env:
+          CI_FAIL_WEBHOOK_URL: ${{ secrets.CI_FAIL_WEBHOOK_URL }}
+        run: |
+          if [ -z "$CI_FAIL_WEBHOOK_URL" ]; then
+            echo "CI_FAIL_WEBHOOK_URL secret не задан — пропускаю уведомление" >&2
+            exit 0
+          fi
+          curl -sS -X POST -H "Content-Type: application/json" \
+            -d '{"event":"ci_failed","job":"node"}' \
+            "$CI_FAIL_WEBHOOK_URL" || true
+
+  python:
+    needs: changes
+    if: needs.changes.outputs.python == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [mesh, giga, scout]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Установить uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      - name: Провижининг headless-слайсеров (MF-1918, только mesh)
+        if: matrix.app == 'mesh'
+        run: |
+          set -euo pipefail
+          # PrusaSlicer — Ubuntu 24.04 universe (no official Linux release on GitHub,
+          # см. docs/infra/slicer.ci.headless.md). Версия не жёстко пинуется apt'ом
+          # (мирроры noble-updates ротируют build), но фактическая версия логируется
+          # и зафиксирована в паспорте карты MF-1918 на момент провижининга (2.7.2+dfsg).
+          sudo apt-get update -y
+          sudo apt-get install -y prusa-slicer libopengl0 libglu1-mesa libwebkit2gtk-4.1-0
+          PRUSA_BIN="$(command -v prusa-slicer)"
+          "$PRUSA_BIN" --help >/dev/null
+          echo "MESH_PRUSA_SLICER_BIN=$PRUSA_BIN" >> "$GITHUB_ENV"
+          prusa-slicer --help 2>&1 | head -1
+
+          # OrcaSlicer — official Linux release не даёт FUSE в CI-контейнере,
+          # извлекаем через --appimage-extract. Версия и sha256 зафиксированы жёстко.
+          ORCA_VERSION="v2.4.2"
+          ORCA_URL="https://github.com/OrcaSlicer/OrcaSlicer/releases/download/${ORCA_VERSION}/OrcaSlicer_Linux_AppImage_Ubuntu2404_V2.4.2.AppImage"
+          ORCA_SHA256="d12fb8c8eac1aecd2dfb6377acd48f994f8fa439ed5292fa532dd82880f029fd"
+          curl -fL --retry 3 -o /tmp/orcaslicer.AppImage "$ORCA_URL"
+          echo "${ORCA_SHA256}  /tmp/orcaslicer.AppImage" | sha256sum -c -
+          chmod +x /tmp/orcaslicer.AppImage
+          (cd /tmp && ./orcaslicer.AppImage --appimage-extract >/dev/null && mv squashfs-root orca-appimage)
+          /tmp/orca-appimage/AppRun --help >/dev/null
+          echo "MESH_ORCA_SLICER_BIN=/tmp/orca-appimage/AppRun" >> "$GITHUB_ENV"
+          # Тот же извлечённый бандл несёт реальные вендорские профили
+          # (resources/profiles/<vendor>/...) — источник канонического
+          # профиля Snapmaker U1 (MF-1974, mesh/snapmaker_u1_profile.py),
+          # без него живые тесты test_snapmaker_u1_*.py тихо скипаются.
+          echo "MESH_ORCA_PROFILES_DIR=/tmp/orca-appimage/resources/profiles" >> "$GITHUB_ENV"
+
+          # Cura — тот же приём, плюс форс offscreen (AppRun.env хардкодит
+          # QT_QPA_PLATFORM=xcb, требует X11 даже для CLI-режимов). smoke_3mf.py
+          # его не читает (не нужен для 3MF-смоука), но CI-гейт MF-1920 ниже
+          # потребляет его (реальный импорт через CuraEngine, не через Uranium —
+          # см. docs/epics/slicer.profiles.md § «CI-гейт реальным импортом»).
+          CURA_VERSION="5.13.0"
+          CURA_URL="https://github.com/Ultimaker/Cura/releases/download/${CURA_VERSION}/UltiMaker-Cura-${CURA_VERSION}-linux-X64.AppImage"
+          CURA_SHA256="100f068127b2598167f00ba4db0e0699ded45adf97bbab2d22ff171a1e1ecc40"
+          curl -fL --retry 3 -o /tmp/cura.AppImage "$CURA_URL"
+          echo "${CURA_SHA256}  /tmp/cura.AppImage" | sha256sum -c -
+          chmod +x /tmp/cura.AppImage
+          (cd /tmp && ./cura.AppImage --appimage-extract >/dev/null && mv squashfs-root cura-appimage)
+          sed -i 's/^QT_QPA_PLATFORM=xcb$/QT_QPA_PLATFORM=offscreen/' /tmp/cura-appimage/AppRun.env
+          timeout 30 /tmp/cura-appimage/AppRun --help >/dev/null
+          echo "MESH_CURA_BIN=/tmp/cura-appimage/AppRun" >> "$GITHUB_ENV"
+      - name: Lint + тесты (${{ matrix.app }})
+        working-directory: apps/${{ matrix.app }}
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          uv sync
+          uv run python scripts/smoke_3mf.py
+          uv run ruff check .
+          uv run pytest
+          uv run pip-audit
+      - name: CI-гейт реальным импортом ≥50×3 связок (MF-1920, только mesh)
+        if: matrix.app == 'mesh'
+        working-directory: apps/mesh
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          uv run python scripts/slicer_ci_gate.py
+      - name: Разбудить Test при падении CI
+        if: failure()
+        env:
+          CI_FAIL_WEBHOOK_URL: ${{ secrets.CI_FAIL_WEBHOOK_URL }}
+        run: |
+          if [ -z "$CI_FAIL_WEBHOOK_URL" ]; then
+            echo "CI_FAIL_WEBHOOK_URL secret не задан — пропускаю уведомление" >&2
+            exit 0
+          fi
+          curl -sS -X POST -H "Content-Type: application/json" \
+            -d '{"event":"ci_failed","job":"python","app":"${{ matrix.app }}"}' \
+            "$CI_FAIL_WEBHOOK_URL" || true

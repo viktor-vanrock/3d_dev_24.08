@@ -1,0 +1,372 @@
+/* --- Шапка: часы слева, центр — нав, справа единая капсула-«островок» ---
+   Четыре режима оболочки (docs/design/header.capsule.md): `presentation` держит хром
+   главного экрана в границах `--content-max`; `full` разносит его к краям вьюпорта;
+   `back` оставляет только возврат; `mixed` совмещает возврат с полным хромом.
+   Закреплена (header-capsule.md § «Закреплено — что это значит технически», MF-851): весь
+   .homeTopbar — фикс-оверлей верхнего слоя в обоих режимах, не только нав-ряд. Единственная
+   реакция на скролл — уплотнение стекла через [data-scrolled] (атрибут ставит homeheader.tsx),
+   hide-on-scroll запрещён (nav.sections.md §1.1). */
+.homeTopbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: var(--z-header);
+  padding: max(16px, env(safe-area-inset-top)) clamp(16px, 5.6vw, 80px) 16px;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  transition:
+    background-color var(--dur-nav) var(--ease-out),
+    backdrop-filter var(--dur-nav) var(--ease-out);
+  /* Шапка вынесена из общего root-снапшота: капсула, часы и nav-pill получают собственные
+     shared-element переходы, а остальной хром мягко проявляется без повторного layout-скачка. */
+  view-transition-name: site-header;
+}
+
+.homeTopbar:is([data-shell="full"], [data-shell="mixed"]) {
+  padding-left: clamp(16px, 4vw, 48px);
+  padding-right: clamp(16px, 4vw, 48px);
+}
+
+.homeTopbar[data-scrolled] {
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+::view-transition-group(site-header) {
+  animation-duration: var(--dur-nav);
+  animation-timing-function: var(--ease-out);
+}
+
+/* Баг MF-1910 (оператор 2026-07-18, «два шрифта накладываются друг на друга, тонкий
+   невыбранной и жирный когда выбрал»): .uiSegmentToggleFill (nav-pill) вложена внутри
+   site-header и несёт СВОЙ отдельный view-transition-name — по спеке она «вынимается»
+   из плоского снапшота site-header, оставляя в его old/new-изображениях прозрачную дыру
+   ровно на месте активного таба. Без анимации (animation: none выше) старое изображение
+   по умолчанию остаётся at opacity:1 — сплошным, НЕ гаснет — и лежит ПОД новым в той же
+   view-transition-group. Новое изображение тоже opacity:1, но с дырой на месте активного
+   таба — сквозь эту дыру просвечивал старый (добольшой) кадр шапки, то есть старый
+   тонкий текст прежнего активного таба поверх уже обновлённого жирного текста под ним.
+   Раньше контраст 400↔600 был неброским, стало 500↔600/700 — дыра стала заметна. Поэтому
+   old по-прежнему гасим сразу, а анимируем только новый слой шапки. */
+::view-transition-old(site-header) {
+  animation: none;
+  opacity: 0;
+}
+
+::view-transition-new(site-header) {
+  animation: none;
+  opacity: 1;
+}
+
+/* Не все экраны носят локальный page-content (лента, профиль и вложенные мастера имеют
+   разные корни). Root-переход даёт им общий спокойный ритм: старый экран быстро уступает,
+   новый проявляется на 40ms позже и на 8px по направлению навигации. Именованные элементы
+   шапки выше вынуты из root и не участвуют в этом сдвиге. */
+::view-transition-old(root) {
+  animation: shellPageOut 160ms var(--ease-out) both;
+}
+
+::view-transition-new(root) {
+  animation: shellPageIn 260ms var(--ease-out) 40ms both;
+}
+
+@keyframes shellPageOut {
+  to {
+    opacity: 0;
+    transform: translateX(calc(-8px * var(--nav-dir-sign)));
+  }
+}
+
+@keyframes shellPageIn {
+  from {
+    opacity: 0;
+    transform: translateX(calc(8px * var(--nav-dir-sign)));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Fallback для браузеров без document.startViewTransition: меняется только payload.
+   Постоянная шапка намеренно не получает animation/transform — именно они давали видимый
+   двухпиксельный скачок нав-пилюли, поиска и Canvas персонажа на каждом route. */
+:root[data-nav-fallback] .appShell > .home > main,
+:root[data-nav-fallback] .appShell > main {
+  animation: fallbackRouteIn 260ms var(--ease-out) both;
+}
+
+@keyframes fallbackRouteIn {
+  from {
+    opacity: 0.76;
+    transform: translateX(calc(8px * var(--nav-dir-sign)));
+    filter: blur(2px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+
+/* Якорь центра — грид, не флекс: центр-колонка всегда держит нав, крайние — часы
+   слева/капсула справа. `presentation` ограничен `--content-max`; `full` и `mixed`
+   используют ширину вьюпорта. */
+.homeTopbarInner {
+  position: relative;
+  display: grid;
+  /* minmax(0, 1fr) не даёт min-content ширине бокового кластера раздвинуть
+     фиксированный shell за viewport на tablet; центр остаётся auto-якорем. */
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  box-sizing: border-box;
+  padding-inline: 62px;
+  max-width: var(--content-max);
+  margin: 0 auto;
+}
+
+/* Стрелка возврата не участвует в grid: левый/правый reserve всегда одинаковы,
+   поэтому часы, табы и капсула не прыгают между экраном с возвратом и без него. */
+.homeTopbarBack {
+  position: absolute;
+  inset-inline-start: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
+}
+
+.homeTopbarInner > .homeTopbarEdge {
+  min-width: 0;
+}
+.homeTopbar:is([data-shell="full"], [data-shell="mixed"]) .homeTopbarInner {
+  max-width: none;
+}
+/* В `mixed` широкий текст возврата получает симметричный резерв с обеих сторон:
+   часы не наезжают на кнопку, а центральная навигация остаётся ровно по центру вьюпорта. */
+.homeTopbar[data-shell="mixed"] .homeTopbarInner[data-back-wide] {
+  padding-inline: clamp(138px, 13vw, 188px);
+}
+
+.homeTopbarBackLabel {
+  font-size: 14px;
+}
+
+/* `back` (header.capsule.md § «Четыре режима оболочки», motion.md §10.1): часы, нав-пилюля
+   и капсула схлопываются на месте (opacity→0 + scaleY(0.9)), не «едут» и не пропадают
+   мгновенно — тот же `--dur-nav`/`--ease-out`, что и остальной motion.md. Стрелка назад не
+   участвует — она уже на своём месте и в mixed, и в back. Transition висит на прямых детях
+   `.homeTopbarInner` постоянно (не только под [data-collapsed]) — иначе разворачивание
+   назад в full/presentation/mixed срабатывает мгновенно, без анимации (переход некуда «прицепиться»,
+   если правило transition исчезает вместе с атрибутом). */
+.homeTopbarInner > .homeTopbarEdge,
+.homeTopbarInner > .homeTopbarNavSlot {
+  transition:
+    opacity var(--dur-nav) var(--ease-out),
+    transform var(--dur-nav) var(--ease-out);
+  transform-origin: top center;
+}
+
+.homeTopbarInner > [data-collapsed] {
+  opacity: 0;
+  transform: scaleY(0.9);
+  pointer-events: none;
+}
+
+/* Финальная лёгкая разметка `back` (после схлопывания, часы/нав/капсула размонтированы) —
+   только стрелка назад, без грид-раскладки трёх колонок. */
+.homeTopbarInner--back {
+  display: flex;
+  align-items: center;
+  min-height: 52px;
+  max-width: var(--content-max);
+  margin: 0 auto;
+}
+
+.homeTopbarEdge {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.homeTopbarEdge--left {
+  justify-content: flex-start;
+}
+
+.homeTopbarEdge--right {
+  justify-content: flex-end;
+}
+
+/* Хедерные табы визуально компактнее каталожных segment controls, но сохраняют
+   44px полный target на desktop; на TV правило выше поднимает его до 64px. */
+.homeSectionTabs.uiSegmentToggle {
+  position: relative;
+  top: 1px;
+  padding: 3px;
+}
+
+.homeSectionTabs .uiSegmentToggleFill {
+  top: 3px;
+  bottom: 3px;
+}
+
+.homeSectionTabs .uiSegmentToggleOption {
+  min-height: 38px;
+  padding-inline: 16px;
+  line-height: 1;
+  transition:
+    color var(--dur-toggle) var(--ease-out),
+    background-color var(--dur-toggle) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .homeSectionTabs .uiSegmentToggleOption:not([data-selected]):hover {
+    background: color-mix(in srgb, var(--text) 8%, transparent);
+    color: var(--text);
+  }
+}
+
+.homeSectionTabs .uiSegmentToggleOption:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* На tablet однострочная раскладка физически не вмещает одновременно часы,
+   четыре таба и полную capsule с 40px touch-targets: правый edge-кластер
+   переполняет свою 1fr-track и заходит на навигацию. Два ряда сохраняют
+   центральный якорь табов и полный набор controls, не ужимая интерактивы. */
+@media (min-width: 641px) and (max-width: 1024px) {
+  html:root {
+    --header-safe: 136px;
+  }
+
+  .homeTopbarInner {
+    grid-template-rows: 62px 50px;
+    row-gap: 0;
+    min-height: 104px;
+  }
+
+  .homeTopbarInner > .homeTopbarEdge--left {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .homeTopbarInner > .homeSectionTabs {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: center;
+  }
+
+  .homeTopbarInner > .homeTopbarEdge--right {
+    grid-column: 3;
+    grid-row: 1;
+  }
+}
+
+/* Bottom-tab перехватывает навигацию на ≤640px (touch.nav.md §1) — одна навигация на экран,
+   пилюля в шапке (оба режима — light/wide) на этой ширине прячется. */
+@media (max-width: 640px) {
+  .homeSectionTabs {
+    display: none;
+  }
+
+  /* MF-1725 (mobile overlap): без табов средняя колонка пуста, поэтому крайним
+     трекам больше не нужен симметричный 1fr, поделённый поровну — свёрнутая
+     капсула (грип+аватар, ~228px) шире часов и не помещается в свою половину,
+     заезжая на часы. max-content отдаёт каждому краю его фактическую ширину,
+     остаток забирает средний 1fr (как gap между часами и капсулой); padding-inline
+     обнуляем — свой отступ от края вьюпорта уже даёт .homeTopbar (clamp ≥16px). */
+  .homeTopbarInner {
+    grid-template-columns: minmax(0, max-content) 1fr minmax(0, max-content);
+    padding-inline: 0;
+  }
+
+  /* После display:none центральный таб больше не занимает grid-ячейку. Явно
+     держим капсулу в правом edge, чтобы она не оказывалась по центру и не
+     перекрывала часы на 390px. */
+  .homeTopbarInner > .homeTopbarEdge--right {
+    grid-column: 3;
+  }
+
+  /* MF-1880 (mobile back-button overlap): .homeTopbarBack не участвует в grid и стоит
+     в зарезервированном паддинг-гаттере (см. комментарий у .homeTopbarBack выше) — но
+     обнулённый здесь padding-inline (правка MF-1725 выше) убрал и левый гаттер, из-за
+     чего стрелка возврата и часы рисовались в одной точке на страницах с onBack
+     (`/project/<id>`). Возвращаем только левый reserve, тем же числом, что и базовое
+     правило (48px кнопка + 14px gap, см. .homeTopbarEdge) — страниц без стрелки это
+     не касается (data-has-back ставит homeheader.tsx только когда есть onBack).
+     Правый край не трогаем: там резерв уже даёт max-content-колонка. */
+  .homeTopbarInner[data-has-back] {
+    padding-inline-start: 62px;
+  }
+
+  .homeTopbarBackLabel {
+    display: none;
+  }
+}
+
+/* Переход Дом⇄Проекты (motion.md §2): пилюля — см. .homeSectionTabs .uiSegmentToggleFill в
+   ui.css (тот же view-transition-name «nav-pill», рядом с реальным DOM-узлом заливки). Здесь —
+   контент раздела: кросс-фейд + сдвиг 12px по направлению навигации, стартует на 40ms позже
+   пилюли (лидер/ведомый, см. navigateWithTransition в router.ts, который пишет data-nav-dir
+   на :root ДО снапшота, — направление знает App по порядку NAV_ITEMS). */
+::view-transition-old(page-content),
+::view-transition-new(page-content) {
+  animation-duration: var(--dur-nav);
+  animation-delay: 40ms;
+  animation-timing-function: var(--ease-out);
+}
+
+::view-transition-old(page-content) {
+  animation-name: homeNavContentOut;
+}
+
+::view-transition-new(page-content) {
+  animation-name: homeNavContentIn;
+}
+
+:root {
+  --nav-dir-sign: 1;
+}
+
+:root[data-nav-dir="back"] {
+  --nav-dir-sign: -1;
+}
+
+@keyframes homeNavContentOut {
+  to {
+    opacity: 0;
+    transform: translateX(calc(-12px * var(--nav-dir-sign)));
+  }
+}
+
+@keyframes homeNavContentIn {
+  from {
+    opacity: 0;
+    transform: translateX(calc(12px * var(--nav-dir-sign)));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-nav-fallback] .appShell > .home > main,
+  :root[data-nav-fallback] .appShell > main,
+  ::view-transition-group(site-header),
+  ::view-transition-old(site-header),
+  ::view-transition-new(site-header),
+  ::view-transition-old(root),
+  ::view-transition-new(root),
+  ::view-transition-old(page-content),
+  ::view-transition-new(page-content) {
+    animation-duration: 1ms;
+    animation-delay: 0ms;
+  }
+}

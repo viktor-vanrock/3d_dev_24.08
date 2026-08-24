@@ -1,0 +1,125 @@
+#!/usr/bin/env bash
+# Эфемерная PostgreSQL-база для миграций и интеграционных тестов на dev VDS.
+# Рабочая portal_dev используется только как источник pg_dump для --from.
+set -euo pipefail
+
+die() { echo "sandbox-db: $*" >&2; exit 1; }
+guard_name() {
+  [[ "$1" =~ ^sbx_[a-z0-9_]{1,40}$ ]] ||
+    die "имя должно соответствовать sbx_<a-z0-9_> (до 44 символов)"
+}
+guard_source() {
+  [[ "$1" =~ ^[a-z][a-z0-9_]{0,62}$ ]] ||
+    die "недопустимое имя source DB"
+}
+
+find_container() {
+  local candidate project service
+  if [[ -n "${SANDBOX_DB_CONTAINER:-}" ]]; then
+    docker inspect -f '{{.State.Running}}' "$SANDBOX_DB_CONTAINER" 2>/dev/null |
+      grep -qx true || die "контейнер $SANDBOX_DB_CONTAINER не запущен"
+    printf '%s\n' "$SANDBOX_DB_CONTAINER"
+    return
+  fi
+  for candidate in portalru-postgres-1 portalru-dev-shared-postgres-1; do
+    if docker inspect -f '{{.State.Running}}' "$candidate" 2>/dev/null |
+       grep -qx true; then
+      printf '%s\n' "$candidate"
+      return
+    fi
+  done
+  while IFS= read -r candidate; do
+    project="$(docker inspect -f '{{index .Config.Labels "com.docker.compose.project"}}' "$candidate" 2>/dev/null || true)"
+    service="$(docker inspect -f '{{index .Config.Labels "com.docker.compose.service"}}' "$candidate" 2>/dev/null || true)"
+    if [[ "$project" == "portalru" && "$service" == "postgres" ]]; then
+      printf '%s\n' "$candidate"
+      return
+    fi
+  done < <(docker ps --format '{{.Names}}')
+  die "dev Postgres не найден; задай SANDBOX_DB_CONTAINER"
+}
+
+PGC="$(find_container)"
+SUPER="${SANDBOX_DB_ROLE:-portal_dev}"
+
+db_exists() {
+  docker exec "$PGC" psql -U "$SUPER" -d postgres -tAc     "select 1 from pg_database where datname='$1'" | grep -qx 1
+}
+drop_db() {
+  docker exec "$PGC" psql -v ON_ERROR_STOP=1 -U "$SUPER" -d postgres     -c "DROP DATABASE IF EXISTS $1 WITH (FORCE);"
+}
+dsn() {
+  local name="$1" raw base query prefix
+  guard_name "$name"
+  raw="${DEV_DB:-}"
+  if [[ -z "$raw" ]]; then
+    raw="$(sed -nE 's#^DATABASE_URL=(postgres://.*)#\1#p' "$HOME/portal.api-dev.env" 2>/dev/null | head -1)"
+  fi
+  [[ -n "$raw" ]] || die "DEV_DB и DATABASE_URL в ~/portal.api-dev.env отсутствуют"
+  base="${raw%%\?*}"
+  query="${raw#"$base"}"
+  prefix="${base%/*}"
+  printf '%s/%s%s\n' "$prefix" "$name" "$query"
+}
+
+usage() {
+  echo "usage: sandbox-db create <sbx_name> [--from portal_dev] | list | psql <sbx_name> | dsn <sbx_name> | drop <sbx_name> | container"
+}
+
+cmd="${1:-}"
+[[ -n "$cmd" ]] || { usage; exit 1; }
+shift
+case "$cmd" in
+  create)
+    [[ $# -ge 1 ]] || die "create требует имя"
+    name="$1"; guard_name "$name"; shift
+    source_db=""
+    if [[ $# -gt 0 ]]; then
+      [[ "$1" == "--from" && $# -eq 2 ]] || die "ожидалось --from <source_db>"
+      source_db="$2"; guard_source "$source_db"
+    fi
+    ! db_exists "$name" || die "база $name уже существует"
+    docker exec "$PGC" psql -v ON_ERROR_STOP=1 -U "$SUPER" -d postgres       -c "CREATE DATABASE $name;"
+    if [[ -n "$source_db" ]]; then
+      db_exists "$source_db" || { drop_db "$name" >/dev/null; die "source DB $source_db не существует"; }
+      echo "sandbox-db: копирую $source_db → $name"
+      if ! docker exec "$PGC" pg_dump -U "$SUPER" --no-owner --no-privileges -d "$source_db" |
+           docker exec -i "$PGC" psql -v ON_ERROR_STOP=1 -q -U "$SUPER" -d "$name"; then
+        drop_db "$name" >/dev/null || true
+        die "копирование провалилось; недосозданная база удалена"
+      fi
+    fi
+    echo "sandbox-db: $name готова в $PGC"
+    echo 'для теста: DATABASE_URL="$(sandbox-db dsn '"$name"')" <команда>'
+    ;;
+  list)
+    docker exec "$PGC" psql -U "$SUPER" -d postgres -tAc       "select datname from pg_database where datname like 'sbx_%' order by datname"
+    ;;
+  psql)
+    [[ $# -eq 1 ]] || die "psql требует имя"
+    name="$1"; guard_name "$name"; db_exists "$name" || die "база $name не существует"
+    if [[ -t 0 && -t 1 ]]; then
+      exec docker exec -it "$PGC" psql -U "$SUPER" -d "$name"
+    else
+      exec docker exec -i "$PGC" psql -U "$SUPER" -d "$name"
+    fi
+    ;;
+  dsn)
+    [[ $# -eq 1 ]] || die "dsn требует имя"
+    db_exists "$1" || die "база $1 не существует"
+    dsn "$1"
+    ;;
+  drop)
+    [[ $# -eq 1 ]] || die "drop требует имя"
+    name="$1"; guard_name "$name"
+    drop_db "$name"
+    echo "sandbox-db: $name удалена"
+    ;;
+  container)
+    echo "$PGC"
+    ;;
+  *)
+    usage
+    exit 1
+    ;;
+esac

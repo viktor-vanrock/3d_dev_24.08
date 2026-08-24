@@ -1,0 +1,10 @@
+{
+  "extends": "@portal/config/tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "WebWorker"],
+    "types": ["vite/client"],
+    "noEmit": true,
+    "allowImportingTsExtensions": true
+  },
+  "include": ["src/sw.ts"]
+}

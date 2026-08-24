@@ -1,0 +1,24 @@
+{
+  "contract_version": "slice-trust.v1",
+  "stock_agent": {
+    "source": "agent",
+    "state": "stock",
+    "stock_input": {
+      "firmware_family": " Klipper ",
+      "stock_profile_id": " CREALITY/ENDER-3-V3-KE/0.4 ",
+      "nozzle_diameter_um": 400,
+      "printer_model_id": " ENDER-3-V3-KE ",
+      "build_volume_mm": { "z": 240, "x": 220, "y": 220 },
+      "kinematics": " Cartesian ",
+      "firmware_revision": "v0.12.0"
+    },
+    "canonical_json": "{\"build_volume_mm\":{\"x\":220,\"y\":220,\"z\":240},\"firmware_family\":\"klipper\",\"firmware_revision\":\"v0.12.0\",\"kinematics\":\"cartesian\",\"nozzle_diameter_um\":400,\"printer_model_id\":\"ender-3-v3-ke\",\"stock_profile_id\":\"creality/ender-3-v3-ke/0.4\"}",
+    "fingerprint": "b4f62fa5e32a92358fcac6f0f922f15140892ffa156742b63a97471d0efcc63b"
+  },
+  "slice_material": {
+    "account_id": "account-7",
+    "device_id": "device-9",
+    "profile_id": "profile-0.20-pla",
+    "slice_key": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+  }
+}

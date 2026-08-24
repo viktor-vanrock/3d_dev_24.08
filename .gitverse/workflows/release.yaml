@@ -1,0 +1,111 @@
+# Версионирование — см. versioning.md.
+#   push в dev (общий рабочий ствол, CONTRIBUTING.md § «Модель веток»)
+#                           → минорный бамп (MINOR+1) + тег, коммит [skip ci] прямо в dev.
+#   workflow_dispatch       → ручной запуск на выбранном ref: bump (то же самое) или
+#                             release (RELEASE+1, MINOR=1) — при нарезке релиза обычно
+#                             дискатчится на main (runbook — versioning.md § «Кто режет»).
+#
+# ВАЖНО (не очевидно): job "version" коммитит version.json обратно в ту же ветку, что его
+# запустила (push-ref / workflow_dispatch ref). Без защиты это даёт бесконечный цикл
+# push→workflow→push→workflow. Защита — двойная: коммит помечается [skip ci], и job
+# дополнительно сам себя не запускает, если последний коммит уже содержит [skip ci].
+#
+# ИСТОРИЯ (MF-1792, 2026-07-17): раньше триггерился на push в main. После перехода на модель
+# двух веток (CONTRIBUTING.md, 2026-07-08) реальная непрерывная интеграция идёт в dev — push
+# в main стал редким ручным промоушеном (право Lead/директоров), и бамп молчал 6 дней/668
+# коммитов, пока это не всплыло враньём версии в футере (version.json читается на сборке в
+# apps/web/src/footer/footer.tsx). Перенесено на push в dev — там и происходит реальный «шип»
+# (dev.3mf.tech передеплоивается на каждый push, CONTRIBUTING.md). Job больше не синкает
+# main↔dev (job sync-dev удалён) — раньше он возвращал версию-коммит из main обратно в dev;
+# теперь коммит сразу идёт в dev, синкать нечего. main этот workflow не трогает вообще —
+# промоушен dev→main остаётся ручным процессом Lead/директоров как и был.
+#
+# dev очень активен (параллельные агенты, много push/час) — push версии-коммита может
+# столкнуться с конкурентным push в dev между checkout и push. Шаг «бампнуть+закоммитить+
+# запушить» — единая ретрай-петля: на отказ push перечитывает свежий dev и бампит заново
+# (не старое число + 1 вслепую), до 5 попыток.
+#
+# ИСТОРИЯ (MF-908, 2026-07-18): `## [Unreleased]` в changelog.md протухал между релизами
+# (128→322 миноров без наполнения) — ручное «Git держит секцию тёплой» (versioning.md) не
+# исполнялось несколько проходов подряд. Вместо повторного обещания — `changelog-unreleased.mjs`
+# теперь запускается тем же шагом, что и version bump, и подсыпает feat/fix/perf/refactor
+# коммиты этого push'а в `[Unreleased]` тем же `chore(release)`-коммитом (не отдельным —
+# отдельный push пересёкся бы с [skip ci]-защитой и мог зациклить workflow). Скрипт
+# идемпотентен (дедуп по тексту пункта/MF-ссылке) — безопасно перезапускать в ретрай-петле.
+#
+# Допущения, требующие проверки на первом реальном релизе (см. ci.yaml — тот же класс риска):
+#   permissions.contents=write, gitverse.event.head_commit.message, gitverse.ref_name —
+#   по аналогии с GitHub Actions, не подтверждено доками GitVerse напрямую.
+
+name: Release
+
+on:
+  push:
+    branches: [dev]
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "bump (минор) или release (новый релиз)"
+        required: true
+        default: bump
+        type: choice
+        options: [bump, release]
+
+permissions:
+  contents: write
+
+jobs:
+  version:
+    if: |
+      gitverse.event_name == 'workflow_dispatch' ||
+      (gitverse.event_name == 'push' && !contains(gitverse.event.head_commit.message, '[skip ci]'))
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.bump.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Установить Node
+        run: |
+          curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+          apt-get install -y nodejs
+      - name: Бампнуть, закоммитить и запушить (ретрай на конкурентный push в dev)
+        id: bump
+        run: |
+          set -euo pipefail
+          ACTION="${{ gitverse.event.inputs.action }}"
+          if [ -z "$ACTION" ]; then ACTION="bump"; fi
+          REF="${{ gitverse.ref_name }}"
+          if [ -z "$REF" ]; then REF="dev"; fi
+          git config user.name "gitverse-actions"
+          git config user.email "actions@3mf.tech"
+          for i in 1 2 3 4 5; do
+            git fetch origin "$REF"
+            git checkout -B "$REF" "origin/$REF"
+            VERSION=$(node scripts/version.mjs "$ACTION")
+            node scripts/changelog-unreleased.mjs || true
+            git add version.json changelog.md
+            git commit -m "chore(release): v$VERSION [skip ci]"
+            if git push origin "HEAD:$REF"; then
+              git tag "v$VERSION"
+              git push origin "v$VERSION"
+              exit 0
+            fi
+            echo "push в $REF отклонён (конкурентный коммит) — повтор $i/5" >&2
+          done
+          echo "::error::не удалось запушить version bump в $REF после 5 попыток"
+          exit 1
+
+  deploy-staging:
+    needs: version
+    if: gitverse.event_name == 'push'
+    # Раннер с меткой [deploy] сейчас не зарегистрирован — job не исполняется.
+    # git checkout/fetch --tags удалены (MF-545): ~/portal.ru принадлежит только
+    # portal.deploy.timer, CD-заглушки не должны его трогать.
+    # Реальный staging-деплой добавить, когда появится staging-среда.
+    runs-on: [self-hosted, deploy]
+    steps:
+      - name: Заглушка staging-деплоя (нет staging-контура, MF-545)
+        run: |
+          echo "no-op: staging deploy not yet implemented"

@@ -1,0 +1,12 @@
+[Unit]
+Description=Run safe Multica workspace GC hourly
+
+[Timer]
+OnBootSec=20min
+OnUnitActiveSec=1h
+RandomizedDelaySec=10min
+Persistent=true
+Unit=multica-workspace-gc.service
+
+[Install]
+WantedBy=timers.target

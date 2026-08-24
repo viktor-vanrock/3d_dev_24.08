@@ -1,0 +1,429 @@
+{
+  "accepted_pipeline": {
+    "schema_version": "feed-news-pipeline.v2",
+    "pipeline_run_id": "pipeline-run-accepted-001",
+    "research": {
+      "schema_version": "news-research-findings.v2",
+      "artifact_id": "research-artifact-001",
+      "candidate": {
+        "schema_version": "news-candidate.v1",
+        "candidate_id": "candidate-v2-001",
+        "title": "Maker One firmware 2.2 raises supported speed",
+        "summary": "The official release and an independent benchmark document the speed increase.",
+        "source_records": [
+          {
+            "source_id": "source-release-22",
+            "canonical_url": "https://maker.example/news/firmware-2-2",
+            "title": "Maker One firmware 2.2",
+            "publisher": "Maker Example",
+            "published_at": "2026-07-21T08:00:00Z",
+            "retrieved_at": "2026-07-22T12:00:00Z",
+            "content_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_id": "source-benchmark-22",
+            "canonical_url": "https://lab.example/maker-one-2-2",
+            "title": "Maker One 2.2 benchmark",
+            "publisher": "Independent Print Lab",
+            "published_at": "2026-07-21T12:00:00Z",
+            "retrieved_at": "2026-07-22T12:01:00Z",
+            "content_hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "claims": [
+          {
+            "claim_id": "claim-speed-22",
+            "text": "Firmware 2.2 raises the supported print speed from 300 to 500 mm/s.",
+            "source_ids": ["source-release-22", "source-benchmark-22"]
+          }
+        ],
+        "semantic_labels": [
+          {
+            "label": "firmware_release",
+            "confidence": 0.98,
+            "evidence": {
+              "claim_ids": ["claim-speed-22"],
+              "source_ids": ["source-release-22", "source-benchmark-22"]
+            },
+            "model": {
+              "provider": "local",
+              "model": "qwen3-research",
+              "model_version": "2026-07-20"
+            },
+            "run_id": "research-run-001"
+          }
+        ],
+        "community_subject_hint": {
+          "subject_type": "machine",
+          "subject_id": "machine-maker-one",
+          "subject_slug": "maker-one",
+          "display_name": "Maker One",
+          "confidence": 0.99,
+          "evidence_claim_ids": ["claim-speed-22"]
+        },
+        "provenance": {
+          "provider": "local",
+          "model": "qwen3-research",
+          "model_version": "2026-07-20",
+          "prompt_version": "feed-news-research.v4",
+          "research_run_id": "research-run-001",
+          "normalization_run_id": null,
+          "generated_at": "2026-07-22T12:03:00Z"
+        },
+        "dedup_signals": {
+          "canonical_url_hashes": ["sha256:url-release-22", "sha256:url-benchmark-22"],
+          "content_hashes": [
+            "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          ],
+          "title_fingerprint": "maker one firmware 2 2 raises supported speed",
+          "semantic_fingerprint": "sha256:semantic-maker-one-22",
+          "exact_match": null,
+          "near_matches": []
+        }
+      },
+      "findings": [
+        {
+          "finding_id": "finding-speed-001",
+          "kind": "fact",
+          "text": "Both the official release and independent benchmark support the 500 mm/s figure.",
+          "confidence": 0.97,
+          "evidence": {
+            "claim_ids": ["claim-speed-22"],
+            "source_ids": ["source-release-22", "source-benchmark-22"]
+          }
+        }
+      ],
+      "run": {
+        "schema_version": "news-role-run.v2",
+        "role": "local_researcher",
+        "run_id": "research-run-001",
+        "executor": {
+          "kind": "model",
+          "locality": "local_gpu",
+          "identity": {
+            "provider": "local",
+            "model": "qwen3-research",
+            "model_version": "2026-07-20"
+          }
+        },
+        "prompt_version": "feed-news-research.v4",
+        "started_at": "2026-07-22T12:00:00Z",
+        "completed_at": "2026-07-22T12:03:00Z",
+        "input_artifact_ids": [],
+        "output_artifact_id": "research-artifact-001"
+      }
+    },
+    "composition": {
+      "schema_version": "news-composition.v2",
+      "artifact_id": "composition-artifact-001",
+      "research_artifact_id": "research-artifact-001",
+      "draft": {
+        "schema_version": "normalized-news.v1",
+        "normalized_news_id": "normalized-v2-001",
+        "candidate_id": "candidate-v2-001",
+        "title": "Maker One ускорился до 500 мм/с с прошивкой 2.2",
+        "dek": "Заявление производителя подтверждает независимый тест.",
+        "body_markdown": "## Что изменилось\n\nПрошивка 2.2 повышает поддерживаемую скорость Maker One с 300 до 500 мм/с.",
+        "body_ast": [
+          {
+            "type": "markdown",
+            "markdown": "## Что изменилось\n\nПрошивка 2.2 повышает поддерживаемую скорость Maker One с 300 до 500 мм/с."
+          }
+        ],
+        "blocks": [],
+        "source_records": [
+          {
+            "source_id": "source-release-22",
+            "canonical_url": "https://maker.example/news/firmware-2-2",
+            "title": "Maker One firmware 2.2",
+            "publisher": "Maker Example",
+            "published_at": "2026-07-21T08:00:00Z",
+            "retrieved_at": "2026-07-22T12:00:00Z",
+            "content_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_id": "source-benchmark-22",
+            "canonical_url": "https://lab.example/maker-one-2-2",
+            "title": "Maker One 2.2 benchmark",
+            "publisher": "Independent Print Lab",
+            "published_at": "2026-07-21T12:00:00Z",
+            "retrieved_at": "2026-07-22T12:01:00Z",
+            "content_hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "claims": [
+          {
+            "claim_id": "claim-speed-22",
+            "text": "Firmware 2.2 raises the supported print speed from 300 to 500 mm/s.",
+            "source_ids": ["source-release-22", "source-benchmark-22"]
+          }
+        ],
+        "semantic_labels": [
+          {
+            "label": "firmware_release",
+            "confidence": 0.98,
+            "evidence": {
+              "claim_ids": ["claim-speed-22"],
+              "source_ids": ["source-release-22", "source-benchmark-22"]
+            },
+            "model": {
+              "provider": "local",
+              "model": "qwen3-research",
+              "model_version": "2026-07-20"
+            },
+            "run_id": "research-run-001"
+          }
+        ],
+        "community_subject_hint": {
+          "subject_type": "machine",
+          "subject_id": "machine-maker-one",
+          "subject_slug": "maker-one",
+          "display_name": "Maker One",
+          "confidence": 0.99,
+          "evidence_claim_ids": ["claim-speed-22"]
+        },
+        "provenance": {
+          "provider": "local",
+          "model": "qwen3-composer",
+          "model_version": "2026-07-20",
+          "prompt_version": "feed-news-compose.v1",
+          "research_run_id": "research-run-001",
+          "normalization_run_id": "compose-run-001",
+          "generated_at": "2026-07-22T12:06:00Z"
+        },
+        "dedup_signals": {
+          "canonical_url_hashes": ["sha256:url-release-22", "sha256:url-benchmark-22"],
+          "content_hashes": [
+            "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          ],
+          "title_fingerprint": "maker one firmware 2 2 raises supported speed",
+          "semantic_fingerprint": "sha256:semantic-maker-one-22",
+          "exact_match": null,
+          "near_matches": []
+        }
+      },
+      "used_finding_ids": ["finding-speed-001"],
+      "run": {
+        "schema_version": "news-role-run.v2",
+        "role": "local_composer",
+        "run_id": "compose-run-001",
+        "executor": {
+          "kind": "model",
+          "locality": "local_gpu",
+          "identity": {
+            "provider": "local",
+            "model": "qwen3-composer",
+            "model_version": "2026-07-20"
+          }
+        },
+        "prompt_version": "feed-news-compose.v1",
+        "started_at": "2026-07-22T12:03:30Z",
+        "completed_at": "2026-07-22T12:06:00Z",
+        "input_artifact_ids": ["research-artifact-001"],
+        "output_artifact_id": "composition-artifact-001"
+      }
+    },
+    "moderation": {
+      "schema_version": "news-moderation.v2",
+      "artifact_id": "moderation-accept-001",
+      "composition_artifact_id": "composition-artifact-001",
+      "decision": "accept",
+      "rationale": "The publishable draft stays within the supported evidence.",
+      "issues": [],
+      "api_feedback": [
+        {
+          "feedback_id": "api-feedback-001",
+          "surface": "moderation_audit",
+          "summary": "Expose evidence coverage in moderation audit views.",
+          "rationale": "Reviewers could verify claim coverage without reopening the source bundle.",
+          "evidence": {
+            "claim_ids": ["claim-speed-22"],
+            "source_ids": ["source-release-22", "source-benchmark-22"]
+          },
+          "disposition": "advisory_only",
+          "automatic_change_allowed": false
+        }
+      ],
+      "run": {
+        "schema_version": "news-role-run.v2",
+        "role": "grok_moderator",
+        "run_id": "moderation-run-accept-001",
+        "executor": {
+          "kind": "model",
+          "locality": "remote_api",
+          "model_family": "grok",
+          "identity": {
+            "provider": "xai",
+            "model": "grok-4.5",
+            "model_version": "2026-07"
+          }
+        },
+        "prompt_version": "feed-news-moderate.v1",
+        "started_at": "2026-07-22T12:06:30Z",
+        "completed_at": "2026-07-22T12:07:00Z",
+        "input_artifact_ids": ["composition-artifact-001"],
+        "output_artifact_id": "moderation-accept-001"
+      }
+    },
+    "publication": {
+      "schema_version": "news-publication.v2",
+      "artifact_id": "publication-accepted-001",
+      "composition_artifact_id": "composition-artifact-001",
+      "moderation_artifact_id": "moderation-accept-001",
+      "action": "publish",
+      "reason_code": "moderation_accepted",
+      "draft_id": "feed-draft-001",
+      "feed_post_id": "feed-post-001",
+      "idempotency_key": "feed-news:candidate-v2-001:moderation-accept-001",
+      "run": {
+        "schema_version": "news-role-run.v2",
+        "role": "deterministic_publisher",
+        "run_id": "publication-run-001",
+        "executor": {
+          "kind": "deterministic_host",
+          "component": "feed-news-publisher",
+          "component_version": "2.0.0"
+        },
+        "prompt_version": null,
+        "started_at": "2026-07-22T12:07:05Z",
+        "completed_at": "2026-07-22T12:07:06Z",
+        "input_artifact_ids": ["composition-artifact-001", "moderation-accept-001"],
+        "output_artifact_id": "publication-accepted-001"
+      }
+    }
+  },
+  "revision_moderation": {
+    "schema_version": "news-moderation.v2",
+    "artifact_id": "moderation-revise-001",
+    "composition_artifact_id": "composition-artifact-001",
+    "decision": "revise",
+    "rationale": "The headline must distinguish supported speed from measured sustained speed.",
+    "issues": [
+      {
+        "issue_id": "moderation-issue-revise-001",
+        "code": "editorial_quality",
+        "message": "Qualify the 500 mm/s value as a supported maximum.",
+        "evidence": {
+          "claim_ids": ["claim-speed-22"],
+          "source_ids": ["source-release-22", "source-benchmark-22"]
+        },
+        "locations": [{ "kind": "markdown_section", "heading": "Что изменилось" }]
+      }
+    ],
+    "api_feedback": [],
+    "run": {
+      "schema_version": "news-role-run.v2",
+      "role": "grok_moderator",
+      "run_id": "moderation-run-revise-001",
+      "executor": {
+        "kind": "model",
+        "locality": "remote_api",
+        "model_family": "grok",
+        "identity": {
+          "provider": "xai",
+          "model": "grok-4.5",
+          "model_version": "2026-07"
+        }
+      },
+      "prompt_version": "feed-news-moderate.v1",
+      "started_at": "2026-07-22T12:06:30Z",
+      "completed_at": "2026-07-22T12:07:00Z",
+      "input_artifact_ids": ["composition-artifact-001"],
+      "output_artifact_id": "moderation-revise-001"
+    }
+  },
+  "revision_publication": {
+    "schema_version": "news-publication.v2",
+    "artifact_id": "publication-revise-001",
+    "composition_artifact_id": "composition-artifact-001",
+    "moderation_artifact_id": "moderation-revise-001",
+    "action": "withhold",
+    "reason_code": "moderation_revise",
+    "draft_id": "feed-draft-001",
+    "feed_post_id": null,
+    "idempotency_key": "feed-news:candidate-v2-001:moderation-revise-001",
+    "run": {
+      "schema_version": "news-role-run.v2",
+      "role": "deterministic_publisher",
+      "run_id": "publication-run-revise-001",
+      "executor": {
+        "kind": "deterministic_host",
+        "component": "feed-news-publisher",
+        "component_version": "2.0.0"
+      },
+      "prompt_version": null,
+      "started_at": "2026-07-22T12:07:05Z",
+      "completed_at": "2026-07-22T12:07:06Z",
+      "input_artifact_ids": ["composition-artifact-001", "moderation-revise-001"],
+      "output_artifact_id": "publication-revise-001"
+    }
+  },
+  "reject_moderation": {
+    "schema_version": "news-moderation.v2",
+    "artifact_id": "moderation-reject-001",
+    "composition_artifact_id": "composition-artifact-001",
+    "decision": "reject",
+    "rationale": "A draft with an unsupported claim must not be published.",
+    "issues": [
+      {
+        "issue_id": "moderation-issue-reject-001",
+        "code": "unsupported_claim",
+        "message": "The claimed sustained throughput is not present in the evidence bundle.",
+        "evidence": {
+          "claim_ids": ["claim-speed-22"],
+          "source_ids": ["source-release-22", "source-benchmark-22"]
+        },
+        "locations": [{ "kind": "claim", "claim_id": "claim-speed-22" }]
+      }
+    ],
+    "api_feedback": [],
+    "run": {
+      "schema_version": "news-role-run.v2",
+      "role": "grok_moderator",
+      "run_id": "moderation-run-reject-001",
+      "executor": {
+        "kind": "model",
+        "locality": "remote_api",
+        "model_family": "grok",
+        "identity": {
+          "provider": "xai",
+          "model": "grok-4.5",
+          "model_version": "2026-07"
+        }
+      },
+      "prompt_version": "feed-news-moderate.v1",
+      "started_at": "2026-07-22T12:06:30Z",
+      "completed_at": "2026-07-22T12:07:00Z",
+      "input_artifact_ids": ["composition-artifact-001"],
+      "output_artifact_id": "moderation-reject-001"
+    }
+  },
+  "reject_publication": {
+    "schema_version": "news-publication.v2",
+    "artifact_id": "publication-reject-001",
+    "composition_artifact_id": "composition-artifact-001",
+    "moderation_artifact_id": "moderation-reject-001",
+    "action": "withhold",
+    "reason_code": "moderation_reject",
+    "draft_id": "feed-draft-001",
+    "feed_post_id": null,
+    "idempotency_key": "feed-news:candidate-v2-001:moderation-reject-001",
+    "run": {
+      "schema_version": "news-role-run.v2",
+      "role": "deterministic_publisher",
+      "run_id": "publication-run-reject-001",
+      "executor": {
+        "kind": "deterministic_host",
+        "component": "feed-news-publisher",
+        "component_version": "2.0.0"
+      },
+      "prompt_version": null,
+      "started_at": "2026-07-22T12:07:05Z",
+      "completed_at": "2026-07-22T12:07:06Z",
+      "input_artifact_ids": ["composition-artifact-001", "moderation-reject-001"],
+      "output_artifact_id": "publication-reject-001"
+    }
+  }
+}

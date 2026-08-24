@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# Сторож+авто-хил VDS: память/демон/прод/контейнеры/диск. При падении — best-effort
+# рестарт + инцидент-карточка Ops + Telegram-алерт (на переходе ok<->bad, без спама).
+set -u
+STATE=/home/plag/.portal-watchdog.state
+OPS=e56a7e84-8aef-4596-9b2f-f85f134c1bc3
+a=(); heal=()
+RAM=$(free -m | awk '/Mem:/{print $7}'); SW=$(free -m | awk '/Swap:/{print $3}')
+[ "${RAM:-9999}" -lt 250 ] && a+=("RAM ${RAM}M<250")
+[ "${SW:-0}" -gt 5500 ] && a+=("swap ${SW}M>5.5G")
+if ! systemctl is-active --quiet multica-daemon; then a+=("multica-daemon down"); sudo -n systemctl restart multica-daemon 2>/dev/null && heal+=("restart multica-daemon"); fi
+if ! systemctl is-active --quiet portal.api; then a+=("portal.api down"); sudo -n systemctl restart portal.api 2>/dev/null && heal+=("restart portal.api"); fi
+for c in multica-backend-1 multica-postgres-1 multica-gate-1; do
+  s=$(docker inspect -f '{{.State.Status}}' "$c" 2>/dev/null || echo нет)
+  if [ "$s" != running ]; then a+=("$c:$s"); docker restart "$c" >/dev/null 2>&1 && heal+=("restart $c"); fi
+done
+D=$(df / | awk 'NR==2{gsub("%","",$5);print $5}')
+if [ "${D:-0}" -gt 90 ]; then
+  a+=("диск ${D}%>90")
+  [ -x /usr/local/sbin/multica-workspace-gc ] && sudo -n env APPLY=1 /usr/local/sbin/multica-workspace-gc >/dev/null 2>&1 && heal+=("workspace-gc")
+fi
+
+prev=$(cat "$STATE" 2>/dev/null || echo ok)
+if [ ${#a[@]} -gt 0 ]; then
+  hmsg=""; [ ${#heal[@]} -gt 0 ] && hmsg=" | авто-хил: $(printf '%s; ' "${heal[@]}")"
+  if [ "$prev" = ok ]; then
+    /usr/local/bin/release-announce "🔴 VDS watchdog: $(printf '%s; ' "${a[@]}")$hmsg" >/dev/null 2>&1
+    multica issue create --title "инцидент VDS: $(printf '%s ' "${a[@]}" | cut -c1-40)" \
+      --description "Watchdog засёк деградацию: $(printf '%s; ' "${a[@]}")$hmsg. Стабилизируй и разберись в причине." \
+      --assignee-id "$OPS" --project 3787122e-09f3-4bce-bf6e-0f4e63d08416 --priority urgent >/dev/null 2>&1
+  fi
+  echo bad > "$STATE"
+else
+  [ "$prev" = bad ] && /usr/local/bin/release-announce "🟢 VDS watchdog: восстановилось (RAM ${RAM}M своб, swap ${SW}M)" >/dev/null 2>&1
+  echo ok > "$STATE"
+fi

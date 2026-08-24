@@ -1,0 +1,39 @@
+# /etc/systemd/system/portal.opencode-runtime.service
+# systemd-юнит изолированного OpenCode runtime для приватных assistant-
+# тредов Portal (MF-2045). Docker Compose-стек (deploy/opencode.runtime.compose.yml),
+# юнит только запускает/останавливает его — не заменяет docker compose.
+#
+# Установка на VDS (Ubuntu noble, пользователь plag, чекаут ~/portal.ru-dev):
+#   sudo cp deploy/portal.opencode-runtime.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now portal.opencode-runtime.service
+#   curl -sf http://127.0.0.1:3104/doc
+#
+# EnvironmentFile ~/portal.opencode-runtime.env (chmod 600, не в git, НЕ шарить
+# с ~/portal.giga-dev.env — тот содержит GIGACHAT_CREDENTIALS/OPENROUTER_API_KEY,
+# этому контейнеру они не нужны и не должны быть видны, см.
+# docs/infra/opencode.assistant.runtime.md). Нужен минимум HYPERPC_STRUCTURED_URL;
+# без него контейнер стартует без единого провайдера (не падает, см. entrypoint).
+#
+# Обновление версии/канареечный rollout — deploy/opencode.runtime.rollout.sh,
+# не `docker compose up` руками (юнит должен видеть тот же образ/тег, что
+# оставил rollout-скрипт).
+
+[Unit]
+Description=portal.ru isolated OpenCode runtime for private assistant threads (MF-2045)
+After=network-online.target docker.service
+Requires=docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+User=plag
+WorkingDirectory=/home/plag/portal.ru-dev
+EnvironmentFile=/home/plag/portal.opencode-runtime.env
+ExecStart=/usr/bin/docker compose -f deploy/opencode.runtime.compose.yml up -d
+ExecStop=/usr/bin/docker compose -f deploy/opencode.runtime.compose.yml down
+TimeoutStartSec=180
+
+[Install]
+WantedBy=multi-user.target

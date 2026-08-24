@@ -1,0 +1,52 @@
+{
+  "endpoint": "GET /models",
+  "hybrid": {
+    "query": "лапа манипулятора po-3",
+    "requested_search_mode": null,
+    "response_fields": {
+      "contract_version": "model-search.v1",
+      "request_id": "req_3f8a1c2e9b7d",
+      "search_mode_used": "hybrid"
+    },
+    "models_count_example": 12
+  },
+  "lexical_degraded": {
+    "query": "суппорт для чпу",
+    "requested_search_mode": "hybrid",
+    "response_fields": {
+      "contract_version": "model-search.v1",
+      "request_id": "req_9c1e4b2a7f30",
+      "search_mode_used": "lexical",
+      "degraded": true
+    },
+    "models_count_example": 5
+  },
+  "empty": {
+    "query": "zzz_несуществующий_запрос_9f2",
+    "requested_search_mode": null,
+    "response_fields": {
+      "contract_version": "model-search.v1",
+      "request_id": "req_0a5d8e3c1f92",
+      "search_mode_used": "hybrid"
+    },
+    "models_count_example": 0
+  },
+  "invalid_examples": {
+    "unsupported_contract_version": {
+      "contract_version": "model-search.v0",
+      "request_id": "req_bad1",
+      "search_mode_used": "hybrid"
+    },
+    "degraded_false_rejected": {
+      "contract_version": "model-search.v1",
+      "request_id": "req_bad2",
+      "search_mode_used": "lexical",
+      "degraded": false
+    },
+    "unknown_search_mode": {
+      "contract_version": "model-search.v1",
+      "request_id": "req_bad3",
+      "search_mode_used": "semantic"
+    }
+  }
+}

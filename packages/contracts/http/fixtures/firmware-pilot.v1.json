@@ -1,0 +1,40 @@
+{
+  "contract_version": "firmware-pilot.v1",
+  "endpoint": "GET /printers/:slug",
+  "fresh_for_hours": 24,
+  "examples": [
+    {
+      "model": {
+        "brand": "Creality",
+        "name": "Ender-3 V3 KE",
+        "slug": "creality.ender-3-v3-ke"
+      },
+      "pilot_status": {
+        "status": "reported",
+        "stage": "not_started",
+        "updated_at": "2026-07-12T00:00:00Z",
+        "freshness": "stale",
+        "source": "fleet",
+        "confidence": "limited"
+      }
+    },
+    {
+      "model": {
+        "brand": "FLSun",
+        "name": "V400",
+        "slug": "flsun.v400"
+      },
+      "pilot_status": {
+        "status": "reported",
+        "stage": "not_started",
+        "updated_at": "2026-07-11T00:00:00Z",
+        "freshness": "stale",
+        "source": "fleet",
+        "confidence": "limited"
+      }
+    }
+  ],
+  "no_data_example": {
+    "status": "no_data"
+  }
+}

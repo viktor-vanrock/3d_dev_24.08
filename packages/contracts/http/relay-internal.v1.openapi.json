@@ -1,0 +1,633 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Portal Relay Internal API",
+    "version": "1.0.0",
+    "description": "Authenticated control-plane contract between the standalone relay and Portal API."
+  },
+  "servers": [{ "url": "/" }],
+  "tags": [{ "name": "relay-internal-v1" }],
+  "security": [{ "relayServiceCredential": [] }],
+  "paths": {
+    "/internal/relay/v1/sessions/authorize": {
+      "post": {
+        "operationId": "relaySessionAuthorize",
+        "tags": ["relay-internal-v1"],
+        "parameters": [
+          { "$ref": "#/components/parameters/RelayServiceCredential" },
+          { "$ref": "#/components/parameters/CorrelationId" },
+          { "$ref": "#/components/parameters/OperationId" }
+        ],
+        "requestBody": { "$ref": "#/components/requestBodies/RelaySessionAuthorizeBody" },
+        "responses": {
+          "200": { "$ref": "#/components/responses/RelaySessionAuthorizeSuccess" },
+          "400": { "$ref": "#/components/responses/RelayInternalError" },
+          "401": { "$ref": "#/components/responses/RelayInternalError" },
+          "403": { "$ref": "#/components/responses/RelayInternalError" },
+          "409": { "$ref": "#/components/responses/RelayInternalError" },
+          "503": { "$ref": "#/components/responses/RelayInternalError" }
+        }
+      }
+    },
+    "/internal/relay/v1/sessions/{sessionId}/heartbeat": {
+      "post": {
+        "operationId": "relaySessionHeartbeat",
+        "tags": ["relay-internal-v1"],
+        "parameters": [
+          { "$ref": "#/components/parameters/RelayServiceCredential" },
+          { "$ref": "#/components/parameters/CorrelationId" },
+          { "$ref": "#/components/parameters/OperationId" },
+          { "$ref": "#/components/parameters/SessionId" }
+        ],
+        "requestBody": { "$ref": "#/components/requestBodies/RelaySessionHeartbeatBody" },
+        "responses": {
+          "200": { "$ref": "#/components/responses/RelaySessionHeartbeatSuccess" },
+          "400": { "$ref": "#/components/responses/RelayInternalError" },
+          "401": { "$ref": "#/components/responses/RelayInternalError" },
+          "403": { "$ref": "#/components/responses/RelayInternalError" },
+          "404": { "$ref": "#/components/responses/RelayInternalError" },
+          "409": { "$ref": "#/components/responses/RelayInternalError" },
+          "503": { "$ref": "#/components/responses/RelayInternalError" }
+        }
+      }
+    },
+    "/internal/relay/v1/sessions/{sessionId}/close": {
+      "post": {
+        "operationId": "relaySessionClose",
+        "tags": ["relay-internal-v1"],
+        "parameters": [
+          { "$ref": "#/components/parameters/RelayServiceCredential" },
+          { "$ref": "#/components/parameters/CorrelationId" },
+          { "$ref": "#/components/parameters/OperationId" },
+          { "$ref": "#/components/parameters/SessionId" }
+        ],
+        "requestBody": { "$ref": "#/components/requestBodies/RelaySessionCloseBody" },
+        "responses": {
+          "200": { "$ref": "#/components/responses/RelaySessionCloseSuccess" },
+          "400": { "$ref": "#/components/responses/RelayInternalError" },
+          "401": { "$ref": "#/components/responses/RelayInternalError" },
+          "403": { "$ref": "#/components/responses/RelayInternalError" },
+          "404": { "$ref": "#/components/responses/RelayInternalError" },
+          "409": { "$ref": "#/components/responses/RelayInternalError" },
+          "503": { "$ref": "#/components/responses/RelayInternalError" }
+        }
+      }
+    },
+    "/internal/relay/v1/gateways/revalidate": {
+      "post": {
+        "operationId": "relayGatewaysRevalidate",
+        "tags": ["relay-internal-v1"],
+        "parameters": [
+          { "$ref": "#/components/parameters/RelayServiceCredential" },
+          { "$ref": "#/components/parameters/CorrelationId" }
+        ],
+        "requestBody": { "$ref": "#/components/requestBodies/RelayGatewaysRevalidateBody" },
+        "responses": {
+          "200": { "$ref": "#/components/responses/RelayGatewaysRevalidateSuccess" },
+          "400": { "$ref": "#/components/responses/RelayInternalError" },
+          "401": { "$ref": "#/components/responses/RelayInternalError" },
+          "403": { "$ref": "#/components/responses/RelayInternalError" },
+          "503": { "$ref": "#/components/responses/RelayInternalError" }
+        }
+      }
+    },
+    "/internal/relay/v1/commands/claim": {
+      "post": {
+        "operationId": "relayCommandsClaim",
+        "tags": ["relay-internal-v1"],
+        "parameters": [
+          { "$ref": "#/components/parameters/RelayServiceCredential" },
+          { "$ref": "#/components/parameters/CorrelationId" },
+          { "$ref": "#/components/parameters/OperationId" }
+        ],
+        "requestBody": { "$ref": "#/components/requestBodies/RelayCommandsClaimBody" },
+        "responses": {
+          "200": { "$ref": "#/components/responses/RelayCommandsClaimSuccess" },
+          "400": { "$ref": "#/components/responses/RelayInternalError" },
+          "401": { "$ref": "#/components/responses/RelayInternalError" },
+          "403": { "$ref": "#/components/responses/RelayInternalError" },
+          "409": { "$ref": "#/components/responses/RelayInternalError" },
+          "503": { "$ref": "#/components/responses/RelayInternalError" }
+        }
+      }
+    },
+    "/internal/relay/v1/commands/{commandId}/lease-heartbeat": {
+      "post": {
+        "operationId": "relayCommandLeaseHeartbeat",
+        "tags": ["relay-internal-v1"],
+        "parameters": [
+          { "$ref": "#/components/parameters/RelayServiceCredential" },
+          { "$ref": "#/components/parameters/CorrelationId" },
+          { "$ref": "#/components/parameters/OperationId" },
+          { "$ref": "#/components/parameters/CommandId" }
+        ],
+        "requestBody": { "$ref": "#/components/requestBodies/RelayCommandLeaseHeartbeatBody" },
+        "responses": {
+          "200": { "$ref": "#/components/responses/RelayCommandLeaseHeartbeatSuccess" },
+          "400": { "$ref": "#/components/responses/RelayInternalError" },
+          "401": { "$ref": "#/components/responses/RelayInternalError" },
+          "403": { "$ref": "#/components/responses/RelayInternalError" },
+          "404": { "$ref": "#/components/responses/RelayInternalError" },
+          "409": { "$ref": "#/components/responses/RelayInternalError" },
+          "503": { "$ref": "#/components/responses/RelayInternalError" }
+        }
+      }
+    },
+    "/internal/relay/v1/commands/{commandId}/result": {
+      "put": {
+        "operationId": "relayCommandResult",
+        "tags": ["relay-internal-v1"],
+        "parameters": [
+          { "$ref": "#/components/parameters/RelayServiceCredential" },
+          { "$ref": "#/components/parameters/CorrelationId" },
+          { "$ref": "#/components/parameters/OperationId" },
+          { "$ref": "#/components/parameters/CommandId" }
+        ],
+        "requestBody": { "$ref": "#/components/requestBodies/RelayCommandResultBody" },
+        "responses": {
+          "200": { "$ref": "#/components/responses/RelayCommandResultSuccess" },
+          "400": { "$ref": "#/components/responses/RelayInternalError" },
+          "401": { "$ref": "#/components/responses/RelayInternalError" },
+          "403": { "$ref": "#/components/responses/RelayInternalError" },
+          "404": { "$ref": "#/components/responses/RelayInternalError" },
+          "409": { "$ref": "#/components/responses/RelayInternalError" },
+          "503": { "$ref": "#/components/responses/RelayInternalError" }
+        }
+      }
+    },
+    "/internal/relay/v1/transfers/{transferId}/metadata": {
+      "get": {
+        "operationId": "relayTransferMetadata",
+        "tags": ["relay-internal-v1"],
+        "parameters": [
+          { "$ref": "#/components/parameters/RelayServiceCredential" },
+          { "$ref": "#/components/parameters/CorrelationId" },
+          { "$ref": "#/components/parameters/TransferId" },
+          { "$ref": "#/components/parameters/SessionIdQuery" },
+          { "$ref": "#/components/parameters/SessionGenerationQuery" }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/RelayTransferMetadataSuccess" },
+          "400": { "$ref": "#/components/responses/RelayInternalError" },
+          "401": { "$ref": "#/components/responses/RelayInternalError" },
+          "403": { "$ref": "#/components/responses/RelayInternalError" },
+          "404": { "$ref": "#/components/responses/RelayInternalError" },
+          "503": { "$ref": "#/components/responses/RelayInternalError" }
+        }
+      }
+    },
+    "/internal/relay/v1/transfers/{transferId}/source-url": {
+      "post": {
+        "operationId": "relayTransferSourceUrl",
+        "tags": ["relay-internal-v1"],
+        "parameters": [
+          { "$ref": "#/components/parameters/RelayServiceCredential" },
+          { "$ref": "#/components/parameters/CorrelationId" },
+          { "$ref": "#/components/parameters/OperationId" },
+          { "$ref": "#/components/parameters/TransferId" }
+        ],
+        "requestBody": { "$ref": "#/components/requestBodies/RelayTransferSourceUrlBody" },
+        "responses": {
+          "200": { "$ref": "#/components/responses/RelayTransferSourceUrlSuccess" },
+          "400": { "$ref": "#/components/responses/RelayInternalError" },
+          "401": { "$ref": "#/components/responses/RelayInternalError" },
+          "403": { "$ref": "#/components/responses/RelayInternalError" },
+          "404": { "$ref": "#/components/responses/RelayInternalError" },
+          "409": { "$ref": "#/components/responses/RelayInternalError" },
+          "503": { "$ref": "#/components/responses/RelayInternalError" }
+        }
+      }
+    },
+    "/internal/relay/v1/transfers/{transferId}/progress": {
+      "put": {
+        "operationId": "relayTransferProgress",
+        "tags": ["relay-internal-v1"],
+        "parameters": [
+          { "$ref": "#/components/parameters/RelayServiceCredential" },
+          { "$ref": "#/components/parameters/CorrelationId" },
+          { "$ref": "#/components/parameters/OperationId" },
+          { "$ref": "#/components/parameters/TransferId" }
+        ],
+        "requestBody": { "$ref": "#/components/requestBodies/RelayTransferProgressBody" },
+        "responses": {
+          "200": { "$ref": "#/components/responses/RelayTransferProgressSuccess" },
+          "400": { "$ref": "#/components/responses/RelayInternalError" },
+          "401": { "$ref": "#/components/responses/RelayInternalError" },
+          "403": { "$ref": "#/components/responses/RelayInternalError" },
+          "404": { "$ref": "#/components/responses/RelayInternalError" },
+          "409": { "$ref": "#/components/responses/RelayInternalError" },
+          "503": { "$ref": "#/components/responses/RelayInternalError" }
+        }
+      }
+    },
+    "/internal/relay/v1/transfers/{transferId}/result": {
+      "put": {
+        "operationId": "relayTransferResult",
+        "tags": ["relay-internal-v1"],
+        "parameters": [
+          { "$ref": "#/components/parameters/RelayServiceCredential" },
+          { "$ref": "#/components/parameters/CorrelationId" },
+          { "$ref": "#/components/parameters/OperationId" },
+          { "$ref": "#/components/parameters/TransferId" }
+        ],
+        "requestBody": { "$ref": "#/components/requestBodies/RelayTransferResultBody" },
+        "responses": {
+          "200": { "$ref": "#/components/responses/RelayTransferResultSuccess" },
+          "400": { "$ref": "#/components/responses/RelayInternalError" },
+          "401": { "$ref": "#/components/responses/RelayInternalError" },
+          "403": { "$ref": "#/components/responses/RelayInternalError" },
+          "404": { "$ref": "#/components/responses/RelayInternalError" },
+          "409": { "$ref": "#/components/responses/RelayInternalError" },
+          "503": { "$ref": "#/components/responses/RelayInternalError" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "relayServiceCredential": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-relay-service-token",
+        "description": "Relay-only service credential. Gateway credentials are not valid for this scheme."
+      }
+    },
+    "headers": {
+      "RelayCorrelationId": { "required": true, "schema": { "$ref": "#/components/schemas/RelayCorrelationId" } },
+      "RelayNoStore": { "required": true, "schema": { "type": "string", "const": "no-store" } }
+    },
+    "parameters": {
+      "RelayServiceCredential": { "name": "x-relay-service-token", "in": "header", "required": true, "schema": { "type": "string", "minLength": 32, "maxLength": 512 }, "description": "Relay-only service credential; gateway credentials are never accepted." },
+      "CorrelationId": { "name": "x-correlation-id", "in": "header", "required": true, "schema": { "$ref": "#/components/schemas/RelayCorrelationId" } },
+      "OperationId": { "name": "x-operation-id", "in": "header", "required": true, "schema": { "$ref": "#/components/schemas/RelayOperationId" } },
+      "SessionId": { "name": "sessionId", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RelayIdentifier" } },
+      "CommandId": { "name": "commandId", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RelayIdentifier" } },
+      "TransferId": { "name": "transferId", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RelayIdentifier" } },
+      "SessionIdQuery": { "name": "session_id", "in": "query", "required": true, "schema": { "$ref": "#/components/schemas/RelayIdentifier" } },
+      "SessionGenerationQuery": { "name": "session_generation", "in": "query", "required": true, "schema": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 } }
+    },
+    "requestBodies": {
+      "RelaySessionAuthorizeBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RelaySessionAuthorizeRequestDto" } } } },
+      "RelaySessionHeartbeatBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RelaySessionHeartbeatRequestDto" } } } },
+      "RelaySessionCloseBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RelaySessionCloseRequestDto" } } } },
+      "RelayGatewaysRevalidateBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RelayGatewaysRevalidateRequestDto" } } } },
+      "RelayCommandsClaimBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RelayCommandsClaimRequestDto" } } } },
+      "RelayCommandLeaseHeartbeatBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RelayCommandLeaseHeartbeatRequestDto" } } } },
+      "RelayCommandResultBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RelayCommandResultRequestDto" } } } },
+      "RelayTransferSourceUrlBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RelayTransferSourceUrlRequestDto" } } } },
+      "RelayTransferProgressBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RelayTransferProgressRequestDto" } } } },
+      "RelayTransferResultBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RelayTransferResultRequestDto" } } } }
+    },
+    "responses": {
+      "RelayInternalError": { "description": "Versioned safe relay error", "headers": { "x-correlation-id": { "$ref": "#/components/headers/RelayCorrelationId" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RelayInternalErrorEnvelopeDto" } } } },
+      "RelaySessionAuthorizeSuccess": { "description": "Gateway session authorized", "headers": { "x-correlation-id": { "$ref": "#/components/headers/RelayCorrelationId" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RelaySessionAuthorizeResponseDto" } } } },
+      "RelaySessionHeartbeatSuccess": { "description": "Session heartbeat persisted", "headers": { "x-correlation-id": { "$ref": "#/components/headers/RelayCorrelationId" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RelaySessionHeartbeatResponseDto" } } } },
+      "RelaySessionCloseSuccess": { "description": "Session close persisted", "headers": { "x-correlation-id": { "$ref": "#/components/headers/RelayCorrelationId" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RelaySessionCloseResponseDto" } } } },
+      "RelayGatewaysRevalidateSuccess": { "description": "Current authorization for every requested gateway", "headers": { "x-correlation-id": { "$ref": "#/components/headers/RelayCorrelationId" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RelayGatewaysRevalidateResponseDto" } } } },
+      "RelayCommandsClaimSuccess": { "description": "Bounded command claim batch", "headers": { "x-correlation-id": { "$ref": "#/components/headers/RelayCorrelationId" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RelayCommandsClaimResponseDto" } } } },
+      "RelayCommandLeaseHeartbeatSuccess": { "description": "Current lease renewed", "headers": { "x-correlation-id": { "$ref": "#/components/headers/RelayCorrelationId" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RelayCommandLeaseHeartbeatResponseDto" } } } },
+      "RelayCommandResultSuccess": { "description": "Command transition accepted or replayed", "headers": { "x-correlation-id": { "$ref": "#/components/headers/RelayCorrelationId" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RelayCommandResultResponseDto" } } } },
+      "RelayTransferMetadataSuccess": { "description": "Authorized immutable transfer metadata", "headers": { "x-correlation-id": { "$ref": "#/components/headers/RelayCorrelationId" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RelayTransferMetadataResponseDto" } } } },
+      "RelayTransferSourceUrlSuccess": { "description": "Short-lived source URL for one immutable object version", "headers": { "x-correlation-id": { "$ref": "#/components/headers/RelayCorrelationId" }, "cache-control": { "$ref": "#/components/headers/RelayNoStore" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RelayTransferSourceUrlResponseDto" } } } },
+      "RelayTransferProgressSuccess": { "description": "Transfer progress accepted or replayed", "headers": { "x-correlation-id": { "$ref": "#/components/headers/RelayCorrelationId" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RelayTransferProgressResponseDto" } } } },
+      "RelayTransferResultSuccess": { "description": "Transfer terminal result accepted or replayed", "headers": { "x-correlation-id": { "$ref": "#/components/headers/RelayCorrelationId" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RelayTransferResultResponseDto" } } } }
+    },
+    "schemas": {
+      "RelayIdentifier": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$" },
+      "RelayCorrelationId": { "type": "string", "minLength": 8, "maxLength": 128, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$" },
+      "RelayOperationId": { "type": "string", "minLength": 8, "maxLength": 128, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$" },
+      "RelayTimestamp": { "type": "string", "format": "date-time" },
+      "RelayCommandStatus": { "type": "string", "enum": ["queued", "leased", "delivered", "acknowledged", "executed", "failed", "expired"] },
+      "RelayTerminalCommandStatus": { "type": "string", "enum": ["executed", "failed", "expired"] },
+      "RelayInternalErrorCode": { "type": "string", "enum": ["relay.validation.invalid.v1", "relay.auth.invalid_service_credential.v1", "relay.auth.gateway_forbidden.v1", "relay.session.not_found.v1", "relay.session.conflict.v1", "relay.command.not_found.v1", "relay.command.fence_conflict.v1", "relay.command.result_conflict.v1", "relay.transfer.not_found.v1", "relay.transfer.source_changed.v1", "relay.idempotency.conflict.v1", "relay.rate_limited.v1", "relay.service_unavailable.v1", "relay.internal.v1"] },
+      "RelayInternalErrorDto": {
+        "type": "object", "additionalProperties": false,
+        "required": ["code", "message", "request_id", "retryable"],
+        "properties": {
+          "code": { "$ref": "#/components/schemas/RelayInternalErrorCode" },
+          "message": { "type": "string", "minLength": 1, "maxLength": 240 },
+          "request_id": { "$ref": "#/components/schemas/RelayCorrelationId" },
+          "operation_id": { "$ref": "#/components/schemas/RelayOperationId" },
+          "retryable": { "type": "boolean" },
+          "retry_after_ms": { "type": "integer", "minimum": 1, "maximum": 30000 }
+        }
+      },
+      "RelayInternalErrorEnvelopeDto": {
+        "type": "object", "additionalProperties": false, "required": ["error"],
+        "properties": { "error": { "$ref": "#/components/schemas/RelayInternalErrorDto" } }
+      },
+      "RelaySessionAuthorizeRequestDto": {
+        "type": "object", "additionalProperties": false,
+        "required": ["gateway_identity", "certificate_fingerprint_sha256", "protocol_version", "agent_version", "capabilities"],
+        "properties": {
+          "gateway_identity": { "$ref": "#/components/schemas/RelayIdentifier" },
+          "certificate_fingerprint_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+          "protocol_version": { "type": "string", "const": "v1" },
+          "agent_version": { "type": "string", "minLength": 1, "maxLength": 64 },
+          "capabilities": { "type": "array", "maxItems": 32, "uniqueItems": true, "items": { "type": "string", "enum": ["heartbeat.v1", "commands.v1", "files.v1", "command_results.v1", "file_resume.v1"] } }
+        }
+      },
+      "RelayAuthorizedDeviceDto": {
+        "type": "object", "additionalProperties": false, "required": ["device_id", "authorization_revision"],
+        "properties": {
+          "device_id": { "$ref": "#/components/schemas/RelayIdentifier" },
+          "authorization_revision": { "type": "integer", "minimum": 0 }
+        }
+      },
+      "RelaySessionAuthorizeResponseDto": {
+        "type": "object", "additionalProperties": false,
+        "required": ["session_id", "session_generation", "gateway_id", "authorization_revision", "authorized_devices", "pending_transfer_ids", "heartbeat_interval_ms", "heartbeat_timeout_ms"],
+        "properties": {
+          "session_id": { "$ref": "#/components/schemas/RelayIdentifier" },
+          "session_generation": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+          "gateway_id": { "$ref": "#/components/schemas/RelayIdentifier" },
+          "authorization_revision": { "type": "integer", "minimum": 0 },
+          "authorized_devices": { "type": "array", "maxItems": 1000, "items": { "$ref": "#/components/schemas/RelayAuthorizedDeviceDto" } },
+          "pending_transfer_ids": { "type": "array", "maxItems": 100, "uniqueItems": true, "items": { "$ref": "#/components/schemas/RelayIdentifier" } },
+          "heartbeat_interval_ms": { "type": "integer", "minimum": 1000, "maximum": 60000 },
+          "heartbeat_timeout_ms": { "type": "integer", "minimum": 2000, "maximum": 120000 }
+        }
+      },
+      "RelayDeviceHeartbeatDto": {
+        "type": "object", "additionalProperties": false,
+        "required": ["device_id", "sequence", "state", "progress_percent"],
+        "properties": {
+          "device_id": { "$ref": "#/components/schemas/RelayIdentifier" },
+          "sequence": { "type": "integer", "minimum": 0 },
+          "state": { "type": "string", "enum": ["idle", "printing", "paused", "error", "offline"] },
+          "progress_percent": { "type": "number", "minimum": 0, "maximum": 100 },
+          "temperature_c": { "type": "number", "minimum": -100, "maximum": 1000 },
+          "bytes_available": { "type": "integer", "minimum": 0 },
+          "model": { "type": "string", "minLength": 1, "maxLength": 128 },
+          "firmware_version": { "type": "string", "minLength": 1, "maxLength": 128 }
+        }
+      },
+      "RelaySessionHeartbeatRequestDto": {
+        "type": "object", "additionalProperties": false,
+        "required": ["gateway_id", "session_generation", "authorization_revision", "observed_at", "devices"],
+        "properties": {
+          "gateway_id": { "$ref": "#/components/schemas/RelayIdentifier" },
+          "session_generation": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+          "authorization_revision": { "type": "integer", "minimum": 0 },
+          "observed_at": { "$ref": "#/components/schemas/RelayTimestamp" },
+          "devices": { "type": "array", "maxItems": 1000, "items": { "$ref": "#/components/schemas/RelayDeviceHeartbeatDto" } }
+        }
+      },
+      "RelaySessionHeartbeatResponseDto": {
+        "type": "object", "additionalProperties": false,
+        "required": ["session_id", "session_generation", "authorization_revision", "accepted_device_ids", "pending_transfer_ids", "persisted_at", "replayed"],
+        "properties": {
+          "session_id": { "$ref": "#/components/schemas/RelayIdentifier" },
+          "session_generation": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+          "authorization_revision": { "type": "integer", "minimum": 0 },
+          "accepted_device_ids": { "type": "array", "maxItems": 1000, "items": { "$ref": "#/components/schemas/RelayIdentifier" } },
+          "pending_transfer_ids": { "type": "array", "maxItems": 100, "uniqueItems": true, "items": { "$ref": "#/components/schemas/RelayIdentifier" } },
+          "persisted_at": { "$ref": "#/components/schemas/RelayTimestamp" },
+          "replayed": { "type": "boolean" }
+        }
+      },
+      "RelaySessionCloseRequestDto": {
+        "type": "object", "additionalProperties": false, "required": ["gateway_id", "session_generation", "reason", "closed_at"],
+        "properties": {
+          "gateway_id": { "$ref": "#/components/schemas/RelayIdentifier" },
+          "session_generation": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+          "reason": { "type": "string", "enum": ["client_close", "heartbeat_timeout", "replaced", "revoked", "api_unavailable", "protocol_error", "rate_limited", "backpressure", "shutdown"] },
+          "closed_at": { "$ref": "#/components/schemas/RelayTimestamp" }
+        }
+      },
+      "RelaySessionCloseResponseDto": {
+        "type": "object", "additionalProperties": false, "required": ["session_id", "session_generation", "closed_at", "replayed"],
+        "properties": {
+          "session_id": { "$ref": "#/components/schemas/RelayIdentifier" },
+          "session_generation": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+          "closed_at": { "$ref": "#/components/schemas/RelayTimestamp" },
+          "replayed": { "type": "boolean" }
+        }
+      },
+      "RelayGatewayRevalidationRequestItemDto": {
+        "type": "object", "additionalProperties": false, "required": ["gateway_id", "session_id", "session_generation", "known_authorization_revision"],
+        "properties": {
+          "gateway_id": { "$ref": "#/components/schemas/RelayIdentifier" },
+          "session_id": { "$ref": "#/components/schemas/RelayIdentifier" },
+          "session_generation": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+          "known_authorization_revision": { "type": "integer", "minimum": 0 }
+        }
+      },
+      "RelayGatewaysRevalidateRequestDto": {
+        "type": "object", "additionalProperties": false, "required": ["gateways"],
+        "properties": { "gateways": { "type": "array", "minItems": 1, "maxItems": 1000, "items": { "$ref": "#/components/schemas/RelayGatewayRevalidationRequestItemDto" } } }
+      },
+      "RelayGatewayRevalidationResultDto": {
+        "type": "object", "additionalProperties": false, "required": ["gateway_id", "session_id", "session_generation", "state", "authorization_revision", "authorized_devices"],
+        "properties": {
+          "gateway_id": { "$ref": "#/components/schemas/RelayIdentifier" },
+          "session_id": { "$ref": "#/components/schemas/RelayIdentifier" },
+          "session_generation": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+          "state": { "type": "string", "enum": ["authorized", "revoked", "superseded", "unknown"] },
+          "authorization_revision": { "type": "integer", "minimum": 0 },
+          "authorized_devices": { "type": "array", "maxItems": 1000, "items": { "$ref": "#/components/schemas/RelayAuthorizedDeviceDto" } }
+        }
+      },
+      "RelayGatewaysRevalidateResponseDto": {
+        "type": "object", "additionalProperties": false, "required": ["results", "validated_at"],
+        "properties": {
+          "results": { "type": "array", "minItems": 1, "maxItems": 1000, "items": { "$ref": "#/components/schemas/RelayGatewayRevalidationResultDto" } },
+          "validated_at": { "$ref": "#/components/schemas/RelayTimestamp" }
+        }
+      },
+      "RelayCommandsClaimRequestDto": {
+        "type": "object", "additionalProperties": false,
+        "required": ["claim_owner", "gateway_id", "session_id", "session_generation", "authorization_revision", "limit"],
+        "properties": {
+          "claim_owner": { "$ref": "#/components/schemas/RelayIdentifier" },
+          "gateway_id": { "$ref": "#/components/schemas/RelayIdentifier" },
+          "session_id": { "$ref": "#/components/schemas/RelayIdentifier" },
+          "session_generation": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+          "authorization_revision": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+          "limit": { "type": "integer", "minimum": 1, "maximum": 100 }
+        }
+      },
+      "RelayCommandPayloadDto": {
+        "type": "object", "additionalProperties": false, "required": ["command"],
+        "properties": {
+          "command": { "type": "string", "enum": ["start", "pause", "resume", "cancel"] },
+          "file_name": { "type": "string", "minLength": 1, "maxLength": 255 }
+        }
+      },
+      "RelayClaimedCommandDto": {
+        "type": "object", "additionalProperties": false,
+        "required": ["command_id", "device_id", "command_seq", "status", "payload", "command_token", "claim_owner", "claim_token", "generation", "attempt_count", "max_attempts", "lease_expires_at", "expires_at"],
+        "properties": {
+          "command_id": { "$ref": "#/components/schemas/RelayIdentifier" },
+          "device_id": { "$ref": "#/components/schemas/RelayIdentifier" },
+          "command_seq": { "type": "integer", "minimum": 1 },
+          "status": { "type": "string", "const": "leased" },
+          "payload": { "$ref": "#/components/schemas/RelayCommandPayloadDto" },
+          "command_token": { "type": "string", "minLength": 32, "maxLength": 4096 },
+          "claim_owner": { "$ref": "#/components/schemas/RelayIdentifier" },
+          "claim_token": { "type": "string", "minLength": 32, "maxLength": 256 },
+          "generation": { "type": "integer", "minimum": 1 },
+          "attempt_count": { "type": "integer", "minimum": 1 },
+          "max_attempts": { "type": "integer", "minimum": 1, "maximum": 100 },
+          "lease_expires_at": { "$ref": "#/components/schemas/RelayTimestamp" },
+          "expires_at": { "$ref": "#/components/schemas/RelayTimestamp" }
+        }
+      },
+      "RelayCommandsClaimResponseDto": {
+        "type": "object", "additionalProperties": false, "required": ["claim_owner", "commands", "claimed_at", "replayed"],
+        "properties": {
+          "claim_owner": { "$ref": "#/components/schemas/RelayIdentifier" },
+          "commands": { "type": "array", "maxItems": 100, "items": { "$ref": "#/components/schemas/RelayClaimedCommandDto" } },
+          "claimed_at": { "$ref": "#/components/schemas/RelayTimestamp" },
+          "replayed": { "type": "boolean" }
+        }
+      },
+      "RelayCommandFenceDto": {
+        "type": "object", "additionalProperties": false, "required": ["claim_owner", "claim_token", "generation"],
+        "properties": {
+          "claim_owner": { "$ref": "#/components/schemas/RelayIdentifier" },
+          "claim_token": { "type": "string", "minLength": 32, "maxLength": 256 },
+          "generation": { "type": "integer", "minimum": 1 }
+        }
+      },
+      "RelayCommandLeaseHeartbeatRequestDto": {
+        "type": "object", "additionalProperties": false, "required": ["claim_owner", "claim_token", "generation", "delivery_state", "observed_at"],
+        "properties": {
+          "claim_owner": { "$ref": "#/components/schemas/RelayIdentifier" },
+          "claim_token": { "type": "string", "minLength": 32, "maxLength": 256 },
+          "generation": { "type": "integer", "minimum": 1 },
+          "delivery_state": { "type": "string", "enum": ["leased", "delivered", "acknowledged"] },
+          "observed_at": { "$ref": "#/components/schemas/RelayTimestamp" }
+        }
+      },
+      "RelayCommandLeaseHeartbeatResponseDto": {
+        "type": "object", "additionalProperties": false, "required": ["command_id", "status", "generation", "lease_expires_at", "replayed"],
+        "properties": {
+          "command_id": { "$ref": "#/components/schemas/RelayIdentifier" },
+          "status": { "type": "string", "enum": ["leased", "delivered", "acknowledged"] },
+          "generation": { "type": "integer", "minimum": 1 },
+          "lease_expires_at": { "$ref": "#/components/schemas/RelayTimestamp" },
+          "replayed": { "type": "boolean" }
+        }
+      },
+      "RelayCommandResultRequestDto": {
+        "type": "object", "additionalProperties": false, "required": ["claim_owner", "claim_token", "generation", "command_seq", "status", "observed_at"],
+        "properties": {
+          "claim_owner": { "$ref": "#/components/schemas/RelayIdentifier" },
+          "claim_token": { "type": "string", "minLength": 32, "maxLength": 256 },
+          "generation": { "type": "integer", "minimum": 1 },
+          "command_seq": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+          "status": { "type": "string", "enum": ["executed", "failed"] },
+          "observed_at": { "$ref": "#/components/schemas/RelayTimestamp" },
+          "error_code": { "type": "string", "enum": ["device_not_owned", "device_revoked", "blocked_config", "replay_rejected", "invalid_token", "role_not_allowed", "command_not_supported", "driver_error", "command_failed", "timeout", "disconnected", "internal_error"] }
+        }
+      },
+      "RelayCommandResultResponseDto": {
+        "type": "object", "additionalProperties": false, "required": ["command_id", "command_seq", "status", "generation", "persisted_at", "replayed"],
+        "properties": {
+          "command_id": { "$ref": "#/components/schemas/RelayIdentifier" },
+          "command_seq": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+          "status": { "$ref": "#/components/schemas/RelayCommandStatus" },
+          "generation": { "type": "integer", "minimum": 1 },
+          "persisted_at": { "$ref": "#/components/schemas/RelayTimestamp" },
+          "replayed": { "type": "boolean" }
+        }
+      },
+      "RelayTransferMetadataResponseDto": {
+        "type": "object", "additionalProperties": false,
+        "required": ["transfer_id", "session_id", "session_generation", "gateway_id", "device_id", "file_name", "kind", "content_type", "size_bytes", "sha256", "object_version", "chunk_size_bytes", "next_offset", "next_sequence", "start_print"],
+        "properties": {
+          "transfer_id": { "$ref": "#/components/schemas/RelayIdentifier" },
+          "session_id": { "$ref": "#/components/schemas/RelayIdentifier" },
+          "session_generation": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+          "gateway_id": { "$ref": "#/components/schemas/RelayIdentifier" },
+          "device_id": { "$ref": "#/components/schemas/RelayIdentifier" },
+          "file_name": { "type": "string", "minLength": 1, "maxLength": 255 },
+          "kind": { "type": "string", "enum": ["gcode", "printer_profile"] },
+          "content_type": { "type": "string", "enum": ["application/octet-stream", "text/plain", "application/vnd.3mfmodel", "model/gcode"] },
+          "size_bytes": { "type": "integer", "minimum": 1, "maximum": 1073741824 },
+          "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+          "object_version": { "type": "string", "minLength": 1, "maxLength": 256 },
+          "chunk_size_bytes": { "type": "integer", "minimum": 1024, "maximum": 1048576 },
+          "next_offset": { "type": "integer", "minimum": 0, "maximum": 1073741824 },
+          "next_sequence": { "type": "integer", "minimum": 0 },
+          "start_print": { "type": "boolean" }
+        }
+      },
+      "RelayTransferSourceUrlRequestDto": {
+        "type": "object", "additionalProperties": false, "required": ["session_id", "session_generation", "object_version", "size_bytes", "sha256", "next_offset", "next_sequence"],
+        "properties": {
+          "session_id": { "$ref": "#/components/schemas/RelayIdentifier" },
+          "session_generation": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+          "object_version": { "type": "string", "minLength": 1, "maxLength": 256 },
+          "size_bytes": { "type": "integer", "minimum": 1, "maximum": 1073741824 },
+          "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+          "next_offset": { "type": "integer", "minimum": 0, "maximum": 1073741824 },
+          "next_sequence": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 }
+        }
+      },
+      "RelayTransferSourceUrlResponseDto": {
+        "type": "object", "additionalProperties": false,
+        "required": ["transfer_id", "source_url", "expires_at", "range_supported", "size_bytes", "sha256", "object_version", "next_offset", "next_sequence"],
+        "properties": {
+          "transfer_id": { "$ref": "#/components/schemas/RelayIdentifier" },
+          "source_url": { "type": "string", "format": "uri", "pattern": "^https://" },
+          "expires_at": { "$ref": "#/components/schemas/RelayTimestamp" },
+          "range_supported": { "type": "boolean", "const": true },
+          "size_bytes": { "type": "integer", "minimum": 1, "maximum": 1073741824 },
+          "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+          "object_version": { "type": "string", "minLength": 1, "maxLength": 256 },
+          "next_offset": { "type": "integer", "minimum": 0, "maximum": 1073741824 },
+          "next_sequence": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 }
+        }
+      },
+      "RelayTransferProgressRequestDto": {
+        "type": "object", "additionalProperties": false,
+        "required": ["session_id", "session_generation", "object_version", "next_offset", "next_sequence", "observed_at"],
+        "properties": {
+          "session_id": { "$ref": "#/components/schemas/RelayIdentifier" },
+          "session_generation": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+          "object_version": { "type": "string", "minLength": 1, "maxLength": 256 },
+          "next_offset": { "type": "integer", "minimum": 0, "maximum": 1073741824 },
+          "next_sequence": { "type": "integer", "minimum": 0 },
+          "observed_at": { "$ref": "#/components/schemas/RelayTimestamp" }
+        }
+      },
+      "RelayTransferProgressResponseDto": {
+        "type": "object", "additionalProperties": false, "required": ["transfer_id", "next_offset", "next_sequence", "persisted_at", "replayed"],
+        "properties": {
+          "transfer_id": { "$ref": "#/components/schemas/RelayIdentifier" },
+          "next_offset": { "type": "integer", "minimum": 0, "maximum": 1073741824 },
+          "next_sequence": { "type": "integer", "minimum": 0 },
+          "persisted_at": { "$ref": "#/components/schemas/RelayTimestamp" },
+          "replayed": { "type": "boolean" }
+        }
+      },
+      "RelayTransferResultRequestDto": {
+        "type": "object", "additionalProperties": false,
+        "required": ["session_id", "session_generation", "object_version", "status", "next_offset", "next_sequence", "observed_at"],
+        "properties": {
+          "session_id": { "$ref": "#/components/schemas/RelayIdentifier" },
+          "session_generation": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+          "object_version": { "type": "string", "minLength": 1, "maxLength": 256 },
+          "status": { "type": "string", "enum": ["completed", "failed"] },
+          "next_offset": { "type": "integer", "minimum": 0, "maximum": 1073741824 },
+          "next_sequence": { "type": "integer", "minimum": 0 },
+          "observed_at": { "$ref": "#/components/schemas/RelayTimestamp" },
+          "error_code": { "type": "string", "enum": ["device_not_owned", "device_revoked", "invalid_transfer", "invalid_file", "transfer_conflict", "invalid_sequence", "checksum_mismatch", "size_mismatch", "source_changed", "upload_failed", "start_failed", "timeout", "disconnected", "internal_error"] }
+        }
+      },
+      "RelayTransferResultResponseDto": {
+        "type": "object", "additionalProperties": false, "required": ["transfer_id", "status", "next_offset", "next_sequence", "persisted_at", "replayed"],
+        "properties": {
+          "transfer_id": { "$ref": "#/components/schemas/RelayIdentifier" },
+          "status": { "type": "string", "enum": ["completed", "failed"] },
+          "next_offset": { "type": "integer", "minimum": 0, "maximum": 1073741824 },
+          "next_sequence": { "type": "integer", "minimum": 0 },
+          "persisted_at": { "$ref": "#/components/schemas/RelayTimestamp" },
+          "replayed": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

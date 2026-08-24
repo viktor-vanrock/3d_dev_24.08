@@ -1,0 +1,103 @@
+.homeConceptTile--queued .homeConceptVisual {
+  background:
+    radial-gradient(
+      ellipse at 50% 48%,
+      rgb(255 255 255 / 0.12) 0%,
+      transparent 58%
+    ),
+    color-mix(in srgb, var(--surface) 78%, transparent);
+}
+
+.homeConceptTile--queued .homeConceptVisual::after {
+  inset: -18% -42%;
+  background: radial-gradient(
+    ellipse at 50% 50%,
+    rgb(255 255 255 / 0.38) 0%,
+    rgb(255 255 255 / 0.17) 24%,
+    transparent 66%
+  );
+  filter: blur(12px);
+  animation: conceptQueueDiffusion 3.2s ease-in-out infinite alternate;
+}
+
+.homeConceptQueueCue {
+  position: absolute;
+  z-index: 2;
+  right: 14px;
+  bottom: 14px;
+  left: 14px;
+  display: flex;
+  min-height: 32px;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 10px;
+  border: 1px solid color-mix(in srgb, white 18%, var(--border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 68%, transparent);
+  color: var(--text-dim);
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  backdrop-filter: blur(12px);
+}
+
+.homeConceptQueueDots {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.homeConceptQueueDots i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.22;
+  animation: conceptQueueDot 1.8s ease-in-out infinite;
+}
+
+.homeConceptQueueDots i:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.homeConceptQueueDots i:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes conceptQueueDiffusion {
+  from {
+    opacity: 0.34;
+    transform: translateX(-24%) scale(0.88);
+  }
+
+  52% {
+    opacity: 0.86;
+  }
+
+  to {
+    opacity: 0.42;
+    transform: translateX(24%) scale(1.04);
+  }
+}
+
+@keyframes conceptQueueDot {
+  0%,
+  72%,
+  100% {
+    opacity: 0.2;
+    box-shadow: 0 0 0 rgb(255 255 255 / 0);
+  }
+
+  36% {
+    opacity: 0.92;
+    box-shadow: 0 0 7px rgb(255 255 255 / 0.58);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .homeConceptTile--queued .homeConceptVisual::after,
+  .homeConceptQueueDots i {
+    animation: none;
+  }
+}

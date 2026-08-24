@@ -1,0 +1,36 @@
+[project]
+name = "portal-queue-lifecycle"
+version = "0.1.0"
+description = "Shared PostgreSQL queue lease lifecycle primitives for Portal workers"
+requires-python = ">=3.12"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "basedpyright>=1.39.0",
+    "psycopg[binary]>=3.2.0",
+    "pytest>=8.3.0",
+    "ruff>=0.8.0",
+]
+
+[tool.basedpyright]
+include = ["src", "tests"]
+pythonVersion = "3.12"
+typeCheckingMode = "strict"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/portal_queue_lifecycle"]

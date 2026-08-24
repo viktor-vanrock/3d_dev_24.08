@@ -1,0 +1,35 @@
+[Unit]
+Description=portal.ru deterministic publisher for accepted news-moderation.v2 artifacts
+Documentation=file:/home/plag/portal.ru-dev/apps/scout/deploy/readme.md
+After=network-online.target portal.scout-news-pipeline.service
+Wants=network-online.target
+ConditionPathExists=/var/lib/portal-scout-news/pipeline.json
+ConditionPathExists=/etc/portal/scout-news-publisher.env
+
+[Service]
+Type=oneshot
+User=plag
+WorkingDirectory=/home/plag/portal.ru-dev/apps/scout
+EnvironmentFile=/etc/portal/scout-news-publisher.env
+# Closed dev requires an ordinary read session for GET detail. systemd mounts it read-only under
+# CREDENTIALS_DIRECTORY; it is never copied to env and is not sent to /feed/ingest.
+LoadCredential=dev-readback-session:/home/plag/.autofab-session-dev
+UnsetEnvironment=AGENT_CONTENT_KEY XAI_API_KEY DATABASE_URL
+StateDirectory=portal-scout-news
+UMask=0077
+ExecStart=/home/plag/portal.ru-dev/apps/scout/.venv/bin/scout-news-publisher /var/lib/portal-scout-news/pipeline.json --output /var/lib/portal-scout-news/publication.json
+StandardOutput=journal
+StandardError=journal
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=tmpfs
+BindReadOnlyPaths=/home/plag/portal.ru-dev/apps/scout
+ReadWritePaths=/var/lib/portal-scout-news
+ProtectControlGroups=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+RestrictSUIDSGID=true
+LockPersonality=true
+RestrictNamespaces=true
+SystemCallArchitectures=native

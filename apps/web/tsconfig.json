@@ -1,0 +1,50 @@
+{
+  "extends": "@portal/config/tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["vite/client"],
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "baseUrl": ".",
+    "paths": {
+      "@app/*": ["src/app/*"],
+      "@pages/*": ["src/pages/*"],
+      "@domains/*": ["src/domains/*"],
+      "@shared/*": ["src/shared/*"],
+      "@platform/*": ["src/platform/*"]
+    }
+
+    // — Качество кода (раскомментировать когда основная разработка устаканится) —
+
+    // Ошибка если переменная объявлена но нигде не используется
+    // "noUnusedLocals": true,
+
+    // Ошибка если параметр функции объявлен но нигде не используется
+    // "noUnusedParameters": true,
+
+    // Ошибка если не все ветки функции возвращают значение
+    // "noImplicitReturns": true,
+
+    // Ошибка если в switch забыли break и выполнение проваливается в следующий case
+    // "noFallthroughCasesInSwitch": true,
+
+    // Требует явно писать override при переопределении метода родительского класса
+    // "noImplicitOverride": true,
+
+    // — Очень строгие (много правок по всему проекту, добавлять последними) —
+
+    // undefined и null разделены строже: foo?: string не принимает явный undefined
+    // "exactOptionalPropertyTypes": true,
+
+    // obj['key'] требует явной проверки на undefined (строже чем noUncheckedIndexedAccess из base)
+    // "noPropertyAccessFromIndexSignature": true,
+
+    // Ошибка на import с side-эффектами без явного указания что это нужно
+    // "noUncheckedSideEffectImports": true,
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  // src/sw.ts — service worker, свой WebWorker-lib-мир (свой self/caches, конфликтует
+  // с DOM-lib этого проекта в одной tsc-программе) — типизируется отдельно, tsconfig.sw.json.
+  "exclude": ["src/sw.ts"]
+}

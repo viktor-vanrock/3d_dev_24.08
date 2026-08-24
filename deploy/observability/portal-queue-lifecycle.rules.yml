@@ -1,0 +1,38 @@
+groups:
+  - name: portal-queue-lifecycle
+    rules:
+      - alert: PortalQueueBacklogOld
+        expr: portal_queue_depth > 0 and on(queue) portal_queue_oldest_age_seconds > 300
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Portal queue {{ $labels.queue }} has an old backlog"
+      - alert: PortalQueueExpiredLeases
+        expr: portal_queue_expired_leases > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Portal queue {{ $labels.queue }} has expired leases"
+      - alert: PortalQueueReclaimExhausted
+        expr: increase(portal_queue_reclaim_total{outcome="exhausted"}[15m]) > 0
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Portal queue {{ $labels.queue }} exhausted a job"
+      - alert: PortalQueueStaleLifecycleWrite
+        expr: increase(portal_queue_operation_total{outcome="stale",operation=~"heartbeat|succeed|fail"}[10m]) > 0
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Portal queue {{ $labels.queue }} rejected a stale lifecycle write"
+      - alert: PortalQueueLifecycleError
+        expr: increase(portal_queue_operation_total{outcome="error"}[10m]) > 0
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Portal queue {{ $labels.queue }} has lifecycle errors"

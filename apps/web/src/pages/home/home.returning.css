@@ -1,0 +1,24 @@
+/* --- Персона-раскладка дома возвращающегося (Фаза 3, MF-438) --- */
+.homeCtaRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+/* Заполненное нередактируемое поле (MF-939 §2, PrinterEditForm) — тот же контур/тач-высота,
+   что .uiInput, но приглушённый текст без интерактивности: Бренд/Модель каталожного принтера
+   показаны, но провенанс привязки правкой не ломается. */
+.printerFieldLocked {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 140px;
+  min-height: var(--input-height);
+  padding: 10px 12px;
+  border-radius: var(--input-radius);
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  color: var(--text-dim);
+  font-family: var(--font-sans);
+  font-size: 14px;
+}

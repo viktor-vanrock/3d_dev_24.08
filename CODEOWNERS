@@ -1,0 +1,60 @@
+# CODEOWNERS — владельцы папок (зоны ответственности распределённой команды агентов).
+# Формат путей — стандартный; "владелец" = агент/сквад Multica (не GitHub-хэндл — доска tasks.3mf.tech).
+# Правило: одна папка — один владелец в моменте. Карта и швы — docs/architecture/service.map.md.
+# CTO раздаёт карты, уважая эти границы; PM пингует нарушения.
+
+# --- деплоймые сервисы (apps/*) ---
+/apps/web/                     Front          # Design=визуал, Motion/Sound=хореография
+/apps/api/                     Back           # host; домены ниже — свои владельцы
+/apps/mesh/                    Mesh
+/apps/scout/                   Data
+/apps/giga/                    AI
+/apps/relay/                   Relay
+/apps/device-agent/            Bridge
+/apps/search/                  AI             # 🆕 нейропоиск по форме (C1)
+
+# --- домены внутри api (микро-владение, общий рантайм) ---
+/apps/api/src/auth/            Back           # 🔑 общее ядро (read-only для остальных)
+/apps/api/src/profile/         Back
+/apps/api/src/catalog/         Data
+/apps/api/src/printers/        Data
+/apps/api/src/models/          Back
+/apps/api/src/compat/          Back
+/apps/api/src/community/       Fullstack      # форум/соц-зона
+/apps/api/src/feed/            Fullstack
+/apps/api/src/makes/           Fullstack
+/apps/api/src/ideas/           Back
+/apps/api/src/devices/         Gateway
+/apps/api/src/publicapi/       Gateway
+/apps/api/src/generations/     AI
+/apps/api/src/assistant/       AI             # 🆕 приватный ассистент сборки (MF-1997/MF-1999)
+/apps/api/src/git/             Back
+/apps/api/src/import/          Data
+/apps/api/src/imports/         Data
+/apps/api/src/analytics/       Growth
+/apps/api/src/seo/             Growth
+/apps/api/src/email/           Ops
+/apps/api/src/push/            Ops
+# общая инфра — меняется по конвенции (§4 карты), не наскоком:
+/apps/api/src/db/              Back
+/apps/api/src/storage/         Back
+/apps/api/src/security/        Back
+/apps/api/src/server.ts        Back
+/apps/api/src/main.ts          Back
+
+# --- домены внутри web ---
+/apps/web/src/ui/              Design
+/apps/web/src/theme/           Design
+/apps/web/src/overlay/         Sound
+/apps/web/src/sound/           Sound
+/apps/web/src/community/       Front
+/apps/web/src/feed/            Front
+/apps/web/src/issue/           Front
+/apps/web/src/park/            Front
+/apps/web/src/printerface/     Front
+/apps/web/src/printers/        Front
+
+# --- пакеты-швы (бизнес-логики нет) ---
+/packages/contracts/           CTO            # 🔗 реестр швов — правки апрувит CTO
+/packages/moonraker-adapter/   Bridge
+/packages/config/              Ops

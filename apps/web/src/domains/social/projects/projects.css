@@ -1,0 +1,727 @@
+/*
+  Страница «Проекты» (MF-512, docs/design/projects.page.md). Wide-хром (шапка) живёт в
+  home.css/homeheader.tsx (единый механизм режима, §1); здесь — только раскладка контента
+  страницы: wide-контейнер (§1.4) и иерархия hero → поиск → каталог (§4). Поиск/каталог
+  переиспользуют классы market.css (marketSearchBar/marketLayout/...) как есть.
+*/
+
+.projectsWide {
+  position: relative;
+}
+
+.projectsWideBody {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: var(--content-max-wide);
+  margin: 0 auto;
+  /* Шапка закреплена (home.css .homeTopbar, MF-851) — резервируем её высоту паддингом сверху,
+     тем же приёмом, что .homeContent (home.css). */
+  padding: calc(var(--header-safe) + 16px) clamp(16px, 4vw, 48px) 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  /* Тот же view-transition-name, что у .homeContent (home.css) — переход Дом⇄Проекты
+     (motion.md §2). Экраны не монтируются одновременно, конфликта имени нет. */
+  view-transition-name: page-content;
+}
+
+.projectsPromise {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.8fr) minmax(520px, 1.2fr);
+  align-items: end;
+  gap: clamp(24px, 5vw, 80px);
+  min-height: 184px;
+  padding: clamp(24px, 3.4vw, 44px);
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
+  border-radius: clamp(28px, 3vw, 44px);
+  background:
+    radial-gradient(circle at 8% 20%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 42%),
+    radial-gradient(circle at 86% 92%, color-mix(in srgb, #f19a72 16%, transparent), transparent 46%),
+    color-mix(in srgb, var(--surface) 58%, transparent);
+  box-shadow: 0 24px 70px color-mix(in srgb, var(--shadow) 52%, transparent);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+}
+
+.projectsPromiseCopy h1 {
+  max-width: 680px;
+  margin: 6px 0 10px;
+  font-family: var(--font-display);
+  font-size: clamp(34px, 4.2vw, 64px);
+  line-height: 0.98;
+  letter-spacing: -0.052em;
+}
+
+.projectsPromiseCopy p {
+  max-width: 560px;
+  margin: 0;
+  color: var(--text-dim);
+  font-size: clamp(14px, 1.3vw, 17px);
+  line-height: 1.5;
+}
+
+.projectsHeroAdd {
+  width: max-content;
+  min-height: 46px;
+  margin-top: 20px;
+  padding-inline: 18px;
+  box-shadow: 0 14px 34px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.projectsHeroAdd svg { transition: transform 220ms var(--ease-spring); }
+.projectsHeroAdd:hover svg { transform: rotate(90deg); }
+
+.projectsPromiseFlow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.projectsPromiseFlow li {
+  position: relative;
+  display: grid;
+  gap: 4px;
+  min-height: 106px;
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--surface) 62%, transparent);
+}
+
+.projectsPromiseFlow li:not(:last-child)::after {
+  content: "→";
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  right: -9px;
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.projectsPromiseFlow li > span {
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.projectsPromiseFlow strong {
+  align-self: end;
+  font-size: 15px;
+}
+
+.projectsPromiseFlow small {
+  color: var(--text-dim);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.projectsCatalogLayout {
+  grid-template-columns: 276px minmax(0, 1fr);
+  gap: 24px;
+}
+
+.projectsSidebar {
+  gap: 16px;
+  top: calc(var(--header-safe) + 12px);
+  border-radius: 28px;
+}
+
+.projectsSidebarSection {
+  display: grid;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+}
+
+.projectsFacetGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.projectsFacetGrid .uiChip {
+  min-height: 36px;
+  padding-inline: 12px;
+  font-size: 12.5px;
+}
+
+.projectsSidebarHint {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+
+.projectsConnectPrinter {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--surface) 52%, transparent);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.projectsConnectPrinter small {
+  color: var(--text-dim);
+  font-size: 11.5px;
+  line-height: 1.35;
+}
+
+.projectsCatalogLayout .homeGallery {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.projectsPopularList {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.projectsPopularQuery {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  width: 100%;
+  min-height: 48px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--control-radius);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.projectsPopularQuery:hover,
+.projectsPopularQuery[aria-pressed="true"] {
+  border-color: color-mix(in srgb, var(--accent) 52%, var(--border));
+  background: color-mix(in srgb, var(--accent) 11%, transparent);
+}
+
+.projectsPopularQuery:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.projectsPopularQuery > :first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.projectsPopularCount {
+  color: var(--text-dim);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.projectTile {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  border-radius: 28px;
+  background: color-mix(in srgb, var(--surface) 67%, transparent);
+  box-shadow: 0 16px 38px color-mix(in srgb, var(--shadow) 42%, transparent);
+  cursor: pointer;
+  animation: projectTileIn 420ms both;
+  animation-delay: calc(var(--i, 0) * 34ms);
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.projectTile:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
+  box-shadow: 0 24px 50px color-mix(in srgb, var(--shadow) 58%, transparent);
+}
+
+.projectTile:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.projectTileCover {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 46% 42%, hsl(var(--project-hue) 62% 68% / 0.46), transparent 52%),
+    color-mix(in srgb, var(--surface-strong) 74%, transparent);
+}
+
+.projectTileMedia {
+  position: absolute;
+  inset: 0;
+}
+
+.projectTileMedia .uiProgressiveMediaImg {
+  object-fit: cover;
+}
+
+.projectTile:hover .projectTileMedia .uiProgressiveMediaImg {
+  transform: scale(1.025);
+}
+
+/* MF-2050: проектный каталог не начинает с пустого полотна. Каркас занимает ровно ту же
+   геометрию, что ProjectTile, а затем растворяется целиком при получении данных. */
+.projectTileSkeleton {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  border-radius: 28px;
+  background: color-mix(in srgb, var(--surface) 67%, transparent);
+  box-shadow: 0 16px 38px color-mix(in srgb, var(--shadow) 42%, transparent);
+}
+
+.projectTileSkeletonCover,
+.projectTileSkeletonLine,
+.projectTileSkeletonPill {
+  background: linear-gradient(
+    105deg,
+    color-mix(in srgb, var(--surface) 58%, transparent) 24%,
+    color-mix(in srgb, var(--surface-strong) 88%, transparent) 43%,
+    color-mix(in srgb, var(--surface) 58%, transparent) 62%
+  );
+  background-size: 240% 100%;
+  animation: projectSkeletonShimmer 1.55s var(--ease-out) infinite;
+}
+
+.projectTileSkeletonCover {
+  aspect-ratio: 16 / 10;
+}
+
+.projectTileSkeletonBody {
+  min-height: 248px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.projectTileSkeletonLine {
+  display: block;
+  height: 12px;
+  border-radius: 999px;
+}
+
+.projectTileSkeletonLine--title {
+  height: 24px;
+  margin: 3px 0 7px;
+}
+
+.projectTileSkeletonFooter {
+  display: flex;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.projectTileSkeletonPill {
+  width: 82px;
+  height: 30px;
+  border-radius: 999px;
+}
+
+@keyframes projectSkeletonShimmer {
+  from { background-position: 140% 0; }
+  to { background-position: -140% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .projectTileSkeletonCover,
+  .projectTileSkeletonLine,
+  .projectTileSkeletonPill {
+    animation: none;
+  }
+}
+
+.projectTileCoverShade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgb(20 20 18 / 0.08), transparent 54%, rgb(20 20 18 / 0.36));
+  pointer-events: none;
+}
+
+.projectTileCoverBadges {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  gap: 6px;
+}
+
+.projectTileCoverBadges span,
+.projectTileMine {
+  min-height: 26px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 9px;
+  border: 1px solid rgb(255 255 255 / 0.52);
+  border-radius: 999px;
+  background: rgb(250 248 239 / 0.78);
+  color: #2d2a25;
+  font-size: 10.5px;
+  font-weight: 760;
+  letter-spacing: 0.02em;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.projectTileMine {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  border-color: color-mix(in srgb, var(--accent) 42%, white);
+  color: var(--accent);
+}
+
+.projectTileFallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: color-mix(in srgb, hsl(var(--project-hue) 64% 44%) 78%, var(--text));
+}
+
+.projectTileFallbackPrint,
+.projectTileFallbackPart,
+.projectTileFallbackGuide {
+  position: absolute;
+  z-index: 2;
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, currentColor 32%, var(--border));
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--surface) 80%, transparent);
+  box-shadow: 0 12px 30px color-mix(in srgb, currentColor 18%, transparent);
+}
+
+.projectTileFallbackPrint {
+  left: 24%;
+  top: 31%;
+}
+
+.projectTileFallbackPart {
+  left: calc(50% - 29px);
+  top: 18%;
+}
+
+.projectTileFallbackGuide {
+  right: 24%;
+  top: 42%;
+}
+
+.projectTileFallback svg {
+  width: 27px;
+  height: 27px;
+}
+
+.projectTileFallbackLine {
+  position: absolute;
+  z-index: 1;
+  height: 1px;
+  background: color-mix(in srgb, currentColor 34%, transparent);
+  transform-origin: left center;
+}
+
+.projectTileFallbackLine--one {
+  width: 25%;
+  left: 35%;
+  top: 42%;
+  transform: rotate(-18deg);
+}
+
+.projectTileFallbackLine--two {
+  width: 24%;
+  left: 53%;
+  top: 42%;
+  transform: rotate(20deg);
+}
+
+.projectTileFallbackLabel {
+  position: absolute;
+  bottom: 14px;
+  color: var(--text-dim);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.projectTileBody {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 248px;
+  padding: 17px 18px 18px;
+}
+
+.projectTileByline {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  color: var(--text-dim);
+  font-size: 11.5px;
+}
+
+.projectTileAuthor {
+  min-width: 0;
+  max-width: 65%;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-weight: 690;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.projectTile h2 {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(20px, 1.65vw, 26px);
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.projectTileSummary {
+  display: -webkit-box;
+  overflow: hidden;
+  min-height: 42px;
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 13px;
+  line-height: 1.55;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.projectTileTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 25px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.projectTileTags li {
+  max-width: 132px;
+  overflow: hidden;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
+  color: var(--text-dim);
+  font-size: 10.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.projectTileFooter {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px 12px;
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid color-mix(in srgb, var(--border) 74%, transparent);
+}
+
+.projectTilePrice {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 740;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.projectTileStats {
+  display: inline-flex;
+  gap: 9px;
+  color: var(--text-dim);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.projectTileStats > span,
+.projectTileOpen {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.projectTileStats svg,
+.projectTileOpen svg {
+  width: 14px;
+  height: 14px;
+}
+
+.projectTileOpen {
+  grid-column: 1 / -1;
+  justify-self: end;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 760;
+}
+
+@keyframes projectTileIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@media (max-width: 1220px) {
+  .projectsCatalogLayout .homeGallery {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 960px) {
+  .projectsPromise {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .projectsCatalogLayout {
+    grid-template-columns: 230px minmax(0, 1fr);
+  }
+
+  .projectsCatalogLayout .homeGallery {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 860px) {
+  .projectsCatalogLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .projectsSidebar {
+    position: static;
+  }
+
+  .projectsFacetGrid {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 3px;
+    scrollbar-width: none;
+  }
+
+  .projectsFacetGrid::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Место под bottom-tab (touch.nav.md §1/§4), тот же приём, что .homeContent (home.css). */
+@media (max-width: 640px) {
+  .projectsWideBody {
+    gap: 14px;
+    padding-bottom: calc(56px + env(safe-area-inset-bottom) + 16px);
+  }
+
+  .projectsPromise {
+    min-height: 0;
+    padding: 22px;
+    border-radius: 28px;
+  }
+
+  .projectsPromiseCopy h1 {
+    font-size: clamp(34px, 12vw, 50px);
+  }
+
+  .projectsPromiseFlow {
+    grid-template-columns: 1fr;
+  }
+
+  .projectsPromiseFlow li {
+    grid-template-columns: 28px minmax(0, 1fr);
+    align-items: center;
+    min-height: 64px;
+  }
+
+  .projectsPromiseFlow li:not(:last-child)::after {
+    content: "↓";
+    top: auto;
+    right: 20px;
+    bottom: -9px;
+    transform: none;
+  }
+
+  .projectsPromiseFlow small {
+    grid-column: 2;
+  }
+
+  .projectsHeroAdd { width: 100%; justify-content: center; }
+
+  .projectTile {
+    border-radius: 24px;
+  }
+
+  .projectTileCover {
+    aspect-ratio: 4 / 3;
+  }
+
+  .projectTileBody {
+    min-height: 232px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .projectsHeroAdd svg { transition: none; }
+  .projectTile {
+    animation: none;
+    transition: none;
+  }
+
+  .projectTileCover > img {
+    transition: none;
+  }
+}

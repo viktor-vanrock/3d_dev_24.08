@@ -1,0 +1,49 @@
+# scout — парсер-воркер, HTTP нет, Route не создаётся.
+
+replicaCount: 1
+
+image:
+  repository: registry.sberdevices.ru/rndml/additive-ai-portal/3d-ai-portal/scout
+  pullPolicy: IfNotPresent
+  command: ["/bin/sh"]
+  args: ["-c", ". /vault/secrets/config && exec scout-worker"]
+
+imagePullSecrets:
+  - name: gitlab-registry-secret
+
+serviceAccount:
+  create: false
+  name: vault
+
+podAnnotations:
+  vault.hashicorp.com/agent-inject: "true"
+  vault.hashicorp.com/agent-pre-populate-only: "true"
+  vault.hashicorp.com/agent-inject-secret-config: rndml/aiportal/scout
+  vault.hashicorp.com/role: d-rndml-aiportal
+  vault.hashicorp.com/agent-inject-template-config: |
+    {{- with secret "rndml/aiportal/scout" -}}
+    {{ range $k, $v := .Data.data }}export {{ $k }}='{{ $v }}'
+    {{ end }}{{- end -}}
+
+configMap:
+  enabled: true
+  config:
+    SCOUT_POLL_INTERVAL_SECONDS: "3600"
+
+securityContext: {}
+podSecurityContext: {}
+
+service:
+  enabled: false
+  ports: []
+
+ingress:
+  enabled: false
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi

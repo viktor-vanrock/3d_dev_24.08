@@ -1,0 +1,91 @@
+# relay — WSS/mTLS-шлюз устройств. HTTP-Route не подходит: TLS терминирует сам
+# процесс. Наружу — L4 (Service :8443), не OpenShift Route.
+
+replicaCount: 1
+
+image:
+  repository: registry.sberdevices.ru/rndml/additive-ai-portal/3d-ai-portal/relay
+  pullPolicy: IfNotPresent
+  command: ["/bin/bash"]
+  args: ["-c", "source /vault/secrets/config && exec node dist/main.js"]
+
+imagePullSecrets:
+  - name: gitlab-registry-secret
+
+serviceAccount:
+  create: false
+  name: vault
+
+securityContext: {}
+podSecurityContext: {}
+
+podAnnotations:
+  vault.hashicorp.com/agent-inject: "true"
+  vault.hashicorp.com/agent-pre-populate-only: "true"
+  vault.hashicorp.com/agent-inject-secret-config: rndml/aiportal/relay
+  vault.hashicorp.com/role: d-rndml-aiportal
+  vault.hashicorp.com/agent-inject-template-config: |
+    {{- with secret "rndml/aiportal/relay" -}}
+    {{ range $k, $v := .Data.data }}export {{ $k }}='{{ $v }}'
+    {{ end }}{{- end -}}
+
+configMap:
+  enabled: true
+  config:
+    NODE_ENV: production
+    RELAY_API_BASE_URL: https://aiportal.dev.sberdevices.ru/api
+    RELAY_GATEWAY_HOST: 0.0.0.0
+    RELAY_GATEWAY_PORT: "8443"
+    RELAY_OBSERVABILITY_HOST: 0.0.0.0
+    RELAY_OBSERVABILITY_PORT: "9091"
+    RELAY_TLS_CERT_FILE: /run/secrets/relay/tls.crt
+    RELAY_TLS_KEY_FILE: /run/secrets/relay/tls.key
+    RELAY_TLS_CA_FILE: /run/secrets/relay/ca.crt
+
+service:
+  enabled: true
+  type: ClusterIP
+  ports:
+    - name: gateway
+      port: 8443
+      protocol: TCP
+      targetPort: 8443
+    - name: metrics
+      port: 9091
+      protocol: TCP
+      targetPort: 9091
+
+ingress:
+  enabled: false
+
+ServiceMonitor:
+  enabled: true
+  path: /metrics
+  port: metrics
+  label: prom-kube-stack
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: metrics
+readinessProbe:
+  httpGet:
+    path: /ready
+    port: metrics
+
+volumes:
+  - name: relay-tls
+    secret:
+      secretName: aiportal-relay-tls
+volumeMounts:
+  - name: relay-tls
+    mountPath: /run/secrets/relay
+    readOnly: true
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi

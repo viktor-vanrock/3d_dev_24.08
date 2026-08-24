@@ -1,0 +1,21 @@
+{
+  "contract_version": "fingerprint-trust.v1",
+  "algorithm_version": "sha256-canonical-config.v1",
+  "decision_matrix": [
+    { "state": "agent", "source": "agent", "account_scope": "allow", "global_scope": "allow" },
+    { "state": "declared", "source": "declared", "account_scope": "allow", "global_scope": "reject" },
+    { "state": "modified", "source": "agent", "canonical_fingerprint": null, "account_scope": "allow", "global_scope": "reject" },
+    { "state": "revoked", "source": "agent", "account_scope": "reject", "global_scope": "reject" },
+    { "state": "stale", "source": "agent", "account_scope": "reject", "global_scope": "reject" },
+    { "state": "unknown", "source": "none", "account_scope": "reject", "global_scope": "reject" }
+  ],
+  "negative_cases": [
+    "replayed_attestation_id",
+    "cross_account",
+    "cross_profile",
+    "algorithm_version_mismatch",
+    "slice_key_mismatch",
+    "signature_mismatch",
+    "custom_configuration_global_reuse"
+  ]
+}

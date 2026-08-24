@@ -1,0 +1,97 @@
+# api — Nest-бэкенд. Одна реплика и Recreate: миграции dbmate в команде старта
+# и RWO-том git-репозиториев нельзя делить на два пода.
+
+replicaCount: 1
+
+strategy:
+  type: Recreate
+
+image:
+  repository: registry.sberdevices.ru/rndml/additive-ai-portal/3d-ai-portal/api
+  pullPolicy: IfNotPresent
+  command: ["/bin/bash"]
+  args:
+    - "-c"
+    - "source /vault/secrets/config && dbmate --migrations-dir db/migrations --schema-file db/schema.sql --no-dump-schema up && exec node dist/nest/main.js"
+
+imagePullSecrets:
+  - name: gitlab-registry-secret
+
+serviceAccount:
+  create: false
+  name: vault
+
+podAnnotations:
+  vault.hashicorp.com/agent-inject: "true"
+  vault.hashicorp.com/agent-pre-populate-only: "true"
+  vault.hashicorp.com/agent-inject-secret-config: rndml/aiportal/api
+  vault.hashicorp.com/role: d-rndml-aiportal
+  vault.hashicorp.com/agent-inject-template-config: |
+    {{- with secret "rndml/aiportal/api" -}}
+    {{ range $k, $v := .Data.data }}export {{ $k }}='{{ $v }}'
+    {{ end }}{{- end -}}
+
+configMap:
+  enabled: true
+  config:
+    NODE_ENV: production
+    PORT: "3002"
+    CLOSED_DEV: "1"
+    WEB_APP_URL: https://aiportal.dev.sberdevices.ru
+    WEB_BASE_URL: https://aiportal.dev.sberdevices.ru
+    API_PUBLIC_URL: https://aiportal.dev.sberdevices.ru/api
+    CORS_ALLOWED_ORIGINS: https://aiportal.dev.sberdevices.ru
+    COOKIE_DOMAIN: aiportal.dev.sberdevices.ru
+    MESH_HTTP_URL: http://mesh:3101
+    GIGA_HTTP_URL: http://giga:3102
+    GIT_REPOS_DIR: /srv/git/repos
+    AUTH_DEV_BYPASS: "0"
+
+securityContext: {}
+podSecurityContext: {}
+
+service:
+  enabled: true
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 3002
+
+# OpenShift Route после helm: api-d-rndml-aiportal.apps.advosd.sberdevices.ru
+ingress:
+  enabled: true
+  openshift: true
+  route:
+    path: "/"
+    annotations:
+      haproxy.router.openshift.io/rewrite-target: /
+      openshift.io/host.generated: "true"
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 30
+readinessProbe:
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 10
+
+volumes:
+  - name: git-repos
+    persistentVolumeClaim:
+      claimName: aiportal-api-git-repos
+volumeMounts:
+  - name: git-repos
+    mountPath: /srv/git/repos
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: "2"
+    memory: 2Gi

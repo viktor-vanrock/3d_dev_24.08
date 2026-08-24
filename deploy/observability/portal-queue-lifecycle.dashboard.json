@@ -1,0 +1,47 @@
+{
+  "title": "Portal queue lifecycle",
+  "schemaVersion": 39,
+  "templating": {
+    "list": [
+      {
+        "name": "queue",
+        "type": "query",
+        "query": "label_values(portal_queue_depth, queue)",
+        "includeAll": true,
+        "multi": true
+      }
+    ]
+  },
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Queue depth",
+      "targets": [{"expr": "portal_queue_depth{queue=~\"$queue\"}"}]
+    },
+    {
+      "type": "timeseries",
+      "title": "Oldest waiting age",
+      "targets": [{"expr": "portal_queue_oldest_age_seconds{queue=~\"$queue\"}"}]
+    },
+    {
+      "type": "timeseries",
+      "title": "Expired leases",
+      "targets": [{"expr": "portal_queue_expired_leases{queue=~\"$queue\"}"}]
+    },
+    {
+      "type": "timeseries",
+      "title": "Reclaims",
+      "targets": [{"expr": "sum by (queue, outcome) (increase(portal_queue_reclaim_total{queue=~\"$queue\"}[15m]))"}]
+    },
+    {
+      "type": "timeseries",
+      "title": "Stale lifecycle outcomes",
+      "targets": [{"expr": "sum by (queue, operation) (increase(portal_queue_operation_total{queue=~\"$queue\",outcome=\"stale\"}[10m]))"}]
+    },
+    {
+      "type": "timeseries",
+      "title": "Lifecycle errors",
+      "targets": [{"expr": "sum by (queue, operation) (increase(portal_queue_operation_total{queue=~\"$queue\",outcome=\"error\"}[10m]))"}]
+    }
+  ]
+}

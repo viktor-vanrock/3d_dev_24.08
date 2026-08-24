@@ -1,0 +1,117 @@
+{
+  "assistant_run": {
+    "payload": {
+      "contract_version": "assistant-run.v1",
+      "thread_id": "3a5e9c10-0000-4a11-8a11-000000000001",
+      "run_id": "3a5e9c10-0000-4a11-8a11-000000000002",
+      "account_id": "3a5e9c10-0000-4a11-8a11-000000000003",
+      "message": "сделай подставку под телефон",
+      "context": { "model_id": "8f14e45f-ceea-467e-a1a1-000000000001" }
+    },
+    "result_answer": {
+      "contract_version": "assistant-run.v1",
+      "thread_id": "3a5e9c10-0000-4a11-8a11-000000000001",
+      "run_id": "3a5e9c10-0000-4a11-8a11-000000000002",
+      "result_type": "answer",
+      "result": {
+        "kind": "answer",
+        "text": "Нашёл похожие подставки в каталоге.",
+        "citations": [],
+        "note": null
+      }
+    },
+    "result_generation_offer": {
+      "contract_version": "assistant-run.v1",
+      "thread_id": "3a5e9c10-0000-4a11-8a11-000000000001",
+      "run_id": "3a5e9c10-0000-4a11-8a11-000000000002",
+      "result_type": "generation_offer",
+      "result": {
+        "kind": "generation_offer",
+        "offer_id": "3a5e9c10-0000-4a11-8a11-000000000002",
+        "branch": "openscad",
+        "prompt_summary": "Подставка под телефон шириной 80мм",
+        "note": null
+      }
+    },
+    "result_error": {
+      "contract_version": "assistant-run.v1",
+      "thread_id": "3a5e9c10-0000-4a11-8a11-000000000001",
+      "run_id": "3a5e9c10-0000-4a11-8a11-000000000002",
+      "result_type": "error",
+      "result": {
+        "kind": "error",
+        "code": "provider_timeout",
+        "message": "HYPERPC не ответил за бюджет ретраев",
+        "retryable": true
+      }
+    }
+  },
+  "generation": {
+    "queued": {
+      "contract_version": "generation.v2",
+      "id": "5b6c7d80-0000-4a11-8a11-000000000010",
+      "user_id": "5b6c7d80-0000-4a11-8a11-000000000011",
+      "branch": "openscad",
+      "prompt": "Подставка под телефон шириной 80мм",
+      "params": { "units": "mm" },
+      "status": "queued",
+      "artifact_url": null,
+      "preview_url": null,
+      "error": null,
+      "assistant_offer_id": "3a5e9c10-0000-4a11-8a11-000000000002",
+      "created_at": "2026-07-20T12:00:00Z",
+      "updated_at": "2026-07-20T12:00:00Z"
+    },
+    "done_direct": {
+      "contract_version": "generation.v2",
+      "id": "5b6c7d80-0000-4a11-8a11-000000000012",
+      "user_id": "5b6c7d80-0000-4a11-8a11-000000000011",
+      "branch": "kzd",
+      "prompt": "кронштейн для полки",
+      "params": {},
+      "status": "done",
+      "artifact_url": "generations/5b6c7d80-0000-4a11-8a11-000000000012/artifact",
+      "preview_url": "generations/5b6c7d80-0000-4a11-8a11-000000000012/preview",
+      "error": null,
+      "assistant_offer_id": null,
+      "created_at": "2026-07-20T12:00:00Z",
+      "updated_at": "2026-07-20T12:05:00Z"
+    },
+    "error": {
+      "contract_version": "generation.v2",
+      "id": "5b6c7d80-0000-4a11-8a11-000000000013",
+      "user_id": "5b6c7d80-0000-4a11-8a11-000000000011",
+      "branch": "hueforge",
+      "prompt": "лого клиента в 3 цвета",
+      "params": {},
+      "status": "error",
+      "artifact_url": null,
+      "preview_url": null,
+      "error": "generation_timeout",
+      "assistant_offer_id": null,
+      "created_at": "2026-07-20T12:00:00Z",
+      "updated_at": "2026-07-20T12:10:00Z"
+    },
+    "running_with_progress": {
+      "contract_version": "generation.v2",
+      "id": "5b6c7d80-0000-4a11-8a11-000000000014",
+      "user_id": "5b6c7d80-0000-4a11-8a11-000000000011",
+      "branch": "trellis",
+      "prompt": "дракон для настольной лампы",
+      "params": {},
+      "status": "running",
+      "artifact_url": null,
+      "preview_url": null,
+      "error": null,
+      "assistant_offer_id": null,
+      "progress": {
+        "phase": "geometry",
+        "progress": 55,
+        "eta_seconds": 18,
+        "estimate_updated_at": "2026-07-20T12:00:20Z"
+      },
+      "created_at": "2026-07-20T12:00:00Z",
+      "updated_at": "2026-07-20T12:00:20Z"
+    }
+  }
+}

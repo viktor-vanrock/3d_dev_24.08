@@ -1,0 +1,7 @@
+[Unit]
+Description=prod-error-watch каждые 5 минут
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=5min
+[Install]
+WantedBy=timers.target

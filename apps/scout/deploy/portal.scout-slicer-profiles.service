@@ -1,0 +1,29 @@
+# systemd-юнит разового прогона источника slicer_profiles (MF-627/MF-719):
+# scout-slicer-profiles-agent (orca+prusa) → machine_candidates. Гоняется по
+# расписанию через portal.scout-slicer-profiles.timer (НЕ подключён к тику
+# portal.scout-worker — источник редкий, не стоит дёргать ~800 файлов GitHub
+# каждый час, см. MF-627/MF-719).
+#
+# Установка на VDS (после uv sync в apps/scout, см. portal.scout-worker.service):
+#   sudo cp deploy/portal.scout-slicer-profiles.service deploy/portal.scout-slicer-profiles.timer /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now portal.scout-slicer-profiles.timer
+#   journalctl -u portal.scout-slicer-profiles -f     # логи последнего прогона
+#
+# EnvironmentFile ~/portal.scout.env (общий с portal.scout-worker.service) —
+# DATABASE_URL (обязателен), GITHUB_TOKEN (опционален — поднимает лимит
+# api.github.com с 60/ч).
+
+[Unit]
+Description=portal.ru scout slicer_profiles agent (orca+prusa -> machine_candidates)
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=plag
+WorkingDirectory=/home/plag/portal.ru/apps/scout
+EnvironmentFile=/home/plag/portal.scout.env
+ExecStart=/home/plag/.local/bin/uv run --no-dev scout-slicer-profiles-agent
+StandardOutput=journal
+StandardError=journal

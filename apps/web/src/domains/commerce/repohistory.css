@@ -1,0 +1,125 @@
+/* «История проекта» (docs/design/projects.page.md §11.3): свёрнутая по умолчанию секция,
+   триггер-строка + раскрываемый read-only журнал. Приглушённое стекло, некликабельные строки. */
+.repoHistory {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.repoHistoryTrigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 35%, transparent);
+  color: var(--text);
+  text-align: left;
+}
+
+.repoHistoryTriggerGlyph {
+  display: inline-flex;
+  font-size: 16px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+
+.repoHistoryTriggerLabel {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.repoHistoryTriggerMeta {
+  flex: 1 1 auto;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.repoHistoryChevron {
+  flex-shrink: 0;
+  color: var(--text-dim);
+  transform: rotate(90deg);
+  transition: transform 0.18s ease;
+}
+
+.repoHistoryChevron[data-open] {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .repoHistoryChevron {
+    transition: none;
+  }
+}
+
+.repoHistoryList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.repoHistoryRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  color: var(--text-dim);
+}
+
+.repoHistoryAvatar {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.repoHistoryRow > img,
+.repoHistoryRow > svg {
+  flex-shrink: 0;
+}
+
+.repoHistoryAvatarFallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  font-size: 14px;
+  color: var(--text);
+}
+
+.repoHistoryAuthor {
+  flex-shrink: 0;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.repoHistoryEvent {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 13px;
+}
+
+.repoHistoryTime {
+  flex-shrink: 0;
+  font-size: 12px;
+}
+
+@media (max-width: 640px) {
+  .repoHistoryRow {
+    flex-wrap: wrap;
+  }
+  .repoHistoryEvent {
+    flex-basis: 100%;
+    order: 3;
+  }
+}

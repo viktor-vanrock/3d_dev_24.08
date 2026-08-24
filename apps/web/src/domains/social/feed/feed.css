@@ -1,0 +1,3363 @@
+/* Лента /feed — страница поста и редактор (MF-816, docs/design/feed.post.editor.md,
+   docs/design/feed.md). Токены/примитивы — theme/tokens.css, ui/ui.css; формула стекла —
+   та же, что .modelGlassBtn/.modelVote (market/model.css), не переизобретаем. */
+
+/* --- Лента /feed: три колонки (MF-959, feed.md §1.1) --- */
+.feedWideBody {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: var(--content-max-wide);
+  margin: 0 auto;
+  /* Тот же приём резерва шапки, что .projectsWideBody (projects.css). */
+  padding: calc(var(--header-safe) + 16px) clamp(16px, 4vw, 48px) 64px;
+  view-transition-name: page-content;
+}
+
+.feedLayout {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr) 312px;
+  gap: clamp(18px, 1.5vw, 22px);
+  align-items: start;
+}
+
+.feedCenter {
+  min-width: 0;
+  max-width: none;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.feedSideLeft,
+.feedSideRight {
+  /* Не скроллятся с лентой (feed.md §1.1) — sticky под шапкой, тот же отступ, что резерв
+     контента (--header-safe), плюс собственный внутренний зазор. */
+  position: sticky;
+  top: calc(var(--header-safe) + 16px);
+  max-height: calc(100vh - var(--header-safe) - 32px);
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.feedSideCard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+  /* В узких рельсах длинная тень общего Card читалась отдельной квадратной подложкой. */
+  box-shadow: none;
+}
+
+.feedCreateCard {
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 88% 4%, color-mix(in srgb, var(--accent) 20%, transparent), transparent 46%),
+    color-mix(in srgb, var(--surface) 76%, transparent);
+}
+
+.feedCreateIntro {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.feedCreateIntro > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.feedCreateIntro strong {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.feedCreateIntro span {
+  color: var(--text-dim);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.feedSideSection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.feedSideSection + .feedSideSection {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.feedRailStack {
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 42%),
+    linear-gradient(145deg, color-mix(in srgb, var(--surface) 86%, transparent), color-mix(in srgb, var(--surface) 64%, transparent));
+  box-shadow: 0 18px 52px color-mix(in srgb, var(--shadow) 58%, transparent);
+  backdrop-filter: blur(26px);
+  -webkit-backdrop-filter: blur(26px);
+}
+
+.feedRailStack > .uiCardGrain {
+  display: none;
+}
+
+.feedRailStack > .feedSideSection {
+  gap: 12px;
+  padding: 18px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.feedRailStack > .feedSideSection + .feedSideSection {
+  border-top: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+}
+
+.feedRailHeading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.feedRailHeading > span {
+  color: var(--text-dim);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.feedSideEmpty {
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.feedSubsSkeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.feedSubsSkeleton span {
+  height: 38px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface) 75%, transparent);
+  animation: feedSkeletonPulse 1.5s ease-in-out infinite;
+}
+
+.feedSubsList {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.feedSubRow {
+  width: 100%;
+  min-height: 48px;
+  padding: 6px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.feedSubRow[data-active="true"] {
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+}
+
+.feedSubMark {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-size: 13px;
+  color: var(--text);
+  background: color-mix(in srgb, var(--surface) 72%, var(--accent) 10%);
+  border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+  overflow: hidden;
+}
+
+/* Реальная favicon-иконка бренда (MF-2039) — тот же приём, что .feedCatalogRowMark > img ниже. */
+.feedSubMark > img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.feedSubMark[data-kind="vendor"],
+.feedSubMark[data-kind="machine"] {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+}
+
+.feedSubCopy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.feedSubCopy > span,
+.feedSubCopy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.feedSubCopy > span {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.feedSubCopy small {
+  color: var(--text-dim);
+  font-size: 10px;
+}
+
+.feedEditorBodyLimit {
+  margin: -4px 0 0;
+  color: var(--text-dim);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+/* «Все новинки →» (printers.md §6) — тот же тон/размер, что «Показать ещё» дерева комментариев
+   (.feedCommentMore) и «Показать все бренды →» каталога принтеров (.prnBrandShowAll,
+   printers.css) — не новый паттерн ссылки-подвала, переиспользуем существующий accent-текст. */
+.feedSideFootLink {
+  background: transparent;
+  border: none;
+  color: var(--accent);
+  font-size: 13px;
+  text-decoration: none;
+  cursor: pointer;
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* --- «Сейчас горячо» правой колонки (feed.md §1.3 п.1, MF-971) --- */
+.feedHotList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.feedHotItem {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  align-items: start;
+  gap: 11px;
+  width: 100%;
+  padding: 10px 0;
+  background: transparent;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 10px;
+}
+
+.feedHotAvatar {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  display: block;
+  filter: drop-shadow(0 6px 9px color-mix(in srgb, var(--shadow) 42%, transparent));
+}
+
+.feedHotRank {
+  position: absolute;
+  right: -3px;
+  bottom: -2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--accent-contrast);
+  background: var(--accent);
+  border: 2px solid color-mix(in srgb, var(--surface) 92%, transparent);
+  font-family: var(--font-display);
+  font-size: 9px;
+  line-height: 1;
+}
+
+.feedHotItemCopy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.feedHotItem + .feedHotItem {
+  border-top: 1px solid var(--border);
+}
+
+.feedHotItemTitle {
+  color: var(--text);
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  white-space: normal;
+}
+
+.feedHotItemMeta {
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.feedHotFreshness {
+  color: var(--text-dim);
+  font-size: 12px;
+  padding-top: 2px;
+}
+
+/* Правый рельс загружается теми же строками, что займут данные. Раньше слово «Загрузка…»
+   схлопывало карточку, после ответа она резко вырастала и сдвигала второй блок. */
+.feedRailSkeleton {
+  display: flex;
+  flex-direction: column;
+}
+
+.feedRailSkeletonRow {
+  min-height: 62px;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 0;
+}
+
+.feedRailSkeletonRow + .feedRailSkeletonRow {
+  border-top: 1px solid var(--border);
+}
+
+.feedRailSkeletonAvatar,
+.feedRailSkeletonCopy > span,
+.feedRailSkeletonAction {
+  background: linear-gradient(
+    105deg,
+    color-mix(in srgb, var(--surface) 54%, transparent) 24%,
+    color-mix(in srgb, var(--surface-strong) 82%, transparent) 43%,
+    color-mix(in srgb, var(--surface) 54%, transparent) 62%
+  );
+  background-size: 240% 100%;
+  animation: feedSkeletonShimmer 1.4s ease-in-out infinite;
+}
+
+.feedRailSkeletonAvatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+}
+
+.feedRailSkeletonCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.feedRailSkeletonCopy > span {
+  height: 10px;
+  border-radius: 999px;
+}
+
+.feedRailSkeletonAction {
+  width: 66px;
+  height: 30px;
+  border-radius: 999px;
+}
+
+/* --- «Каталог фидов» правой колонки (feed.md §1.3 п.3, MF-971) --- */
+.feedCatalogGuestLink {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: var(--accent);
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.feedCatalogList {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.feedCatalogRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 0;
+}
+
+.feedCatalogRow + .feedCatalogRow {
+  border-top: 1px solid var(--border);
+}
+
+.feedCatalogRowIdentity {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.feedCatalogRowMark {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 74%, var(--accent) 8%);
+  font-family: var(--font-display);
+  font-size: 12px;
+  overflow: hidden;
+}
+
+.feedCatalogRowMark > img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.feedCatalogRowMark[data-kind="vendor"],
+.feedCatalogRowMark[data-kind="machine"] {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
+}
+
+.feedCatalogRowCopy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.feedCatalogRowName {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: var(--text);
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.feedCatalogRowCount {
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.feedCatalogRowAction {
+  display: flex;
+}
+
+.feedCatalogRow .uiChip {
+  min-height: 36px;
+  padding-inline: 10px;
+  font-size: 11.5px;
+}
+
+.feedHeaderRow {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 2px 2px 4px;
+}
+
+.feedPageHeading {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.feedPageHeading h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(20px, 2vw, 24px);
+  font-weight: 500;
+  line-height: 1.08;
+  letter-spacing: -0.015em;
+  color: var(--text);
+}
+
+.feedPageHeading p {
+  max-width: 520px;
+  margin: 2px 0 0;
+  color: var(--text-dim);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.feedHeaderActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.feedScopeTabs .uiSegmentToggleOption {
+  min-height: 36px;
+  padding-inline: 14px;
+}
+
+.feedScopeTabsDesktop {
+  width: 100%;
+  align-self: stretch;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 30%, transparent),
+    0 10px 28px color-mix(in srgb, var(--shadow) 42%, transparent);
+}
+
+.feedScopeTabsDesktop .uiSegmentToggleOption {
+  flex: 1;
+  padding-inline: 8px;
+}
+
+.feedMobileScope {
+  display: none;
+}
+
+.feedSubsTrigger {
+  display: none;
+}
+
+/* Первый вход без подписок (feed.md §4 «Первый раз, подписок нет») — мягкая полоса над лентой,
+   не тумба-блокер: чтение ленты под ней работает как обычно. */
+.feedSuggestBanner {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 18px;
+}
+
+.feedSuggestBannerCopy {
+  color: var(--text);
+  font-size: 14px;
+}
+
+.feedSuggestChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Пустые «Мои подписки» (feed.md §4) — плашка над фолбэком из общей ленты. */
+.feedSubsEmptyBanner {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 2px 2px 4px;
+}
+
+.feedSubsEmptyTitle {
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.feedSubsEmptySub {
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+/* Рельс новинок — локальная компактная композиция: меньшие метаданные и ритм 12/8px. */
+.feedSideCard .prnReleaseCard[data-composition="compact"] {
+  gap: 0;
+  min-height: 0;
+  padding: 12px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.feedReleaseList {
+  display: flex;
+  flex-direction: column;
+}
+
+.feedReleaseList .prnReleaseCard + .prnReleaseCard {
+  border-top: 1px solid var(--border);
+}
+
+.feedSideCard .prnReleaseCard[data-composition="compact"] .prnReleaseMeta {
+  gap: 8px;
+}
+
+.feedSideCard .prnReleaseCard[data-composition="compact"] .prnReleaseDate {
+  min-width: 44px;
+  font-size: 11px;
+}
+
+.feedSideCard .prnReleaseCard[data-composition="compact"] .uiStatusPill {
+  height: 28px;
+  padding-inline: 10px;
+  gap: 6px;
+  font-size: 11px;
+}
+
+.feedSideCard .prnReleaseCard[data-composition="compact"] .uiStatusDot {
+  width: 6px;
+  height: 6px;
+}
+
+.feedSideCard .prnReleaseCard[data-composition="compact"] .prnReleaseTitle {
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+.feedSideCard .prnReleaseCard[data-composition="compact"] .prnReleaseAction {
+  margin-top: 8px;
+}
+
+.feedSideCard .prnReleaseCard[data-composition="compact"] .prnReleaseAction .uiChip {
+  min-height: 40px;
+  padding-inline: 12px;
+  font-size: 12px;
+}
+
+/* Подписка различается галочкой, текстом и aria-pressed, но не акцентной заливкой. */
+.feedSideCard .prnReleaseCard[data-composition="compact"] .uiChip[data-selected="true"] {
+  border-color: var(--border);
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* Правая колонка уезжает первой: до 1400px ей тесно внутри общего коридора шапки.
+   Левая остаётся до mobile и отдаёт центру всё остальное. */
+@media (max-width: 1399px) {
+  .feedLayout {
+    grid-template-columns: 240px minmax(0, 1fr);
+  }
+
+  .feedSideRight {
+    display: none;
+  }
+}
+
+@media (max-width: 899px) {
+  .feedLayout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .feedSideLeft {
+    display: none;
+  }
+}
+
+/* «Написать пост» → FAB (feed.md §5, bottom-tab-режим ≤640px): плавающая зелёная CTA над
+   таббаром, тот же приём/геометрия, что .cmtyCreateFab (community.css). Скрыт выше 640px —
+   там кнопка остаётся инлайн в левой колонке (feedSideLeft). Место под таббар резервирует
+   .feedWideBody ниже — тот же принцип, что .homeContent (home.css). */
+.feedWriteFab {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .feedWideBody {
+    padding-bottom: calc(56px + env(safe-area-inset-bottom) + 16px);
+  }
+
+  .feedWriteFab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    right: 16px;
+    bottom: calc(56px + env(safe-area-inset-bottom) + 16px);
+    z-index: var(--z-bottomnav);
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: none;
+    background: var(--accent);
+    color: var(--accent-contrast);
+    box-shadow: 0 12px 28px color-mix(in srgb, var(--accent) 45%, transparent);
+  }
+}
+
+/* Инлайн-блок правой колонки в потоке центральной (feed.md §5, <1400px) — те же два
+   подблока, что и sticky-сайдбар справа, просто в потоке после 5-го поста; на ≥1400
+   сайдбар уже виден, второй копии не нужно. */
+.feedRightRailInline {
+  display: none;
+}
+
+@media (max-width: 1399px) {
+  .feedRightRailInline {
+    display: flex;
+  }
+}
+
+@media (max-width: 899px) {
+  .feedMobileScope {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    position: sticky;
+    top: var(--header-safe);
+    z-index: 20;
+    padding: 10px 0;
+  }
+
+  .feedHeaderRow {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    position: sticky;
+    top: var(--header-safe);
+    z-index: 20;
+    padding: 10px 0;
+  }
+
+  .feedHeaderActions {
+    width: 100%;
+  }
+
+  .feedScopeTabs {
+    max-width: calc(100% - 72px);
+    overflow-x: auto;
+  }
+
+  .feedSubsTrigger {
+    display: inline-flex;
+  }
+}
+
+/* --- VoteArrows (community.md §7.4, feed.md §6.1, feed.post.editor.md §7.1) --- */
+.feedVote {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  width: fit-content;
+}
+
+.feedVote[data-variant="large"] {
+  flex-direction: column;
+  gap: 0;
+  padding: 6px;
+}
+
+.feedVoteBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+.feedVote[data-variant="large"] .feedVoteBtn {
+  width: 48px;
+  height: 48px;
+}
+
+.feedVoteBtn[data-active="up"] {
+  color: var(--accent);
+}
+
+.feedVoteBtn[data-active="down"] {
+  color: var(--accent-danger);
+}
+
+.feedVoteBtn[data-active="up"],
+.feedVoteBtn[data-active="down"] {
+  animation: feedVoteBounce var(--dur-pop) var(--ease-spring);
+}
+
+@keyframes feedVoteBounce {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feedVoteBtn[data-active="up"],
+  .feedVoteBtn[data-active="down"] {
+    animation: none;
+  }
+}
+
+.feedVoteCount {
+  min-width: 32px;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.feedVote[data-labeled="true"] .feedVoteCount {
+  min-width: 62px;
+}
+
+.feedVoteCaption {
+  color: var(--text-dim);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.feedVote[data-variant="large"] .feedVoteCount {
+  font-family: var(--font-display);
+  font-size: 20px;
+  padding: 2px 0;
+}
+
+@media (max-width: 640px) {
+  .feedVote[data-variant="compact"] .feedVoteBtn {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+/* --- Карточка поста ленты (feed.md §2) — карточный каркас переиспользован uiCard --- */
+.feedPostCard {
+  display: block;
+  padding: 16px;
+  cursor: pointer;
+  text-align: left;
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  border-radius: 28px;
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--surface) 88%, transparent), color-mix(in srgb, var(--surface) 68%, transparent));
+  width: 100%;
+  /* Свайп по карточке не голосует (feed.md §5, ≤640px) — карточка сама не слушает
+     горизонтальные жесты (только тап), но `pan-y` явно отдаёт горизонталь браузеру/родителю,
+     не даёт клику-по-стрелке внутри карточки зацепиться за drag поверх скролла. */
+  touch-action: pan-y;
+  transition:
+    border-color var(--dur-toggle) var(--ease-out),
+    box-shadow var(--dur-toggle) var(--ease-out),
+    transform var(--dur-toggle) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .feedPostCard:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--accent) 32%, var(--border));
+    box-shadow: 0 14px 42px var(--shadow);
+  }
+
+  .feedPostCard .feedVoteBtn:hover,
+  .feedPostCard .uiCardFooterPill:hover,
+  .feedPostCard .feedPill:hover,
+  .feedPostCardHeaderLink:hover {
+    background: color-mix(in srgb, var(--surface) 70%, var(--accent) 8%);
+  }
+}
+
+.feedPostCardMeta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.feedPostCardHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.feedPostIdentityMark {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  object-fit: cover;
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  color: var(--text);
+  background: color-mix(in srgb, var(--surface) 72%, var(--accent) 8%);
+  font-family: var(--font-display);
+  font-size: 13px;
+}
+
+.feedPostCardIdentity {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.feedPostCardIdentityTop,
+.feedPostCardIdentityMeta {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.feedPostCardIdentityTop .feedPostCardHeaderLink {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.feedPostCardIdentityMeta {
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.feedPostKind,
+.feedOfficialBadge,
+.feedAgentBadge {
+  min-height: 20px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: 0.025em;
+  white-space: nowrap;
+}
+
+.feedPostKind {
+  color: var(--text-dim);
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+}
+
+.feedOfficialBadge {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border));
+}
+
+.feedAgentBadge {
+  color: var(--text-dim);
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--text-dim) 40%, transparent);
+}
+
+.feedProvenance {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 2px;
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.feedProvenanceAgent,
+.feedProvenanceSource {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.feedProvenanceAgent > span:last-child {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.feedProvenanceAgent strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.feedProvenanceAgent small {
+  overflow: hidden;
+  max-width: 230px;
+  color: var(--text-dim);
+  font-size: inherit;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.feedProvenancePulse {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.feedProvenanceSource {
+  flex: 0 1 auto;
+  padding: 5px 9px;
+  border: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
+  border-radius: 999px;
+  color: var(--text-dim);
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+  text-decoration: none;
+  transition: border-color 160ms ease, color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.feedProvenanceSource span:first-of-type {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .feedProvenanceSource:hover {
+    color: var(--accent);
+    border-color: color-mix(in srgb, var(--accent) 32%, var(--border));
+    background: color-mix(in srgb, var(--surface) 82%, var(--accent) 7%);
+    transform: translateY(-1px);
+  }
+}
+
+.feedProvenance--detail {
+  margin-top: 2px;
+  padding: 16px 0 0;
+  border-top: 1px solid color-mix(in srgb, var(--border) 68%, transparent);
+  font-size: 13px;
+}
+
+.feedProvenance--detail .feedProvenanceAgent > span:last-child {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.feedProvenance--detail .feedProvenanceSource {
+  padding: 8px 12px;
+}
+
+@media (max-width: 620px) {
+  .feedProvenance {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .feedProvenanceSource {
+    max-width: 100%;
+  }
+}
+
+.feedCoAuthorBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 20px;
+  padding: 2px 8px 2px 6px;
+  border-radius: 999px;
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border));
+  font-size: 11px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.feedPostCardHeaderLink {
+  color: var(--text-dim);
+  background: transparent;
+  border: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+.feedPostCardHeaderLink:hover {
+  color: var(--accent);
+}
+
+.feedPostCardHeaderAvatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--surface);
+  display: block;
+}
+
+.feedPostCardTitle {
+  font-family: var(--font-display);
+  font-size: clamp(19px, 1.35vw, 22px);
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  white-space: normal;
+}
+
+.feedPostCardTitle[data-read="true"] {
+  color: var(--text-dim);
+}
+
+.feedPostCardSnippet {
+  position: relative;
+  max-height: 4.2em;
+  overflow: hidden;
+  color: var(--text-dim);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.feedPostCardSnippet[data-clamp="true"] {
+  mask-image: linear-gradient(to bottom, black 60%, transparent);
+  -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent);
+}
+
+.feedPostCardModel {
+  display: flex;
+  align-items: stretch;
+  gap: 14px;
+  width: 100%;
+  min-height: 188px;
+  padding: 12px;
+  border-radius: 22px;
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--border));
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  background:
+    radial-gradient(circle at 15% 50%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 36%),
+    linear-gradient(120deg, color-mix(in srgb, var(--surface) 48%, transparent), color-mix(in srgb, var(--accent2) 8%, var(--surface)));
+  transition:
+    transform var(--dur-toggle) var(--ease-out),
+    border-color var(--dur-toggle) var(--ease-out),
+    box-shadow var(--dur-toggle) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .feedPostCardModel:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--accent) 46%, var(--border));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 8%, transparent);
+  }
+}
+
+.feedPostCardModelCopy {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  padding: 18px 20px;
+  overflow: hidden;
+  border-radius: 16px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--surface) 56%, transparent), color-mix(in srgb, var(--surface) 20%, transparent));
+}
+
+.feedPostCardModelCopy::after {
+  content: "";
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  right: -74px;
+  bottom: -108px;
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 28px color-mix(in srgb, var(--accent) 4%, transparent),
+    0 0 0 56px color-mix(in srgb, var(--accent) 3%, transparent);
+  pointer-events: none;
+}
+
+.feedPostCardModelTitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.feedPostCardModelStats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.feedPostCardModelStats > span {
+  min-height: 26px;
+  padding: 4px 9px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  background: color-mix(in srgb, var(--surface) 48%, transparent);
+}
+
+.feedPostCardModelAction {
+  position: relative;
+  z-index: 1;
+  width: fit-content;
+  margin-top: 4px;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Компактная плитка model_link (feed.md §2.2): элементы homeModelThumb, Glow, Art,
+   Layer и Shadow из market.tile.tsx образуют квадратную рамку около 120×120 вместо
+   вертикальной карточки каталога; здесь переопределяются aspect-ratio и ширина. */
+.feedPostCardModelPreview.homeModelThumb {
+  width: 164px;
+  aspect-ratio: 1 / 1;
+  flex-shrink: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.feedPostCardMedia {
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  border-radius: 20px;
+}
+
+/* Тонкая play-иконка поверх постера media (feed.md §2.2) — не крупная кнопка на пол-карточки. */
+.feedPostCardMediaPlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.5));
+}
+
+/* 2 строки текста автора под обложкой media — обрезка по высоте, БЕЗ градиента
+   (feed.md §2.2: короче порога, где нужен fade — тот приём см. базовый .feedPostCardSnippet). */
+.feedPostCardSnippetMedia {
+  max-height: 2.8em;
+}
+
+.feedPostCardSnippetMedia::after {
+  content: none;
+}
+
+.feedPostCardFooter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 0;
+  flex-wrap: wrap;
+}
+
+.feedPostCardVote {
+  display: flex;
+}
+
+/* --- GitVerse-тело (feed.md §2.2, MF-1051) --- */
+.feedGitversePreview {
+  width: 96px;
+  height: 96px;
+  flex-shrink: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dim);
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
+}
+
+.feedGitversePreview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.feedGitverseBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  width: fit-content;
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+  background: color-mix(in srgb, var(--surface) 45%, transparent);
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.feedPostCardGitverseBare {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-dim);
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.feedPostCardGitverseBare:hover {
+  color: var(--accent);
+}
+
+/* --- Инлайн-раскрытие карточки (feed.md §2.4/§6.3, MF-1051) --- */
+.feedPostCardExpand {
+  overflow: hidden;
+  transition:
+    max-height var(--dur-slow) var(--ease-out),
+    opacity var(--dur-slow) var(--ease-out);
+}
+
+.feedPostCardExpandLink {
+  display: inline-flex;
+  margin-top: 8px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--accent);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.feedPostCardModelPreviewLg {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 20px;
+}
+
+.feedPillChevron {
+  transition: transform var(--dur-toggle) var(--ease-out);
+}
+
+.feedPillChevron[data-expanded="true"] {
+  transform: rotate(180deg);
+}
+
+.feedPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 48px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+  background: color-mix(in srgb, var(--surface) 45%, transparent);
+  color: var(--text-dim);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* Шеврон pill «Раскрыть»/«Свернуть» (feed.md §2.4, motion.md §10.1 — тот же приём
+   разворота-схлопывания, тут в обратную сторону). Разворот на 180° за --dur-toggle,
+   один transform, никакого второго keyframe под «уже развёрнут». */
+.feedExpandChevron {
+  display: inline-flex;
+  transition: transform var(--dur-toggle) var(--ease-spring);
+}
+
+.feedPill[aria-expanded="true"] .feedExpandChevron {
+  transform: rotate(180deg);
+}
+
+/* `ExpandableCardBody` (feed.md §2.4/§6.3) — контейнер между телом и футером растущий
+   по высоте на месте. Приём `grid-template-rows: 0fr → 1fr` вместо измеренного
+   `max-height`/`scrollHeight`: даёт тот же визуальный рост "0 → полный контент" без JS-замера
+   высоты (контент раскрытого блока не фиксированный — таблица типов feed.md §2.4 — переизмерять
+   scrollHeight при resize/шрифтах не нужно). Внутренний `min-height: 0` на гриде — обязателен,
+   иначе grid-item не сжимается ниже своего контента и transition не проигрывается.
+   `overflow: hidden` — на внутреннем блоке, не на самом гриде (иначе тень/фокус-кольцо дочерних
+   элементов обрежется). `opacity` едет тем же таймингом, как и рост-схлопывание шапки в
+   motion.md §10.1. Соседние карточки ленты не дёргаются: рост — по высоте самого блока, layout
+   вокруг не переставляется отдельным transition. */
+.feedCardExpand {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows var(--dur-slow) var(--ease-out),
+    opacity var(--dur-slow) var(--ease-out);
+}
+
+.feedCardExpand[data-expanded="true"] {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.feedCardExpandInner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* `prefers-reduced-motion` — без отдельного media-блока (motion.md § «Reduced-motion —
+   единый источник»): --dur-slow/--dur-toggle обнуляются глобально в tokens.css, поэтому и рост
+   блока, и разворот шеврона становятся мгновенными сами по себе. */
+
+/* --- Страница поста (feed.post.editor.md §1) --- */
+.feedPostLayout {
+  max-width: 1080px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 720px) minmax(220px, 280px);
+  gap: clamp(24px, 4vw, 48px);
+  align-items: start;
+}
+
+.feedPostPage {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.feedPostEyebrow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.feedPostEyebrowEdited {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
+  font-size: 11px;
+}
+
+.feedPostBody {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.feedPostBody > .markdownBody {
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
+
+.feedPostContextCard {
+  position: sticky;
+  top: calc(var(--header-safe) + 16px);
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--surface) 78%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.feedPostContextSection { display: grid; grid-template-columns: 38px 1fr; gap: 10px; }
+.feedPostContextSection h2 { margin: 0; font: 600 1rem/1.3 var(--font-display); }
+.feedPostContextMark, .feedEditorContextMark { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; background: color-mix(in srgb, var(--accent) 12%, var(--surface)); color: var(--accent); }
+.feedPostOfficialBadge, .feedPostContextMuted { display: block; margin-top: 3px; font-size: 11px; color: var(--text-dim); }
+.feedPostOfficialBadge { color: var(--accent); }
+.feedPostContextLink { grid-column: 1 / -1; min-height: 36px; border: 0; border-radius: 12px; background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); cursor: pointer; }
+.feedPostContextAuthor { border: 0; border-top: 1px solid var(--border); padding: 14px 0 0; background: transparent; color: var(--text); display: flex; gap: 10px; align-items: center; text-align: left; cursor: pointer; }
+.feedPostContextAuthor > img, .feedPostContextAuthor > span:first-child { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; display: grid; place-items: center; background: var(--surface); }
+.feedPostContextAuthor > svg { flex: 0 0 38px; }
+.feedPostContextAuthor > span:last-child { display: flex; flex-direction: column; }
+.feedPostContextAuthor small { color: var(--text-dim); }
+
+.feedPostBody .markdownBody h1,
+.feedPostBody .markdownBody h2,
+.feedPostBody .markdownBody h3 {
+  font-size: 1.1em;
+}
+
+.feedPostActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.feedPostVideo {
+  width: 100%;
+  border-radius: 20px;
+  background: #000;
+}
+
+.feedPostImage {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 20px;
+}
+
+/* --- Дерево комментариев (feed.post.editor.md §1.6) --- */
+.feedComments {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.feedCommentsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.feedCommentComposer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.feedCommentComposerIdentity { display: flex; align-items: center; gap: 8px; color: var(--text-dim); font-size: 13px; }
+.feedCommentAvatarFallback { display: grid; place-items: center; font-size: 12px; }
+
+.feedCommentTree {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.feedComment {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-left: 14px;
+  border-left: 1px solid transparent;
+}
+
+.feedComment[data-depth="0"] {
+  padding-left: 0;
+  border-left: none;
+}
+
+.feedComment[data-mine="true"] {
+  border-left-color: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.feedCommentHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.feedCommentAvatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--surface);
+}
+
+.feedCommentMineTag {
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  color: var(--accent);
+  font-size: 11px;
+}
+
+.feedCommentBody {
+  font-size: 14px;
+}
+
+.feedCommentRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.feedCommentReplyBtn,
+.feedCommentDeleteBtn {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 13px;
+  cursor: pointer;
+  min-height: 32px;
+  padding: 0 4px;
+}
+
+.feedCommentChildren {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.feedCommentMore {
+  background: transparent;
+  border: none;
+  color: var(--accent);
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+  min-height: 32px;
+}
+
+/* --- Редактор /feed/new (feed.post.editor.md §2) --- */
+.feedEditorShell {
+  max-width: 1180px;
+  margin-inline: auto;
+}
+
+.feedEditorLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 780px) minmax(240px, 300px);
+  align-items: start;
+  justify-content: center;
+  gap: clamp(24px, 4vw, 48px);
+}
+
+.feedEditorPage {
+  min-width: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: clamp(20px, 3vw, 30px);
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  border-radius: 30px;
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--surface) 88%, transparent), color-mix(in srgb, var(--surface) 68%, transparent));
+  box-shadow: 0 22px 60px color-mix(in srgb, var(--shadow) 58%, transparent);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+}
+
+.feedEditorHeading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 4px;
+}
+
+.feedEditorHeading > span {
+  color: var(--text-dim);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.feedEditorContext { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 18px; background: color-mix(in srgb, var(--surface) 56%, transparent); }
+.feedEditorContext > div { display: flex; flex-direction: column; gap: 2px; }
+.feedEditorContext strong { font-size: 14px; }
+.feedEditorContext span { color: var(--text-dim); font-size: 12px; }
+
+.feedEditorTitleRow {
+  position: relative;
+}
+
+.feedEditorTitleRow .marketInput {
+  min-height: 60px;
+  padding-inline: 18px;
+  border-radius: 20px;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.feedEditorRequired,
+.feedEditorFieldError {
+  color: var(--danger, #c73535);
+}
+
+.feedEditorTitleRow[data-invalid] .marketInput {
+  border-color: var(--danger, #c73535);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--danger, #c73535) 18%, transparent);
+}
+
+.feedEditorFieldError {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+}
+
+.feedEditorTitleCounter {
+  position: absolute;
+  right: 14px;
+  top: -20px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.feedEditorAttachmentPicker {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.feedEditorTypeTabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 52%, transparent);
+}
+
+.feedEditorTypeTab {
+  min-width: 0;
+  min-height: 48px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  font: 500 12px/1.2 var(--font-body);
+  white-space: nowrap;
+}
+
+.feedEditorTypeTab > span {
+  margin-right: 4px;
+  color: var(--accent);
+}
+
+.feedEditorTypeTab[aria-selected="true"] {
+  color: var(--text);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--shadow) 60%, transparent);
+}
+
+.feedEditorAttachPreview {
+  position: relative;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 58%, transparent);
+}
+
+.feedEditorAttachPreviewGitverse {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.feedEditorAttachPreviewThumb {
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  object-fit: cover;
+  background: var(--surface-2, var(--surface));
+}
+
+.feedEditorAttachRemove {
+  margin-left: auto;
+}
+
+.feedEditorGitverseField {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.feedEditorGitverseField .marketInput {
+  width: 100%;
+  padding-right: 40px;
+}
+
+.feedEditorGitverseSpinner {
+  position: absolute;
+  right: 12px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--border) 60%, transparent);
+  border-top-color: var(--accent);
+  animation: feedGitverseSpin 0.7s linear infinite;
+}
+
+@keyframes feedGitverseSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feedEditorGitverseSpinner {
+    animation: none;
+  }
+}
+
+.feedEditorDraftBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  border: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.feedEditorDraftBanner button {
+  background: transparent;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+}
+
+.feedEditorOptional,
+.feedBlockEditorHint {
+  color: var(--text-dim);
+}
+
+.feedBlockEditor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.feedBlockEditorHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.feedBlockEditorHint {
+  font-size: 12px;
+}
+
+.feedBlockEditorCanvas {
+  padding: 14px;
+  min-height: 250px;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--surface) 58%, transparent);
+}
+
+.feedBlockRow {
+  position: relative;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) 32px;
+  align-items: start;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.feedBlockRow + .feedBlockRow {
+  border-top: 1px solid color-mix(in srgb, var(--border) 62%, transparent);
+}
+
+.feedBlockType {
+  display: grid;
+  place-items: center;
+  min-width: 32px;
+  min-height: 32px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface) 76%, transparent);
+  color: var(--text-dim);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.feedBlockInput {
+  width: 100%;
+  min-height: 36px;
+  resize: vertical;
+  border: 0;
+  outline: 0;
+  padding: 6px 4px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  line-height: 1.55;
+}
+
+.feedBlockInput::placeholder {
+  color: var(--text-dim);
+}
+
+.feedBlockInput:focus-visible {
+  border-radius: 8px;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+.feedBlockRow[data-block-type="heading-2"] .feedBlockInput {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.feedBlockRow[data-block-type="heading-3"] .feedBlockInput {
+  font-family: var(--font-display);
+  font-size: 1.12rem;
+  font-weight: 700;
+}
+
+.feedBlockRow[data-block-type="quote"] .feedBlockInput {
+  border-left: 3px solid var(--accent);
+  padding-left: 12px;
+}
+
+.feedBlockRow[data-block-type="code"] .feedBlockInput {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.feedBlockRemove {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 20px;
+}
+
+.feedBlockRemove:hover,
+.feedBlockRemove:focus-visible {
+  background: color-mix(in srgb, var(--danger, #c73535) 12%, transparent);
+  color: var(--danger, #c73535);
+}
+
+.feedBlockAdd {
+  position: relative;
+  padding-top: 8px;
+}
+
+.feedBlockAddButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.feedBlockAddButton > span {
+  font-size: 20px;
+  color: var(--accent);
+}
+
+.feedBlockMenu {
+  position: absolute;
+  z-index: 4;
+  left: 0;
+  top: 56px;
+  width: min(280px, calc(100vw - 64px));
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: 0 18px 48px rgb(0 0 0 / 18%);
+}
+
+.feedBlockMenuItem {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  align-items: center;
+  width: 100%;
+  min-height: 44px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.feedBlockMenuItem:hover,
+.feedBlockMenuItem:focus-visible {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.feedEditorDisabledReason {
+  margin-right: auto;
+  align-self: center;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.feedEditorFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  position: sticky;
+  bottom: 0;
+  padding: 12px 0;
+}
+
+.feedEditorAside {
+  position: sticky;
+  top: calc(var(--header-safe) + 16px);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.feedEditorGuide,
+.feedEditorMascotTip {
+  padding: 18px;
+  box-shadow: none;
+}
+
+.feedEditorGuide ol {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.feedEditorGuide li {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 10px;
+  padding: 12px 0;
+}
+
+.feedEditorGuide li + li {
+  border-top: 1px solid var(--border);
+}
+
+.feedEditorGuide li > span {
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  font-family: var(--font-display);
+  font-size: 12px;
+}
+
+.feedEditorGuide li > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.feedEditorGuide strong,
+.feedEditorMascotTip strong {
+  color: var(--text);
+  font-size: 13px;
+}
+
+.feedEditorGuide small,
+.feedEditorMascotTip span {
+  color: var(--text-dim);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.feedEditorMascotTip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background:
+    radial-gradient(circle at 15% 50%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 42%),
+    color-mix(in srgb, var(--surface) 72%, transparent);
+}
+
+.feedEditorMascotTip > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.feedModelSearchRow {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 8px;
+  border-radius: 16px;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.feedModelSearchRow:hover {
+  border-color: var(--border);
+}
+
+.feedModelSearchRow[data-disabled="true"] {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.feedModelSearchThumb {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: var(--surface);
+}
+
+@media (max-width: 640px) {
+  .feedPostLayout { grid-template-columns: 1fr; }
+  .feedPostContextCard { position: static; order: 2; }
+  .feedBlockEditorHeader {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .feedBlockEditorCanvas {
+    padding: 10px;
+  }
+
+  .feedBlockRow {
+    grid-template-columns: 32px minmax(0, 1fr) 32px;
+    gap: 4px;
+  }
+
+  .feedEditorFooter {
+    background: color-mix(in srgb, var(--bg) 92%, transparent);
+    backdrop-filter: blur(12px);
+  }
+}
+
+@media (max-width: 980px) {
+  .feedEditorLayout {
+    grid-template-columns: minmax(0, 780px);
+  }
+
+  .feedEditorAside {
+    position: static;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .feedEditorPage {
+    padding: 16px;
+    border-radius: 22px;
+  }
+
+  .feedEditorHeading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .feedEditorTypeTabs {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .feedEditorAside {
+    grid-template-columns: 1fr;
+  }
+
+  .feedPostCardModel {
+    gap: 12px;
+    min-height: 0;
+  }
+
+  .feedPostCardModelCopy {
+    padding: 12px;
+  }
+
+  .feedPostCardModelAction {
+    display: none;
+  }
+
+  .feedPostCardModelPreview.homeModelThumb {
+    width: 112px;
+  }
+}
+
+/* --- Публикация как документ: detail + editor v2 (MF-1922) --- */
+.feedPostShell,
+.feedEditorShell {
+  max-width: none;
+}
+
+.feedPostLayout,
+.feedEditorLayout {
+  width: min(100%, 1240px);
+  margin-inline: auto;
+  gap: clamp(18px, 2vw, 28px);
+}
+
+.feedPostLayout {
+  max-width: none;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 320px);
+}
+
+.feedPostPage {
+  overflow: hidden;
+  gap: 0;
+  padding: clamp(22px, 3vw, 38px);
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  border-radius: 30px;
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--surface) 93%, transparent), color-mix(in srgb, var(--surface) 77%, transparent));
+  box-shadow: 0 24px 70px color-mix(in srgb, var(--shadow) 52%, transparent);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+}
+
+.feedPostArticleHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding-bottom: 26px;
+}
+
+.feedPostIdentity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.feedPostTitleRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.feedPostTitleRow h1 {
+  max-width: 18ch;
+  margin: 0;
+  font: 680 clamp(2rem, 3.4vw, 3.35rem) / 0.98 var(--font-display);
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+}
+
+.feedPostTitleEditor {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 8px;
+}
+
+.feedPostBody {
+  gap: clamp(22px, 3vw, 32px);
+  padding-bottom: 28px;
+}
+
+.feedPostDetailModel {
+  display: grid;
+  grid-template-columns: minmax(260px, 44%) minmax(0, 1fr);
+  min-height: 300px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 18% 50%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 46%),
+    color-mix(in srgb, var(--surface) 54%, transparent);
+}
+
+.feedPostDetailModelPreview {
+  width: 100%;
+  min-height: 300px;
+  border: 0;
+  border-radius: 0;
+}
+
+.feedPostDetailModelCopy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 12px;
+  padding: clamp(24px, 4vw, 42px);
+}
+
+.feedPostDetailModelCopy > strong {
+  font: 650 clamp(1.4rem, 2.2vw, 2rem) / 1.05 var(--font-display);
+  letter-spacing: -0.03em;
+}
+
+.feedPostDetailModelStats {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.feedPostDetailModelButton {
+  margin-top: 8px;
+}
+
+.feedRichBody {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(18px, 2.5vw, 28px);
+  color: var(--text);
+}
+
+.feedRichBody > .markdownBody {
+  max-width: 72ch;
+  font-size: clamp(1rem, 1.15vw, 1.1rem);
+  line-height: 1.72;
+}
+
+.feedRichBody > .markdownBody > :first-child {
+  margin-top: 0;
+}
+
+.feedRichBody > .markdownBody > :last-child {
+  margin-bottom: 0;
+}
+
+.feedPostEditorial {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.feedPostEditorialLead {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  color: var(--text-dim);
+  font-size: 0.96rem;
+  line-height: 1.55;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.feedPostEditorialVisual {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--surface) 58%, transparent);
+}
+
+.feedPostEditorialVisual .feedRichBody {
+  gap: 0;
+}
+
+.feedPostEditorialVisual .feedRichImage img {
+  width: 100%;
+  height: clamp(210px, 31vw, 380px);
+  max-height: none;
+  border-radius: 0;
+  object-fit: cover;
+}
+
+.feedPostEditorialVisual .feedRichImage figcaption {
+  padding: 10px 14px 12px;
+}
+
+.feedPostEditorialVisual .feedRichDiagram {
+  max-height: 340px;
+  padding: clamp(14px, 2vw, 22px);
+  overflow: auto;
+  border-radius: 0;
+  background:
+    radial-gradient(circle at 18% 20%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 42%),
+    color-mix(in srgb, var(--surface) 60%, transparent);
+}
+
+.feedPostEditorialSections {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+  padding-top: 2px;
+}
+
+.feedPostEditorialSectionsLabel {
+  padding-top: 7px;
+  color: var(--text-dim);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.feedPostEditorialSections ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.feedPostEditorialSections li {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 11px 7px 8px;
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 56%, transparent);
+}
+
+.feedPostEditorialSections li > span {
+  color: var(--accent);
+  font: 700 9px/1 var(--font-mono);
+}
+
+.feedPostEditorialSections li > strong {
+  max-width: 25ch;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.feedGitverseCopy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.feedGitverseName,
+.feedGitverseDescription {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.feedGitverseName {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.feedGitverseDescription {
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.feedRichImage {
+  margin: 0;
+}
+
+.feedRichImage img {
+  display: block;
+  width: 100%;
+  max-height: 720px;
+  object-fit: contain;
+  border-radius: 24px;
+  background: color-mix(in srgb, var(--surface) 64%, transparent);
+}
+
+.feedRichImage figcaption {
+  padding: 9px 4px 0;
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.feedRichProject {
+  width: 100%;
+  min-height: 168px;
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 22px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 38%, var(--border));
+  border-radius: 24px;
+  background:
+    linear-gradient(120deg, color-mix(in srgb, var(--accent) 9%, transparent), transparent 44%),
+    color-mix(in srgb, var(--surface) 62%, transparent);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.feedRichProjectPreview {
+  height: 144px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  color: var(--accent);
+  font-size: 48px;
+}
+
+.feedRichProjectPreview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.feedRichProjectCopy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.feedRichProjectCopy strong {
+  font: 650 1.25rem/1.15 var(--font-display);
+}
+
+.feedRichProjectCopy small {
+  color: var(--text-dim);
+}
+
+.feedRichProjectArrow {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  color: var(--accent);
+  font-size: 18px;
+}
+
+.feedRichGitverse {
+  overflow: hidden;
+  border-radius: 24px;
+}
+
+.feedRichDiagram {
+  width: 100%;
+  overflow-x: auto;
+  padding: 18px;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--surface) 64%, transparent);
+}
+
+.feedRichDiagram svg {
+  display: block;
+  margin: 0 auto;
+  max-width: 100%;
+  height: auto;
+}
+
+.feedRichDiagramLoading {
+  height: 120px;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--surface) 64%, transparent);
+}
+
+.feedRichDiagramFallback {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface) 64%, transparent);
+  overflow-x: auto;
+  font-size: 13px;
+  white-space: pre-wrap;
+}
+
+.feedRichSources {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 4px;
+  border-top: 1px solid var(--border);
+}
+
+.feedRichSourcesLabel {
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.feedRichSourcesList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.feedRichSourceChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px 7px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 62%, transparent);
+  color: var(--text);
+  font-size: 13px;
+  text-decoration: none;
+  transition: border-color var(--dur-toggle) var(--ease-out), background var(--dur-toggle) var(--ease-out);
+}
+
+.feedRichSourceChip:hover,
+.feedRichSourceChip:focus-visible {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+}
+
+.feedRichSourceChip img {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.feedPostContextCard {
+  overflow: hidden;
+  padding: 0;
+  border-radius: 26px;
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  box-shadow: 0 18px 52px color-mix(in srgb, var(--shadow) 42%, transparent);
+  gap: 0;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+.feedPostContextAuthor {
+  width: 100%;
+  min-height: 118px;
+  display: grid;
+  grid-template-columns: 68px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 20px;
+  border: 0;
+  background:
+    radial-gradient(circle at 14% 50%, color-mix(in srgb, var(--accent) 17%, transparent), transparent 43%);
+}
+
+.feedPostContextAuthor > span:nth-child(2) {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.feedPostContextAuthor strong {
+  overflow: hidden;
+  font: 650 1.1rem/1.2 var(--font-display);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.feedPostContextAuthor small,
+.feedPostContextKicker,
+.feedPostContextMuted {
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.feedPostContextArrow {
+  color: var(--accent);
+  font-size: 18px;
+}
+
+.feedPostContextSection {
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 12px;
+  padding: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.feedPostContextSection h2 {
+  margin: 2px 0 0;
+  font: 650 1rem/1.25 var(--font-display);
+}
+
+.feedPostContextMark,
+.feedEditorContextMark {
+  width: 42px;
+  height: 42px;
+}
+
+.feedPostOfficialBadge {
+  display: block;
+  width: fit-content;
+  margin-top: 5px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent);
+  font-size: 10px;
+}
+
+.feedPostContextLink {
+  min-height: 40px;
+  margin-top: 4px;
+  padding-inline: 12px;
+  border-radius: 13px;
+}
+
+.feedPostRelated {
+  display: flex;
+  flex-direction: column;
+  padding: 18px 20px 20px;
+  border-top: 1px solid var(--border);
+}
+
+.feedPostRelatedTitle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 8px;
+}
+
+.feedPostRelatedTitle > span {
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.feedPostRelatedRow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 0;
+  border: 0;
+  border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.feedPostRelatedRow > span {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.feedPostRelatedRow small {
+  color: var(--text-dim);
+}
+
+.feedPostActionBar {
+  padding: 16px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.feedPostActionBar .feedVote[data-variant="large"] {
+  flex-direction: row;
+  min-width: 134px;
+  min-height: 44px;
+  padding: 3px;
+}
+
+.feedPostActionBar .feedVote[data-variant="large"] .feedVoteBtn {
+  width: 40px;
+  height: 38px;
+}
+
+.feedPostActionBar .feedVote[data-variant="large"] .feedVoteScore {
+  min-width: 42px;
+}
+
+.feedComments {
+  gap: 20px;
+  padding-top: clamp(28px, 4vw, 42px);
+}
+
+.feedCommentsHeader {
+  gap: 16px;
+}
+
+.feedCommentsHeader h2 {
+  margin-top: 4px;
+}
+
+.feedCommentsSort {
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.feedCommentComposer {
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--surface) 52%, transparent);
+}
+
+.feedCommentComposer .marketTextarea {
+  min-height: 92px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.feedCommentTree {
+  gap: 0;
+}
+
+.feedComment {
+  padding: 20px 0 0 16px;
+}
+
+.feedComment[data-depth="0"] {
+  padding: 22px 0;
+  border-top: 1px solid var(--border);
+}
+
+.feedCommentBody {
+  padding-left: 34px;
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.feedCommentRow {
+  padding-left: 34px;
+}
+
+.feedEditorLayout {
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 320px);
+  justify-content: initial;
+}
+
+.feedEditorPage {
+  gap: 24px;
+  padding: clamp(22px, 3vw, 38px);
+}
+
+.feedEditorHeading {
+  align-items: flex-start;
+}
+
+.feedEditorHeading > div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.feedEditorHeading > span {
+  margin-top: 4px;
+}
+
+.feedEditorComposerHead {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(190px, 230px);
+  gap: 12px;
+}
+
+.feedEditorContext {
+  gap: 12px;
+  padding: 12px 14px;
+}
+
+.feedEditorCommunity {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.feedEditorCommunity .marketInput {
+  min-height: 48px;
+  border-radius: 16px;
+}
+
+.feedEditorAttachmentLabel {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.feedEditorAttachmentLabel > span {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.feedEditorAttachmentLabel small {
+  color: var(--text-dim);
+}
+
+.feedBlockEditorCanvas {
+  min-height: 360px;
+  padding: 16px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 66%, transparent), color-mix(in srgb, var(--surface) 46%, transparent));
+}
+
+.feedInlineBlock {
+  min-width: 0;
+  min-height: 88px;
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border: 1px dashed color-mix(in srgb, var(--border) 90%, transparent);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--surface) 48%, transparent);
+}
+
+.feedInlineBlock[data-ready="true"] {
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--accent) 34%, var(--border));
+}
+
+.feedInlineBlockImage,
+.feedInlineBlockGlyph {
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  object-fit: cover;
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+}
+
+.feedInlineBlockGlyph {
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+  font-size: 28px;
+}
+
+.feedInlineBlockCopy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.feedInlineBlockCopy strong {
+  font-size: 14px;
+}
+
+.feedInlineBlockCopy small {
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.feedInlineUrlInput {
+  width: 100%;
+  padding: 7px 0;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+}
+
+.feedInlineUrlInput:focus {
+  border-color: var(--accent);
+}
+
+.feedBlockMenu {
+  width: min(520px, calc(100vw - 64px));
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.feedInlinePicker {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.feedInlinePicker > p {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.feedInlinePickerList {
+  max-height: min(420px, 60vh);
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.feedInlinePickerRow {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  border: 1px solid transparent;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface) 52%, transparent);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.feedInlinePickerRow:hover,
+.feedInlinePickerRow:focus-visible {
+  border-color: var(--accent);
+}
+
+.feedInlinePickerRow > img,
+.feedInlinePickerEmpty {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  object-fit: cover;
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+}
+
+.feedInlinePickerEmpty {
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+  font-size: 24px;
+}
+
+.feedInlinePickerRow > span:last-child {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.feedInlinePickerRow strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.feedInlinePickerRow small {
+  color: var(--text-dim);
+}
+
+@media (max-width: 1040px) {
+  .feedPostLayout {
+    grid-template-columns: minmax(0, 1fr) 280px;
+  }
+}
+
+@media (max-width: 880px) {
+  .feedPostLayout,
+  .feedEditorLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .feedPostContextCard {
+    position: static;
+    order: 2;
+  }
+
+  .feedEditorAside {
+    position: static;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .feedPostPage {
+    padding: 18px;
+    border-radius: 22px;
+  }
+
+  .feedPostTitleRow {
+    flex-direction: column;
+  }
+
+  .feedPostTitleRow h1 {
+    max-width: none;
+    font-size: clamp(2rem, 11vw, 2.8rem);
+  }
+
+  .feedPostTitleEditor {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .feedPostTitleEditor .marketInput {
+    grid-column: 1 / -1;
+  }
+
+  .feedPostDetailModel {
+    grid-template-columns: 1fr;
+  }
+
+  .feedPostDetailModelPreview {
+    min-height: 220px;
+  }
+
+  .feedRichProject {
+    grid-template-columns: 88px minmax(0, 1fr);
+    min-height: 112px;
+    gap: 12px;
+  }
+
+  .feedRichProjectPreview {
+    height: 88px;
+  }
+
+  .feedRichProjectArrow,
+  .feedCommentsSort {
+    display: none;
+  }
+
+  .feedPostActionBar .modelGlassBtn {
+    flex: 1 1 auto;
+  }
+
+  .feedEditorComposerHead,
+  .feedEditorAside {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .feedPostEditorialVisual .feedRichImage img {
+    height: 220px;
+  }
+
+  .feedPostEditorialSections {
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+
+  .feedPostEditorialSectionsLabel {
+    padding-top: 0;
+  }
+
+  .feedPostEditorialSections ol {
+    flex-direction: column;
+  }
+
+  .feedPostEditorialSections li > strong {
+    max-width: min(46ch, calc(100vw - 120px));
+  }
+
+  .feedInlineBlock {
+    grid-template-columns: 52px minmax(0, 1fr);
+  }
+
+  .feedInlineBlockImage,
+  .feedInlineBlockGlyph {
+    width: 52px;
+    height: 52px;
+  }
+
+  .feedInlineBlock > .modelGlassBtn {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .feedBlockMenu {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- Пагинация ленты (feed.md §4 «Первая загрузка»/«Догрузка», MF-974) --- */
+
+.feedPostCardSkeleton {
+  cursor: default;
+}
+
+.feedPostCard:not(.feedPostCardSkeleton) {
+  animation: primReveal var(--dur-reveal) var(--ease-out) both;
+}
+
+.feedSkeletonVote,
+.feedSkeletonLine,
+.feedSkeletonPill {
+  border-radius: 8px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--surface) 60%, transparent) 25%,
+    color-mix(in srgb, var(--surface) 85%, transparent) 50%,
+    color-mix(in srgb, var(--surface) 60%, transparent) 75%
+  );
+  background-size: 200% 100%;
+  animation: feedSkeletonShimmer 1.4s ease-in-out infinite;
+}
+
+.feedSkeletonVote {
+  flex: none;
+  width: 48px;
+  height: 88px;
+  border-radius: var(--ref-radius-md, 14px);
+}
+
+.feedSkeletonLine {
+  height: 14px;
+}
+
+.feedSkeletonPill {
+  width: 64px;
+  height: 28px;
+  border-radius: 999px;
+}
+
+@keyframes feedSkeletonShimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feedSkeletonVote,
+  .feedSkeletonLine,
+  .feedSkeletonPill,
+  .feedRailSkeletonAvatar,
+  .feedRailSkeletonCopy > span,
+  .feedRailSkeletonAction {
+    animation: none;
+  }
+}
+
+.feedLoadMoreSpinner {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0;
+}
+
+.feedShowMore {
+  align-self: center;
+  min-height: 48px;
+  padding: 0 20px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  color: var(--text);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.feedLoadError {
+  color: var(--text-dim);
+  text-align: center;
+  padding: 8px 0;
+}
+
+.feedRetryInline {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+}
+
+.feedEndOfList {
+  min-height: 92px;
+  padding: 16px 20px;
+  border-radius: 24px;
+  border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+  background: color-mix(in srgb, var(--surface) 48%, transparent);
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-align: left;
+}
+
+.feedEndOfList > span {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.feedEndOfList strong {
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.feedEndOfList small {
+  font-size: 12px;
+}
+.feedContextSearchStatus {
+  min-height: 44px;
+  margin-bottom: 12px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 26%, var(--border));
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.feedContextSearchStatus button {
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}

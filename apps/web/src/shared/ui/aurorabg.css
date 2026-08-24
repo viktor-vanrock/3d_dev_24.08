@@ -1,0 +1,146 @@
+.aurorabg {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  z-index: 0;
+  pointer-events: none;
+  background: var(--bg);
+}
+
+/* Канонический ambient-слой живёт в PageFrame и не перемонтируется между route payload.
+   Старые экранные инстансы пока оставлены в компонентах для их изолированных тестов, но
+   внутри настоящего appShell скрыты: одновременно рисуется ровно один набор blur-blob.
+   Фон намеренно не участвует в View Transition: это живой DOM-слой под snapshot страниц,
+   поэтому его GPU-анимация не захватывается заново и не начинает движение с другого кадра. */
+.appShell .aurorabg:not(.appShellAurora) {
+  display: none;
+}
+
+.appShellAurora .aurorabgBlob1 { opacity: 0.32; }
+.appShellAurora .aurorabgBlob2 { opacity: 0.28; }
+.appShellAurora .aurorabgBlob3 { opacity: 0.2; }
+
+/* Root-снапшот нативного View Transitions API раньше захватывал aurora вместе с
+   route payload, а затем гасил/проявлял весь кадр через shellPageOut/In. Поэтому
+   постоянный DOM-фон формально не перемонтировался, но визуально всё равно мигал.
+   Вынимаем ambient в собственную shared-element группу: её геометрия и opacity
+   неизменны, а old-кадр сразу уступает new без cross-fade двух фаз drift-анимации. */
+.appShellAurora {
+  view-transition-name: shell-aurora;
+}
+
+::view-transition-group(shell-aurora),
+::view-transition-old(shell-aurora),
+::view-transition-new(shell-aurora) {
+  animation: none;
+}
+
+::view-transition-old(shell-aurora) {
+  opacity: 0;
+}
+
+::view-transition-new(shell-aurora) {
+  opacity: 1;
+}
+
+/* Статичный луч-прожектор сверху — по референсу «Киоск 3D-печати» (конус
+   света над продуктом). Не анимируем — это амбиентный свет, не декор. */
+.aurorabgSpotlight {
+  position: absolute;
+  top: -35%;
+  right: -15%;
+  width: 90%;
+  height: 90%;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in srgb, var(--accent2) 35%, transparent) 0%,
+    color-mix(in srgb, var(--accent) 12%, transparent) 35%,
+    transparent 65%
+  );
+  filter: blur(60px);
+}
+
+/* Лёгкое зерно поверх — статика/пыль, как на референсе, только opacity, без анимации */
+.aurorabgGrain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.aurorabgBlob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  will-change: transform;
+}
+
+.aurorabgBlob1 {
+  width: 480px;
+  height: 480px;
+  top: -140px;
+  left: -120px;
+  background: var(--accent);
+  opacity: 0.22;
+  animation: auroraDrift1 26s ease-in-out infinite alternate;
+}
+
+.aurorabgBlob2 {
+  width: 440px;
+  height: 440px;
+  bottom: -160px;
+  right: -100px;
+  background: var(--accent2);
+  opacity: 0.2;
+  animation: auroraDrift2 32s ease-in-out infinite alternate;
+}
+
+.aurorabgBlob3 {
+  width: 360px;
+  height: 360px;
+  top: 38%;
+  left: 58%;
+  background: var(--accent);
+  opacity: 0.12;
+  animation: auroraDrift3 22s ease-in-out infinite alternate;
+}
+
+/* Все route-экземпляры продолжают одну временную шкалу, заданную AuroraBackground.
+   Иначе новый экран снова начинал drift с keyframe 0 и градиент заметно прыгал. */
+.aurorabgBlob {
+  animation-delay: var(--aurora-phase, 0ms);
+}
+
+@keyframes auroraDrift1 {
+  from {
+    transform: translate(0, 0) scale(1);
+  }
+  to {
+    transform: translate(70px, 50px) scale(1.15);
+  }
+}
+
+@keyframes auroraDrift2 {
+  from {
+    transform: translate(0, 0) scale(1);
+  }
+  to {
+    transform: translate(-60px, -40px) scale(1.1);
+  }
+}
+
+@keyframes auroraDrift3 {
+  from {
+    transform: translate(0, 0) scale(1);
+  }
+  to {
+    transform: translate(-50px, 40px) scale(0.9);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aurorabgBlob {
+    animation: none !important;
+  }
+}

@@ -1,0 +1,25 @@
+name: Фича
+description: Предложение новой функциональности или улучшения
+title: "[feature] "
+labels: ["enhancement"]
+body:
+  - type: dropdown
+    id: app
+    attributes:
+      label: Приложение
+      options: [web, api, mesh, giga, infra, весь продукт]
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Какую проблему решает
+      description: Кого касается (см. персоны в vision.md) и почему это важно
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Предлагаемое решение
+    validations:
+      required: false

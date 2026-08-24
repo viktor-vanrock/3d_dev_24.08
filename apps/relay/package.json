@@ -1,0 +1,36 @@
+{
+  "name": "@portal/relay",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
+    "build": "pnpm run clean && tsc -p tsconfig.build.json",
+    "start": "node dist/main.js",
+    "smoke:compiled": "node scripts/compiled-runtime-smoke.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:load": "vitest run src/load/relay-load-profile.test.ts"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.1.28",
+    "@nestjs/core": "^11.1.28",
+    "@nestjs/platform-express": "^11.1.28",
+    "@portal/contracts": "workspace:*",
+    "pino": "^10.3.1",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@portal/config": "workspace:*",
+    "@types/node": "^22.10.0",
+    "@types/ws": "^8.5.13",
+    "eslint": "9.39.4",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.2.6"
+  }
+}

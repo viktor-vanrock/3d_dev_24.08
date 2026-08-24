@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "pilot_id": "ender-3-v3-ke",
+  "model": { "brand": "Creality", "name": "Ender-3 V3 KE", "firmware_class": "klipper" },
+  "connector": {
+    "type": "moonraker",
+    "api": "https://moonraker.readthedocs.io/en/latest/web_api/",
+    "version_probe": { "moonraker_method": "server.info", "reference": "https://moonraker.readthedocs.io/en/latest/web_api/#get-server-information", "pass": "server.info returns a non-empty Moonraker version; record it in the QA evidence, not this fixture.", "blocker": "Moonraker is absent, unreachable from the agent LAN, or server.info has no version." }
+  },
+  "required_capabilities": [
+    { "key": "status-and-push", "probe": { "moonraker_method": "printer.objects.subscribe", "reference": "https://moonraker.readthedocs.io/en/latest/web_api/#subscribe-to-printer-object-status", "pass": "Subscription accepts print_stats, extruder, heater_bed and virtual_sdcard and emits notify_status_update.", "blocker": "Required printer objects or push telemetry are unavailable." } },
+    { "key": "print-control", "probe": { "moonraker_method": "printer.objects.list", "reference": "https://moonraker.readthedocs.io/en/latest/web_api/#list-available-printer-objects", "pass": "print_stats is listed; pause/resume/cancel/start probes are permitted by the physical-print safety check.", "blocker": "print_stats is missing or the operator cannot safely perform a command probe." } },
+    { "key": "gcode-upload", "probe": { "moonraker_method": "server.files.upload", "reference": "https://moonraker.readthedocs.io/en/latest/web_api/#upload-a-file", "pass": "A harmless QA G-code file uploads into the gcodes root.", "blocker": "Upload endpoint is disabled, unauthorized, or storage is unavailable." } }
+  ],
+  "safe_commands": [
+    { "name": "pause", "moonraker_method": "printer.print.pause", "reference": "https://moonraker.readthedocs.io/en/latest/web_api/#pause-a-print", "allowed_states": ["printing"] },
+    { "name": "resume", "moonraker_method": "printer.print.resume", "reference": "https://moonraker.readthedocs.io/en/latest/web_api/#resume-a-print", "allowed_states": ["paused"] },
+    { "name": "cancel", "moonraker_method": "printer.print.cancel", "reference": "https://moonraker.readthedocs.io/en/latest/web_api/#cancel-a-print", "allowed_states": ["printing", "paused"] },
+    { "name": "start_print", "moonraker_method": "printer.print.start", "reference": "https://moonraker.readthedocs.io/en/latest/web_api/#start-a-print", "allowed_states": ["idle", "ready"] },
+    { "name": "upload_gcode", "moonraker_method": "server.files.upload", "reference": "https://moonraker.readthedocs.io/en/latest/web_api/#upload-a-file", "allowed_states": ["idle", "ready"] }
+  ],
+  "telemetry": {
+    "subscription": { "moonraker_method": "printer.objects.subscribe", "reference": "https://moonraker.readthedocs.io/en/latest/web_api/#subscribe-to-printer-object-status", "pass": "Updates arrive through notify_status_update without polling.", "blocker": "Subscription or notify_status_update does not work." },
+    "fields": [
+      { "name": "print_state", "moonraker_object": "print_stats", "path": "state", "nullable": false },
+      { "name": "job_file_name", "moonraker_object": "print_stats", "path": "filename", "nullable": true },
+      { "name": "nozzle_temp_c", "moonraker_object": "extruder", "path": "temperature", "nullable": false },
+      { "name": "bed_temp_c", "moonraker_object": "heater_bed", "path": "temperature", "nullable": false },
+      { "name": "progress", "moonraker_object": "virtual_sdcard", "path": "progress", "nullable": true }
+    ]
+  },
+  "config": { "source": "Printer-local Klipper configuration: /usr/data/printer_data/config/printer.cfg and included *.cfg files; agent reads locally only.", "fingerprint_inputs": ["printer.cfg plus resolved includes", "nozzle diameter", "heated-bed limits", "motion limits"] },
+  "rollback": { "point": "Operator-created backup of the complete stock printer_data/config directory before installing any pilot visual or agent configuration.", "operator_action": "Restore that backup using the printer's local recovery procedure; do not remotely overwrite firmware.", "verification": { "moonraker_method": "server.info", "reference": "https://moonraker.readthedocs.io/en/latest/web_api/#get-server-information", "pass": "Restored printer returns server.info and the stock UI can start a local test print.", "blocker": "No pre-change backup or local recovery path is available." } },
+  "pilot_status": { "stage": "not_started", "updated_at": "2026-07-12T00:00:00Z", "fresh_for_hours": 24, "source": "docs/infra/ender3-v3-ke-firmware-readiness.md (Verdict: BLOCKED externally)", "trust_limit": "Нет обезличенного live-evidence для точного Ender-3 V3 KE; общий relay, fixture и другой принтер не повышают этап." }
+}

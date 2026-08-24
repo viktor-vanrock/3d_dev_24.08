@@ -1,0 +1,15 @@
+.projectManifestEditor { display: grid; gap: 20px; }
+.projectManifestLead { margin: 0; color: var(--text-dim); line-height: 1.55; }
+.projectManifestField { display: grid; gap: 8px; font-weight: 650; }
+.projectManifestField input, .projectManifestField textarea { width: 100%; min-height: 48px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); color: var(--text); font: inherit; box-sizing: border-box; }
+.projectManifestField textarea { resize: vertical; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .875rem; line-height: 1.5; }
+.projectManifestField input:focus-visible, .projectManifestField textarea:focus-visible, .projectManifestAdvanced summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.projectManifestAdvanced { border-block: 1px solid var(--border); padding-block: 14px; }
+.projectManifestAdvanced summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-weight: 700; }
+.projectManifestAdvanced p { color: var(--text-dim); line-height: 1.5; }
+.projectManifestConflict, .projectManifestInlineError { display: grid; gap: 10px; padding: 16px; border: 1px solid color-mix(in srgb, var(--critical) 55%, var(--border)); border-radius: 16px; background: color-mix(in srgb, var(--critical) 9%, transparent); line-height: 1.5; }
+.projectManifestConflict .modelGlassBtn { justify-self: start; }
+.projectManifestNotice { color: var(--text); font-weight: 650; }
+.projectManifestActions { display: flex; justify-content: flex-end; gap: 12px; flex-wrap: wrap; }
+.projectManifestState { min-height: 160px; display: grid; place-items: center; color: var(--text-dim); }
+@media (max-width: 560px) { .projectManifestActions > button { flex: 1 1 100%; } }

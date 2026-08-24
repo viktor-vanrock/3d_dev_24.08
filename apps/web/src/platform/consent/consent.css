@@ -1,0 +1,86 @@
+/*
+  Баннер согласия на аналитику/cookie (MF-610, docs/design/consent.md §1). Fixed-полоса
+  снизу, не sticky — не раздвигает раскладку (design/readme.md §Философия п.4). Стекло —
+  тот же паттерн, что .ovlToast/.ovlSheet (overlay/overlay.css), свой z-слой --z-consent.
+*/
+
+.consentBannerHost {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--z-consent);
+  display: flex;
+  justify-content: center;
+  padding: 0 max(16px, env(safe-area-inset-right)) max(0px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  pointer-events: none;
+}
+
+.consentBanner {
+  pointer-events: auto;
+  width: min(var(--content-max), 100%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: var(--card-radius-sm) var(--card-radius-sm) 0 0;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--surface) 82%, transparent) 0%,
+    color-mix(in srgb, var(--surface) 68%, var(--accent) 3%) 100%
+  );
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 -8px 24px var(--shadow);
+  color: var(--text);
+}
+
+.consentBannerText {
+  flex: 1;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--text-dim);
+}
+
+.consentBannerLink {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.consentBanner .uiButton {
+  flex: 0 0 auto;
+  min-height: var(--touch-target-min);
+  padding-inline: 14px;
+  font-size: 12px;
+}
+
+@media (max-width: 640px) {
+  .consentBanner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .consentBanner .uiButton {
+    width: 100%;
+    min-height: 48px;
+  }
+}
+
+/* Появление снизу (motion.md — reveal, не резкий), уважает prefers-reduced-motion через
+   --dur-reveal (tokens.css переопределяет его в 0ms при reduce, тот же паттерн, что .reveal). */
+.consentBanner {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity var(--dur-reveal) var(--ease-out),
+    transform var(--dur-reveal) var(--ease-out);
+}
+
+.consentBanner[data-visible="true"] {
+  opacity: 1;
+  transform: translateY(0);
+}

@@ -1,0 +1,39 @@
+# systemd-юнит HTTP-поверхности apps/giga для dev-контура (MF-1015).
+# Giga остаётся внутренним сервисом: слушает только loopback и не получает
+# публичного nginx-домена. apps/api вызывает POST /embed по приватной границе.
+# Порт 3102 свободен рядом с mesh (3101) и Multica (3100).
+#
+# Установка на VDS:
+#   cd ~/portal.ru-dev/apps/giga && uv sync --no-dev
+#   sudo cp deploy/portal.giga-http.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now portal.giga-http.service
+#   curl -sf http://127.0.0.1:3102/health
+#
+# EnvironmentFile ~/portal.giga-dev.env (chmod 600, не в git) —
+# DATABASE_URL (portal_dev, НЕ прод) и GIGACHAT_CREDENTIALS.
+#
+# MF-1944: до 2026-07-18 юнит шарил ~/portal.giga.env с portal.giga-worker/
+# -catalog.service, у которых DATABASE_URL намеренно на прод (`portal`@5434,
+# реальный каталог для embeddings/AI). HTTP-поверхность живёт в dev-контуре
+# (WorkingDirectory=~/portal.ru-dev) и должна читать dev-каталог
+# (`portal_dev`@5432, те же id, что и apps/api-dev/apps/mesh-dev) — иначе
+# любой live-запрос упирается в пустой прод slicer_profiles/materials.
+# ~/portal.giga.env (прод) НЕ трогаем — используется -worker/-catalog.
+
+[Unit]
+Description=portal.ru dev giga HTTP service (embeddings and AI)
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=plag
+WorkingDirectory=/home/plag/portal.ru-dev/apps/giga
+EnvironmentFile=/home/plag/portal.giga-dev.env
+ExecStart=/home/plag/.local/bin/uv run --no-dev uvicorn giga.main:app --host 127.0.0.1 --port 3102
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

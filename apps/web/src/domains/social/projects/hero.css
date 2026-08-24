@@ -1,0 +1,265 @@
+/* Hero-карусель «Проектов» (MF-512, docs/design/projects.page.md §2, хореография — motion.md §6).
+   Один доминантный слайд 16:9 без peek (§2.2 — дефолт: «проще, крупнее герой»); автолист/точки/
+   стрелки — кросс-фейд ~500ms с лёгким parallax превью, ре-маунт по key. Ручной свайп — отдельный
+   слой поверх: палец двигает слайд 1:1 с сопротивлением (hero.tsx), reduced-motion → без parallax. */
+
+.heroCarousel {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 460px;
+  border-radius: var(--card-radius);
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  /* Свайп слайда ловим сами (hero.tsx pointermove) — вертикальный скролл страницы браузер
+     обрабатывает как обычно. */
+  touch-action: pan-y;
+}
+
+.heroCarouselSkeleton {
+  background: linear-gradient(
+    100deg,
+    color-mix(in srgb, var(--surface) 100%, transparent) 30%,
+    color-mix(in srgb, var(--bg-raised) 100%, transparent) 50%,
+    color-mix(in srgb, var(--surface) 100%, transparent) 70%
+  );
+  background-size: 200% 100%;
+  animation: heroShimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes heroShimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .heroCarouselSkeleton {
+    animation: none;
+  }
+}
+
+.heroSlide {
+  position: absolute;
+  inset: 0;
+  /* Автолист/точки/стрелки — кросс-фейд ~500ms, без резкого reveal (motion.md §6). Токен
+     --dur-slow уже обнуляется под prefers-reduced-motion (tokens.css) — своего варианта
+     длительности здесь не нужно, единый источник reduced-motion. */
+  animation: heroSlideFade var(--dur-slow) var(--ease-out);
+}
+
+/* Пока палец тянет слайд (data-dragging из hero.tsx) — без transition/анимации входа,
+   transform на инлайн-стиле следует за пальцем 1:1 (с сопротивлением, посчитанным в JS). */
+.heroSlide[data-dragging] {
+  animation: none;
+}
+
+@keyframes heroSlideFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.heroSlideHit {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.heroSlidePreview {
+  position: absolute;
+  inset: 0;
+  /* Лёгкий parallax фона под кросс-фейд (motion.md §6: «2-3px сдвиг, без резкого reveal») */
+  animation: heroSlideParallax var(--dur-slow) var(--ease-out);
+}
+
+.heroSlide[data-dragging] .heroSlidePreview {
+  animation: none;
+}
+
+@keyframes heroSlideParallax {
+  from {
+    transform: translateX(3px);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.heroSlideImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Fallback без постера (thumb_url=null, docs/design/projects.page.md §14.3 п.4) — тот же
+   branded-placeholder, что карточка каталога (.homeModelThumb/Glow/Art, home.css): свечение по
+   хэшу id (--tile-hue) + слоистый CubeIcon-глиф, в масштабе hero 16:9 вместо плитки 4:3. */
+.heroSlidePlaceholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(
+    ellipse at 30% 22%,
+    hsl(var(--tile-hue) 45% 26% / 0.5) 0%,
+    hsl(var(--tile-hue) 40% 12% / 0.3) 55%,
+    transparent 100%
+  );
+}
+
+.heroSlidePlaceholderGlow {
+  position: absolute;
+  width: 24%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: hsl(var(--tile-hue) 70% 55% / 0.28);
+  filter: blur(40px);
+}
+
+.heroSlidePlaceholderArt {
+  position: relative;
+  display: flex;
+  color: hsl(var(--tile-hue) 65% 72%);
+  font-size: clamp(56px, 9vw, 104px);
+  filter: drop-shadow(0 4px 16px hsl(var(--tile-hue) 60% 20% / 0.5));
+  animation: heroSlidePlaceholderFloat 5.5s ease-in-out infinite alternate;
+}
+
+@keyframes heroSlidePlaceholderFloat {
+  from {
+    transform: translateY(4px);
+  }
+  to {
+    transform: translateY(-6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .heroSlidePlaceholderArt {
+    animation: none;
+  }
+}
+
+/* Вуаль-контраст под оверлей-текстом (floating-veil, §2.2) — читаемость ≥AA на ярком превью. */
+.heroSlideVeil {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.28) 42%, transparent 68%);
+}
+
+.heroSlideOverlay {
+  position: absolute;
+  left: clamp(16px, 3vw, 32px);
+  right: clamp(16px, 3vw, 32px);
+  bottom: clamp(48px, 8vw, 68px);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #fff;
+}
+
+.heroSlideTitle {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(20px, 3vw, 30px);
+  line-height: 1.15;
+}
+
+.heroSlideAuthor {
+  font-size: 14px;
+  opacity: 0.85;
+}
+
+.heroSlideCta {
+  position: absolute;
+  right: clamp(16px, 3vw, 32px);
+  bottom: clamp(16px, 3vw, 24px);
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(20, 20, 20, 0.35);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #fff;
+  font-size: 14px;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+}
+
+.heroCarouselDots {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 12px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.heroCarouselDot {
+  width: 48px;
+  height: 48px;
+  margin: -20px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.heroCarouselDot::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.55);
+  /* Морф ширины токеном тумблера (motion.md §6) */
+  transition:
+    width var(--dur-toggle) var(--ease-spring),
+    border-radius var(--dur-toggle) var(--ease-spring),
+    background var(--dur-toggle) var(--ease-spring);
+}
+
+.heroCarouselDot[data-active]::before {
+  width: 22px;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+/* Явный reduced-motion override здесь не нужен: .heroSlide/.heroSlidePreview анимируют через
+   var(--dur-slow), .heroCarouselDot::before — через var(--dur-toggle), оба токена уже
+   обнуляются в tokens.css под prefers-reduced-motion (единый источник, motion.md). */
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

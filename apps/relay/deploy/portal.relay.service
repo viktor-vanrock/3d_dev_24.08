@@ -1,0 +1,44 @@
+# Compiled Nest relay process. This template changes repository/deploy ownership only;
+# installing or restarting it is an explicit Ops action.
+#
+# Build from the repository root:
+#   pnpm install --frozen-lockfile
+#   pnpm run check:relay-deploy
+#   pnpm run build:relay
+#
+# EnvironmentFile=/home/plag/portal.relay.env (chmod 600, never commit values):
+#   NODE_ENV=production
+#   RELAY_PROTOCOL_VERSION=v1
+#   RELAY_INSTANCE_ID=relay-prod-1
+#   RELAY_API_BASE_URL=https://api.3mf.tech
+#   RELAY_SERVICE_TOKEN=<same relay-specific value configured in the API>
+#   RELAY_GATEWAY_HOST=127.0.0.1
+#   RELAY_GATEWAY_PORT=8443
+#   RELAY_OBSERVABILITY_HOST=127.0.0.1
+#   RELAY_OBSERVABILITY_PORT=9091
+#   RELAY_TLS_CERT_FILE=/etc/portal/relay/tls.crt
+#   RELAY_TLS_KEY_FILE=/etc/portal/relay/tls.key
+#   RELAY_TLS_CA_FILE=/etc/portal/relay/gateway-ca.crt
+#
+# Gateway WSS and observability are separate listeners. Only the gateway TLS listener
+# belongs behind the relay L4 proxy. Scrape /metrics and probe /health + /ready directly
+# on the loopback observability listener.
+
+[Unit]
+Description=portal.ru relay (compiled NestJS device WSS data-plane)
+After=network-online.target portal.api.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=plag
+WorkingDirectory=/home/plag/portal.ru/apps/relay
+EnvironmentFile=/home/plag/portal.relay.env
+ExecStart=/usr/bin/node /home/plag/portal.ru/apps/relay/dist/main.js
+Restart=always
+RestartSec=5
+KillSignal=SIGTERM
+TimeoutStopSec=65
+
+[Install]
+WantedBy=multi-user.target

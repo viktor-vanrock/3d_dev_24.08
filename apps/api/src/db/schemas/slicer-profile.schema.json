@@ -1,0 +1,158 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://3mf.tech/schemas/slicer-profile.schema.json",
+  "title": "Unified slicer profile (MF-411, фаза 1 эпика MF-34)",
+  "description": "Контракт нормализованного профиля машина/процесс/филамент — выход парсер-агентов (OrcaSlicer/PrusaSlicer/Cura) перед записью в slicer_profiles.params, вход резолвера экспорта (MF-16). Валидирует ОДНУ дельту (не резолвленный профиль) — params содержит только переопределения относительно inherits, не плоскую копию родителя. См. docs/epics/slicer.profiles.md.",
+  "type": "object",
+  "required": ["profile_class", "slicer", "name", "params", "source"],
+  "additionalProperties": false,
+  "properties": {
+    "profile_class": {
+      "type": "string",
+      "enum": ["machine", "process", "filament"],
+      "description": "Класс профиля: станок / процесс печати / филамент — три класса OrcaSlicer resources/profiles."
+    },
+    "slicer": {
+      "type": "string",
+      "enum": ["orcaslicer", "prusaslicer", "cura"],
+      "description": "Слайсер-источник. Порядок приоритета парсинга (эпик MF-34): OrcaSlicer → PrusaSlicer → Cura."
+    },
+    "setting_id": {
+      "type": ["string", "null"],
+      "description": "Native id источника. У OrcaSlicer — глобально-уникальный setting_id. У PrusaSlicer/Cura прямого эквивалента нет — null, идентификация по (slicer, name, source_ref)."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Человекочитаемое имя профиля как у источника (напр. '0.20mm Standard @BBL X1C')."
+    },
+    "inherits": {
+      "type": ["string", "null"],
+      "description": "name/setting_id родителя В ТОМ ЖЕ источнике — резолвится парсером в slicer_profiles.inherits_id. params этой записи — ДЕЛЬТА поверх родителя, не полная копия (принцип наследования эпика, зеркалит OrcaSlicer inherits)."
+    },
+    "vendor_slug": {
+      "type": ["string", "null"],
+      "description": "Слаг вендора для матчинга на vendors.slug (наш каталог), если применимо."
+    },
+    "machine_ref": {
+      "type": ["object", "null"],
+      "description": "Best-effort ссылка на наш каталог станков (machines) для class='machine'|'process'.",
+      "additionalProperties": false,
+      "properties": {
+        "vendor_slug": { "type": "string" },
+        "model": { "type": "string" }
+      },
+      "required": ["vendor_slug", "model"]
+    },
+    "material_ref": {
+      "type": ["object", "null"],
+      "description": "Best-effort ссылка на наш каталог филамента (materials) для class='filament'.",
+      "additionalProperties": false,
+      "properties": {
+        "vendor_slug": { "type": "string" },
+        "material_slug": { "type": "string" }
+      },
+      "required": ["vendor_slug", "material_slug"]
+    },
+    "params": {
+      "type": "object",
+      "description": "Дельта настроек в унифицированном (не сырых слайсер-имён) словаре ключей. Не exhaustive — additionalProperties разрешены под ключи, которых пока нет в словаре ниже (растим без ломки схемы, принцип 2 domain.model.md). Полный текущий словарь — docs/epics/slicer.profiles.md § «Словарь params».",
+      "additionalProperties": true,
+      "properties": {
+        "build_volume_mm": {
+          "type": "object",
+          "properties": {
+            "x": { "type": "number", "exclusiveMinimum": 0 },
+            "y": { "type": "number", "exclusiveMinimum": 0 },
+            "z": { "type": "number", "exclusiveMinimum": 0 }
+          }
+        },
+        "kinematics": { "type": "string", "enum": ["cartesian", "corexy", "delta", "bedslinger", "corexz"] },
+        "nozzle_diameter_mm": { "type": "number", "exclusiveMinimum": 0 },
+        "max_nozzle_temp_c": { "type": "number" },
+        "max_bed_temp_c": { "type": "number" },
+        "has_heated_chamber": { "type": "boolean" },
+        "extruder_type": { "type": "string", "enum": ["direct_drive", "bowden"] },
+        "gcode_flavor": { "type": "string" },
+        "layer_height_mm": { "type": "number", "exclusiveMinimum": 0 },
+        "first_layer_height_mm": { "type": "number", "exclusiveMinimum": 0 },
+        "print_speed_mm_s": { "type": "number", "exclusiveMinimum": 0 },
+        "first_layer_speed_mm_s": { "type": "number", "exclusiveMinimum": 0 },
+        "travel_speed_mm_s": { "type": "number", "exclusiveMinimum": 0 },
+        "infill_density_pct": { "type": "number", "minimum": 0, "maximum": 100 },
+        "infill_pattern": { "type": "string" },
+        "wall_loops": { "type": "integer", "minimum": 0 },
+        "top_shell_layers": { "type": "integer", "minimum": 0 },
+        "bottom_shell_layers": { "type": "integer", "minimum": 0 },
+        "support_enable": { "type": "boolean" },
+        "support_type": { "type": "string" },
+        "skirt_loops": { "type": "integer", "minimum": 0 },
+        "brim_width_mm": { "type": "number", "minimum": 0 },
+        "cooling_fan_speed_pct": {
+          "type": "object",
+          "properties": {
+            "min": { "type": "number", "minimum": 0, "maximum": 100 },
+            "max": { "type": "number", "minimum": 0, "maximum": 100 }
+          }
+        },
+        "nozzle_temperature_c": {
+          "type": "object",
+          "properties": {
+            "first_layer": { "type": "number" },
+            "other": { "type": "number" }
+          }
+        },
+        "bed_temperature_c": {
+          "type": "object",
+          "properties": {
+            "first_layer": { "type": "number" },
+            "other": { "type": "number" }
+          }
+        },
+        "max_volumetric_speed_mm3_s": { "type": "number", "exclusiveMinimum": 0 },
+        "flow_ratio": { "type": "number", "exclusiveMinimum": 0 },
+        "retraction_length_mm": { "type": "number", "minimum": 0 },
+        "retraction_speed_mm_s": { "type": "number", "exclusiveMinimum": 0 },
+        "z_hop_mm": { "type": "number", "minimum": 0 },
+        "pressure_advance_k": { "type": "number", "minimum": 0 },
+        "density_g_cm3": { "type": "number", "exclusiveMinimum": 0 },
+        "diameter_mm": { "type": "number", "exclusiveMinimum": 0 },
+        "cost_per_kg": { "type": "number", "minimum": 0 }
+      }
+    },
+    "source": {
+      "type": "object",
+      "required": ["name", "license"],
+      "additionalProperties": false,
+      "description": "Атрибуция вендора/источника (эпик MF-34 § «Лицензии»). license обязателен на каждой записи — юридическая чистота переиспользования профилей.",
+      "properties": {
+        "name": { "type": "string", "description": "Слаг источника, напр. 'softfever_orcaslicer', 'prusaslicer', 'cura', 'manual_ru_vendor_site'." },
+        "url": { "type": ["string", "null"] },
+        "ref": { "type": ["string", "null"], "description": "Путь файла/коммит в исходном репозитории." },
+        "license": { "type": "string", "description": "Напр. 'AGPL-3.0', 'GPL-3.0', 'proprietary-attributed' (для RU-вендоров без открытой лицензии — атрибуция вместо лицензии свободного ПО)." }
+      }
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 1,
+      "description": "1.0 — профиль взят из источника как есть. <1 — экстраполяция (эпик § RU-специфика: 'нет базового профиля вендора — взят родственный материал')."
+    },
+    "extrapolated_from": {
+      "type": ["object", "null"],
+      "description": "Заполняется, когда confidence < 1 и профиль выведен из другого профиля той же унифицированной схемы (не из источника напрямую).",
+      "additionalProperties": false,
+      "properties": {
+        "profile_ref": { "type": "string", "description": "slicer:setting_id ИЛИ slicer:name родственного профиля, от которого экстраполировано." },
+        "reason": { "type": "string", "minLength": 1 }
+      },
+      "required": ["profile_ref", "reason"]
+    },
+    "schema_version": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 1
+    }
+  }
+}

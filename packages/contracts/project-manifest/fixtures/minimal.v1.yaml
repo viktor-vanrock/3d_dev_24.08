@@ -1,0 +1,11 @@
+# Наименьший легальный portal.project.yaml v1 — один артефакт, без компонентов/BOM/фаз.
+# Для по-настоящему вырожденного случая (голый одиночный STL/3MF) этот файл не нужен вовсе —
+# резолвер синтезирует эквивалент сам; этот fixture показывает наименьшую РУЧНУЮ форму.
+schemaVersion: 1
+project:
+  name: "Кронштейн держателя"
+  slug: bracket-holder
+artifacts:
+  - id: bracket
+    role: source
+    path: print/bracket.stl

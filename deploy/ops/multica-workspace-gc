@@ -1,0 +1,108 @@
+#!/usr/bin/env bash
+# Безопасная очистка рабочих сред Multica по состоянию agent_task_queue.
+# Не удаляет queued/dispatched/running/waiting/deferred и не трогает orphan dirs.
+set -euo pipefail
+
+ROOT="${MULTICA_WORKSPACE_ROOT:-/home/plag/multica_workspaces}"
+APPLY="${APPLY:-0}"
+TERMINAL_TTL_HOURS="${TERMINAL_TTL_HOURS:-48}"
+ARTIFACT_TTL_HOURS="${ARTIFACT_TTL_HOURS:-3}"
+DB_NAME="${MULTICA_DB_NAME:-multica}"
+DB_USER="${MULTICA_DB_USER:-multica}"
+
+exec 9>/run/lock/multica-workspace-gc.lock
+flock -n 9 || { echo "skip: another cleanup is running"; exit 0; }
+
+container="${MULTICA_POSTGRES_CONTAINER:-}"
+if [[ -z "${container}" ]]; then
+  container="$(docker ps --format '{{.Names}}' | awk '/multica.*postgres/ { print; exit }')"
+fi
+[[ -n "${container}" ]] || { echo "error: Multica postgres container not found" >&2; exit 1; }
+[[ -d "${ROOT}" ]] || { echo "skip: workspace root does not exist: ${ROOT}"; exit 0; }
+
+query() {
+  docker exec "${container}" psql -X -q -U "${DB_USER}" -d "${DB_NAME}" "$@"
+}
+
+safe_task_dir() {
+  local candidate resolved
+  candidate="$1"
+  [[ -n "${candidate}" && -d "${candidate}" && ! -L "${candidate}" ]] || return 1
+  resolved="$(realpath -m -- "${candidate}")"
+  [[ "${resolved}" =~ ^${ROOT}/[0-9a-f-]{36}/[0-9a-f]{8}$ ]] || return 1
+  printf '%s\n' "${resolved}"
+}
+
+remove_path() {
+  local path="$1"
+  if [[ "${APPLY}" == "1" ]]; then
+    rm -rf --one-file-system -- "${path}"
+  fi
+}
+
+removed_workspaces=0
+removed_artifacts=0
+reclaimed_bytes=0
+
+while IFS=$'\t' read -r task_id work_dir; do
+  [[ -n "${task_id:-}" ]] || continue
+  [[ -d "${work_dir:-}" ]] || continue
+  path="$(safe_task_dir "${work_dir:-}")" || {
+    [[ -z "${work_dir:-}" ]] || echo "skip unsafe terminal path: task=${task_id} path=${work_dir}"
+    continue
+  }
+  bytes="$(du -sb -- "${path}" 2>/dev/null | awk 'NR==1{print $1}' || echo 0)"
+  echo "terminal workspace: task=${task_id} bytes=${bytes} path=${path} apply=${APPLY}"
+  remove_path "${path}"
+  removed_workspaces=$((removed_workspaces + 1))
+  reclaimed_bytes=$((reclaimed_bytes + bytes))
+done < <(
+  query -At -F $'\t' -c "
+    WITH normalized AS (
+      SELECT id::text, status, COALESCE(completed_at, created_at) AS used_at,
+             regexp_replace(work_dir, '/workdir/?$', '') AS dir
+      FROM agent_task_queue
+      WHERE work_dir IS NOT NULL
+        AND work_dir LIKE '${ROOT}/%'
+    ), eligible AS (
+      SELECT min(id) AS task_id, dir
+      FROM normalized
+      GROUP BY dir
+      HAVING bool_and(status IN ('completed', 'failed', 'cancelled'))
+         AND max(used_at) < now() - make_interval(hours => ${TERMINAL_TTL_HOURS})
+    )
+    SELECT task_id, dir FROM eligible ORDER BY dir;"
+)
+
+while IFS=$'\t' read -r task_id work_dir; do
+  [[ -n "${task_id:-}" ]] || continue
+  [[ -d "${work_dir:-}" ]] || continue
+  path="$(safe_task_dir "${work_dir:-}")" || continue
+  while IFS= read -r -d '' artifact; do
+    bytes="$(du -sb -- "${artifact}" 2>/dev/null | awk 'NR==1{print $1}' || echo 0)"
+    echo "terminal artifact: task=${task_id} bytes=${bytes} path=${artifact} apply=${APPLY}"
+    remove_path "${artifact}"
+    removed_artifacts=$((removed_artifacts + 1))
+    reclaimed_bytes=$((reclaimed_bytes + bytes))
+  done < <(find "${path}" -type d \( -name node_modules -o -name .next -o -name .turbo -o -name coverage \
+    -o -path "${path}/home/.cache" -o -path "${path}/home/.npm" -o -path "${path}/home/.local/share" \) -prune -print0)
+done < <(
+  query -At -F $'\t' -c "
+    WITH normalized AS (
+      SELECT id::text, status, COALESCE(completed_at, created_at) AS used_at,
+             regexp_replace(work_dir, '/workdir/?$', '') AS dir
+      FROM agent_task_queue
+      WHERE work_dir IS NOT NULL
+        AND work_dir LIKE '${ROOT}/%'
+    ), eligible AS (
+      SELECT min(id) AS task_id, dir
+      FROM normalized
+      GROUP BY dir
+      HAVING bool_and(status IN ('completed', 'failed', 'cancelled'))
+         AND max(used_at) < now() - make_interval(hours => ${ARTIFACT_TTL_HOURS})
+    )
+    SELECT task_id, dir FROM eligible ORDER BY dir;"
+)
+
+echo "summary: apply=${APPLY} workspaces=${removed_workspaces} artifacts=${removed_artifacts} candidate_bytes=${reclaimed_bytes}"
+df -h "${ROOT}"

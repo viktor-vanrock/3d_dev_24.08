@@ -1,0 +1,371 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.3mf.tech/project/v1",
+  "title": "portal.project.yaml — project-code.v1 (MF-1964)",
+  "description": "Декларативная машинная модель git-проекта. Нормативный прозаический канон: docs/architecture/project.manifest.md (MF-1963/MF-1964) — эта схема реализует его буквально, включая kebab-case ключи составных слов, id-keyed maps (не массивы) для artifacts/components/configurations/scenes/connections/workflows и array-кортежи для translation/rotation. README.md — человеческое описание, не дублируется здесь. Исполняемый код в манифесте запрещён. YAML 1.2 safe subset: только plain-теги, БЕЗ якорей/алиасов/custom-тегов; дубликат ключа — ошибка парсинга. `x-*` поля разрешены и сохраняются по всему дереву (opaque passthrough); любое другое неизвестное поле — ошибка (project_schema_unsupported/дочерние diagnostics).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "project"],
+  "properties": {
+    "schema": {
+      "const": "https://schemas.3mf.tech/project/v1",
+      "description": "Schema major в URL (docs/architecture/project.manifest.md §2). Неизвестная/отсутствующая версия — project_schema_unsupported, не молчаливый даунгрейд."
+    },
+    "project": { "$ref": "#/$defs/Project" },
+    "artifacts": {
+      "type": "object",
+      "default": {},
+      "description": "Record<Id, Artifact>.",
+      "propertyNames": { "$ref": "#/$defs/Id" },
+      "additionalProperties": { "$ref": "#/$defs/Artifact" }
+    },
+    "components": {
+      "type": "object",
+      "default": {},
+      "description": "Record<Id, Component>.",
+      "propertyNames": { "$ref": "#/$defs/Id" },
+      "additionalProperties": { "$ref": "#/$defs/Component" }
+    },
+    "configurations": {
+      "type": "object",
+      "default": {},
+      "description": "Record<Id, Configuration>.",
+      "propertyNames": { "$ref": "#/$defs/Id" },
+      "additionalProperties": { "$ref": "#/$defs/Configuration" }
+    },
+    "scenes": {
+      "type": "object",
+      "default": {},
+      "description": "Record<Id, Scene>.",
+      "propertyNames": { "$ref": "#/$defs/Id" },
+      "additionalProperties": { "$ref": "#/$defs/Scene" }
+    },
+    "connections": {
+      "type": "object",
+      "default": {},
+      "description": "Record<Id, Connection>.",
+      "propertyNames": { "$ref": "#/$defs/Id" },
+      "additionalProperties": { "$ref": "#/$defs/Connection" }
+    },
+    "workflows": {
+      "type": "object",
+      "default": {},
+      "description": "Record<Id, Workflow>.",
+      "propertyNames": { "$ref": "#/$defs/Id" },
+      "additionalProperties": { "$ref": "#/$defs/Workflow" }
+    }
+  },
+  "patternProperties": {
+    "^x-[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$": {
+      "description": "Namespaced расширение — сохраняется verbatim при round-trip даже если резолвер его не понимает."
+    }
+  },
+  "$defs": {
+    "Id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9.-]{0,63}$",
+      "description": "Стабильный id: не зависит от имени файла/позиции, не переиспользуется с новым смыслом (project.manifest.md §3)."
+    },
+    "Mm": { "type": "number", "description": "Миллиметры — единственная единица длины (project.manifest.md §3)." },
+    "Vector3Mm": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/Mm" },
+      "minItems": 3,
+      "maxItems": 3,
+      "description": "[x, y, z] в мм."
+    },
+    "Quaternion": {
+      "type": "array",
+      "items": { "type": "number" },
+      "minItems": 4,
+      "maxItems": 4,
+      "description": "[x, y, z, w] — единичный кватернион. Углы Эйлера запрещены."
+    },
+    "Transform": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["translation", "rotation"],
+      "patternProperties": { "^x-[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$": {} },
+      "properties": {
+        "translation": { "$ref": "#/$defs/Vector3Mm" },
+        "rotation": { "$ref": "#/$defs/Quaternion" },
+        "scale": { "$ref": "#/$defs/Vector3Mm", "default": [1, 1, 1] }
+      }
+    },
+    "CoordinateSystem": { "const": "right-handed-z-up" },
+    "LengthUnit": { "const": "mm" },
+    "Project": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["uid", "title", "default-configuration", "units"],
+      "patternProperties": { "^x-[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$": {} },
+      "properties": {
+        "uid": { "$ref": "#/$defs/Id" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "default-configuration": { "$ref": "#/$defs/Id", "description": "Обязана резолвиться в ключ configurations." },
+        "units": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["length", "coordinates"],
+          "properties": {
+            "length": { "$ref": "#/$defs/LengthUnit" },
+            "coordinates": { "$ref": "#/$defs/CoordinateSystem" }
+          }
+        },
+        "license": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "properties": {
+            "spdx": { "type": "string" },
+            "file": { "type": "string" }
+          }
+        },
+        "authors": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name"],
+            "properties": { "name": { "type": "string" }, "url": { "type": ["string", "null"] } }
+          }
+        },
+        "upstream": {
+          "type": ["object", "null"],
+          "description": "Provenance внешнего источника (project.manifest.md §8.3: URL/ref/commit).",
+          "additionalProperties": false,
+          "properties": {
+            "url": { "type": "string" },
+            "ref": { "type": ["string", "null"] },
+            "commit": { "type": ["string", "null"] }
+          }
+        },
+        "release": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "properties": { "version": { "type": "string" }, "notes": { "type": ["string", "null"] } }
+        },
+        "safety-notices": { "type": "array", "default": [], "items": { "type": "string" } }
+      }
+    },
+    "Artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "patternProperties": { "^x-[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$": {} },
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Repo-relative POSIX путь, без `..`/backslash/control chars/абсолютного префикса/`.git*`. Ровно один из path/url обязателен — резолвер проверяет это как invariant (project_path_unsafe/project_artifact_missing), не сама схема (ajv strict не допускает conditional required через if/not здесь без раздутия схемы)."
+        },
+        "url": {
+          "type": "string",
+          "description": "Внешний immutable artifact — допустим ТОЛЬКО вместе с `sha256` (allowlist проверяет резолвер, не эта схема)."
+        },
+        "kind": { "type": "string", "minLength": 1, "description": "Свободный семантический slug (напр. print-model, cad-source, pcb-gerber, firmware, doc). Не закрытый enum в v1." },
+        "selector": { "type": ["string", "null"], "description": "Адресация object/build-item внутри контейнера (3MF)." },
+        "sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+        "media-type": { "type": ["string", "null"] },
+        "role": { "type": ["string", "null"] },
+        "provenance": { "type": ["object", "null"] }
+      }
+    },
+    "ComponentKind": { "enum": ["manufactured", "purchased", "software", "consumable", "tool"] },
+    "InterfaceKind": { "enum": ["point", "axis", "plane", "holes", "connector", "electrical", "software"] },
+    "Interface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "transform"],
+      "patternProperties": { "^x-[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$": {} },
+      "properties": {
+        "kind": { "$ref": "#/$defs/InterfaceKind" },
+        "transform": { "$ref": "#/$defs/Transform" }
+      }
+    },
+    "Component": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "patternProperties": { "^x-[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$": {} },
+      "properties": {
+        "kind": { "$ref": "#/$defs/ComponentKind" },
+        "artifact": { "anyOf": [{ "$ref": "#/$defs/Id" }, { "type": "null" }], "description": "Ref в artifacts — типично для kind=manufactured." },
+        "catalog-ref": { "type": ["string", "null"], "description": "Каталожный id — типично для kind=purchased. Manifest не хранит цену как вечную истину." },
+        "interfaces": { "type": "object", "default": {}, "propertyNames": { "$ref": "#/$defs/Id" }, "additionalProperties": { "$ref": "#/$defs/Interface" } }
+      }
+    },
+    "CompatibilityStatus": { "enum": ["compatible", "incompatible", "unknown"] },
+    "CompatibilityConfidence": { "enum": ["high", "medium", "low", "unknown"] },
+    "CompatibilityProvenance": { "enum": ["author", "manufacturer", "verified_make", "agent", "computed"] },
+    "CompatibilityClaim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["subject", "value", "status", "provenance", "confidence"],
+      "properties": {
+        "subject": { "type": "string", "minLength": 1 },
+        "value": {},
+        "status": { "$ref": "#/$defs/CompatibilityStatus" },
+        "provenance": { "$ref": "#/$defs/CompatibilityProvenance" },
+        "confidence": { "$ref": "#/$defs/CompatibilityConfidence" }
+      }
+    },
+    "BomEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["quantity", "source"],
+      "properties": {
+        "component": { "anyOf": [{ "$ref": "#/$defs/Id" }, { "type": "null" }] },
+        "quantity": { "type": "number", "exclusiveMinimum": 0 },
+        "unit": { "type": ["string", "null"] },
+        "source": { "enum": ["printed", "purchased", "salvaged"] },
+        "notes": { "type": ["string", "null"] }
+      }
+    },
+    "Configuration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "workflow"],
+      "patternProperties": { "^x-[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$": {} },
+      "properties": {
+        "title": { "type": "string", "minLength": 1 },
+        "artifacts": { "type": "array", "default": [], "items": { "$ref": "#/$defs/Id" } },
+        "components": { "type": "array", "default": [], "items": { "$ref": "#/$defs/Id" } },
+        "workflow": { "$ref": "#/$defs/Id", "description": "Ref в workflows." },
+        "requirements": {
+          "type": "object",
+          "additionalProperties": false,
+          "default": {},
+          "properties": {
+            "machines": { "type": "array", "default": [], "items": { "type": "string" } },
+            "materials": { "type": "array", "default": [], "items": { "type": "string" } },
+            "skills": { "type": "array", "default": [], "items": { "type": "string" } }
+          }
+        },
+        "compatibility": { "type": "array", "default": [], "items": { "$ref": "#/$defs/CompatibilityClaim" } },
+        "bom": { "type": "array", "default": [], "items": { "$ref": "#/$defs/BomEntry" } }
+      }
+    },
+    "Instance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["component", "transform"],
+      "patternProperties": { "^x-[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$": {} },
+      "properties": {
+        "component": { "$ref": "#/$defs/Id" },
+        "transform": { "$ref": "#/$defs/Transform" }
+      }
+    },
+    "Scene": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["instances"],
+      "patternProperties": { "^x-[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$": {} },
+      "properties": {
+        "instances": { "type": "object", "propertyNames": { "$ref": "#/$defs/Id" }, "additionalProperties": { "$ref": "#/$defs/Instance" } },
+        "active-connections": { "type": "array", "default": [], "items": { "$ref": "#/$defs/Id" } }
+      }
+    },
+    "ConnectionKind": {
+      "enum": ["fixed", "fastener", "press-fit", "snap", "adhesive", "hinge", "slider", "alignment", "wire", "connector", "solder", "software"]
+    },
+    "ConnectionEndpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["instance"],
+      "properties": {
+        "instance": { "$ref": "#/$defs/Id" },
+        "interface": { "anyOf": [{ "$ref": "#/$defs/Id" }, { "type": "null" }] }
+      }
+    },
+    "Connection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "endpoints"],
+      "patternProperties": { "^x-[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$": {} },
+      "properties": {
+        "kind": { "$ref": "#/$defs/ConnectionKind" },
+        "endpoints": { "type": "array", "minItems": 2, "items": { "$ref": "#/$defs/ConnectionEndpoint" } },
+        "parameters": {
+          "type": "object",
+          "default": {},
+          "description": "Открытый bag (fastener/quantity/tool/допуски/safety note) — намеренное исключение из additionalProperties:false, форма не закрывается v1."
+        }
+      }
+    },
+    "PhaseType": { "enum": ["print", "assembly", "flash", "solder", "check"] },
+    "Phase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "steps"],
+      "patternProperties": { "^x-[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$": {} },
+      "properties": {
+        "type": { "$ref": "#/$defs/PhaseType" },
+        "depends-on": { "type": "array", "default": [], "items": { "$ref": "#/$defs/Id" } },
+        "steps": { "type": "array", "items": { "$ref": "#/$defs/Id" } }
+      }
+    },
+    "Transition": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": { "^x-[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$": {} },
+      "properties": {
+        "from-scene": { "anyOf": [{ "$ref": "#/$defs/Id" }, { "type": "null" }] },
+        "to-scene": { "anyOf": [{ "$ref": "#/$defs/Id" }, { "type": "null" }] },
+        "add-connections": { "type": "array", "default": [], "items": { "$ref": "#/$defs/Id" } },
+        "remove-connections": { "type": "array", "default": [], "items": { "$ref": "#/$defs/Id" } }
+      }
+    },
+    "Action": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["type"],
+      "description": "Typed intent, НЕ shell-команда (project.manifest.md §5.8). `type` — открытый slug (open-artifact/prepare-print/send-to-printer/flash-device/…); API отдельно авторизует/валидирует capability.",
+      "properties": {
+        "type": { "type": "string", "minLength": 1 }
+      }
+    },
+    "Evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["accepted"],
+      "properties": {
+        "accepted": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "enum": ["confirmation", "photo", "measurement", "machine_result"] }
+        }
+      }
+    },
+    "Step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title"],
+      "patternProperties": { "^x-[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$": {} },
+      "properties": {
+        "title": { "type": "string", "minLength": 1 },
+        "instruction": { "type": ["string", "null"], "description": "Markdown или ссылка на docs/." },
+        "inputs": { "type": "array", "default": [], "items": {} },
+        "outputs": { "type": "array", "default": [], "items": {} },
+        "requirements": { "type": "array", "default": [], "items": {} },
+        "warnings": { "type": "array", "default": [], "items": { "type": "string" } },
+        "transition": { "$ref": "#/$defs/Transition" },
+        "action": { "$ref": "#/$defs/Action" },
+        "evidence": { "$ref": "#/$defs/Evidence" },
+        "allow-skip": { "type": "boolean", "default": false },
+        "skip-reason": { "type": ["string", "null"] },
+        "depends-on": { "type": "array", "default": [], "items": { "$ref": "#/$defs/Id" }, "description": "Другие step id ЭТОГО workflow — резолвер отклоняет цикл (project_workflow_cycle)." }
+      }
+    },
+    "Workflow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["phases", "steps"],
+      "patternProperties": { "^x-[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$": {} },
+      "properties": {
+        "phases": { "type": "object", "propertyNames": { "$ref": "#/$defs/Id" }, "additionalProperties": { "$ref": "#/$defs/Phase" } },
+        "steps": { "type": "object", "propertyNames": { "$ref": "#/$defs/Id" }, "additionalProperties": { "$ref": "#/$defs/Step" } }
+      }
+    }
+  }
+}

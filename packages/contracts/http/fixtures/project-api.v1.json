@@ -1,0 +1,32 @@
+{
+  "create_project_request": {
+    "title": "Кронштейн камеры",
+    "description": null,
+    "tags": ["camera", "mount"],
+    "repo_url": "https://example.com/projects/camera-mount"
+  },
+  "project_draft_response": {
+    "contract_version": "project-api.v1",
+    "project": {
+      "id": "00000000-0000-4000-8000-000000000101",
+      "title": "Кронштейн камеры",
+      "description": null,
+      "tags": ["camera", "mount"],
+      "owner": {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "username": "maker",
+        "display_name": null,
+        "avatar_url": null
+      },
+      "publication_state": "draft",
+      "primary_model_id": null,
+      "published_revision_id": null,
+      "models_count": 0,
+      "version": 1,
+      "created_at": "2026-08-10T12:00:00.000Z",
+      "updated_at": "2026-08-10T12:00:00.000Z",
+      "repo_url": "https://example.com/projects/camera-mount",
+      "primary_model": null
+    }
+  }
+}

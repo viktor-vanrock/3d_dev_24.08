@@ -1,0 +1,71 @@
+/* /internal/material-candidates — апрув-очередь филамента (MF-848). Внутренний инструмент,
+   без своей design-спеки (не публичная страница) — только компоновка примитивов ui/ui.tsx. */
+
+.mtcList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.mtcRow {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: clamp(14px, 3vw, 20px);
+  border-radius: var(--card-radius-sm);
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+}
+
+.mtcRowHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mtcSource {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.mtcMeta {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.mtcRaw {
+  margin: 0;
+  padding: 12px;
+  border-radius: var(--card-radius-sm);
+  background: color-mix(in srgb, var(--surface) 80%, black 8%);
+  font-family: var(--font-mono, monospace);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.mtcMatch {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mtcMatchLabel {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+}
+
+.mtcActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}

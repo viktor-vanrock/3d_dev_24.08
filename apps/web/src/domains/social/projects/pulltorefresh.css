@@ -1,0 +1,58 @@
+/* Pull-to-refresh индикатор (docs/design/touch.nav.md §3) — растёт вместе с протяжкой (высота =
+   distance из usePullToRefresh, px), без transition на высоту (следует за пальцем 1:1, тот же
+   принцип, что rubber-band в hero.tsx/navswipe.ts). */
+.ptrIndicator {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+  color: var(--text-dim);
+  opacity: 0.66;
+}
+
+/* Порог пройден (ready) / загрузка — доливается до --accent (--dur-toggle/--ease-spring, §5). */
+.ptrIndicator[data-phase="ready"],
+.ptrIndicator[data-phase="loading"] {
+  color: var(--accent);
+  opacity: 1;
+  transition:
+    color var(--dur-toggle) var(--ease-spring),
+    opacity var(--dur-toggle) var(--ease-spring);
+}
+
+/* Успех — короткая вспышка --accent, затем схлопывание (fade-up на --dur-nav, §5 спеки). */
+.ptrIndicator[data-phase="success"] {
+  color: var(--accent);
+  opacity: 1;
+  transition:
+    height var(--dur-nav) var(--ease-out),
+    opacity var(--dur-nav) var(--ease-out);
+}
+
+.ptrIcon {
+  display: flex;
+  padding-bottom: 12px;
+}
+
+.ptrIcon[data-spin] {
+  animation: ptrSpin 0.8s linear infinite;
+}
+
+/* Ambient-пульс на ready — переиспользуем uiPulse (ui/ui.css), не заводим свой (motion.md
+   «осознанно не токенизируем», touch.nav.md §5). */
+.ptrIndicator[data-phase="ready"] .ptrIcon {
+  animation: uiPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes ptrSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ptrIcon[data-spin],
+  .ptrIndicator[data-phase="ready"] .ptrIcon {
+    animation: none;
+  }
+}

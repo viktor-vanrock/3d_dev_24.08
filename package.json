@@ -1,0 +1,27 @@
+{
+  "name": "portal.ru",
+  "private": true,
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "dev:relay": "pnpm --filter @portal/relay run dev",
+    "build": "turbo run build",
+    "build:relay": "pnpm --filter @portal/relay... run build",
+    "start:relay": "pnpm --filter @portal/relay run start",
+    "check:relay-deploy": "node apps/relay/deploy/check-active-config.mjs",
+    "check:no-go-relay-residue": "node apps/relay/deploy/check-no-go-relay-residue.mjs",
+    "boundaries": "pnpm --filter @portal/api boundaries",
+    "check:pre-commit": "pnpm lint && pnpm typecheck && pnpm boundaries",
+    "lint": "turbo run lint --filter=!@portal/web",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "prepare": "node scripts/install-git-hooks.mjs",
+    "version.bump": "node scripts/version.mjs"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.0"
+  }
+}

@@ -1,0 +1,51 @@
+[project]
+name = "scout"
+version = "0.0.0"
+description = "Парсер-контур: кандидаты станков/филамента и календарь релизов из внешних источников"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "psycopg[binary]>=3.2.0",
+    "httpx>=0.28.0",
+]
+
+[project.scripts]
+scout-worker = "scout.worker:run_loop"
+scout-vendor-whitelist-agent = "scout.sources.run:main"
+scout-slicer-profiles-agent = "scout.sources.run_slicer_profiles:main"
+scout-slicer-print-profiles-agent = "scout.sources.run_slicer_print_profiles:main"
+scout-slicer-print-profiles-prusa-agent = "scout.sources.run_slicer_print_profiles_prusa:main"
+scout-slicer-print-profiles-cura-agent = "scout.sources.run_slicer_print_profiles_cura:main"
+scout-slicer-print-profiles-ru-agent = "scout.sources.run_slicer_print_profiles_ru:main"
+scout-resolver-agent = "scout.resolver.run:main"
+scout-spoolman-agent = "scout.sources.run_spoolman:main"
+scout-news-worker = "scout.news.run:main"
+scout-news-api-feedback = "scout.news.feedback:main"
+scout-news-publisher = "scout.news.publisher:main"
+scout-news-provision-publisher-key = "scout.news.provision:main"
+scout-news-revoke-publisher-key = "scout.news.provision:revoke_main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.0",
+    "ruff>=0.8.0",
+    "pip-audit>=2.7.0",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/scout"]

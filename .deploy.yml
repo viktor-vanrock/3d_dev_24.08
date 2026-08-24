@@ -1,0 +1,86 @@
+.deploy_dev:
+  extends: .kube_deploy
+  stage: deploy
+  tags: [kubernetes-std]
+  variables:
+    APP_NAMESPACE: d-rndml-aiportal
+    CHART_DIR: "./helm"
+    CHART_NAME: "."
+    CHART_REPO: https://gitlab-ci-token:$CI_JOB_TOKEN@git.sberdevices.ru/rndml/devops/helm-template.git
+    CHART_REF: "master"
+    ENVIRONMENT: develop
+    OC_SERVER: "https://api.advosd.sberdevices.ru:6443"
+    OC_TOKEN: $OC_TOKEN
+  rules: !reference [.rules, dev]
+
+# 1 волна 
+
+deploy_dev_api:
+  extends: .deploy_dev
+  needs: [get_version, build_api]
+  dependencies: [get_version, build_api]
+  variables:
+    APP_NAME: api
+    VALUES_PATH: envs/dev/api.yaml
+
+deploy_dev_web:
+  extends: .deploy_dev
+  needs: [get_version, build_web, deploy_dev_api]
+  dependencies: [get_version, build_web]
+  variables:
+    APP_NAME: web
+    VALUES_PATH: envs/dev/web.yaml
+
+# потом 2 волна
+
+deploy_dev_relay:
+  extends: .deploy_dev
+  when: manual
+  allow_failure: true
+  needs: [get_version, build_relay]
+  dependencies: [get_version, build_relay]
+  variables:
+    APP_NAME: relay
+    VALUES_PATH: envs/dev/relay.yaml
+
+deploy_dev_search:
+  extends: .deploy_dev
+  when: manual
+  allow_failure: true
+  needs: [get_version, build_search]
+  dependencies: [get_version, build_search]
+  variables:
+    APP_NAME: search
+    VALUES_PATH: envs/dev/search.yaml
+
+deploy_dev_mesh:
+  extends: .deploy_dev
+  when: manual
+  allow_failure: true
+  needs: [get_version, build_mesh]
+  dependencies: [get_version, build_mesh]
+  variables:
+    APP_NAME: mesh
+    VALUES_PATH: envs/dev/mesh.yaml
+
+deploy_dev_giga:
+  extends: .deploy_dev
+  when: manual
+  allow_failure: true
+  needs: [get_version, build_giga]
+  dependencies: [get_version, build_giga]
+  variables:
+    APP_NAME: giga
+    VALUES_PATH: envs/dev/giga.yaml
+
+# совсем потом
+
+deploy_dev_scout:
+  extends: .deploy_dev
+  when: manual
+  allow_failure: true
+  needs: [get_version, build_scout]
+  dependencies: [get_version, build_scout]
+  variables:
+    APP_NAME: scout
+    VALUES_PATH: envs/dev/scout.yaml

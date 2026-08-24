@@ -1,0 +1,440 @@
+.homeMixedGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.homeConceptSentinel {
+  grid-column: 1 / -1;
+  height: 1px;
+  pointer-events: none;
+}
+
+.homeConceptTile {
+  min-width: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, hsl(var(--concept-hue, 160) 48% 48%) 26%, var(--border));
+  border-radius: 24px;
+  background: color-mix(in srgb, var(--surface) 62%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 50%, transparent),
+    0 14px 34px color-mix(in srgb, hsl(var(--concept-hue, 160) 50% 28%) 8%, transparent);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  animation: primReveal var(--dur-reveal) var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 45ms);
+  transition:
+    transform var(--dur-toggle) var(--ease-spring),
+    border-color var(--dur-toggle) var(--ease-out),
+    box-shadow var(--dur-toggle) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .homeConceptTile--ready:hover {
+    transform: translateY(-4px);
+    border-color: color-mix(in srgb, hsl(var(--concept-hue) 60% 48%) 54%, var(--border));
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, white 64%, transparent),
+      0 20px 44px color-mix(in srgb, hsl(var(--concept-hue) 55% 28%) 16%, transparent);
+  }
+}
+
+.homeConceptVisual {
+  position: relative;
+  display: block;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 51% 46%, hsl(var(--concept-hue, 160) 74% 68% / 0.28), transparent 34%),
+    linear-gradient(145deg, hsl(var(--concept-hue, 160) 38% 78% / 0.3), color-mix(in srgb, var(--surface) 72%, transparent));
+}
+
+.homeConceptVisual img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transform: scale(1.025);
+  transition:
+    opacity var(--dur-reveal) var(--ease-out),
+    transform var(--dur-reveal) var(--ease-out);
+}
+
+.homeConceptVisual img[data-loaded] {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.homeConceptMeta {
+  min-height: 112px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 13px 14px 15px;
+}
+
+.homeConceptMeta strong {
+  display: -webkit-box;
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-size: 13px;
+  line-height: 1.3;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.homeConceptDescription {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--text-dim);
+  font-size: 11px;
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.homeConceptTile--skeleton {
+  cursor: default;
+}
+
+.homeConceptTile--prompt-enter {
+  animation-name: conceptPromptArrive;
+  animation-timing-function: var(--ease-spring);
+}
+
+.homeConceptTile--tail-loading {
+  animation-name: conceptPlaceholderArrive;
+  animation-timing-function: var(--ease-out);
+}
+
+.homeConceptTile--image-enter {
+  animation: none;
+}
+
+.homeConceptTile--failed {
+  opacity: 0.52;
+}
+
+.homeConceptTile--skeleton .homeConceptVisual {
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+}
+
+.homeConceptTile--skeleton .homeConceptVisual::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 25%, rgb(255 255 255 / 0.48) 50%, transparent 75%);
+  animation: modelShimmer 1.5s linear infinite;
+}
+
+.homeConceptTile--generating .homeConceptVisual {
+  background: color-mix(in srgb, var(--surface) 74%, transparent);
+}
+
+.homeConceptTile--generating .homeConceptVisual::after {
+  background: linear-gradient(100deg, transparent 22%, rgb(255 255 255 / 0.62) 50%, transparent 78%);
+  animation: conceptGenerationSweep 1.25s linear infinite;
+}
+
+.homeConceptTile--ready .homeConceptVisual:not([data-loaded])::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 25%, rgb(255 255 255 / 0.4) 50%, transparent 75%);
+  animation: modelShimmer 1.5s linear infinite;
+}
+
+.homeConceptGenerationCue {
+  position: absolute;
+  z-index: 2;
+  right: 14px;
+  bottom: 14px;
+  left: 14px;
+  display: flex;
+  min-height: 32px;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 10px;
+  border: 1px solid color-mix(in srgb, white 34%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 58%, transparent);
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  backdrop-filter: blur(12px);
+}
+
+.homeConceptGenerationCue i {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.78;
+}
+
+.homeConceptTile--image-enter .homeConceptVisual img[data-loaded] {
+  animation: conceptImageResolve var(--dur-reveal) var(--ease-out) both;
+}
+
+.homeConceptTile--image-enter .homeConceptVisual[data-loaded]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    105deg,
+    transparent 28%,
+    color-mix(in srgb, white 52%, transparent) 48%,
+    transparent 68%
+  );
+  transform: translateX(-120%);
+  animation: conceptImageSheen var(--dur-reveal) var(--ease-out) both;
+}
+
+.homeConceptTrellisProgress {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  overflow: hidden;
+  padding: 12px;
+  color: white;
+  filter: drop-shadow(0 1px 4px rgb(0 0 0 / 0.32));
+  pointer-events: none;
+}
+
+.homeConceptTrellisActivity {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 50%, rgb(255 255 255 / 0.08), transparent 45%);
+}
+
+.homeConceptTrellisActivity::after {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  background: linear-gradient(
+    105deg,
+    transparent 35%,
+    rgb(255 255 255 / 0.24) 49%,
+    transparent 63%
+  );
+  transform: translateX(-115%);
+  animation:
+    conceptTrellisActivity
+    calc(var(--dur-slow) + var(--dur-slow) + var(--dur-slow) + var(--dur-slow))
+    var(--ease-out)
+    infinite;
+}
+
+.homeConceptTrellisEta {
+  position: relative;
+  z-index: 2;
+  min-width: 112px;
+  padding: 8px 14px;
+  border: 1px solid rgb(255 255 255 / 0.34);
+  border-radius: 999px;
+  background: rgb(18 24 22 / 0.68);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.16),
+    0 8px 24px rgb(12 16 15 / 0.18);
+  font-family: var(--font-display);
+  font-size: clamp(24px, 2.4vw, 34px);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.045em;
+  line-height: 1;
+  text-align: center;
+  backdrop-filter: blur(8px);
+  animation:
+    conceptTrellisTimerPulse
+    calc(var(--dur-slow) + var(--dur-slow) + var(--dur-slow))
+    var(--ease-out)
+    infinite alternate;
+}
+
+.homeConceptTrellisTrack {
+  position: absolute;
+  z-index: 2;
+  right: 12px;
+  bottom: 12px;
+  left: 12px;
+  display: block;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 56%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+.homeConceptTrellisTrack i {
+  position: relative;
+  display: block;
+  height: 100%;
+  overflow: hidden;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width var(--dur-toggle) var(--ease-out);
+}
+
+.homeConceptTrellisTrack i::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.72), transparent);
+  transform: translateX(-100%);
+  animation: conceptTrellisProgress 1.2s linear infinite;
+}
+
+@keyframes conceptTrellisActivity {
+  from {
+    transform: translateX(-115%);
+  }
+
+  to {
+    transform: translateX(115%);
+  }
+}
+
+@keyframes conceptTrellisTimerPulse {
+  from {
+    border-color: rgb(255 255 255 / 0.26);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.12),
+      0 8px 24px rgb(12 16 15 / 0.14);
+  }
+
+  to {
+    border-color: rgb(255 255 255 / 0.48);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.22),
+      0 8px 30px rgb(255 255 255 / 0.18);
+  }
+}
+
+@keyframes conceptPromptArrive {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.97);
+  }
+
+  64% {
+    opacity: 1;
+    transform: translateY(-2px) scale(1.008);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes conceptPlaceholderArrive {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes conceptImageResolve {
+  from {
+    opacity: 0;
+    filter: blur(12px) saturate(0.72);
+    transform: scale(1.055);
+  }
+
+  to {
+    opacity: 1;
+    filter: blur(0) saturate(1);
+    transform: scale(1);
+  }
+}
+
+@keyframes conceptGenerationSweep {
+  0% {
+    opacity: 0;
+    transform: translateX(-115%);
+  }
+
+  18% {
+    opacity: 1;
+  }
+
+  72% {
+    opacity: 0;
+    transform: translateX(115%);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(115%);
+  }
+}
+
+@keyframes conceptImageSheen {
+  from {
+    opacity: 0;
+    transform: translateX(-120%);
+  }
+
+  35% {
+    opacity: 0.72;
+  }
+
+  to {
+    opacity: 0;
+    transform: translateX(120%);
+  }
+}
+
+@keyframes conceptTrellisProgress {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@media (max-width: 1000px) {
+  .homeMixedGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .homeMixedGrid {
+    gap: 10px;
+  }
+
+  .homeConceptTrellisEta {
+    min-width: 92px;
+    padding: 7px 11px;
+    font-size: 21px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .homeConceptTile,
+  .homeConceptTile--skeleton .homeConceptVisual::after,
+  .homeConceptTile--ready .homeConceptVisual:not([data-loaded])::after,
+  .homeConceptTile--image-enter .homeConceptVisual::after,
+  .homeConceptTrellisActivity::after,
+  .homeConceptTrellisEta,
+  .homeConceptTrellisTrack i::after,
+  .homeConceptVisual img {
+    animation: none;
+    transition: none;
+  }
+}

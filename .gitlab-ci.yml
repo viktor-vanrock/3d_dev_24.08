@@ -1,0 +1,101 @@
+include:
+  - project: "rndml-public/devops/job-templates"
+    file:
+      - ".deploy.yml"
+  - ".deploy.yml"
+
+stages:
+  - prepare
+  - pack
+  - deploy
+
+variables:
+  DEV_API_URL: "/api"
+
+.rules:
+  dev:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_PIPELINE_SOURCE == "web"
+  dev_manual:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: manual
+      allow_failure: true
+    - if: $CI_PIPELINE_SOURCE == "web"
+      when: manual
+      allow_failure: true
+
+# prepare
+
+get_version:
+  extends: .getversion
+  stage: prepare
+  tags: [kube-stage]
+  before_script:
+    - version=$(node -p "const v=require('./version.json'); v.year + '.' + v.release + '.' + v.minor")
+  rules: !reference [.rules, dev]
+
+# pack
+
+.build_image:
+  extends: .kaniko
+  stage: pack
+  tags: [kube-stage]
+  dependencies: [get_version]
+  rules: !reference [.rules, dev]
+  # Один kaniko-под за раз: kube-stage не вытягивает 7 concurrent runner pod.
+  resource_group: kaniko-kube-stage
+
+build_web:
+  extends: .build_image
+  variables:
+    PROJECT_NAME: web
+    DOCKERFILE: ${CI_PROJECT_DIR}/apps/web/Dockerfile
+    DOCKER_ADDITION_ARGS_LIST: >-
+      --build-arg VITE_API_URL=$DEV_API_URL
+      --build-arg VITE_CLOSED_DEV=1
+      --build-arg VITE_DEV_BANNER=1
+
+build_api:
+  extends: .build_image
+  variables:
+    PROJECT_NAME: api
+    DOCKERFILE: ${CI_PROJECT_DIR}/apps/api/Dockerfile
+
+build_relay:
+  extends: .build_image
+  rules: !reference [.rules, dev_manual]
+  variables:
+    PROJECT_NAME: relay
+    DOCKERFILE: ${CI_PROJECT_DIR}/apps/relay/Dockerfile
+
+build_search:
+  extends: .build_image
+  rules: !reference [.rules, dev_manual]
+  variables:
+    PROJECT_NAME: search
+    DOCKERFILE: ${CI_PROJECT_DIR}/apps/search/Dockerfile
+
+build_mesh:
+  extends: .build_image
+  rules: !reference [.rules, dev_manual]
+  variables:
+    PROJECT_NAME: mesh
+    DOCKERFILE: ${CI_PROJECT_DIR}/apps/mesh/Dockerfile
+
+build_giga:
+  extends: .build_image
+  rules: !reference [.rules, dev_manual]
+  variables:
+    PROJECT_NAME: giga
+    DOCKERFILE: ${CI_PROJECT_DIR}/apps/giga/Dockerfile
+
+build_scout:
+  extends: .build_image
+  rules: !reference [.rules, dev_manual]
+  variables:
+    PROJECT_NAME: scout
+    DOCKERFILE: ${CI_PROJECT_DIR}/apps/scout/Dockerfile

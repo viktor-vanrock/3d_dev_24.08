@@ -1,0 +1,462 @@
+/*
+  Тёмная — глубокий тил/изумруд (по референсу «Киоск 3D-печати»: почти чёрный
+  тёплый тил-фон, мятно-изумрудный акцент, стеклянные карточки со свечением).
+  Светлая — матовый кремовый (лофт/домашнее производство): тёплый
+  кремовый фон, латунно-деревянные акценты.
+  --accent — единственный функциональный цвет (кнопки/ссылки/фокус).
+  --accent2 — декоративный, разный по теме.
+  --accent-warn/--accent-danger — семантические (очередь/деструктив), см. design/palette-typography.md.
+  --font-display — фирменный дисплейный шрифт для заголовков/CTA (SB Sans Display, решение
+  оператора 2026-07-18, docs/brand/typography.md), не для мелкого текста/полей — там --font-sans
+  (SB Sans Text).
+
+  Три тира (W3C Design Tokens, MF-40/MF-426):
+  1. reference (--ref-*)  — сырьё: голая палитра/радиусы/шрифты/тени, без роли и без темы.
+  2. semantic/alias       — существующие имена (--bg/--text/--accent/...), роль + тема; тема
+                            переключается сменой [data-theme] и НЕ трогает reference-тир.
+  3. component (--button-*, --card-*, ...) — то, что реально берут компоненты ui/; ссылается
+                            только на semantic (не на reference напрямую) — так тема течёт вниз
+                            по цепочке без переопределений в компонентном тире.
+  Крюк под Lite⇄Pro (features.md): тумблер меняет ТОЛЬКО semantic-переопределения плотности/
+  акцента в будущем [data-tier], компонентный тир не тронут — уже сейчас ни один компонент
+  не хардкодит reference-значения напрямую.
+*/
+
+/* ============================== 1. REFERENCE ============================== */
+:root {
+  /* Тёмная палитра — тил/мятный/изумруд */
+  --ref-color-teal-975: #04120d;
+  --ref-color-teal-950: #0a1512;
+  --ref-color-teal-900: #0f1e19;
+  --ref-color-teal-800: #13251f;
+  --ref-color-teal-700: #24413a;
+  --ref-color-mint-050: #eef5f2;
+  --ref-color-mint-300: #9eeec3;
+  --ref-color-mint-400: #34d399;
+  --ref-color-mint-500: #5eead4;
+  --ref-color-amber-400: #fbc281;
+  --ref-color-coral-400: #e8836f;
+  --ref-color-slate-400: #8ba69c;
+
+  /* Светлая палитра — кремовый лофт */
+  --ref-color-mint-025: #f4fff6;
+  --ref-color-cream-000: #fffdf8;
+  --ref-color-cream-100: #f6f1e7;
+  --ref-color-cream-200: #efe8da;
+  --ref-color-tan-300: #ded4c0;
+  /* Затемнено с #8a8070 до #6b6153 (MF-729): исходный тон давал ~3.5:1 с фонами кремовой
+     палитры на мелком тексте (.homeModelSub и др. --text-dim) — ниже WCAG AA 4.5:1. Новый ~5.4:1. */
+  --ref-color-tan-500: #6b6153;
+  --ref-color-ink-900: #2b2620;
+  /* Затемнено с #21a038 до #14803a (MF-729): исходный тон давал ~3.3:1 с --accent-contrast
+     (mint-025) на кнопках светлой темы — ниже WCAG AA 4.5:1 для обычного текста. Новый даёт ~4.9:1. */
+  --ref-color-forest-600: #14803a;
+  --ref-color-brass-400: #b08968;
+  --ref-color-amber-600: #b8801f;
+  --ref-color-coral-600: #c14e35;
+  --ref-color-sun-200: #ffdf9e;
+  --ref-color-sun-400: #f2a93b;
+
+  /* Тени (по теме, т.к. светлая тень должна быть тёплой, а не чёрной) */
+  --ref-shadow-teal: rgba(0, 0, 0, 0.6);
+  --ref-shadow-cream: rgba(43, 38, 32, 0.1);
+
+  /* Радиусы (design/metrics.md: карточки ≈28, компакт ≈22, поля ≈12, пилюли 999) */
+  --ref-radius-sm: 12px;
+  --ref-radius-md: 22px;
+  --ref-radius-lg: 28px;
+  --ref-radius-pill: 999px;
+
+  /* Тач-инвариант (design/layout.md § «Тач/киоск»; закрепляется в MF-428) */
+  --ref-touch-target-min: 48px;
+
+  /* Шрифты (design/palette-typography.md § «Типографика»). Решение оператора 2026-07-18
+     (docs/brand/typography.md § «Реконсиляция»): портал переходит на фирменные SB Sans
+     Display/Text (self-hosted, apps/web/src/theme/brand.fonts.css) — берём готовые
+     --font-brand-* токены вместо Unbounded/Inter. */
+  --ref-font-display: var(--font-brand-display);
+  --ref-font-sans: var(--font-brand-text);
+  /* GAP-24/25 projects.multiformat.md §6: моноширинный — инлайн/fenced-код markdown-рендера,
+     системный стек (без веб-шрифта — не тянем лишний чанк ради code-блоков). */
+  --ref-font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
+/* ============================== 2. SEMANTIC/ALIAS ============================== */
+:root,
+[data-theme="dark"] {
+  --bg: var(--ref-color-teal-950);
+  --bg-raised: var(--ref-color-teal-900);
+  --surface: var(--ref-color-teal-800);
+  --border: var(--ref-color-teal-700);
+  --text: var(--ref-color-mint-050);
+  --text-dim: var(--ref-color-slate-400);
+  --accent: var(--ref-color-mint-400);
+  --accent-contrast: var(--ref-color-teal-975);
+  --accent2: var(--ref-color-mint-500);
+  --accent-warn: var(--ref-color-amber-400);
+  --accent-danger: var(--ref-color-coral-400);
+  --shadow: var(--ref-shadow-teal);
+  /* Висп-тумблер: цвет «заряда энергии» (тёмная — мятная плазма) */
+  --wisp-core: var(--ref-color-mint-300);
+  --wisp-glow: var(--ref-color-mint-400);
+  --font-display: var(--ref-font-display);
+  --font-sans: var(--ref-font-sans);
+  --font-mono: var(--ref-font-mono);
+  color-scheme: dark;
+}
+
+[data-theme="light"] {
+  --bg: var(--ref-color-cream-100);
+  --bg-raised: var(--ref-color-cream-200);
+  --surface: var(--ref-color-cream-000);
+  --border: var(--ref-color-tan-300);
+  --text: var(--ref-color-ink-900);
+  --text-dim: var(--ref-color-tan-500);
+  --accent: var(--ref-color-forest-600);
+  --accent-contrast: var(--ref-color-mint-025);
+  --accent2: var(--ref-color-brass-400);
+  --accent-warn: var(--ref-color-amber-600);
+  --accent-danger: var(--ref-color-coral-600);
+  --shadow: var(--ref-shadow-cream);
+  /* Висп: в светлой — тёплое солнце (латунный --accent2 в шарике смотрится грязно) */
+  --wisp-core: var(--ref-color-sun-200);
+  --wisp-glow: var(--ref-color-sun-400);
+  --font-display: var(--ref-font-display);
+  --font-sans: var(--ref-font-sans);
+  --font-mono: var(--ref-font-mono);
+  color-scheme: light;
+}
+
+/* ============================== 3. COMPONENT ============================== */
+/* Ссылаются только на semantic-тир выше — тема течёт вниз без переопределений здесь. */
+:root {
+  --touch-target-min: var(--ref-touch-target-min);
+  /* Раскладка (docs/design/projects.page.md §1.4, GAP-CSS §26): --content-max — лайтовый
+     контент (дом/маркет как сейчас); --content-max-wide — шире, для wide-страниц
+     («Проекты», будущие «Принтеры»); берётся всеми wide-страницами, не хардкодится в странице. */
+  --content-max: 1280px;
+  --content-max-wide: 1440px;
+  --card-radius: var(--ref-radius-lg);
+  --card-radius-sm: var(--ref-radius-md);
+  --pill-radius: var(--ref-radius-pill);
+  /* Figma UI-kit использует не один универсальный radius: actions/tabs/chips — капсулы,
+     icon actions — круги, поля — скруглённые прямоугольники. Не сводить их обратно к
+     `--control-radius`: именно это делало прошлый перенос визуально непохожим на макет. */
+  --field-radius: 16px;
+  --input-radius: var(--field-radius);
+  --input-height: var(--touch-target-min);
+  --button-radius: var(--pill-radius);
+  --chip-radius: var(--pill-radius);
+  --tab-radius: var(--pill-radius);
+  --icon-button-radius: 50%;
+  --control-height: var(--touch-target-min);
+  --control-padding-inline: 16px;
+  /* Матрица размеров из Figma UI-kit «3D портал» (page UI-kit, Button/Icon Button/Chips).
+     `m` остаётся текущим системным размером и поэтому автоматически растёт в 10-foot tier;
+     компактные s/xs допустимы для широких chips и вторичных панелей, но не для одиночных
+     навигационных целей. */
+  --control-height-l: 56px;
+  --control-height-m: var(--control-height);
+  --control-height-s: 42px;
+  --control-height-xs: 36px;
+  --control-padding-l: 20px;
+  --control-padding-m: 16px;
+  --control-padding-s: 12px;
+  --control-padding-xs: 10px;
+  --control-font-l: 16px;
+  --control-font-m: 14px;
+  --control-font-s: 13px;
+  --control-font-xs: 12px;
+  --button-height: var(--control-height);
+  --icon-button-size: var(--touch-target-min);
+  --focus-ring-color: var(--accent);
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+  /* Единый отклик для .pressable: без сдвига геометрии, только яркость/transform. Карточка
+     хранит отдельную пару границ вложенного аффорданса, чтобы при hover он не растворялся. */
+  --state-hover-brightness: 1.06;
+  --state-press-brightness: 0.92;
+  --card-action-border: color-mix(in srgb, var(--border) 82%, transparent);
+  --card-action-border-hover: color-mix(in srgb, var(--border) 72%, var(--text));
+
+  /* Хореография движения (docs/design/motion.md, MF-601/MF-614/MF-684): именованные тайминги/
+     кривые — компоненты берут их вместо захардкоженных чисел, чтобы «ощущение» правилось в одном
+     месте. Шкала КОНЕЧНАЯ — 9 длительностей + 2 кривые; новая длительность — только под семейство
+     с ≥2 реальными использованиями, не «про запас». */
+  --dur-tap: 90ms;
+  --dur-press: 140ms;
+  --dur-toggle: 160ms;
+  --dur-burst: 180ms;
+  --dur-nav: 220ms;
+  --dur-reveal: 280ms;
+  --dur-pop: 300ms;
+  --dur-callout: 360ms;
+  --dur-slow: 500ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  /* Только для «живых» откликов (тумблер, send-кнопка, count-up) — лёгкий overshoot, не мультяшный. */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* 10-foot tier (tv.10foot.md §§2–6): это отдельный слой плотности и целей поверх
+   существующих компонентов, а не новый набор компонентов. Один размер viewport не
+   означает телевизор: 1280×720 и 1920×1080 — также обычные desktop-окна. Поэтому
+   укрупнение включается только при последнем способе ввода D-pad/пульт, который
+   theme/inputmode.ts отмечает на <html>. Иначе desktop незаметно получал 64px controls
+   вместо точной Figma-геометрии 56/48/42/36px. */
+@media (min-width: 1200px) and (min-height: 640px) {
+  :root[data-input-mode="dpad"] {
+    --tv-safe-inline: 5vw;
+    --tv-safe-block: 5vh;
+    --tv-target-min: 64px;
+    --touch-target-min: var(--tv-target-min);
+    --input-height: var(--tv-target-min);
+    --control-height: var(--tv-target-min);
+    --control-height-l: 72px;
+    --control-height-m: var(--tv-target-min);
+    --control-height-s: 56px;
+    --control-height-xs: 48px;
+    --button-height: var(--control-height);
+    --icon-button-size: var(--tv-target-min);
+  }
+}
+
+/* Единый источник reduced-motion (motion.md §«Reduced-motion»): обнуляем длительности здесь —
+   любой примитив/компонент, читающий var(--dur-*), становится мгновенным без собственного
+   @media-блока. Цвет/состояние по-прежнему меняются мгновенно (ничего не зависает на полпути);
+   существующие ~30 локальных @media-блоков по экранам не трогаем — они всё ещё под литералами. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-tap: 0ms;
+    --dur-press: 0ms;
+    --dur-toggle: 0ms;
+    --dur-burst: 0ms;
+    --dur-nav: 0ms;
+    --dur-reveal: 0ms;
+    --dur-pop: 0ms;
+    --dur-callout: 0ms;
+    --dur-slow: 0ms;
+  }
+}
+
+/* Плавная смена темы, пока тянут висп: короткий глобальный транзишен цветов.
+   Атрибут ставит/снимает themetoggle.tsx (во время drag + хвост после отпускания). */
+:root[data-theme-anim],
+:root[data-theme-anim] *,
+:root[data-theme-anim] *::before,
+:root[data-theme-anim] *::after {
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease,
+    color 0.3s ease,
+    box-shadow 0.3s ease,
+    filter 0.3s ease !important;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  /* Тач-киоск/мобильный: убираем 300мс задержку тапа и pinch-zoom на интерактиве */
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  /* Базовый вес текста (фидбек оператора 2026-07-18: «слишком много тонких букв, надо
+     больше жирности, но уместно») — 400 (браузерный default) наследовался ВЕЗДЕ, где
+     компонент не задавал свой font-weight явно: десятки заголовков на --font-display
+     по всему сайту (карточки моделей/принтеров/тредов, заголовки постов и т.д.) рисовались
+     неявным тонким весом. Явные font-weight в компонентах (300/500/600/700) по-прежнему
+     побеждают — эта правка поднимает только необозначенный дефолт, не переписывает то, что
+     уже осознанно взвешено. SB Sans Medium — настоящий файл начертания, не синтетика. */
+  font-weight: 500;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+/* Форм-контролы НЕ наследуют font-* от body по умолчанию (UA-стиль браузера для
+   input/textarea/select/button — своя, отдельная от остального документа) — строки
+   ввода поиска/фильтров сайта оставались на браузерном шрифте/весе, даже после того как
+   body поднялся до 500 (фидбек оператора 2026-07-18: «во всех местах... строка ввода
+   запроса»). font: inherit подтягивает и family, и size, и weight разом; точечные
+   компоненты (.homeGhostInput и т.п.) по-прежнему переопределяют своими явными правилами. */
+button,
+a,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
+a,
+input,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+a {
+  touch-action: manipulation;
+}
+
+/* Тач-киоск: не даём случайно выделить текст лейблов/иконок при быстрых тапах */
+label,
+svg {
+  user-select: none;
+}
+
+/* Фидбек на тап вместо :hover (на сенсоре его физически нет) — design/layout.md § «Тач/киоск»,
+   хореография — motion.md §1. Двухфазный тайминг чистым CSS: браузер берёт transition СОСТОЯНИЯ,
+   В КОТОРОЕ входит — нажатие подхватывает transition, объявленный на :active (быстро, --ease-out,
+   как будто палец придавил ДО завершения тапа — :active уже реагирует на pointerdown/touchstart),
+   отпускание возвращается к transition базового класса (пружина --ease-spring, лёгкий overshoot —
+   «упругая поверхность», не жёсткий щелчок). */
+.pressable {
+  transition:
+    transform var(--dur-press) var(--ease-spring),
+    filter var(--dur-press) var(--ease-spring);
+}
+
+.pressable:active {
+  transform: scale(0.96);
+  filter: brightness(var(--state-press-brightness));
+  transition:
+    transform var(--dur-tap) var(--ease-out),
+    filter var(--dur-tap) var(--ease-out);
+}
+
+/* Курсор/трекпад (mouse, не тач) — лёгкий "приподнялось" до нажатия, чтобы кнопка не
+   ощущалась мёртвой в состоянии покоя (motion.md §1 держит только press/release, hover
+   раньше не был нужен на киоске; на десктопе — Apple-TV-подобный отклик на наведение).
+   `(hover: hover) and (pointer: fine)` — не трогает тач/стилус, там :hover либо не
+   срабатывает вовсе, либо залипает после тапа. */
+@media (hover: hover) and (pointer: fine) {
+  .pressable:not(:disabled, [data-disabled="true"], [aria-disabled="true"]):hover {
+    filter: brightness(var(--state-hover-brightness));
+  }
+  .pressable:not(:disabled, [data-disabled="true"], [aria-disabled="true"]):active:hover {
+    filter: brightness(var(--state-press-brightness));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pressable {
+    transition: none;
+  }
+  .pressable:active {
+    transform: none;
+    filter: none;
+    transition: none;
+  }
+  .pressable:hover {
+    filter: none;
+  }
+}
+
+/* Появление одного элемента при монтировании — fade+rise (motion.md §5). Общий keyframe вместо
+   копипасты `homeRise`-подобных блоков по экранам. */
+@keyframes primReveal {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.reveal {
+  animation: primReveal var(--dur-reveal) var(--ease-out) both;
+}
+
+/* Контейнер: дети получают .reveal-поведение + инкрементальную задержку через --i, проставляемый
+   на каждом ребёнке (motion.md §5). Шаг 40ms — фиксированный множитель, не токен: единственный
+   наблюдаемый интервал во всём коде. */
+.stagger-reveal > * {
+  animation: primReveal var(--dur-reveal) var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 40ms);
+}
+
+/* Enter/exit оверлеев (modal/sheet/toast/alert, motion.md §«Примитивы») — форма примитива;
+   миграция существующих overlay-мест на него — отдельная задача MF-685 (Stage 2). */
+.modal-in-out {
+  opacity: 0;
+  transform: translateY(-8px) scale(0.98);
+  transition:
+    opacity var(--dur-slow) var(--ease-out),
+    transform var(--dur-slow) var(--ease-out);
+}
+
+.modal-in-out[data-visible="true"] {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* Видимый фокус с клавиатуры/switch-устройств (полный аудит — MF-428, здесь — базовый инвариант,
+   чтобы новые компоненты ui/ не рождались без него). Только :focus-visible — тап мышью/пальцем
+   рамку не показывает. */
+:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* Пульт/D-pad (tv.10foot.md §3/§9, MF-923): толще/ярче кольцо + glow поверх стеклянной обводки
+   карточки — должно читаться с 3 метров. `data-input-mode="dpad"` ставит theme/inputmode.ts на
+   <html> только когда последний ввод был стрелками; обычная тач/мышь-навигация этот селектор не
+   задевает и остаётся на базовом :focus-visible выше. */
+[data-input-mode="dpad"] :focus-visible {
+  outline-width: 3px;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--focus-ring-color) 35%, transparent);
+}
+
+/* Отступ героя от шапки (docs/design/model.card.visual.md §1): --header-safe — высота
+   капсулы-шапки (84px факт) + запас дыхания. С закреплением шапки (position: fixed,
+   docs/design/header-capsule.md § «Закреплённая центральная навигация», MF-851) это уже не
+   просто ориентир для sticky-элемента (.modelViewerStage) — это реальный паддинг-сверху,
+   который обязан резервировать КАЖДЫЙ экран (.homeContent/.projectsWideBody, home.css/
+   projects.css), иначе контент прячется под фикс-хромом. Появится баннер/тир-режим сверху —
+   меняется только это значение, не литералы по файлам. --hero-top-gap — второй, более тонкий
+   отступ самого героя, чтобы он не «поднырывал» под шапку. */
+:root {
+  --header-safe: max(88px, calc(72px + env(safe-area-inset-top)));
+  --hero-top-gap: 24px;
+}
+
+/* На tablet это значение переопределяет двухрядная шапка в home.css. На desktop/TV
+   фактический однорядный homeTopbar — 110px, поэтому overlay и контент должны читать
+   safe-area не меньше этого значения и не заходить под нижний край хрома. */
+@media (min-width: 641px) {
+  :root {
+    --header-safe: max(110px, calc(72px + env(safe-area-inset-top)));
+  }
+}
+
+/* Слой всплывашек (эпик MF-440/MF-441, design/status-alerts.md): непрерывный
+   диапазон выше контента (1) и поповеров капсулы (20), ниже — ничего не выше алерт-хоста.
+   Аватар-редактор (50) намеренно ниже — критичный алерт виден поверх него. */
+:root {
+  /* Bottom-tab (touch.nav.md §1): выше аватар-редактора (50, home.css), ниже тоста —
+     таббар не должен перекрывать всплывающее уведомление. */
+  --z-bottomnav: 55;
+  /* Закреплённая шапка (header-capsule.md § «Закреплённая центральная навигация», MF-851) —
+     тот же ярус «пинанного root-хрома», что и bottom-tab: верх/низ экрана не пересекаются
+     пространственно, общий z не создаёт коллизии. */
+  --z-header: 55;
+  --z-toast: 60;
+  /* PWA install-промо: выше эфемерного тоста, ниже юридического consent-баннера. */
+  --z-install: 61;
+  /* Юридический баннер согласия (MF-610, docs/design/consent.md §1): весомее тоста
+     (не гаснет сам), но уступает функциональным оверлеям, которые юзер открыл сам. */
+  --z-consent: 62;
+  --z-sheet: 65;
+  --z-modal: 70;
+  --z-alert: 75;
+}

@@ -1,0 +1,36 @@
+{
+  "name": "@portal/device-agent",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "build": "tsc -b",
+    "build:bundle": "esbuild src/main.ts --bundle --format=esm --platform=node --target=node22 --sourcemap=external --banner:js=\"import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\" --outfile=.release-dist/main.js",
+    "release": "./deploy/release.sh",
+    "start": "node dist/main.js",
+    "typecheck": "tsc -b --noEmit",
+    "lint": "eslint . && pnpm depcruise",
+    "lint:eslint": "eslint .",
+    "depcruise": "depcruise --config .dependency-cruiser.cjs --output-type err src",
+    "boundaries": "pnpm lint",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@portal/contracts": "workspace:*",
+    "jose": "^5.9.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@portal/config": "workspace:*",
+    "@types/node": "^22.10.0",
+    "@types/ws": "^8.5.13",
+    "dependency-cruiser": "^18.1.1",
+    "esbuild": "^0.25.0",
+    "eslint": "9.39.4",
+    "eslint-plugin-boundaries": "^7.1.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.2.6"
+  }
+}

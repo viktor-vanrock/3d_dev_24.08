@@ -1,0 +1,29 @@
+[Unit]
+Description=3MF device agent (Moonraker outbound connector)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=3mf-agent
+Group=3mf-agent
+WorkingDirectory=/opt/3mf-device-agent/current
+EnvironmentFile=-/etc/3mf-device-agent/agent.env
+ExecStart=/usr/bin/node /opt/3mf-device-agent/current/.release-dist/main.js
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/3mf-device-agent
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+CapabilityBoundingSet=
+LockPersonality=true
+MemoryDenyWriteExecute=true
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

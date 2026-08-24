@@ -1,0 +1,538 @@
+{
+  "no_news": {
+    "schema_version": "feed-news-job-outcome.v1",
+    "job_id": "news-job-no-news-001",
+    "candidate_id": null,
+    "completed_at": "2026-07-22T06:05:00Z",
+    "provenance": {
+      "provider": "hyperpc",
+      "model": "gemma-4-e4b",
+      "model_version": "2026-07-18",
+      "prompt_version": "feed-news-research.v3",
+      "research_run_id": "research-run-no-news-001",
+      "normalization_run_id": null,
+      "generated_at": "2026-07-22T06:05:00Z"
+    },
+    "outcome": "no_news",
+    "candidate": null,
+    "normalized_news": null,
+    "source_records": [
+      {
+        "source_id": "source-vendor-feed",
+        "canonical_url": "https://vendor.example/news",
+        "title": "Vendor newsroom",
+        "publisher": "Vendor Example",
+        "published_at": null,
+        "retrieved_at": "2026-07-22T06:00:00Z",
+        "content_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+      }
+    ],
+    "reason": {
+      "code": "no_eligible_news",
+      "message": "No new dated product or company announcement was found."
+    }
+  },
+  "exact_duplicate": {
+    "schema_version": "feed-news-job-outcome.v1",
+    "job_id": "news-job-duplicate-001",
+    "candidate_id": "candidate-duplicate-001",
+    "completed_at": "2026-07-22T07:05:00Z",
+    "provenance": {
+      "provider": "hyperpc",
+      "model": "gemma-4-e4b",
+      "model_version": "2026-07-18",
+      "prompt_version": "feed-news-research.v3",
+      "research_run_id": "research-run-duplicate-001",
+      "normalization_run_id": null,
+      "generated_at": "2026-07-22T07:05:00Z"
+    },
+    "outcome": "exact_duplicate",
+    "candidate": {
+      "schema_version": "news-candidate.v1",
+      "candidate_id": "candidate-duplicate-001",
+      "title": "Vendor ships firmware 2.4",
+      "summary": "Firmware 2.4 is available for the Vendor X printer.",
+      "source_records": [
+        {
+          "source_id": "source-release-24",
+          "canonical_url": "https://vendor.example/news/firmware-2-4",
+          "title": "Firmware 2.4 released",
+          "publisher": "Vendor Example",
+          "published_at": "2026-07-21T10:00:00Z",
+          "retrieved_at": "2026-07-22T07:00:00Z",
+          "content_hash": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+        }
+      ],
+      "claims": [
+        {
+          "claim_id": "claim-release-24",
+          "text": "Firmware 2.4 is generally available.",
+          "source_ids": ["source-release-24"]
+        }
+      ],
+      "semantic_labels": [
+        {
+          "label": "firmware_release",
+          "confidence": 0.99,
+          "evidence": {
+            "claim_ids": ["claim-release-24"],
+            "source_ids": ["source-release-24"]
+          },
+          "model": {
+            "provider": "hyperpc",
+            "model": "gemma-4-e4b",
+            "model_version": "2026-07-18"
+          },
+          "run_id": "label-run-duplicate-001"
+        }
+      ],
+      "community_subject_hint": {
+        "subject_type": "machine",
+        "subject_id": null,
+        "subject_slug": "vendor-x",
+        "display_name": "Vendor X",
+        "confidence": 0.98,
+        "evidence_claim_ids": ["claim-release-24"]
+      },
+      "provenance": {
+        "provider": "hyperpc",
+        "model": "gemma-4-e4b",
+        "model_version": "2026-07-18",
+        "prompt_version": "feed-news-research.v3",
+        "research_run_id": "research-run-duplicate-001",
+        "normalization_run_id": null,
+        "generated_at": "2026-07-22T07:04:00Z"
+      },
+      "dedup_signals": {
+        "canonical_url_hashes": ["sha256:url-release-24"],
+        "content_hashes": ["sha256:2222222222222222222222222222222222222222222222222222222222222222"],
+        "title_fingerprint": "vendor ships firmware 2 4",
+        "semantic_fingerprint": "sha256:semantic-release-24",
+        "exact_match": {
+          "feed_post_id": "feed-post-existing-024",
+          "matched_on": "content_hash",
+          "matched_value": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+        },
+        "near_matches": []
+      }
+    },
+    "normalized_news": null,
+    "duplicate_of": {
+      "feed_post_id": "feed-post-existing-024",
+      "matched_on": "content_hash",
+      "matched_value": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+    }
+  },
+  "quality_rejected": {
+    "schema_version": "feed-news-job-outcome.v1",
+    "job_id": "news-job-quality-001",
+    "candidate_id": "candidate-quality-001",
+    "completed_at": "2026-07-22T08:05:00Z",
+    "provenance": {
+      "provider": "hyperpc",
+      "model": "gemma-4-e4b",
+      "model_version": "2026-07-18",
+      "prompt_version": "feed-news-research.v3",
+      "research_run_id": "research-run-quality-001",
+      "normalization_run_id": null,
+      "generated_at": "2026-07-22T08:05:00Z"
+    },
+    "outcome": "quality_rejected",
+    "candidate": {
+      "schema_version": "news-candidate.v1",
+      "candidate_id": "candidate-quality-001",
+      "title": "Unconfirmed printer rumor",
+      "summary": "A forum post claims a new printer will ship soon.",
+      "source_records": [
+        {
+          "source_id": "source-forum-rumor",
+          "canonical_url": "https://forum.example/posts/rumor-42",
+          "title": "Possible new Vendor printer",
+          "publisher": "Community forum",
+          "published_at": "2026-07-22T07:00:00Z",
+          "retrieved_at": "2026-07-22T08:00:00Z",
+          "content_hash": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+        }
+      ],
+      "claims": [
+        {
+          "claim_id": "claim-rumor",
+          "text": "An unnamed printer may ship this quarter.",
+          "source_ids": ["source-forum-rumor"]
+        }
+      ],
+      "semantic_labels": [
+        {
+          "label": "product_announcement",
+          "confidence": 0.32,
+          "evidence": {
+            "claim_ids": ["claim-rumor"],
+            "source_ids": ["source-forum-rumor"]
+          },
+          "model": {
+            "provider": "hyperpc",
+            "model": "gemma-4-e4b",
+            "model_version": "2026-07-18"
+          },
+          "run_id": "label-run-quality-001"
+        }
+      ],
+      "community_subject_hint": null,
+      "provenance": {
+        "provider": "hyperpc",
+        "model": "gemma-4-e4b",
+        "model_version": "2026-07-18",
+        "prompt_version": "feed-news-research.v3",
+        "research_run_id": "research-run-quality-001",
+        "normalization_run_id": null,
+        "generated_at": "2026-07-22T08:04:00Z"
+      },
+      "dedup_signals": {
+        "canonical_url_hashes": ["sha256:url-rumor-42"],
+        "content_hashes": ["sha256:3333333333333333333333333333333333333333333333333333333333333333"],
+        "title_fingerprint": "unconfirmed printer rumor",
+        "semantic_fingerprint": null,
+        "exact_match": null,
+        "near_matches": []
+      }
+    },
+    "normalized_news": null,
+    "rejection": {
+      "code": "insufficient_sources",
+      "message": "The only evidence is an anonymous community post.",
+      "evidence": {
+        "claim_ids": ["claim-rumor"],
+        "source_ids": ["source-forum-rumor"]
+      }
+    }
+  },
+  "retryable_failure": {
+    "schema_version": "feed-news-job-outcome.v1",
+    "job_id": "news-job-retry-001",
+    "candidate_id": null,
+    "completed_at": "2026-07-22T09:05:00Z",
+    "provenance": {
+      "provider": "hyperpc",
+      "model": "gemma-4-e4b",
+      "model_version": "2026-07-18",
+      "prompt_version": "feed-news-research.v3",
+      "research_run_id": "research-run-retry-001",
+      "normalization_run_id": null,
+      "generated_at": "2026-07-22T09:05:00Z"
+    },
+    "outcome": "retryable_failure",
+    "candidate": null,
+    "normalized_news": null,
+    "error": {
+      "code": "provider_timeout",
+      "message": "Research provider did not answer before the lease deadline.",
+      "retryable": true,
+      "retry_after_seconds": 120
+    }
+  },
+  "rich_article": {
+    "schema_version": "feed-news-job-outcome.v1",
+    "job_id": "news-job-rich-001",
+    "candidate_id": "candidate-rich-001",
+    "completed_at": "2026-07-22T10:10:00Z",
+    "provenance": {
+      "provider": "hyperpc",
+      "model": "gemma-4-e4b",
+      "model_version": "2026-07-18",
+      "prompt_version": "feed-news-normalize.v2",
+      "research_run_id": "research-run-rich-001",
+      "normalization_run_id": "normalize-run-rich-001",
+      "generated_at": "2026-07-22T10:10:00Z"
+    },
+    "outcome": "ready",
+    "candidate": {
+      "schema_version": "news-candidate.v1",
+      "candidate_id": "candidate-rich-001",
+      "title": "Maker One gains faster printing and an open 3D demo",
+      "summary": "The Maker One update raises supported speed and publishes a reference model.",
+      "source_records": [
+        {
+          "source_id": "source-announcement",
+          "canonical_url": "https://maker.example/news/maker-one-update",
+          "title": "Maker One performance update",
+          "publisher": "Maker Example",
+          "published_at": "2026-07-21T08:00:00Z",
+          "retrieved_at": "2026-07-22T10:00:00Z",
+          "content_hash": "sha256:4444444444444444444444444444444444444444444444444444444444444444"
+        },
+        {
+          "source_id": "source-benchmark",
+          "canonical_url": "https://lab.example/reviews/maker-one-2-2",
+          "title": "Maker One 2.2 benchmark",
+          "publisher": "Independent Print Lab",
+          "published_at": "2026-07-21T12:00:00Z",
+          "retrieved_at": "2026-07-22T10:01:00Z",
+          "content_hash": "sha256:5555555555555555555555555555555555555555555555555555555555555555"
+        },
+        {
+          "source_id": "source-model",
+          "canonical_url": "https://maker.example/models/speed-tower",
+          "title": "Maker One speed tower",
+          "publisher": "Maker Example",
+          "published_at": "2026-07-21T08:00:00Z",
+          "retrieved_at": "2026-07-22T10:02:00Z",
+          "content_hash": "sha256:6666666666666666666666666666666666666666666666666666666666666666"
+        }
+      ],
+      "claims": [
+        {
+          "claim_id": "claim-speed",
+          "text": "Firmware 2.2 raises the supported speed from 300 to 500 mm/s.",
+          "source_ids": ["source-announcement", "source-benchmark"]
+        },
+        {
+          "claim_id": "claim-model",
+          "text": "The vendor published a downloadable speed-tower model.",
+          "source_ids": ["source-announcement", "source-model"]
+        }
+      ],
+      "semantic_labels": [
+        {
+          "label": "firmware_release",
+          "confidence": 0.97,
+          "evidence": {
+            "claim_ids": ["claim-speed"],
+            "source_ids": ["source-announcement", "source-benchmark"]
+          },
+          "model": {
+            "provider": "hyperpc",
+            "model": "gemma-4-e4b",
+            "model_version": "2026-07-18"
+          },
+          "run_id": "label-run-rich-001"
+        },
+        {
+          "label": "model_release",
+          "confidence": 0.94,
+          "evidence": {
+            "claim_ids": ["claim-model"],
+            "source_ids": ["source-announcement", "source-model"]
+          },
+          "model": {
+            "provider": "hyperpc",
+            "model": "gemma-4-e4b",
+            "model_version": "2026-07-18"
+          },
+          "run_id": "label-run-rich-001"
+        }
+      ],
+      "community_subject_hint": {
+        "subject_type": "machine",
+        "subject_id": "machine-maker-one",
+        "subject_slug": "maker-one",
+        "display_name": "Maker One",
+        "confidence": 0.99,
+        "evidence_claim_ids": ["claim-speed", "claim-model"]
+      },
+      "provenance": {
+        "provider": "hyperpc",
+        "model": "gemma-4-e4b",
+        "model_version": "2026-07-18",
+        "prompt_version": "feed-news-research.v3",
+        "research_run_id": "research-run-rich-001",
+        "normalization_run_id": null,
+        "generated_at": "2026-07-22T10:05:00Z"
+      },
+      "dedup_signals": {
+        "canonical_url_hashes": ["sha256:url-maker-update", "sha256:url-maker-benchmark", "sha256:url-maker-model"],
+        "content_hashes": [
+          "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+          "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+          "sha256:6666666666666666666666666666666666666666666666666666666666666666"
+        ],
+        "title_fingerprint": "maker one gains faster printing and an open 3d demo",
+        "semantic_fingerprint": "sha256:semantic-maker-one-22",
+        "exact_match": null,
+        "near_matches": [
+          {
+            "feed_post_id": "feed-post-maker-one-preview",
+            "similarity": 0.72
+          }
+        ]
+      }
+    },
+    "normalized_news": {
+      "schema_version": "normalized-news.v1",
+      "normalized_news_id": "normalized-rich-001",
+      "candidate_id": "candidate-rich-001",
+      "title": "Maker One ускорился до 500 мм/с — и получил открытую тестовую модель",
+      "dek": "Прошивка 2.2 повышает заявленную скорость, а независимый тест подтверждает прирост.",
+      "body_markdown": "## Что изменилось\n\nMaker Example выпустила прошивку 2.2 для Maker One. Заявленная скорость выросла с 300 до 500 мм/с.\n\n## Как проверить\n\nПроизводитель опубликовал открытую модель speed tower для проверки настроек.",
+      "body_ast": [
+        {
+          "type": "markdown",
+          "markdown": "## Что изменилось\n\nMaker Example выпустила прошивку 2.2 для Maker One."
+        },
+        { "type": "block_ref", "block_id": "block-hero-image" },
+        {
+          "type": "markdown",
+          "markdown": "Заявленная скорость выросла с 300 до 500 мм/с."
+        },
+        { "type": "block_ref", "block_id": "block-speed-chart" },
+        {
+          "type": "markdown",
+          "markdown": "## Как проверить\n\nПроизводитель опубликовал открытую модель speed tower."
+        },
+        { "type": "block_ref", "block_id": "block-speed-tower" },
+        { "type": "block_ref", "block_id": "block-primary-source" }
+      ],
+      "blocks": [
+        {
+          "block_id": "block-hero-image",
+          "kind": "image",
+          "source_id": "source-announcement",
+          "image_url": "https://maker.example/media/maker-one-2-2.webp",
+          "alt": "Maker One printing a speed tower",
+          "caption": "Maker One after the firmware 2.2 update",
+          "content_hash": "sha256:7777777777777777777777777777777777777777777777777777777777777777"
+        },
+        {
+          "block_id": "block-speed-chart",
+          "kind": "chart",
+          "source_ids": ["source-announcement", "source-benchmark"],
+          "title": "Supported print speed",
+          "chart_type": "bar",
+          "x_axis_label": "Firmware",
+          "y_axis_label": "mm/s",
+          "series": [
+            {
+              "label": "Maker One",
+              "points": [
+                { "x": "2.1", "y": 300 },
+                { "x": "2.2", "y": 500 }
+              ]
+            }
+          ]
+        },
+        {
+          "block_id": "block-speed-tower",
+          "kind": "model_3d",
+          "source_ids": ["source-model"],
+          "model_id": "portal-model-speed-tower",
+          "asset_url": "https://maker.example/models/speed-tower/model.3mf",
+          "mime_type": "model/3mf",
+          "poster_url": "https://maker.example/models/speed-tower/poster.webp",
+          "alt": "3D preview of the Maker One speed tower",
+          "caption": "Open speed-tower model supplied by the vendor"
+        },
+        {
+          "block_id": "block-primary-source",
+          "kind": "source",
+          "source_id": "source-announcement",
+          "claim_ids": ["claim-speed", "claim-model"],
+          "label": "Official announcement"
+        }
+      ],
+      "source_records": [
+        {
+          "source_id": "source-announcement",
+          "canonical_url": "https://maker.example/news/maker-one-update",
+          "title": "Maker One performance update",
+          "publisher": "Maker Example",
+          "published_at": "2026-07-21T08:00:00Z",
+          "retrieved_at": "2026-07-22T10:00:00Z",
+          "content_hash": "sha256:4444444444444444444444444444444444444444444444444444444444444444"
+        },
+        {
+          "source_id": "source-benchmark",
+          "canonical_url": "https://lab.example/reviews/maker-one-2-2",
+          "title": "Maker One 2.2 benchmark",
+          "publisher": "Independent Print Lab",
+          "published_at": "2026-07-21T12:00:00Z",
+          "retrieved_at": "2026-07-22T10:01:00Z",
+          "content_hash": "sha256:5555555555555555555555555555555555555555555555555555555555555555"
+        },
+        {
+          "source_id": "source-model",
+          "canonical_url": "https://maker.example/models/speed-tower",
+          "title": "Maker One speed tower",
+          "publisher": "Maker Example",
+          "published_at": "2026-07-21T08:00:00Z",
+          "retrieved_at": "2026-07-22T10:02:00Z",
+          "content_hash": "sha256:6666666666666666666666666666666666666666666666666666666666666666"
+        }
+      ],
+      "claims": [
+        {
+          "claim_id": "claim-speed",
+          "text": "Firmware 2.2 raises the supported speed from 300 to 500 mm/s.",
+          "source_ids": ["source-announcement", "source-benchmark"]
+        },
+        {
+          "claim_id": "claim-model",
+          "text": "The vendor published a downloadable speed-tower model.",
+          "source_ids": ["source-announcement", "source-model"]
+        }
+      ],
+      "semantic_labels": [
+        {
+          "label": "firmware_release",
+          "confidence": 0.97,
+          "evidence": {
+            "claim_ids": ["claim-speed"],
+            "source_ids": ["source-announcement", "source-benchmark"]
+          },
+          "model": {
+            "provider": "hyperpc",
+            "model": "gemma-4-e4b",
+            "model_version": "2026-07-18"
+          },
+          "run_id": "label-run-rich-001"
+        },
+        {
+          "label": "model_release",
+          "confidence": 0.94,
+          "evidence": {
+            "claim_ids": ["claim-model"],
+            "source_ids": ["source-announcement", "source-model"]
+          },
+          "model": {
+            "provider": "hyperpc",
+            "model": "gemma-4-e4b",
+            "model_version": "2026-07-18"
+          },
+          "run_id": "label-run-rich-001"
+        }
+      ],
+      "community_subject_hint": {
+        "subject_type": "machine",
+        "subject_id": "machine-maker-one",
+        "subject_slug": "maker-one",
+        "display_name": "Maker One",
+        "confidence": 0.99,
+        "evidence_claim_ids": ["claim-speed", "claim-model"]
+      },
+      "provenance": {
+        "provider": "hyperpc",
+        "model": "gemma-4-e4b",
+        "model_version": "2026-07-18",
+        "prompt_version": "feed-news-normalize.v2",
+        "research_run_id": "research-run-rich-001",
+        "normalization_run_id": "normalize-run-rich-001",
+        "generated_at": "2026-07-22T10:10:00Z"
+      },
+      "dedup_signals": {
+        "canonical_url_hashes": ["sha256:url-maker-update", "sha256:url-maker-benchmark", "sha256:url-maker-model"],
+        "content_hashes": [
+          "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+          "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+          "sha256:6666666666666666666666666666666666666666666666666666666666666666"
+        ],
+        "title_fingerprint": "maker one gains faster printing and an open 3d demo",
+        "semantic_fingerprint": "sha256:semantic-maker-one-22",
+        "exact_match": null,
+        "near_matches": [
+          {
+            "feed_post_id": "feed-post-maker-one-preview",
+            "similarity": 0.72
+          }
+        ]
+      }
+    }
+  }
+}

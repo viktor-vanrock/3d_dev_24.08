@@ -1,0 +1,35 @@
+# systemd-юнит разового прогона источника slicer_print_profiles_ru (MF-411,
+# шаг 3 фазы 1 эпика MF-34, RU-специфика): scout-slicer-print-profiles-ru-agent
+# (курируемый seed FDplast/Bestfilament/REC/PLASTICO x PLA/PETG/ABS,
+# extrapolated_from_id -> Generic PLA/PETG/ABS) -> slicer_profile_candidates/
+# slicer_profiles.
+#
+# Без .timer, в отличие от остальных portal.scout-slicer-print-profiles*
+# юнитов: это не фетч живого внешнего источника (нечего опрашивать по
+# расписанию), а курируемая статическая таблица — перепрогон нужен только
+# вручную, когда таблицу в коде правят (новый вендор/материал). Требует, чтобы
+# portal.scout-slicer-print-profiles.service (OrcaSlicer, Generic-профили) уже
+# отработал хотя бы раз — иначе прогон честно пропускает записи
+# (skipped_no_base), не падает.
+#
+# Установка на VDS (после uv sync в apps/scout, см. portal.scout-worker.service):
+#   sudo cp deploy/portal.scout-slicer-print-profiles-ru.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl start portal.scout-slicer-print-profiles-ru.service
+#   journalctl -u portal.scout-slicer-print-profiles-ru -f     # логи последнего прогона
+#
+# EnvironmentFile ~/portal.scout.env (общий с portal.scout-worker.service) —
+# DATABASE_URL (обязателен).
+
+[Unit]
+Description=portal.ru scout slicer_print_profiles_ru agent (curated RU filament estimates -> slicer_profiles)
+After=network-online.target postgresql.service
+
+[Service]
+Type=oneshot
+User=plag
+WorkingDirectory=/home/plag/portal.ru/apps/scout
+EnvironmentFile=/home/plag/portal.scout.env
+ExecStart=/home/plag/.local/bin/uv run --no-dev scout-slicer-print-profiles-ru-agent
+StandardOutput=journal
+StandardError=journal

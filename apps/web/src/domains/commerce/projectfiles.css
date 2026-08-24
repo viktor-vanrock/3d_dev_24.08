@@ -1,0 +1,237 @@
+/* Блок «Файлы проекта» (docs/design/projects.md §3.2): «парящая» секция — заголовок парит,
+   строки-файлы приглушённое стекло. Появляется только у мульти-артефактного проекта. */
+.projectFiles {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 8px;
+}
+
+.projectFilesHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.projectFilesDownloadAll {
+  min-height: 40px;
+}
+
+.projectFilesGroups {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.projectFilesGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.projectFilesGroupLabel {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.projectFileRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 45%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.projectFileGlyph {
+  display: inline-flex;
+  font-size: 18px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+
+.projectFileName {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.projectFileSize {
+  flex-shrink: 0;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.projectFileBtn {
+  flex-shrink: 0;
+  min-height: 40px;
+}
+
+@media (max-width: 640px) {
+  .projectFileRow {
+    flex-wrap: wrap;
+  }
+  .projectFileName {
+    flex-basis: 100%;
+  }
+  .projectFileBtn {
+    min-height: 48px;
+  }
+}
+
+/* Дерево файлов репо (docs/design/projects.page.md §11.2): раскрываемые узлы папок, верхний
+   уровень открыт по умолчанию, вложенность — рекурсивно те же строки. */
+.repoTree {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--surface) 58%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 38%, transparent),
+    0 18px 44px color-mix(in srgb, var(--shadow) 34%, transparent);
+}
+
+.repoTreeTopbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 58px;
+  padding: 10px 16px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  background:
+    linear-gradient(100deg, color-mix(in srgb, var(--accent) 13%, var(--surface)), color-mix(in srgb, var(--surface) 72%, transparent));
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.repoTreeTopbar .repoTreeBranch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 11px;
+  border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  border-radius: 999px;
+  color: var(--text);
+  font-weight: 720;
+  background: color-mix(in srgb, var(--surface) 78%, transparent);
+}
+
+.repoTreeTopbar a {
+  margin-left: auto;
+  padding: 9px 12px;
+  border-radius: 999px;
+  color: var(--accent);
+  font-weight: 720;
+  text-decoration: none;
+}
+
+.repoTreeTopbar a:hover {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.repoTreeGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-top: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+}
+
+.repoTreeTopbar + .repoTreeGroup {
+  border-top: 0;
+}
+
+.repoTreeFolderRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 54px;
+  padding: 7px 16px;
+  color: var(--text);
+  text-align: left;
+  transition: background-color 0.18s ease;
+}
+
+.repoTreeFolderRow:hover {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+
+.repoTreeFolderLabel {
+  font-size: 14px;
+  font-weight: 720;
+  color: var(--text);
+}
+
+.repoTreeFolderPath {
+  font-size: 12px;
+  color: var(--text-dim);
+  opacity: 0.7;
+}
+
+.repoTreeChevron {
+  flex-shrink: 0;
+  color: var(--text-dim);
+  transform: rotate(90deg);
+  transition: transform 0.18s ease;
+}
+
+.repoTreeChevron[data-open] {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .repoTreeChevron {
+    transition: none;
+  }
+}
+
+.repoTreeFolderBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: color-mix(in srgb, var(--surface) 38%, transparent);
+}
+
+.repoTreeFolderBody > .projectFileRow {
+  min-height: 52px;
+  padding: 7px 16px 7px 48px;
+  border: 0;
+  border-top: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
+  border-radius: 0;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.repoTreeFolderBody > .repoTreeGroup {
+  margin-left: 28px;
+  border-left: 1px solid color-mix(in srgb, var(--border) 52%, transparent);
+}
+
+@media (max-width: 640px) {
+  .repoTreeTopbar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .repoTreeTopbar a {
+    margin-left: 0;
+  }
+
+  .repoTreeFolderPath {
+    display: none;
+  }
+}

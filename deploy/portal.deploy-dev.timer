@@ -1,0 +1,10 @@
+# Таймер автодеплоя dev, раз в минуту (см. portal.deploy-dev.service). MF-541.
+# Установка — см. заголовок portal.deploy-dev.service.
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=1min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

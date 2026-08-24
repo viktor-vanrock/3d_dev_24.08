@@ -1,0 +1,19 @@
+{
+  "type": "filament",
+  "name": "fdm_filament_pet",
+  "inherits": "fdm_filament_common",
+  "from": "system",
+  "instantiation": "false",
+  "hot_plate_temp": ["80"],
+  "hot_plate_temp_initial_layer": ["80"],
+  "filament_max_volumetric_speed": ["25"],
+  "filament_type": ["PETG"],
+  "filament_density": ["1.27"],
+  "filament_cost": ["30"],
+  "nozzle_temperature_initial_layer": ["255"],
+  "fan_max_speed": ["100"],
+  "fan_min_speed": ["20"],
+  "nozzle_temperature": ["255"],
+  "nozzle_temperature_range_low": ["220"],
+  "nozzle_temperature_range_high": ["270"]
+}

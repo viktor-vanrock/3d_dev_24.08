@@ -1,0 +1,11 @@
+[Unit]
+Description=portal.ru — мониторинг свободного места на диске
+
+[Service]
+Type=oneshot
+User=plag
+ExecStart=/home/plag/portal.ru/deploy/portal.disk-monitor.sh
+StandardOutput=journal
+StandardError=journal
+# Не считать выход 1 (WARNING) или 2 (CRITICAL) сбоем сервиса — логируем, но не шлём systemd-failure
+SuccessExitStatus=0 1 2

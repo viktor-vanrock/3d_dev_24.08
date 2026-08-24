@@ -1,0 +1,29 @@
+# systemd-юнит разового прогона резолвера apps/scout (MF-720/MF-722):
+# scout-resolver-agent — клеймит pending machine_candidates и промоутит их в
+# канон machines (insert/update/matched/rejected). Гоняется по расписанию
+# через portal.scout-resolver.timer (НЕ подключён к тику portal.scout-worker —
+# у резолвера своя частота уместности, он доедает уже накопленную очередь,
+# см. apps/scout/src/scout/resolver/run.py докстринг).
+#
+# Установка на VDS (после uv sync в apps/scout, см. portal.scout-worker.service):
+#   sudo cp deploy/portal.scout-resolver.service deploy/portal.scout-resolver.timer /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now portal.scout-resolver.timer
+#   journalctl -u portal.scout-resolver -f     # логи последнего прогона
+#
+# EnvironmentFile ~/portal.scout.env (общий с portal.scout-worker.service) —
+# DATABASE_URL (обязателен). Без DATABASE_URL прогон пропускается без падения.
+
+[Unit]
+Description=portal.ru scout resolver agent (machine_candidates -> machines)
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=plag
+WorkingDirectory=/home/plag/portal.ru/apps/scout
+EnvironmentFile=/home/plag/portal.scout.env
+ExecStart=/home/plag/.local/bin/uv run --no-dev scout-resolver-agent
+StandardOutput=journal
+StandardError=journal

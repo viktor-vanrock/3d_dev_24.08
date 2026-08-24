@@ -1,0 +1,200 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://3mf.tech/contracts/project-manifest/schema.v1.json",
+  "title": "portal.project.yaml — манифест project-as-code v1 (MF-1967)",
+  "description": "Переносимая машинная модель проекта поверх git-субстрата (docs/epics/project.git.md): конфигурации, артефакты (файлы), компоненты (физические части сборки), BOM (закупные позиции), сцена соединений и DAG фаз сборки. Файл лежит в корне репозитория проекта рядом с README.md. Резолвер (apps/api/src/models/projectManifest) сводит манифест в единый resolved project graph, одинаковый для импорта из STL-пачки/составного 3MF/git-репозитория. Простой одиночный STL/3MF резолвится без этого файла вовсе (резолвер синтезирует вырожденный манифест) — поле НЕ обязательно для однокомпонентных проектов. additionalProperties:false на каждом уровне — deny-by-default; произвольный исполняемый код (run/exec/script и т.п.) структурно невозможен, любое такое поле — MANIFEST_SCHEMA_INVALID. Неизвестные поля допускаются только через явный `x-*` неймспейс (patternProperties) и обязаны пройти сквозь резолвер непрочитанными, не потеряться.",
+  "type": "object",
+  "required": ["schemaVersion", "project"],
+  "additionalProperties": false,
+  "patternProperties": { "^x-[A-Za-z0-9_-]*$": {} },
+  "properties": {
+    "schemaVersion": {
+      "const": 1,
+      "description": "Версия контракта манифеста. Резолвер отказывает неизвестной версии (MANIFEST_UNKNOWN_VERSION), не пытается угадать формат — версионирование аддитивное (v2 — новый файл schema.v2.json, не breaking-правка этого)."
+    },
+    "project": {
+      "type": "object",
+      "required": ["name"],
+      "additionalProperties": false,
+      "patternProperties": { "^x-[A-Za-z0-9_-]*$": {} },
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "slug": {
+          "type": "string",
+          "pattern": "^[a-z0-9]([a-z0-9-]{0,62}[a-z0-9])?$",
+          "description": "Опционально: короткий машинный идентификатор проекта, не влияет на models.id/repo_path (та связка — задача Data, вне этой карточки)."
+        }
+      }
+    },
+    "configurations": {
+      "type": "array",
+      "maxItems": 200,
+      "items": { "$ref": "#/$defs/configuration" }
+    },
+    "artifacts": {
+      "type": "array",
+      "maxItems": 2000,
+      "items": { "$ref": "#/$defs/artifact" }
+    },
+    "components": {
+      "type": "array",
+      "maxItems": 2000,
+      "items": { "$ref": "#/$defs/component" }
+    },
+    "bom": {
+      "type": "array",
+      "maxItems": 5000,
+      "items": { "$ref": "#/$defs/bomItem" }
+    },
+    "connections": {
+      "type": "array",
+      "maxItems": 5000,
+      "items": { "$ref": "#/$defs/connection" }
+    },
+    "phases": {
+      "type": "array",
+      "maxItems": 1000,
+      "items": { "$ref": "#/$defs/phase" }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+      "description": "Идентификатор сущности внутри манифеста (не путь файла, не БД id). Не может начинаться с точки/дефиса и не содержит `/` — исключает подмену под путь при небрежном использовании id вызывающим кодом."
+    },
+    "artifactPath": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024,
+      "pattern": "^[^\\\\]+$",
+      "description": "POSIX-путь файла внутри проекта, относительно корня. Обратные слэши запрещены схемой; полная проверка (без ведущего `/`, без сегмента `..`, символических ссылок/submodule-эскейпа) — на резолвере (security.ts), не только регулярка — деталь синтаксиса не покрывает семантику 'выходит ли путь за пределы дерева'."
+    },
+    "url": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048,
+      "description": "Непрозрачная для схемы ссылка (например, страница вендора детали). Резолвер НИКОГДА не разыменовывает (не делает fetch) — это чисто отображаемые метаданные; схема ссылок (SSRF-guard: разрешены только http/https, запрещены file:/ftp:/локальные и метаданные-адреса) валидируется в security.ts, не здесь."
+    },
+    "configuration": {
+      "type": "object",
+      "required": ["id", "name"],
+      "additionalProperties": false,
+      "patternProperties": { "^x-[A-Za-z0-9_-]*$": {} },
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "default": { "type": "boolean" },
+        "componentRefs": {
+          "type": "array",
+          "maxItems": 2000,
+          "items": { "$ref": "#/$defs/id" }
+        }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "required": ["id", "role", "path"],
+      "additionalProperties": false,
+      "patternProperties": { "^x-[A-Za-z0-9_-]*$": {} },
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "role": {
+          "type": "string",
+          "enum": ["source", "drawing", "cnc_program", "gerber", "code_archive", "firmware", "doc", "other"],
+          "description": "Логическая роль на уровне манифеста — самостоятельная таксономия, НЕ 1:1 с model_files.role (та БД-схема — зона Data, отдельная карточка при появлении реальной связки)."
+        },
+        "path": { "$ref": "#/$defs/artifactPath" },
+        "format": {
+          "type": "string",
+          "maxLength": 32,
+          "description": "Необязательная подсказка формата (например 'stl'/'3mf'/'step'). Не источник истины — итоговый формат определяется по байтам (docs/epics/formats.policy.md §1.2), как и для остального upload-конвейера."
+        },
+        "checksum": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "Опциональный sha256 (hex) заявленного автором содержимого — если задан, резолвер сверяет с фактическим содержимым импортируемого входа и отказывает при расхождении (MANIFEST_CHECKSUM_MISMATCH)."
+        }
+      }
+    },
+    "component": {
+      "type": "object",
+      "required": ["id", "name"],
+      "additionalProperties": false,
+      "patternProperties": { "^x-[A-Za-z0-9_-]*$": {} },
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "craft": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Ремесло компонента (domain.model.md реестр); по умолчанию '3d_printing', если не задано."
+        },
+        "artifactRefs": {
+          "type": "array",
+          "maxItems": 2000,
+          "items": { "$ref": "#/$defs/id" }
+        },
+        "quantity": { "type": "integer", "minimum": 1, "maximum": 100000, "default": 1 }
+      }
+    },
+    "bomItem": {
+      "type": "object",
+      "required": ["id", "name", "quantity"],
+      "additionalProperties": false,
+      "patternProperties": { "^x-[A-Za-z0-9_-]*$": {} },
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "quantity": { "type": "integer", "minimum": 1, "maximum": 1000000 },
+        "unit": { "type": "string", "maxLength": 32 },
+        "vendor": {
+          "type": "object",
+          "additionalProperties": false,
+          "patternProperties": { "^x-[A-Za-z0-9_-]*$": {} },
+          "properties": {
+            "name": { "type": "string", "maxLength": 200 },
+            "url": { "$ref": "#/$defs/url" }
+          }
+        },
+        "notes": { "type": "string", "maxLength": 2000 }
+      }
+    },
+    "connection": {
+      "type": "object",
+      "required": ["id", "from", "to"],
+      "additionalProperties": false,
+      "patternProperties": { "^x-[A-Za-z0-9_-]*$": {} },
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "from": { "$ref": "#/$defs/id" },
+        "to": { "$ref": "#/$defs/id" },
+        "kind": { "type": "string", "maxLength": 64 },
+        "notes": { "type": "string", "maxLength": 2000 }
+      }
+    },
+    "phase": {
+      "type": "object",
+      "required": ["id", "name"],
+      "additionalProperties": false,
+      "patternProperties": { "^x-[A-Za-z0-9_-]*$": {} },
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "dependsOn": {
+          "type": "array",
+          "maxItems": 1000,
+          "items": { "$ref": "#/$defs/id" }
+        },
+        "componentRefs": {
+          "type": "array",
+          "maxItems": 2000,
+          "items": { "$ref": "#/$defs/id" }
+        },
+        "notes": { "type": "string", "maxLength": 2000 }
+      }
+    }
+  }
+}

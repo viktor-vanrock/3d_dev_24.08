@@ -1,0 +1,29 @@
+# systemd-юнит разового прогона apps/giga календарь-агента (MF-644/MF-722):
+# giga-calendar-agent — fetch → LLM-extract → матчинг → идемпотентный upsert
+# release_events. Гоняется по расписанию через portal.giga-calendar.timer
+# (по образцу portal.scout-slicer-profiles.timer — источники обходятся не
+# чаще раза в сутки, дороже дёргать чаще).
+#
+# Установка на VDS (после uv sync в apps/giga, см. portal.giga-worker.service):
+#   cd ~/portal.ru/apps/giga && uv sync --no-dev
+#   sudo cp deploy/portal.giga-calendar.service deploy/portal.giga-calendar.timer /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now portal.giga-calendar.timer
+#   journalctl -u portal.giga-calendar -f     # логи последнего прогона
+#
+# EnvironmentFile ~/portal.giga.env (общий с portal.giga-worker.service) —
+# DATABASE_URL, GIGACHAT_CREDENTIALS (обяз., иначе прогон — no-op с warn).
+
+[Unit]
+Description=portal.ru giga calendar agent (release articles -> release_events)
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=plag
+WorkingDirectory=/home/plag/portal.ru/apps/giga
+EnvironmentFile=/home/plag/portal.giga.env
+ExecStart=/home/plag/.local/bin/uv run --no-dev giga-calendar-agent
+StandardOutput=journal
+StandardError=journal

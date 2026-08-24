@@ -1,0 +1,749 @@
+.projectBuildPage {
+  --build-rail: clamp(240px, 21vw, 330px);
+}
+
+.projectBuildHeaderLayer {
+  position: relative;
+  z-index: 30;
+}
+
+.projectBuildBody {
+  gap: clamp(26px, 4vw, 48px);
+  padding-bottom: 72px;
+}
+
+.projectBuildIntro {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.36fr);
+  gap: clamp(24px, 5vw, 72px);
+  align-items: end;
+  padding-top: clamp(14px, 3vw, 36px);
+}
+
+.projectBuildKicker {
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 790;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.projectBuildIntro h1 {
+  max-width: 860px;
+  margin: 10px 0 0;
+  font-size: clamp(38px, 6vw, 76px);
+  line-height: 0.94;
+  letter-spacing: -0.055em;
+}
+
+.projectBuildIntro p {
+  max-width: 720px;
+  margin: 18px 0 0;
+  color: var(--text-dim);
+  font-size: clamp(15px, 1.4vw, 18px);
+  line-height: 1.55;
+}
+
+.projectBuildProgress {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 14px;
+  align-items: baseline;
+  padding: 20px;
+  border: 1px solid color-mix(in srgb, var(--border) 58%, transparent);
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--surface) 68%, transparent);
+  backdrop-filter: blur(18px);
+}
+
+.projectBuildProgress strong {
+  font-size: 34px;
+  letter-spacing: -0.04em;
+}
+
+.projectBuildProgress > span,
+.projectBuildProgress > small {
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.projectBuildProgress > div {
+  grid-column: 1 / -1;
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text) 10%, transparent);
+}
+
+.projectBuildProgress i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width 320ms var(--ease-out);
+}
+
+.projectBuildProgress > small {
+  grid-column: 1 / -1;
+}
+
+.projectBuildWorkspace {
+  display: grid;
+  grid-template-columns: var(--build-rail) minmax(0, 1fr);
+  gap: clamp(18px, 2.4vw, 34px);
+  align-items: start;
+}
+
+.projectBuildRail,
+.projectBuildStage {
+  border: 1px solid color-mix(in srgb, var(--border) 58%, transparent);
+  background: color-mix(in srgb, var(--surface) 74%, transparent);
+  box-shadow: 0 22px 64px color-mix(in srgb, var(--shadow) 48%, transparent);
+  backdrop-filter: blur(22px);
+}
+
+.projectBuildRail {
+  position: sticky;
+  top: calc(var(--header-safe) + 16px);
+  overflow: hidden;
+  border-radius: 26px;
+}
+
+.projectBuildRailTitle {
+  display: grid;
+  gap: 6px;
+  padding: 20px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 48%, transparent);
+}
+
+.projectBuildRailTitle span {
+  color: var(--text-dim);
+  font-size: 10px;
+  font-weight: 760;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.projectBuildRailTitle strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.projectBuildRail ol {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 8px;
+  list-style: none;
+}
+
+.projectBuildStepButton {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 11px 12px;
+  border: 1px solid transparent;
+  border-radius: 16px;
+  color: var(--text);
+  text-align: left;
+}
+
+.projectBuildStepButton > span:first-child {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--text) 7%, transparent);
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 760;
+}
+
+.projectBuildStepButton > span:last-child {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.projectBuildStepButton small {
+  color: var(--text-dim);
+  font-size: 9px;
+  font-weight: 730;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.projectBuildStepButton strong {
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.projectBuildStepButton[data-current] {
+  border-color: color-mix(in srgb, var(--accent) 44%, var(--border));
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.projectBuildStepButton[data-current] > span:first-child,
+.projectBuildStepButton[data-done] > span:first-child {
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.projectBuildStage {
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 34px;
+}
+
+.projectBuildStageMedia {
+  position: relative;
+  min-height: clamp(280px, 43vw, 560px);
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 48% 48%, color-mix(in srgb, var(--accent) 23%, transparent), transparent 42%),
+    color-mix(in srgb, var(--surface) 68%, transparent);
+}
+
+.projectBuildStageMedia::after {
+  content: "";
+  position: absolute;
+  inset: 45% 0 0;
+  background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--text) 64%, transparent));
+}
+
+.projectBuildStageMedia[data-artifact]::after {
+  display: none;
+}
+
+.projectBuildStageMedia img {
+  width: 100%;
+  height: 100%;
+  min-height: clamp(280px, 43vw, 560px);
+  display: block;
+  object-fit: cover;
+}
+
+.projectBuildArtifactViewer {
+  position: absolute;
+  inset: 0;
+}
+
+.projectBuildArtifactViewer .modelViewerStage {
+  position: relative;
+  top: auto;
+  min-height: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.projectBuildArtifactViewer .modelViewerStage::before {
+  inset: 3%;
+}
+
+.projectBuildArtifactViewer .modelViewerFallbackArt {
+  width: min(46%, 320px);
+  height: min(46%, 320px);
+  font-size: clamp(96px, 16vw, 230px);
+}
+
+.projectBuildStageMedia[data-empty] {
+  display: grid;
+  place-items: center;
+}
+
+.projectBuildStageMedia[data-empty] > span {
+  color: color-mix(in srgb, var(--accent) 72%, transparent);
+  font-size: clamp(72px, 12vw, 180px);
+  font-weight: 800;
+  letter-spacing: -0.08em;
+}
+
+.projectBuildStageMeta {
+  position: absolute;
+  z-index: 1;
+  right: 24px;
+  bottom: 22px;
+  left: 24px;
+  display: flex;
+  justify-content: space-between;
+  color: white;
+  font-size: 12px;
+  font-weight: 760;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.projectBuildStageMedia[data-artifact] .projectBuildStageMeta {
+  pointer-events: none;
+  color: var(--text);
+  text-shadow: 0 1px 18px color-mix(in srgb, var(--surface) 92%, transparent);
+}
+
+.projectBuildStageContent {
+  display: grid;
+  gap: 26px;
+  padding: clamp(24px, 4vw, 52px);
+}
+
+.projectBuildStageContent h2,
+.projectBuildComplete h2 {
+  max-width: 900px;
+  margin: 0;
+  font-size: clamp(32px, 4.8vw, 62px);
+  line-height: 0.98;
+  letter-spacing: -0.05em;
+}
+
+.projectBuildInstruction {
+  max-width: 820px;
+  color: var(--text);
+  font-size: clamp(16px, 1.4vw, 19px);
+  line-height: 1.65;
+}
+
+.projectBuildSectionHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 20px;
+}
+
+.projectBuildSectionHead > div {
+  display: grid;
+  gap: 5px;
+}
+
+.projectBuildSectionHead span {
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 780;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.projectBuildSectionHead h3,
+.projectBuildWarnings h3,
+.projectBuildChecklist h3 {
+  margin: 0;
+  font-size: clamp(18px, 2vw, 25px);
+  letter-spacing: -0.025em;
+}
+
+.projectBuildSectionHead > small {
+  max-width: 46%;
+  overflow: hidden;
+  color: var(--text-dim);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.projectBuildArtifacts,
+.projectBuildCommands {
+  display: grid;
+  gap: 15px;
+}
+
+.projectBuildArtifactTabs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
+  gap: 10px;
+}
+
+.projectBuildArtifactTab {
+  min-width: 0;
+  min-height: 74px;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 11px 12px;
+  border: 1px solid color-mix(in srgb, var(--border) 62%, transparent);
+  border-radius: 17px;
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  color: var(--text);
+  text-align: left;
+}
+
+.projectBuildArtifactTab > span:first-child {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--text) 7%, transparent);
+  color: var(--text-dim);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.projectBuildArtifactTab > span:last-child {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.projectBuildArtifactTab strong,
+.projectBuildArtifactTab small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.projectBuildArtifactTab strong {
+  font-size: 12px;
+}
+
+.projectBuildArtifactTab small,
+.projectBuildArtifacts > p {
+  color: var(--text-dim);
+  font-size: 10px;
+}
+
+.projectBuildArtifactTab[data-current] {
+  border-color: color-mix(in srgb, var(--accent) 64%, var(--border));
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+}
+
+.projectBuildArtifactTab[data-current] > span:first-child {
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.projectBuildArtifacts > p {
+  margin: 0;
+  font-size: 12px;
+}
+
+.projectBuildNeed {
+  max-width: 900px;
+  padding: 22px;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+}
+
+.projectBuildWarnings,
+.projectBuildChecklist {
+  max-width: 900px;
+  padding: 22px;
+  border-radius: 20px;
+}
+
+.projectBuildWarnings {
+  border: 1px solid color-mix(in srgb, #c67712 34%, var(--border));
+  background: color-mix(in srgb, #f0b252 9%, transparent);
+}
+
+.projectBuildWarnings ul,
+.projectBuildChecklist ul {
+  display: grid;
+  gap: 9px;
+  margin: 13px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.projectBuildWarnings li,
+.projectBuildChecklist li {
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.projectBuildWarnings li::before {
+  content: "!";
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  margin-right: 9px;
+  border-radius: 50%;
+  background: color-mix(in srgb, #c67712 18%, transparent);
+  color: #9a5a0a;
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.projectBuildChecklist {
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+}
+
+.projectBuildChecklist li {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 9px;
+  align-items: start;
+}
+
+.projectBuildChecklist li > span {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.projectBuildCommand {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 11px 14px;
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, var(--border) 58%, transparent);
+  border-radius: 19px;
+  background: color-mix(in srgb, var(--text) 93%, #111);
+  color: white;
+}
+
+.projectBuildCommand > div {
+  display: grid;
+  gap: 4px;
+}
+
+.projectBuildCommand small {
+  color: color-mix(in srgb, white 66%, transparent);
+  line-height: 1.4;
+}
+
+.projectBuildCommand pre {
+  grid-column: 1 / -1;
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 0;
+  padding: 14px;
+  border-radius: 13px;
+  background: rgb(0 0 0 / 24%);
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: pre;
+}
+
+.projectBuildCommand .projectBuildSecondary {
+  min-height: 42px;
+  align-self: start;
+  border-color: rgb(255 255 255 / 18%);
+  background: rgb(255 255 255 / 9%);
+  color: white;
+}
+
+.projectBuildSource {
+  width: fit-content;
+  display: grid;
+  gap: 3px;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.projectBuildSource > span,
+.projectBuildSource > small {
+  color: var(--text-dim);
+  font-size: 10px;
+}
+
+.projectBuildSource > strong {
+  color: var(--accent);
+  font-size: 13px;
+}
+
+.projectBuildNeed h3 {
+  margin: 0 0 12px;
+  font-size: 15px;
+}
+
+.projectBuildNeed ul {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.projectBuildNeed li {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 11px 0;
+  border-top: 1px solid color-mix(in srgb, var(--border) 46%, transparent);
+  font-size: 13px;
+}
+
+.projectBuildNeed li strong {
+  text-align: right;
+}
+
+.projectBuildPrimaryActions,
+.projectBuildCompleteGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.projectBuildAction,
+.projectBuildDone,
+.projectBuildSecondary {
+  display: inline-flex;
+  align-items: flex-start;
+  justify-content: center;
+  flex-direction: column;
+  gap: 3px;
+  min-height: 52px;
+  padding: 12px 18px;
+  border-radius: 16px;
+  font: inherit;
+  text-decoration: none;
+}
+
+.projectBuildAction,
+.projectBuildDone {
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-weight: 760;
+}
+
+.projectBuildAction small,
+.projectBuildDone small {
+  color: inherit;
+  font-size: 10px;
+  font-weight: 560;
+  opacity: 0.76;
+}
+
+.projectBuildDone {
+  background: color-mix(in srgb, var(--text) 88%, var(--accent));
+}
+
+.projectBuildSecondary {
+  align-items: center;
+  border: 1px solid color-mix(in srgb, var(--border) 62%, transparent);
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+  color: var(--text);
+  font-weight: 680;
+}
+
+.projectBuildSecondary:disabled {
+  opacity: 0.42;
+}
+
+.projectBuildStageFooter {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 4px;
+  border-top: 1px solid color-mix(in srgb, var(--border) 48%, transparent);
+}
+
+.projectBuildComplete {
+  min-height: min(720px, calc(100svh - var(--header-safe) - 32px));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 22px;
+  padding: clamp(32px, 7vw, 96px);
+  background:
+    radial-gradient(circle at 20% 24%, color-mix(in srgb, var(--accent) 21%, transparent), transparent 38%),
+    color-mix(in srgb, var(--surface) 66%, transparent);
+}
+
+.projectBuildCompleteMark {
+  display: grid;
+  place-items: center;
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-size: 30px;
+}
+
+.projectBuildComplete > p {
+  max-width: 760px;
+  margin: 0;
+  color: var(--text-dim);
+  font-size: clamp(16px, 1.5vw, 20px);
+  line-height: 1.6;
+}
+
+.projectBuildPrivacy {
+  color: var(--text-dim);
+}
+
+@media (max-width: 980px) {
+  .projectBuildIntro {
+    grid-template-columns: 1fr;
+  }
+
+  .projectBuildWorkspace {
+    grid-template-columns: 1fr;
+  }
+
+  .projectBuildRail {
+    position: static;
+  }
+
+  .projectBuildRail ol {
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(220px, 0.72fr);
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+  }
+
+  .projectBuildRail li {
+    scroll-snap-align: start;
+  }
+}
+
+@media (max-width: 620px) {
+  .projectBuildPage {
+    --workspace-inline: 16px;
+  }
+
+  .projectBuildIntro h1 {
+    font-size: clamp(36px, 13vw, 58px);
+  }
+
+  .projectBuildStage,
+  .projectBuildRail {
+    border-radius: 24px;
+  }
+
+  .projectBuildStageMedia {
+    min-height: 250px;
+  }
+
+  .projectBuildStageMedia img {
+    min-height: 250px;
+  }
+
+  .projectBuildStageContent {
+    padding: 24px 20px;
+  }
+
+  .projectBuildPrimaryActions,
+  .projectBuildCompleteGrid,
+  .projectBuildStageFooter {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .projectBuildAction,
+  .projectBuildDone,
+  .projectBuildSecondary {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .projectBuildProgress i {
+    transition: none;
+  }
+}

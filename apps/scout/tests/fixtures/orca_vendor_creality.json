@@ -1,0 +1,16 @@
+{
+    "name": "Creality",
+    "version": "02.03.02.75",
+    "force_update": "0",
+    "description": "Creality configurations",
+    "machine_model_list": [
+        {
+            "name": "Creality Ender-3 V2",
+            "sub_path": "machine/Creality Ender-3 V2.json"
+        },
+        {
+            "name": "Creality CR-10 SE",
+            "sub_path": "machine/Creality CR-10 SE.json"
+        }
+    ]
+}

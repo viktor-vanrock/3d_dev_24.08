@@ -1,0 +1,16 @@
+[Unit]
+Description=Multica event-driven autopilot router
+After=docker.service multica-daemon.service network-online.target
+Requires=docker.service
+
+[Service]
+Type=simple
+User=plag
+EnvironmentFile=/home/plag/.config/multica-event-router.env
+ExecStart=/usr/bin/python3 /home/plag/event-router/multica-event-router.py --serve
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+

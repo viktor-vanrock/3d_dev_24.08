@@ -1,0 +1,111 @@
+/* Адаптивная раскладка мастерской персонажа вынесена отдельно: основной файл
+   описывает сцену и каталог, этот — только их переключение на tablet/mobile. */
+@media (max-width: 1040px) {
+  .avatarStudioShell {
+    grid-template-columns: minmax(300px, 0.78fr) minmax(440px, 1.22fr);
+    gap: 22px;
+  }
+
+  .avatarStudioGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .avatarStudioActions .avatarStudioGhost {
+    display: none;
+  }
+
+  .avatarStudioTabs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .avatarStudioPage {
+    padding: 92px 12px 92px;
+  }
+
+  .avatarStudioShell {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .avatarStudioPreview {
+    position: static;
+    min-height: auto;
+  }
+
+  .avatarStudioIntro h1 {
+    font-size: 38px;
+  }
+
+  .avatarStudioIntro p {
+    margin-top: 10px;
+    font-size: 14px;
+  }
+
+  .avatarStudioStage {
+    min-height: 360px;
+    margin-top: 14px;
+    border-radius: 28px;
+  }
+
+  .avatarStudioEditor {
+    padding: 18px 12px;
+    border-radius: 26px;
+  }
+
+  .avatarStudioEditorHead .avatarStudioActions {
+    display: none;
+  }
+
+  .avatarStudioTabs {
+    top: 70px;
+    display: flex;
+    overflow-x: auto;
+    margin-top: 14px;
+    scrollbar-width: none;
+  }
+
+  .avatarStudioTabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .avatarStudioTab {
+    flex: 0 0 auto;
+  }
+
+  .avatarStudioGrid {
+    gap: 8px;
+  }
+
+  .avatarStudioTile {
+    min-height: 172px;
+  }
+
+  .avatarStudioTilePreview {
+    height: 112px;
+  }
+
+  .avatarStudioMobileSave {
+    position: sticky;
+    z-index: 6;
+    bottom: 76px;
+    display: block;
+    margin: 18px 0 0;
+    padding: 8px;
+    background: color-mix(in srgb, var(--bg-raised) 88%, transparent);
+    backdrop-filter: blur(18px);
+  }
+
+  .avatarStudioMobileSave .avatarStudioSave {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .avatarStudioCanvas,
+  .avatarStudioFallback {
+    transition: none;
+  }
+}

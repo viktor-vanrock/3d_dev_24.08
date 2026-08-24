@@ -1,0 +1,394 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://3mf.tech/contracts/device-protocol/v1/schema.json",
+  "title": "Portal device protocol v1",
+  "description": "Closed raw-WebSocket frame contract for device-agent and relay. The TLS certificate, not a frame field, is the gateway identity authority.",
+  "$ref": "#/$defs/anyFrame",
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9._:-]+$"
+    },
+    "sequence": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "capability": {
+      "type": "string",
+      "enum": [
+        "camera",
+        "heated_bed",
+        "heated_chamber",
+        "multi_extruder",
+        "file_transfer",
+        "cmd.pause",
+        "cmd.resume",
+        "cmd.cancel",
+        "cmd.start"
+      ]
+    },
+    "deviceStatus": {
+      "type": "string",
+      "enum": ["printing", "ready", "idle", "paused", "error", "offline"]
+    },
+    "safeScalar": {
+      "oneOf": [
+        { "type": "number" },
+        { "type": "string", "maxLength": 256 },
+        { "type": "boolean" },
+        { "type": "null" }
+      ]
+    },
+    "heartbeatDevice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["device_id", "status", "sequence"],
+      "properties": {
+        "device_id": { "$ref": "#/$defs/identifier" },
+        "status": { "$ref": "#/$defs/deviceStatus" },
+        "sequence": { "$ref": "#/$defs/sequence" },
+        "progress_percent": { "type": ["number", "null"], "minimum": 0, "maximum": 100 },
+        "metrics": {
+          "type": "object",
+          "maxProperties": 32,
+          "propertyNames": { "pattern": "^[A-Za-z0-9._-]{1,64}$" },
+          "additionalProperties": { "$ref": "#/$defs/safeScalar" }
+        },
+        "identity": {
+          "type": "object",
+          "maxProperties": 16,
+          "propertyNames": { "pattern": "^[A-Za-z0-9._-]{1,64}$" },
+          "additionalProperties": { "type": "string", "maxLength": 128 }
+        }
+      }
+    },
+    "authorizedDevice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["device_id"],
+      "properties": {
+        "device_id": { "$ref": "#/$defs/identifier" },
+        "firmware_class": { "type": ["string", "null"], "maxLength": 64 }
+      }
+    },
+    "helloChallenge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "nonce"],
+      "properties": {
+        "type": { "const": "hello_challenge" },
+        "nonce": { "type": "string", "minLength": 32, "maxLength": 128 }
+      }
+    },
+    "hello": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "protocol_version", "nonce", "agent_version", "capabilities"],
+      "properties": {
+        "type": { "const": "hello" },
+        "protocol_version": { "const": "v1" },
+        "nonce": { "type": "string", "minLength": 32, "maxLength": 128 },
+        "agent_version": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "printer_model": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "firmware_class": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "capabilities": {
+          "type": "array",
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/capability" }
+        }
+      }
+    },
+    "helloAck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "session_id", "gateway_id", "devices", "heartbeat_interval_seconds", "heartbeat_timeout_seconds"],
+      "properties": {
+        "type": { "const": "hello_ack" },
+        "session_id": { "$ref": "#/$defs/identifier" },
+        "gateway_id": { "$ref": "#/$defs/identifier" },
+        "devices": { "type": "array", "maxItems": 128, "items": { "$ref": "#/$defs/authorizedDevice" } },
+        "heartbeat_interval_seconds": { "type": "integer", "minimum": 1, "maximum": 300 },
+        "heartbeat_timeout_seconds": { "type": "integer", "minimum": 2, "maximum": 600 }
+      }
+    },
+    "heartbeat": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "message_id", "devices"],
+      "properties": {
+        "type": { "const": "heartbeat" },
+        "message_id": { "$ref": "#/$defs/identifier" },
+        "devices": { "type": "array", "maxItems": 128, "items": { "$ref": "#/$defs/heartbeatDevice" } }
+      }
+    },
+    "heartbeatAck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "message_id", "accepted_device_ids"],
+      "properties": {
+        "type": { "const": "heartbeat_ack" },
+        "message_id": { "$ref": "#/$defs/identifier" },
+        "accepted_device_ids": { "type": "array", "maxItems": 128, "uniqueItems": true, "items": { "$ref": "#/$defs/identifier" } }
+      }
+    },
+    "emptyCommandPayload": {
+      "type": "object",
+      "maxProperties": 0
+    },
+    "startCommandPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["file_name"],
+      "properties": {
+        "file_name": { "type": "string", "minLength": 1, "maxLength": 255 }
+      }
+    },
+    "command": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "device_id", "command_id", "command_seq", "command", "command_token", "payload"],
+          "properties": {
+            "type": { "const": "command" },
+            "device_id": { "$ref": "#/$defs/identifier" },
+            "command_id": { "$ref": "#/$defs/identifier" },
+            "command_seq": { "$ref": "#/$defs/sequence" },
+            "command": { "enum": ["pause", "resume", "cancel"] },
+            "command_token": { "type": "string", "minLength": 16, "maxLength": 2048 },
+            "payload": { "$ref": "#/$defs/emptyCommandPayload" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "device_id", "command_id", "command_seq", "command", "command_token", "payload"],
+          "properties": {
+            "type": { "const": "command" },
+            "device_id": { "$ref": "#/$defs/identifier" },
+            "command_id": { "$ref": "#/$defs/identifier" },
+            "command_seq": { "$ref": "#/$defs/sequence" },
+            "command": { "const": "start" },
+            "command_token": { "type": "string", "minLength": 16, "maxLength": 2048 },
+            "payload": { "$ref": "#/$defs/startCommandPayload" }
+          }
+        }
+      ]
+    },
+    "commandAck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "device_id", "command_id", "command_seq"],
+      "properties": {
+        "type": { "const": "command_ack" },
+        "device_id": { "$ref": "#/$defs/identifier" },
+        "command_id": { "$ref": "#/$defs/identifier" },
+        "command_seq": { "$ref": "#/$defs/sequence" }
+      }
+    },
+    "commandResult": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "device_id", "command_id", "command_seq", "outcome"],
+          "properties": {
+            "type": { "const": "command_result" },
+            "device_id": { "$ref": "#/$defs/identifier" },
+            "command_id": { "$ref": "#/$defs/identifier" },
+            "command_seq": { "$ref": "#/$defs/sequence" },
+            "outcome": { "const": "executed" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "device_id", "command_id", "command_seq", "outcome", "error_code"],
+          "properties": {
+            "type": { "const": "command_result" },
+            "device_id": { "$ref": "#/$defs/identifier" },
+            "command_id": { "$ref": "#/$defs/identifier" },
+            "command_seq": { "$ref": "#/$defs/sequence" },
+            "outcome": { "const": "failed" },
+            "error_code": {
+              "enum": [
+                "device_not_authorized",
+                "device_unavailable",
+                "command_not_supported",
+                "role_not_allowed",
+                "replay_rejected",
+                "invalid_command",
+                "invalid_command_token",
+                "command_failed",
+                "command_timeout"
+              ]
+            },
+            "message": { "type": "string", "maxLength": 256 }
+          }
+        }
+      ]
+    },
+    "fileStart": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "device_id", "transfer_id", "file_name", "size_bytes", "sha256", "object_version", "kind", "start_print", "chunk_size_bytes"],
+      "properties": {
+        "type": { "const": "file_start" },
+        "device_id": { "$ref": "#/$defs/identifier" },
+        "transfer_id": { "$ref": "#/$defs/identifier" },
+        "file_name": { "type": "string", "minLength": 1, "maxLength": 255 },
+        "size_bytes": { "type": "integer", "minimum": 0, "maximum": 1073741824 },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "object_version": { "$ref": "#/$defs/identifier" },
+        "kind": { "enum": ["gcode", "printer_profile"] },
+        "start_print": { "type": "boolean" },
+        "chunk_size_bytes": { "type": "integer", "minimum": 1, "maximum": 65536 }
+      }
+    },
+    "fileStartAck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "device_id", "transfer_id", "next_seq", "next_offset_bytes"],
+      "properties": {
+        "type": { "const": "file_start_ack" },
+        "device_id": { "$ref": "#/$defs/identifier" },
+        "transfer_id": { "$ref": "#/$defs/identifier" },
+        "next_seq": { "$ref": "#/$defs/sequence" },
+        "next_offset_bytes": { "type": "integer", "minimum": 0, "maximum": 1073741824 }
+      }
+    },
+    "fileChunk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "device_id", "transfer_id", "seq", "offset_bytes", "last", "data_base64"],
+      "properties": {
+        "type": { "const": "file_chunk" },
+        "device_id": { "$ref": "#/$defs/identifier" },
+        "transfer_id": { "$ref": "#/$defs/identifier" },
+        "seq": { "$ref": "#/$defs/sequence" },
+        "offset_bytes": { "type": "integer", "minimum": 0, "maximum": 1073741824 },
+        "last": { "type": "boolean" },
+        "data_base64": { "type": "string", "maxLength": 87384, "contentEncoding": "base64" }
+      }
+    },
+    "fileChunkAck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "device_id", "transfer_id", "seq", "next_seq", "next_offset_bytes"],
+      "properties": {
+        "type": { "const": "file_chunk_ack" },
+        "device_id": { "$ref": "#/$defs/identifier" },
+        "transfer_id": { "$ref": "#/$defs/identifier" },
+        "seq": { "$ref": "#/$defs/sequence" },
+        "next_seq": { "$ref": "#/$defs/sequence" },
+        "next_offset_bytes": { "type": "integer", "minimum": 0, "maximum": 1073741824 }
+      }
+    },
+    "fileResult": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "device_id", "transfer_id", "outcome", "stored_as"],
+          "properties": {
+            "type": { "const": "file_result" },
+            "device_id": { "$ref": "#/$defs/identifier" },
+            "transfer_id": { "$ref": "#/$defs/identifier" },
+            "outcome": { "const": "stored" },
+            "stored_as": { "type": "string", "minLength": 1, "maxLength": 255 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "device_id", "transfer_id", "outcome", "error_code"],
+          "properties": {
+            "type": { "const": "file_result" },
+            "device_id": { "$ref": "#/$defs/identifier" },
+            "transfer_id": { "$ref": "#/$defs/identifier" },
+            "outcome": { "const": "failed" },
+            "error_code": {
+              "enum": [
+                "device_not_authorized",
+                "invalid_transfer",
+                "transfer_conflict",
+                "unknown_transfer",
+                "invalid_sequence",
+                "invalid_data",
+                "source_changed",
+                "file_size_mismatch",
+                "checksum_mismatch",
+                "upload_failed",
+                "start_failed",
+                "transfer_timeout"
+              ]
+            },
+            "next_seq": { "$ref": "#/$defs/sequence" },
+            "next_offset_bytes": { "type": "integer", "minimum": 0, "maximum": 1073741824 },
+            "message": { "type": "string", "maxLength": 256 }
+          }
+        }
+      ]
+    },
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "code"],
+      "properties": {
+        "type": { "const": "error" },
+        "code": {
+          "enum": [
+            "invalid_frame",
+            "unknown_frame_type",
+            "frame_too_large",
+            "unsupported_version",
+            "authentication_failed",
+            "authorization_failed",
+            "device_not_authorized",
+            "rate_limited",
+            "backpressure_limit",
+            "internal_error"
+          ]
+        },
+        "message": { "type": "string", "maxLength": 256 },
+        "correlation_id": { "$ref": "#/$defs/identifier" }
+      }
+    },
+    "gatewayToRelayFrame": {
+      "oneOf": [
+        { "$ref": "#/$defs/hello" },
+        { "$ref": "#/$defs/heartbeat" },
+        { "$ref": "#/$defs/commandAck" },
+        { "$ref": "#/$defs/commandResult" },
+        { "$ref": "#/$defs/fileStartAck" },
+        { "$ref": "#/$defs/fileChunkAck" },
+        { "$ref": "#/$defs/fileResult" }
+      ]
+    },
+    "relayToGatewayFrame": {
+      "oneOf": [
+        { "$ref": "#/$defs/helloChallenge" },
+        { "$ref": "#/$defs/helloAck" },
+        { "$ref": "#/$defs/heartbeatAck" },
+        { "$ref": "#/$defs/command" },
+        { "$ref": "#/$defs/fileStart" },
+        { "$ref": "#/$defs/fileChunk" },
+        { "$ref": "#/$defs/error" }
+      ]
+    },
+    "anyFrame": {
+      "oneOf": [
+        { "$ref": "#/$defs/gatewayToRelayFrame" },
+        { "$ref": "#/$defs/relayToGatewayFrame" }
+      ]
+    }
+  }
+}

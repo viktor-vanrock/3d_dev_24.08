@@ -1,0 +1,21 @@
+# systemd-юнит автодеплоя dev (polling origin/dev), запускается таймером
+# portal.deploy-dev.timer раз в минуту. Сам деплой — deploy/portal.deploy-dev.sh. MF-541.
+# Юнит копируется на VDS в /etc/systemd/system/.
+#
+# Установка на VDS:
+#   sudo cp deploy/portal.deploy-dev.service deploy/portal.deploy-dev.timer /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now portal.deploy-dev.timer
+#   systemctl list-timers portal.deploy-dev.timer
+#   journalctl -u portal.deploy-dev -f
+
+[Unit]
+Description=portal.ru dev autodeploy (poll origin/dev, build, restart affected API/Nest relay)
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=plag
+WorkingDirectory=/home/plag/portal.ru-dev
+ExecStart=/home/plag/portal.ru-dev/deploy/portal.deploy-dev.sh

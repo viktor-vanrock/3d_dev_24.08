@@ -1,0 +1,29 @@
+# Dev counterpart of portal.relay.service. Installing/restarting remains an Ops action.
+# Build with `pnpm run build:relay` from /home/plag/portal.ru-dev first.
+# Expected env differences in /home/plag/portal.relay-dev.env:
+#   NODE_ENV=development
+#   RELAY_INSTANCE_ID=relay-dev-1
+#   RELAY_API_BASE_URL=http://127.0.0.1:3200
+#   RELAY_GATEWAY_HOST=127.0.0.1
+#   RELAY_GATEWAY_PORT=3011
+#   RELAY_OBSERVABILITY_HOST=127.0.0.1
+#   RELAY_OBSERVABILITY_PORT=3012
+
+[Unit]
+Description=portal.ru dev relay (compiled NestJS device WSS data-plane)
+After=network-online.target portal.api-dev.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=plag
+WorkingDirectory=/home/plag/portal.ru-dev/apps/relay
+EnvironmentFile=/home/plag/portal.relay-dev.env
+ExecStart=/usr/bin/node /home/plag/portal.ru-dev/apps/relay/dist/main.js
+Restart=always
+RestartSec=5
+KillSignal=SIGTERM
+TimeoutStopSec=65
+
+[Install]
+WantedBy=multi-user.target

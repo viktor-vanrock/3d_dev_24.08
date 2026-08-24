@@ -1,0 +1,56 @@
+# systemd-юнит воркера конвертации apps/mesh (STL→3MF, pending→ready).
+# По образцу portal.api.service (см. infra.md). Секреты — только в EnvironmentFile
+# (chmod 600, НЕ в git). Юнит копируется на VDS в /etc/systemd/system/.
+#
+# Установка на VDS (Ubuntu noble, пользователь plag, репо ~/portal.ru):
+#   cd ~/portal.ru/apps/mesh && uv sync --no-dev
+#   sudo cp deploy/portal.mesh-worker.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now portal.mesh-worker.service
+#   journalctl -u portal.mesh-worker -f     # логи воркера
+#
+# EnvironmentFile ~/portal.mesh.env (chmod 600, не в git) — DATABASE_URL, S3_*,
+# S3_BUCKET_MODELS. Пока S3-кредов нет (MF-454) — воркер запустится и будет
+# простаивать, логируя предупреждение, без падения.
+#
+# PYTHONUNBUFFERED=1 (MF-913): без него stdout Python'а в non-tty юните
+# буферизуется блочно, и `journalctl -u portal.mesh-worker` может не показывать
+# вообще ничего новее рестарта, даже когда модели реально прошли через воркер
+# и best-effort шаги (превью/STL-дериватив) залогировали warning — живой
+# прод-баг расследовался вслепую именно из-за этого. Юнит уже установлен на
+# VDS — обновление требует sudo cp + daemon-reload + restart (зона Ops), этот
+# файл в репо только источник для копии.
+#
+# XDG_RUNTIME_DIR/DBUS_SESSION_BUS_ADDRESS (MF-989): headless-слайсинг вызывает
+# внешний CLI-процесс (PrusaSlicer, apt-пакет prusa-slicer) и не может опереться
+# на sandbox.py (fork+RLIMIT_AS — изолирует только Python-поток, не внешний
+# бинарь). CPU/память/время на сам процесс слайсера берутся через
+# `systemd-run --user --scope -p CPUQuota=... -p MemoryMax=... -- timeout N
+# prusa-slicer ...` (cgroup-лимит на процесс, не на python-поток) — это требует
+# рабочей user-шины systemd (`user@1000.service`, включено через
+# `loginctl enable-linger plag`, сделано Ops), а её эта system-service юнита не
+# видит без явных переменных ниже. Без них `systemd-run --user` падает с
+# `Failed to connect to bus: No medium found`. Проверено живьём на dev-3mf
+# (headless-слайс тестового куба через `prusa-slicer -g --export-gcode`
+# в `systemd-run --user --scope` с CPUQuota/MemoryMax/TasksMax + `timeout` —
+# см. MF-989).
+
+[Unit]
+Description=portal.ru revision-aware mesh conversion worker (model_revisions)
+After=network-online.target postgresql.service user@1000.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=plag
+WorkingDirectory=/home/plag/portal.ru/apps/mesh
+Environment=PYTHONUNBUFFERED=1
+Environment=XDG_RUNTIME_DIR=/run/user/1000
+Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
+EnvironmentFile=/home/plag/portal.mesh.env
+ExecStart=/home/plag/.local/bin/uv run --no-dev mesh-worker
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

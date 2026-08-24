@@ -1,0 +1,101 @@
+/*
+  Bottom-tab (docs/design/touch.nav.md §1): скрыт по умолчанию (>640px — навигация только
+  пилюлей в шапке), появляется на тач-ширинах. Стекло — тот же паттерн, что
+  .consentBannerHost/.consentBanner (consent/consent.css).
+*/
+
+.bottomTabBar {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .bottomTabBar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: var(--z-bottomnav);
+    display: flex;
+    height: calc(56px + env(safe-area-inset-bottom));
+    padding-bottom: env(safe-area-inset-bottom);
+    border-top: 1px solid var(--border);
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--surface) 82%, transparent) 0%,
+      color-mix(in srgb, var(--surface) 68%, var(--accent) 7%) 100%
+    );
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 -12px 32px var(--shadow);
+  }
+}
+
+.bottomTabItem {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--text);
+  opacity: 0.66;
+  transition: opacity var(--dur-toggle) var(--ease-spring);
+}
+
+.bottomTabItem[data-active] {
+  opacity: 1;
+  color: var(--accent);
+}
+
+.bottomTabIconWrap {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color var(--dur-toggle) var(--ease-spring);
+}
+
+.bottomTabItem[data-active] .bottomTabIconWrap {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.bottomTabItem[data-active] .bottomTabIconWrap svg {
+  stroke-width: 2.5px;
+}
+
+.bottomTabLabel {
+  font-size: 11px;
+  line-height: 1;
+}
+
+@media (max-width: 380px) {
+  .bottomTabItem {
+    gap: 1px;
+  }
+
+  .bottomTabIconWrap {
+    width: 22px;
+    height: 22px;
+  }
+
+  .bottomTabLabel {
+    max-width: 100%;
+    overflow: hidden;
+    font-size: 9px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bottomTabItem,
+  .bottomTabIconWrap {
+    transition: none;
+  }
+}

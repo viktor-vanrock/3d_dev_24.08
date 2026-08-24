@@ -1,0 +1,40 @@
+# systemd-юнит HTTP-поверхности apps/mesh (FastAPI, mesh.main:app) — на VDS
+# развёрнут отдельно от portal.mesh-worker.service (poll-воркер конвертации), этот юнит
+# отдельный и НЕ заменяет его — оба нужны одновременно, общий EnvironmentFile.
+# По образцу portal.api.service: слушает ТОЛЬКО 127.0.0.1 (внутренняя сеть, mesh без
+# публичного домена — см. docs/architecture/readme.md «Публичная поверхность — только
+# api»), наружу не открывается (nginx/UFW не трогать). apps/api вызывает
+# POST /make-photos и GET /health, внутренний mesh-клиент может вызывать
+# POST /convert и GET /metrics по http://127.0.0.1:3101.
+#
+# Порт 3101, не 3100: сам VDS хостит и рантайм агентского сквада (Multica) —
+# на 127.0.0.1:3100 уже сидит контейнер multica-frontend (docker-proxy), порт
+# занят до mesh. Свободный сосед 3100 — 3101. См. MF-842.
+#
+# Установка на VDS (Ubuntu noble, пользователь plag, репо ~/portal.ru):
+#   cd ~/portal.ru/apps/mesh && uv sync --no-dev
+#   sudo cp deploy/portal.mesh-http.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now portal.mesh-http.service
+#   curl -sf http://127.0.0.1:3101/health   # проверка
+#   journalctl -u portal.mesh-http -f       # логи
+#
+# EnvironmentFile ~/portal.mesh.env (тот же файл, что и portal.mesh-worker.service,
+# chmod 600, не в git) — DATABASE_URL, S3_*, S3_BUCKET_MODELS.
+
+[Unit]
+Description=portal.ru mesh HTTP service (FastAPI, conversion and make-photos)
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=plag
+WorkingDirectory=/home/plag/portal.ru/apps/mesh
+EnvironmentFile=/home/plag/portal.mesh.env
+ExecStart=/home/plag/.local/bin/uv run --no-dev uvicorn mesh.main:app --host 127.0.0.1 --port 3101
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,31 @@
+# systemd-юнит воркера apps/scout (тик vendor_whitelist → machine_candidates, MF-623/MF-719).
+# По образцу apps/mesh/deploy/portal.mesh-worker.service. Секреты — только в EnvironmentFile
+# (chmod 600, НЕ в git). Юнит копируется на VDS в /etc/systemd/system/.
+#
+# Установка на VDS (Ubuntu noble, пользователь plag, репо ~/portal.ru):
+#   cd ~/portal.ru/apps/scout && uv sync --no-dev
+#   sudo cp deploy/portal.scout-worker.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now portal.scout-worker.service
+#   journalctl -u portal.scout-worker -f     # логи воркера
+#
+# EnvironmentFile ~/portal.scout.env (chmod 600, не в git) — DATABASE_URL
+# (то же имя, что apps/api), опционально SCOUT_POLL_INTERVAL_SECONDS (дефолт 3600).
+# Без DATABASE_URL воркер запускается и простаивает без падения.
+
+[Unit]
+Description=portal.ru scout worker (vendor_whitelist -> machine_candidates)
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=plag
+WorkingDirectory=/home/plag/portal.ru/apps/scout
+EnvironmentFile=/home/plag/portal.scout.env
+ExecStart=/home/plag/.local/bin/uv run --no-dev scout-worker
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

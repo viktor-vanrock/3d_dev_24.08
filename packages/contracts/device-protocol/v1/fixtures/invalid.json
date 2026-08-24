@@ -1,0 +1,98 @@
+{
+  "protocol_version": "v1",
+  "cases": [
+    {
+      "name": "unknown-frame-type",
+      "direction": "gateway_to_relay",
+      "expected_error": "unknown_frame_type",
+      "frame": { "type": "future_frame" }
+    },
+    {
+      "name": "hello-without-version",
+      "direction": "gateway_to_relay",
+      "expected_error": "invalid_frame",
+      "frame": { "type": "hello", "nonce": "0123456789abcdef0123456789abcdef", "agent_version": "1.0.0", "capabilities": [] }
+    },
+    {
+      "name": "unsupported-version",
+      "direction": "gateway_to_relay",
+      "validation_stage": "version_negotiation",
+      "expected_error": "unsupported_version",
+      "frame": { "type": "hello", "protocol_version": "v2", "nonce": "0123456789abcdef0123456789abcdef", "agent_version": "1.0.0", "capabilities": [] }
+    },
+    {
+      "name": "hello-extra-security-field",
+      "direction": "gateway_to_relay",
+      "expected_error": "invalid_frame",
+      "frame": { "type": "hello", "protocol_version": "v1", "nonce": "0123456789abcdef0123456789abcdef", "agent_version": "1.0.0", "capabilities": [], "token": "must-not-be-accepted" }
+    },
+    {
+      "name": "heartbeat-invalid-status",
+      "direction": "gateway_to_relay",
+      "expected_error": "invalid_frame",
+      "frame": { "type": "heartbeat", "message_id": "heartbeat-1", "devices": [{ "device_id": "device-1", "status": "future", "sequence": 1 }] }
+    },
+    {
+      "name": "heartbeat-unsafe-metric-object",
+      "direction": "gateway_to_relay",
+      "expected_error": "invalid_frame",
+      "frame": { "type": "heartbeat", "message_id": "heartbeat-1", "devices": [{ "device_id": "device-1", "status": "ready", "sequence": 1, "metrics": { "nested": { "secret": "value" } } }] }
+    },
+    {
+      "name": "sequence-outside-safe-integer",
+      "direction": "gateway_to_relay",
+      "expected_error": "invalid_frame",
+      "frame": { "type": "command_ack", "device_id": "device-1", "command_id": "command-1", "command_seq": 9007199254740992 }
+    },
+    {
+      "name": "command-with-unrestricted-payload",
+      "direction": "relay_to_gateway",
+      "expected_error": "invalid_frame",
+      "frame": { "type": "command", "device_id": "device-1", "command_id": "command-1", "command_seq": 1, "command": "pause", "command_token": "0123456789abcdef", "payload": { "shell": "unsafe" } }
+    },
+    {
+      "name": "start-command-without-file",
+      "direction": "relay_to_gateway",
+      "expected_error": "invalid_frame",
+      "frame": { "type": "command", "device_id": "device-1", "command_id": "command-1", "command_seq": 1, "command": "start", "command_token": "0123456789abcdef", "payload": {} }
+    },
+    {
+      "name": "failed-command-result-without-code",
+      "direction": "gateway_to_relay",
+      "expected_error": "invalid_frame",
+      "frame": { "type": "command_result", "device_id": "device-1", "command_id": "command-1", "command_seq": 1, "outcome": "failed" }
+    },
+    {
+      "name": "file-start-invalid-checksum",
+      "direction": "relay_to_gateway",
+      "expected_error": "invalid_frame",
+      "frame": { "type": "file_start", "device_id": "device-1", "transfer_id": "transfer-1", "file_name": "part.gcode", "size_bytes": 5, "sha256": "not-a-sha256", "object_version": "version-1", "kind": "gcode", "start_print": false, "chunk_size_bytes": 65536 }
+    },
+    {
+      "name": "file-chunk-negative-offset",
+      "direction": "relay_to_gateway",
+      "expected_error": "invalid_frame",
+      "frame": { "type": "file_chunk", "device_id": "device-1", "transfer_id": "transfer-1", "seq": 0, "offset_bytes": -1, "last": false, "data_base64": "aGVsbG8=" }
+    },
+    {
+      "name": "stored-file-result-with-error-code",
+      "direction": "gateway_to_relay",
+      "expected_error": "invalid_frame",
+      "frame": { "type": "file_result", "device_id": "device-1", "transfer_id": "transfer-1", "outcome": "stored", "stored_as": "part.gcode", "error_code": "checksum_mismatch" }
+    },
+    {
+      "name": "error-with-unknown-code",
+      "direction": "relay_to_gateway",
+      "expected_error": "invalid_frame",
+      "frame": { "type": "error", "code": "raw_database_error" }
+    },
+    {
+      "name": "oversized-transport-frame",
+      "direction": "gateway_to_relay",
+      "validation_stage": "transport_size",
+      "raw_size_bytes": 131073,
+      "expected_error": "frame_too_large",
+      "frame": { "type": "heartbeat", "message_id": "heartbeat-1", "devices": [] }
+    }
+  ]
+}

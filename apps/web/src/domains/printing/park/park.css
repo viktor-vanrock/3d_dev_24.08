@@ -1,0 +1,819 @@
+/*
+  Мастер «добавить принтер» (MF-903, docs/design/printer.wizard.md) + два экрана-выхода (§5).
+  Плитки уровня расширяют .uiActionCard (data-selected/data-disabled — ui.css), здесь только
+  раскладка, специфичная для этого экрана.
+*/
+
+/* --- Шаг 1/2: сфокусированная форма под общей шапкой сайта --- */
+.parkScreen {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Header общий с остальными маршрутами: резервируем его высоту плюс ритм формы,
+     чтобы fixed-оболочка не перекрывала прогресс на touch и wide-экранах. */
+  --park-wizard-safe-top: max(calc(var(--header-safe) + 24px), calc(16px + env(safe-area-inset-top)));
+  padding: var(--park-wizard-safe-top) clamp(16px, 4vw, 32px) clamp(16px, 4vw, 32px);
+  overflow-x: hidden;
+}
+
+.parkCard {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 600px;
+  padding: clamp(18px, 3.5vw, 28px);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.homePickerNotice {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.homePickerNotice[role="alert"] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  color: var(--text);
+}
+
+.parkProgress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.parkProgress .uiChecklistBar {
+  margin: 0;
+}
+
+/* В мастере незаполненная часть остаётся нейтральной, а пройденная — зелёной:
+   декоративный accent2 в светлой теме латунный и визуально разворачивал прогресс. */
+.parkWizardProgressTrack {
+  background: color-mix(in srgb, var(--border) 62%, var(--surface));
+}
+
+.parkWizardProgressFill {
+  background: var(--accent);
+}
+
+/* Поле поиска — обычный ввод, не warning/error: поднимаем его на нейтральную поверхность. */
+.parkWizardSearch {
+  background: color-mix(in srgb, var(--surface) 88%, var(--bg));
+  border-color: color-mix(in srgb, var(--border) 80%, var(--surface));
+}
+
+/* --- Чип модели над плитками шага 2 (§2) --- */
+.parkMachineChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: flex-start;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
+  font-size: 13px;
+  color: var(--text);
+}
+
+.parkEditChip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  margin: -12px -12px -12px 0;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+.parkStep2 {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* --- Плитка-строка уровня (§3.1): плоская, без своего зерна/обводки — те живут на внешней
+   .parkCard. Разделитель между строками — тонкая линия снизу, не карточка-в-карточке. --- */
+.parkLevelGroup {
+  border-bottom: 1px solid var(--border);
+}
+
+.parkLevelGroup:last-of-type {
+  border-bottom: none;
+}
+
+.parkLevelTile {
+  background: none;
+  border: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-radius: var(--card-radius-sm);
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+.parkLevelTile[data-selected="true"] {
+  border-radius: var(--card-radius-sm);
+}
+
+.parkSubpanel {
+  padding: 4px 4px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* --- Проверка IP (§4): «Проверить» морфит в кольцо-прогресс (motion.md §3, тот же приём, что
+   send-кнопка AI-поиска — круг меняет содержимое, без промежуточного скачка макета). --- */
+.parkCheckButton {
+  position: relative;
+  min-width: 118px;
+  gap: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .parkCheckButton[data-loading="true"] .uiButtonSpinner {
+    animation: none;
+  }
+}
+
+.parkCheckButton[data-loading="true"] .uiButtonSpinner {
+  flex: 0 0 auto;
+}
+
+.parkIpPanel,
+.parkEnrollPanel,
+.parkCustomPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.parkIpSuccess {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.parkIpError {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  animation: parkShake var(--dur-burst) var(--ease-spring);
+}
+
+@keyframes parkShake {
+  0%, 100% { translate: 0 0; }
+  16.66%, 50%, 83.33% { translate: -2px 0; }
+  33.33%, 66.66% { translate: 2px 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .parkIpError {
+    animation: none;
+  }
+}
+
+.parkErrorText {
+  margin: 0;
+  font-size: 13px;
+  color: var(--accent-warn);
+}
+
+.parkVisuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.parkWarningText {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.parkGhostHint {
+  align-self: flex-start;
+  border: none;
+  background: transparent;
+  color: var(--accent);
+  font-size: 13px;
+  padding: 4px 0;
+  cursor: pointer;
+  min-height: 48px;
+  padding: 12px 0;
+}
+
+/* --- Enroll (bridge/custom, §4) --- */
+.parkEnrollCode {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: clamp(14px, 3vw, 20px);
+  border-radius: var(--card-radius-sm);
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface) 70%);
+}
+
+.parkEnrollCodeValue {
+  font-family: var(--font-mono, monospace);
+  font-size: clamp(16px, 3vw, 20px);
+  font-weight: 600;
+  color: var(--text);
+  word-break: break-all;
+}
+
+.parkEnrollSteps {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.parkEnrollCommand {
+  display: block;
+  padding: 10px 12px;
+  border-radius: var(--card-radius-sm);
+  background: color-mix(in srgb, black 30%, var(--surface) 70%);
+  font-size: 12px;
+  overflow-x: auto;
+  white-space: nowrap;
+  color: var(--text);
+}
+
+/* --- Два выхода под плитками, когда managed и custom все погашены (§3.3/§5) --- */
+.parkExits {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.parkExitCard {
+  background: none;
+  border: 1px dashed var(--border);
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* --- Успех (§4) --- */
+.parkSuccess {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.parkSuccessText {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-dim);
+}
+
+/* --- Экраны-выходы «Сделать самому» / «Прошивки сообщества» (§5) — те же пропорции, что
+   .marketAddPage (market.css), не дублируем токены отдельным набором. --- */
+.parkExitPage {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 620px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.parkExitPageCard {
+  padding: clamp(20px, 4vw, 28px);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.parkExitIntro {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.parkDiySteps {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--text);
+}
+
+/* --- Список парка `/park` (MF-1077, docs/design/park.md §1) --- */
+.parkListPage {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 620px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.parkListHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.parkLiveSummary {
+  margin: 4px 0 0;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.parkListPage .uiEmptyState .uiButton {
+  margin-top: 10px;
+}
+
+.parkList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.parkPrinterRow {
+  align-items: flex-start;
+}
+
+/* --- Виджет пилота прошивки (§3.2) — замещает строку соединения, тап раскрывает подсказку. --- */
+.parkPilotRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0;
+  text-align: left;
+}
+
+.parkPilotSpark {
+  display: inline-flex;
+  color: var(--text-dim);
+}
+
+/* --- Живая страница принтера `/printer/:id` (MF-953) --- */
+.printerLivePage {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 620px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Reusable managed-local surface (MF-1683): один render-path для detail-состояний,
+   где browser→LAN даёт только read-only факт и не открывает command-контур. */
+.managedLocalSurface {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  max-width: 620px;
+  margin: 0 auto;
+}
+
+.managedLocalPrinterName {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.managedLocalCard {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: clamp(20px, 4vw, 28px);
+}
+
+.managedLocalAnnouncement {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  outline: none;
+}
+
+.managedLocalSource,
+.managedLocalReason,
+.managedLocalBoundary {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.managedLocalSource {
+  font-weight: 600;
+}
+
+.managedLocalBoundary {
+  color: var(--text-dim);
+}
+
+.managedLocalSourceCaption,
+.managedLocalHint {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.managedLocalCard > .uiButton {
+  align-self: flex-start;
+  min-height: 48px;
+}
+
+[data-input-mode="dpad"] .managedLocalCard > .uiButton {
+  min-height: 64px;
+  min-width: 64px;
+}
+
+@media (max-width: 640px) {
+  .managedLocalSurface {
+    padding-bottom: calc(64px + env(safe-area-inset-bottom));
+  }
+
+  .managedLocalCard > .uiButton {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .managedLocalSurface,
+  .managedLocalCard,
+  .managedLocalAnnouncement {
+    animation: none;
+    transition: none;
+  }
+}
+
+.printerLiveSub {
+  color: var(--text-dim);
+  font-size: 14px;
+}
+
+.printerLiveCard {
+  padding: clamp(20px, 4vw, 28px);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.printerLiveEvidence {
+  padding: clamp(18px, 3vw, 24px);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.printerLiveEvidenceList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+}
+
+.printerLiveEvidenceRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 32px;
+  border-bottom: 1px solid var(--border);
+}
+
+.printerLiveEvidenceRow dt {
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.printerLiveEvidenceRow dd {
+  margin: 0;
+}
+
+.printerLiveAnnouncement {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.printerLiveStatusRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.printerLiveHint {
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.printerLiveStatusCopy {
+  display: flex;
+  flex: 1 1 240px;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--text-dim);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.printerLiveTimestamp {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.printerLiveNextStep {
+  color: var(--text-dim);
+}
+
+.printerLiveRecovery {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.printerLiveProgress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.printerLiveProgressTrack {
+  flex: 1;
+  height: 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text) 12%, transparent);
+  overflow: hidden;
+}
+
+.printerLiveProgressFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #68e2a2, #9eeec3);
+  transition: width 0.3s ease;
+}
+
+.printerLiveProgressValue {
+  font-size: 14px;
+  color: var(--text);
+  min-width: 3ch;
+  text-align: right;
+}
+
+.printerLiveTemps {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.printerLiveTemp {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.printerLiveTempLabel {
+  font-size: 12px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+.printerLiveTempValue {
+  font-size: 18px;
+  color: var(--text);
+}
+
+.printerLiveTemp[data-tone="warn"] .printerLiveTempValue {
+  color: #ffb02e;
+}
+
+.printerLiveControls {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.printerLiveControls > * {
+  flex: 1 1 140px;
+  min-height: 48px;
+  min-width: 0;
+}
+
+.printerLiveControl {
+  display: flex;
+  flex: 1 1 140px;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.printerLiveControl > .uiButton {
+  min-height: 48px;
+  width: 100%;
+  min-width: 0;
+}
+
+/* Ограниченная поверхность test job (MF-1541): не маскирует QA-режим под обычный
+   пульт и не создаёт controls для start/stop/cancel/G-code. */
+.printerTestJob {
+  padding: clamp(18px, 3vw, 24px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.printerTestJobHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.printerTestJobMeta,
+.printerTestJobRestriction,
+.printerTestJobExcluded,
+.printerTestJobReason,
+.printerTestJobRollback {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.printerTestJobMeta,
+.printerTestJobExcluded {
+  color: var(--text-dim);
+}
+
+.printerTestJobRestriction,
+.printerTestJobReason,
+.printerTestJobRollback {
+  color: var(--text);
+}
+
+.printerTestJobControls {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.printerTestJobControls > .uiButton,
+.printerTestJobAction > .uiButton {
+  min-height: 48px;
+}
+
+.printerTestJobAction {
+  display: flex;
+  flex: 1 1 180px;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.commandStatus {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-dim);
+}
+
+.commandStatus .uiStatusPill {
+  align-self: flex-start;
+}
+
+.commandStatusRetry {
+  align-self: flex-start;
+  min-height: 48px;
+  padding: 6px 0;
+}
+
+@media (min-width: 900px) {
+  .printerLivePage {
+    max-width: 860px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 320px);
+    align-items: start;
+  }
+
+  .printerLivePage > :nth-child(-n + 3) {
+    grid-column: 1 / -1;
+  }
+
+  .printerLiveCard {
+    grid-column: 1;
+  }
+
+  .printerLiveControls {
+    grid-column: 2;
+    grid-row: 4;
+    align-self: stretch;
+    flex-direction: column;
+  }
+
+  .printerTestJob {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 520px) {
+  /* Evidence идёт перед action-row. На viewport 390px его compact-плотность
+     оставляет нижнюю границу карточки выше fixed bottom-tab, при этом строки
+     сохраняют touch-sized StatusPill и полный текст причины. */
+  .printerLivePage > .uiHeading {
+    /* Длинные имена принтеров не должны раздвигать evidence под fixed chrome. */
+    font-size: 18px;
+    line-height: 1.1;
+  }
+
+  .printerLiveCard {
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .printerLiveEvidence {
+    padding: 14px 16px;
+    gap: 8px;
+  }
+
+  .printerLiveEvidenceList {
+    gap: 4px;
+  }
+
+  .printerLiveControls {
+    display: grid;
+    /* Статус-пилюля внутри .printerLiveControl длиннее половины viewport. Без
+       minmax(0, 1fr) grid-трек принимает min-content и раздвигает весь control-row. */
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .printerLiveControls > *:last-child {
+    grid-column: 1 / -1;
+  }
+
+  /* В mobile действие и его объяснение должны делить одну колонку, а не
+     диктовать ширину соседней. Пилюля сохраняет читаемый текст и переносится
+     внутри границ карточки. */
+  .printerLiveControl .commandStatus {
+    min-width: 0;
+  }
+
+  .printerLiveControl .commandStatus .uiStatusPill {
+    height: auto;
+    min-height: 38px;
+    max-width: 100%;
+    white-space: normal;
+    text-align: center;
+  }
+}
+
+@media (max-width: 640px) {
+  /* Bottom-tab — overlay-хром. Отделяем следующий action-row от его
+     визуальной safe-зоны, чтобы fixed-навигация не накрывала первый ряд
+     кнопок в полном mobile-снимке и при cold-start прокрутке. */
+  .printerLivePage {
+    gap: 8px;
+  }
+
+  .printerLiveControls {
+    margin-top: calc(56px + env(safe-area-inset-bottom) + 16px);
+  }
+}

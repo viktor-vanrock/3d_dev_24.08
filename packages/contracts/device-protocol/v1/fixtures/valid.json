@@ -1,0 +1,109 @@
+{
+  "protocol_version": "v1",
+  "cases": [
+    {
+      "name": "hello-challenge",
+      "direction": "relay_to_gateway",
+      "frame": { "type": "hello_challenge", "nonce": "0123456789abcdef0123456789abcdef" }
+    },
+    {
+      "name": "hello",
+      "direction": "gateway_to_relay",
+      "frame": {
+        "type": "hello",
+        "protocol_version": "v1",
+        "nonce": "0123456789abcdef0123456789abcdef",
+        "agent_version": "1.0.0",
+        "printer_model": "Test Printer",
+        "firmware_class": "klipper",
+        "capabilities": ["file_transfer", "cmd.pause", "cmd.resume", "cmd.cancel", "cmd.start"]
+      }
+    },
+    {
+      "name": "hello-ack",
+      "direction": "relay_to_gateway",
+      "frame": {
+        "type": "hello_ack",
+        "session_id": "session-1",
+        "gateway_id": "gateway-1",
+        "devices": [{ "device_id": "device-1", "firmware_class": "klipper" }],
+        "heartbeat_interval_seconds": 20,
+        "heartbeat_timeout_seconds": 45
+      }
+    },
+    {
+      "name": "heartbeat",
+      "direction": "gateway_to_relay",
+      "frame": {
+        "type": "heartbeat",
+        "message_id": "heartbeat-1",
+        "devices": [{ "device_id": "device-1", "status": "printing", "sequence": 12, "progress_percent": 35.5, "metrics": { "nozzle_c": 210 }, "identity": { "serial": "safe-test-id" } }]
+      }
+    },
+    {
+      "name": "heartbeat-ack",
+      "direction": "relay_to_gateway",
+      "frame": { "type": "heartbeat_ack", "message_id": "heartbeat-1", "accepted_device_ids": ["device-1"] }
+    },
+    {
+      "name": "command",
+      "direction": "relay_to_gateway",
+      "frame": { "type": "command", "device_id": "device-1", "command_id": "command-1", "command_seq": 7, "command": "pause", "command_token": "0123456789abcdef", "payload": {} }
+    },
+    {
+      "name": "start-command",
+      "direction": "relay_to_gateway",
+      "frame": { "type": "command", "device_id": "device-1", "command_id": "command-2", "command_seq": 8, "command": "start", "command_token": "0123456789abcdef", "payload": { "file_name": "part.gcode" } }
+    },
+    {
+      "name": "command-ack",
+      "direction": "gateway_to_relay",
+      "frame": { "type": "command_ack", "device_id": "device-1", "command_id": "command-1", "command_seq": 7 }
+    },
+    {
+      "name": "command-result-executed",
+      "direction": "gateway_to_relay",
+      "frame": { "type": "command_result", "device_id": "device-1", "command_id": "command-1", "command_seq": 7, "outcome": "executed" }
+    },
+    {
+      "name": "command-result-failed",
+      "direction": "gateway_to_relay",
+      "frame": { "type": "command_result", "device_id": "device-1", "command_id": "command-1", "command_seq": 7, "outcome": "failed", "error_code": "command_failed", "message": "safe failure" }
+    },
+    {
+      "name": "file-start",
+      "direction": "relay_to_gateway",
+      "frame": { "type": "file_start", "device_id": "device-1", "transfer_id": "transfer-1", "file_name": "part.gcode", "size_bytes": 5, "sha256": "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824", "object_version": "version-1", "kind": "gcode", "start_print": false, "chunk_size_bytes": 65536 }
+    },
+    {
+      "name": "file-start-ack",
+      "direction": "gateway_to_relay",
+      "frame": { "type": "file_start_ack", "device_id": "device-1", "transfer_id": "transfer-1", "next_seq": 0, "next_offset_bytes": 0 }
+    },
+    {
+      "name": "file-chunk",
+      "direction": "relay_to_gateway",
+      "frame": { "type": "file_chunk", "device_id": "device-1", "transfer_id": "transfer-1", "seq": 0, "offset_bytes": 0, "last": true, "data_base64": "aGVsbG8=" }
+    },
+    {
+      "name": "file-chunk-ack",
+      "direction": "gateway_to_relay",
+      "frame": { "type": "file_chunk_ack", "device_id": "device-1", "transfer_id": "transfer-1", "seq": 0, "next_seq": 1, "next_offset_bytes": 5 }
+    },
+    {
+      "name": "file-result-stored",
+      "direction": "gateway_to_relay",
+      "frame": { "type": "file_result", "device_id": "device-1", "transfer_id": "transfer-1", "outcome": "stored", "stored_as": "part.gcode" }
+    },
+    {
+      "name": "file-result-failed",
+      "direction": "gateway_to_relay",
+      "frame": { "type": "file_result", "device_id": "device-1", "transfer_id": "transfer-1", "outcome": "failed", "error_code": "checksum_mismatch", "next_seq": 1, "next_offset_bytes": 5 }
+    },
+    {
+      "name": "error",
+      "direction": "relay_to_gateway",
+      "frame": { "type": "error", "code": "unsupported_version", "message": "unsupported protocol version", "correlation_id": "correlation-1" }
+    }
+  ]
+}

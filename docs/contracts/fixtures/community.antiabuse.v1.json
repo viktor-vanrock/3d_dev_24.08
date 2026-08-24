@@ -1,0 +1,16 @@
+{
+  "contract_version": "community-antiabuse.v1",
+  "fixtures": [
+    { "name": "tl0_thread_with_one_link_is_allowed", "request": { "trust_level": 0, "action": "thread_create", "links": 1, "photos": 0, "threads_in_last_24h": 2 }, "expected": { "status": 201 } },
+    { "name": "tl0_second_link_is_rejected", "request": { "trust_level": 0, "action": "post_create", "links": 2, "photos": 0 }, "expected": { "status": 422, "error": "TL0_LINK_LIMIT", "limit": 1 } },
+    { "name": "tl0_photo_is_rejected", "request": { "trust_level": 0, "action": "post_create", "links": 0, "photos": 1 }, "expected": { "status": 422, "error": "TL0_ATTACHMENT_LIMIT", "limit": 0 } },
+    { "name": "tl0_thread_daily_quota", "request": { "trust_level": 0, "action": "thread_create", "threads_in_last_24h": 3 }, "expected": { "status": 429, "error": "TL0_DAILY_QUOTA_EXCEEDED", "retry_after_header": true } },
+    { "name": "tl1_removes_tl0_quota", "request": { "trust_level": 1, "action": "thread_create", "threads_in_last_24h": 3 }, "expected": { "status": 201 } },
+    { "name": "create_retry_returns_stored_response", "request": { "trust_level": 0, "action": "post_create", "idempotency_key": "post-4b23", "retry": true, "same_canonical_body": true }, "expected": { "status": 201, "same_response": true, "created_rows": 1 } },
+    { "name": "idempotency_key_reuse_with_other_body_conflicts", "request": { "trust_level": 1, "action": "post_create", "idempotency_key": "post-4b23", "retry": true, "same_canonical_body": false }, "expected": { "status": 409, "error": "IDEMPOTENCY_CONFLICT", "created_rows": 1 } },
+    { "name": "self_vote_is_rejected_without_side_effect", "request": { "action": "post_vote", "actor_is_author": true, "value": 1 }, "expected": { "status": 403, "error": "SELF_VOTE_FORBIDDEN", "vote_mutated": false, "reputation_event_created": false } },
+    { "name": "vote_retry_does_not_award_twice", "request": { "action": "post_vote", "actor_is_author": false, "value": 1, "retry": true }, "expected": { "status": 200, "vote_rows": 1, "positive_reputation_events": 1 } },
+    { "name": "daily_cap_clamps_positive_award", "request": { "action": "post_vote", "positive_points_before": 195, "award": 10, "utc_day": "2026-07-13" }, "expected": { "status": 200, "granted_points": 5, "positive_points_after": 200 } },
+    { "name": "anomalous_cluster_is_blocked_before_vote", "request": { "action": "post_vote", "distinct_accounts_same_ip_or_fingerprint_same_subject_last_hour": 20, "value": 1 }, "expected": { "status": 429, "error": "VOTE_ANOMALY_BLOCKED", "vote_mutated": false, "reputation_event_created": false } }
+  ]
+}

@@ -1,0 +1,39 @@
+# systemd-юнит разового прогона entity resolution пайплайна apps/api (MF-650, декомпозиция
+# MF-406): scripts/resolve-run.ts — blocking→matching→merge→plausibility поверх
+# machine_candidates.status='pending' (runEntityResolution). Отдельный тик от
+# portal.catalog-ingest (та же логика выбора, что apps/scout/deploy/portal.scout-resolver —
+# у резолвера своя частота уместности, он доедает очередь, не привязан к тику источника).
+# Гоняется по расписанию через portal.catalog-resolve.timer.
+#
+# Установка на VDS (после pnpm install в корне монорепо):
+#   sudo cp apps/api/deploy/portal.catalog-resolve.service apps/api/deploy/portal.catalog-resolve.timer /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now portal.catalog-resolve.timer
+#   journalctl -u portal.catalog-resolve -f     # логи последнего прогона
+#
+# EnvironmentFile ~/portal.api.env (общий с portal.api.service) — DATABASE_URL (обяз.).
+# Current implementation: src/modules/catalog/infrastructure/resolve via the catalog public operations surface.
+#
+# ВАЖНО (не блокер, для осведомлённости при следующей карте на эту тему): этот резолвер
+# намеренно клеймит из общей очереди machine_candidates только source из KNOWN_SOURCES
+# (apps/api/src/modules/catalog/infrastructure/resolve/run.ts) — cura-definitions/sovol3d-store/giga-free-html.
+# apps/scout — независимый параллельный пайплайн (MF-623/627/720) со своим резолвером
+# (apps/scout/deploy/portal.scout-resolver) и несовместимым форматом raw
+# (vendor_slug/model_name вместо vendor/model); без этого фильтра штатный прогон рубил бы
+# scout-кандидаты как invalid ДО того, как их увидит scout-резолвер. Обе линии пишут в один
+# machines-канон, но НЕ координируют алгоритмы matching/similarity между собой — известный
+# побочный факт, см. docs/epics/domain.model.md § «Агент-парсер свободного HTML».
+
+[Unit]
+Description=portal.ru catalog entity resolution (machine_candidates -> machines)
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=plag
+WorkingDirectory=/home/plag/portal.ru/apps/api
+EnvironmentFile=/home/plag/portal.api.env
+ExecStart=/usr/bin/pnpm run resolve:run
+StandardOutput=journal
+StandardError=journal

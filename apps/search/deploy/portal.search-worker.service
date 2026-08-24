@@ -1,0 +1,61 @@
+# systemd-юнит воркера индексации apps/search (search_index_jobs -> model_embeddings,
+# HYPERPC-профиль hyperpc/qwen3-vl-embedding-2b). По образцу portal.mesh-worker.service/
+# portal.giga-worker.service — см. infra.md. MF-2021.
+#
+# apps/search на момент установки существует только в dev (`git show main:apps/search` —
+# нет пути), поэтому юнит, как portal.mesh-worker-dev/portal.giga-http, только для
+# dev-контура: WorkingDirectory на ~/portal.ru-dev, DATABASE_URL на portal_dev.
+#
+# Установка на VDS (Ubuntu noble, пользователь plag, чекаут ~/portal.ru-dev):
+#   cd ~/portal.ru-dev/apps/search && uv sync --no-dev
+#   sudo cp deploy/portal.search-worker.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now portal.search-worker.service
+#   journalctl -u portal.search-worker -f     # логи воркера
+#
+# EnvironmentFile ~/portal.search-dev.env (chmod 600, не в git):
+#   DATABASE_URL=postgres://portal_dev:...@127.0.0.1:5432/portal_dev?sslmode=disable
+#     (тот же контур, что ~/portal.api-dev.env/~/portal.giga-dev.env — НЕ прод)
+#   HYPERPC_URL=http://100.74.48.83:8189   (слот 4, Tailscale — docs/process/hyperpc.local.llm.md)
+#   S3_ENDPOINT/S3_ACCESS_KEY/S3_SECRET_KEY (MF-2022, те же креды cloud.ru, что
+#     ~/portal.mesh-dev.env) + опционально S3_REGION/S3_BUCKET_MODELS (дефолт "3mf" — на dev
+#     обычно нужен "3mf-dev", см. portal.mesh-worker-dev.service) — без них content-адаптер не
+#     соберётся и воркер простаивает (тот же паттерн, что без DATABASE_URL/HYPERPC_URL).
+#   опционально: HYPERPC_TIMEOUT_SECONDS/HYPERPC_MAX_RETRIES/HYPERPC_RETRY_BACKOFF_SECONDS,
+#   SEARCH_LIFECYCLE_ENABLED=1 (без него воркер fail-closed и не claim'ит джобы),
+#   SEARCH_POLL_INTERVAL_SECONDS/SEARCH_INDEX_LEASE_SECONDS/SEARCH_WORKER_ID/
+#   SEARCH_INDEX_MAX_ATTEMPTS/SEARCH_HEARTBEAT_INTERVAL_SECONDS/
+#   SEARCH_SHUTDOWN_GRACE_SECONDS (дефолты в src/portal_search/config.py).
+#   Без DATABASE_URL/HYPERPC_URL/S3_* воркер не падает и не claim'ит джобы.
+#
+# Queue lifecycle: search-worker запускает portal_search.lifecycle_worker:run_loop.
+# Старый implicit-reclaim loop удалён; disable — это безопасная остановка claim, а не rollback
+# на старую SQL-реализацию. Включать только после миграции lease_generation и локальных
+# crash/reclaim gates.
+#
+# ВСЁ ЕЩЁ ОТКРЫТО (MF-2022 «Пробел 2», код адаптера её не решает): apps/api/src/models/
+# indexQueue.ts ставит джобы в search_index_jobs под профилем embedding_model='gigachat/Embeddings'
+# (активный текстовый профиль MF-2013, dim=1024) — этот воркер claim'ит только паттерн 'hyperpc/%'
+# (profiles.EMBEDDING_MODEL='hyperpc/qwen3-vl-embedding-2b', dim=2048).
+# Профили НЕ совпадают: ни один текущий продюсер не ставит 'hyperpc/%'-джобы, поэтому даже после
+# redeploy воркер простаивает по нулю джоб (не сбой этой установки) — разрыв между продюсером Back
+# (MF-2013, gigachat/Embeddings) и консюмером AI (MF-1998, hyperpc/qwen3-vl-embedding-2b), решение
+# — Back/CTO/Data, не Ops и не адаптер.
+
+[Unit]
+Description=portal.ru dev search indexing worker (search_index_jobs -> model_embeddings)
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=plag
+WorkingDirectory=/home/plag/portal.ru-dev/apps/search
+Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=/home/plag/portal.search-dev.env
+ExecStart=/home/plag/.local/bin/uv run --no-dev search-worker
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

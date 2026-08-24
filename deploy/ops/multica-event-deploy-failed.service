@@ -1,0 +1,10 @@
+[Unit]
+Description=Emit failed dev deployment into Multica event router
+After=docker.service
+
+[Service]
+Type=oneshot
+User=plag
+EnvironmentFile=/home/plag/.config/multica-event-router.env
+ExecStart=/usr/bin/python3 /home/plag/event-router/multica-event-router.py --emit-service-failure portal.deploy-dev.service
+

@@ -1,0 +1,24 @@
+# systemd-юнит автодеплоя main (polling origin/main), запускается таймером
+# portal.deploy.timer раз в минуту. Сам деплой — deploy/portal.deploy.sh. MF-479.
+# Юнит копируется на VDS в /etc/systemd/system/.
+#
+# Установка на VDS (Ubuntu noble, пользователь plag, репо ~/portal.ru):
+#   sudo cp deploy/portal.deploy.service deploy/portal.deploy.timer /etc/systemd/system/
+#   sudo cp deploy/portal.deploy.sudoers /etc/sudoers.d/portal.deploy
+#   sudo chmod 440 /etc/sudoers.d/portal.deploy
+#   sudo visudo -cf /etc/sudoers.d/portal.deploy   # проверить синтаксис
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now portal.deploy.timer
+#   systemctl list-timers portal.deploy.timer      # убедиться, что таймер активен
+#   journalctl -u portal.deploy -f                  # логи прогонов деплоя
+
+[Unit]
+Description=portal.ru autodeploy (poll origin/main, build, restart apps/api on change)
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=plag
+WorkingDirectory=/home/plag/portal.ru
+ExecStart=/home/plag/portal.ru/deploy/portal.deploy.sh

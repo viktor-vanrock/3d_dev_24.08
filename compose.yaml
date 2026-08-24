@@ -1,0 +1,47 @@
+# Локальные зависимости для разработки (не для прода — прод описан в infra.md).
+name: portal
+services:
+  postgres:
+    # pgvector вкомпилирован в образ (см. MF-1018), PostGIS добавлен поверх (MF-1000) —
+    # движок остаётся Postgres 16, сборка — deploy/dev.postgres.dockerfile.
+    build:
+      context: .
+      dockerfile: deploy/dev.postgres.dockerfile
+    image: portal.postgres.dev:pg16-vector-postgis
+    container_name: portal.postgres
+    environment:
+      POSTGRES_USER: portal
+      POSTGRES_PASSWORD: portal
+      POSTGRES_DB: portal
+    ports:
+      - "5432:5432"
+    volumes:
+      - portal.postgres.data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U portal -d portal"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Локальная эмуляция S3 (cloud.ru-бакетов `3mf`/`auth`) — не поднимать в проде.
+  minio:
+    image: minio/minio:latest
+    container_name: portal.minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: portal
+      MINIO_ROOT_PASSWORD: portal12345
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - portal.minio.data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  portal.postgres.data:
+  portal.minio.data:

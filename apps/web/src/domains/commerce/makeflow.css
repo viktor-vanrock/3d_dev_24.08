@@ -1,0 +1,50 @@
+.makeWizard { display: grid; gap: 22px; color: var(--text); }
+.makeWizardHead, .makeDetailHead, .modelMakesHead { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.makeWizard h2, .makeWizard h3, .makeDetail h1, .makeDetail h2 { margin: 0; }
+.makeEyebrow { color: var(--text-dim); font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; }
+.makeIconBtn, .makeBack { min-width: 44px; min-height: 44px; }
+.makeDrop { display: grid; place-items: center; min-height: 190px; padding: 24px; border: 1px dashed var(--border); border-radius: 22px; text-align: center; cursor: pointer; }
+.makeDrop input { margin-top: 18px; }
+.makeWizard section, .makeWizard label { display: grid; gap: 8px; }
+.makeWizard select, .makeWizard input, .makeWizard textarea { min-height: 44px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--text); font: inherit; }
+.makeWizard select[multiple] { min-height: 132px; }
+.makeFields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.makeRating, .makeTags, .makeMaterialChoices, .makeInlineActions, .makeWizardActions { display: flex; flex-wrap: wrap; gap: 10px; }
+.makeRating label, .makeTags label, .makeMaterialChoices label { display: inline-flex; align-items: center; gap: 6px; }
+.makeRating input, .makeTags input, .makeMaterialChoices input { min-height: auto; }
+.makeWizardActions { justify-content: flex-end; }
+.makeWizardActions button, .makeInlineActions button, .makeDetail button, .modelMakesCommunity button { min-height: 44px; border: 1px solid var(--border); border-radius: 999px; padding: 0 18px; background: var(--surface); color: var(--text); cursor: pointer; }
+.makeAuthorButton { display: inline-flex; align-items: center; gap: 9px; padding: 4px 14px 4px 6px !important; }
+.makePrimary { background: var(--accent) !important; color: #07110d !important; }
+.makeDetail { width: min(1180px, calc(100% - 32px)); margin: 0 auto; display: grid; gap: 32px; padding: 24px 0 80px; }
+.makePhotoGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.makePhotoGrid button { padding: 0; border-radius: 22px; overflow: hidden; min-height: 180px; }
+.makePhotoGrid img { width: 100%; height: 100%; max-height: 520px; object-fit: cover; display: block; }
+.makeSpecLayout { display: grid; grid-template-columns: 1.2fr .8fr; gap: 32px; }
+.makeSpecs { display: grid; grid-template-columns: auto 1fr; gap: 10px 18px; }
+.makeSpecs dt { color: var(--text-dim); }.makeSpecs dd { margin: 0; }.makeSpecPair { display: contents; }
+.makeRelatedGrid, .modelMakesGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.makeRelatedGrid button { display: grid; height: auto; padding: 16px; text-align: left; border-radius: 16px; }
+.makeLightbox { position: fixed; inset: 0; z-index: var(--z-modal); background: rgba(0,0,0,.9); display: grid; place-items: center; padding: 30px; }
+.makeLightbox img { max-width: 92vw; max-height: 82vh; object-fit: contain; }
+.makeLightboxImage { padding: 0 !important; border: 0 !important; background: transparent !important; overflow: auto; max-width: 92vw; max-height: 82vh; }
+.makeLightboxImage img[data-zoomed="true"] { max-width: none; max-height: none; transform: scale(1.7); transform-origin: center; cursor: zoom-out; }
+.makeLightboxImage img[data-zoomed="false"] { cursor: zoom-in; }
+.makeLightboxClose { position: absolute; top: 18px; right: 18px; }
+.makeLightbox > div { display: flex; align-items: center; gap: 14px; }
+.modelMakesCommunity { display: grid; gap: 18px; margin-top: 28px; }
+.modelMakesHead h2 span { display: inline-grid; place-items: center; min-width: 28px; height: 28px; border-radius: 999px; background: var(--surface); font-size: .8rem; }
+.modelMakesSort, .modelMakesFilters { display: flex; flex-wrap: wrap; gap: 10px; }
+.modelMakesSort button[aria-pressed="true"] { border-color: var(--accent); }
+.modelMakesFilters label { display: grid; gap: 5px; color: var(--text-dim); }
+.modelMakesFilters select { min-height: 44px; border-radius: 12px; background: var(--surface); color: var(--text); border: 1px solid var(--border); padding: 0 12px; }
+.modelMakesGrid button { height: auto; padding: 0; overflow: hidden; border-radius: 18px; display: grid; text-align: left; }
+.modelMakesGrid img, .modelMakePlaceholder { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: grid; place-items: center; background: var(--surface); }
+.modelMakesGrid button > span:last-child { display: grid; gap: 3px; padding: 12px; }
+.modelMakesGrid small { color: var(--text-dim); }
+@media (max-width: 700px) {
+  .makeFields, .makeSpecLayout, .makePhotoGrid { grid-template-columns: 1fr; }
+  .makeRelatedGrid, .modelMakesGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 420px) { .makeRelatedGrid, .modelMakesGrid { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { .makeLightbox { scroll-behavior: auto; } }

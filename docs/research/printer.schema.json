@@ -1,0 +1,128 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://3mf.tech/schema/printer.v1.json",
+  "title": "Printer",
+  "description": "Каноническая карточка принтера в БД принтеров 3mf.tech. Заполняется командой Ресёрчеры (агенты + люди). Все поля спроектированы под фасетную сортировку/фильтрацию в каталоге: по столу, нагреву, AMS, лазеру, цене и т.д. Правило: неизвестное поле = null (НЕ выдумывать), с пометкой в _meta.gaps.",
+  "type": "object",
+  "required": ["id", "brand", "model", "_meta"],
+  "properties": {
+    "id": { "type": "string", "description": "Рабочий slug для ресёрчера и SEO-путь /printers/<slug>: brand.model в lowercase через точки, напр. creality.k1-max. Каноническая PK-идентичность в БД — отдельный id uuid (docs/epics/ids.policy.md); этот slug мапится в колонку printers.slug при upsert (MF-405/MF-839), НЕ является первичным ключом." },
+    "brand": { "type": "string", "description": "Бренд, напр. Creality" },
+    "model": { "type": "string", "description": "Модель, напр. K1 Max" },
+    "aliases": { "type": "array", "items": { "type": "string" }, "description": "Прочие названия/ревизии" },
+    "released_at": { "type": "string", "format": "date", "description": "Дата анонса/выхода (YYYY-MM-DD); для календаря новинок" },
+    "status": { "type": "string", "enum": ["announced", "shipping", "eol", "rumored"], "description": "Статус на рынке" },
+    "kinematics": { "type": "string", "enum": ["cartesian", "corexy", "delta", "scara", "idex", "polar", "belt"], "description": "Кинематика — ключевой фильтр" },
+    "type": { "type": "string", "enum": ["fdm", "resin-lcd", "resin-dlp", "resin-sla"], "description": "Технология печати" },
+    "enclosed": { "type": "boolean", "description": "Закрытая камера" },
+    "build_volume": {
+      "type": "object",
+      "description": "Область печати в мм — сортировка по объёму/столу",
+      "properties": {
+        "x": { "type": "number" }, "y": { "type": "number" }, "z": { "type": "number" },
+        "shape": { "type": "string", "enum": ["rect", "round"] },
+        "diameter": { "type": ["number", "null"], "description": "для delta/round" }
+      }
+    },
+    "hotend": {
+      "type": "object",
+      "description": "Хотэнд — сортировка по max нагреву, потоку",
+      "properties": {
+        "max_temp_c": { "type": ["number", "null"], "description": "Макс температура хотэнда °C" },
+        "max_flow_mm3s": { "type": ["number", "null"], "description": "Макс поток мм³/с" },
+        "nozzle_default_mm": { "type": ["number", "null"] },
+        "nozzle_swappable": { "type": ["boolean", "null"] },
+        "material": { "type": ["string", "null"], "description": "напр. hardened steel, bimetal" },
+        "hardened": { "type": ["boolean", "null"], "description": "закалённый (абразивы)" }
+      }
+    },
+    "bed": {
+      "type": "object",
+      "description": "Стол — сортировка по нагреву, покрытию",
+      "properties": {
+        "max_temp_c": { "type": ["number", "null"] },
+        "surface": { "type": ["string", "null"], "description": "PEI, стекло, магнитная гибкая" },
+        "auto_leveling": { "type": ["string", "null"], "description": "напр. sensorless, strain-gauge, inductive, none" }
+      }
+    },
+    "speed": {
+      "type": "object",
+      "properties": {
+        "max_speed_mms": { "type": ["number", "null"] },
+        "max_accel_mms2": { "type": ["number", "null"] },
+        "input_shaping": { "type": ["boolean", "null"] }
+      }
+    },
+    "multimaterial": {
+      "type": "object",
+      "description": "AMS/мультиматериал — уникальные системы важны (фильтр 'есть AMS')",
+      "properties": {
+        "supported": { "type": "boolean" },
+        "system_name": { "type": ["string", "null"], "description": "напр. AMS, AMS lite, ACE Pro, MMU3" },
+        "max_colors": { "type": ["number", "null"] },
+        "unique_notes": { "type": ["string", "null"], "description": "чем уникальна эта AMS" }
+      }
+    },
+    "toolhead_extras": {
+      "type": "array",
+      "description": "Уникальные фичи головы — лазер, ЧПУ-шпиндель, каттер и т.д. (фильтр 'есть лазер')",
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": { "type": "string", "enum": ["laser", "cnc-spindle", "cutter", "pen", "foodpaste", "other"] },
+          "spec": { "type": "string", "description": "напр. 10W диодный лазер" }
+        }
+      }
+    },
+    "connectivity": {
+      "type": "object",
+      "description": "Связь — критично для наших типов коннектора (просто/по IP/наш агент)",
+      "properties": {
+        "wifi": { "type": ["boolean", "null"] },
+        "ethernet": { "type": ["boolean", "null"] },
+        "usb": { "type": ["boolean", "null"] },
+        "camera": { "type": ["boolean", "null"] },
+        "firmware": { "type": ["string", "null"], "description": "напр. Klipper, Marlin, proprietary" },
+        "moonraker": { "type": ["boolean", "null"], "description": "есть Moonraker API (важно для нашего агента на принтере)" },
+        "lan_mode": { "type": ["boolean", "null"], "description": "работает без облака вендора" }
+      }
+    },
+    "materials_supported": { "type": "array", "items": { "type": "string" }, "description": "PLA, PETG, ABS, TPU, PA-CF, ..." },
+    "dimensions_mm": {
+      "type": "object",
+      "properties": { "w": { "type": ["number", "null"] }, "d": { "type": ["number", "null"] }, "h": { "type": ["number", "null"] }, "weight_kg": { "type": ["number", "null"] } }
+    },
+    "price": {
+      "type": "object",
+      "description": "Цена — оригинальная и на РУ-рынке (оба, для сортировки/сравнения)",
+      "properties": {
+        "msrp_usd": { "type": ["number", "null"], "description": "оригинальная рекомендованная, USD" },
+        "ru_rub": { "type": ["number", "null"], "description": "типичная цена на РУ-рынке, ₽" },
+        "ru_updated_at": { "type": ["string", "null"], "format": "date" }
+      }
+    },
+    "unique_features": { "type": "array", "items": { "type": "string" }, "description": "Всё уникальное, что не влезло в поля выше — свободный список" },
+    "media": {
+      "type": "object",
+      "description": "Фото/медиа принтера — лежат в том же бакете под printers/<id>/",
+      "properties": {
+        "hero": { "type": ["string", "null"], "description": "ключ главного фото в бакете" },
+        "gallery": { "type": "array", "items": { "type": "string" }, "description": "ключи доп. фото" },
+        "official_url": { "type": ["string", "null"] }
+      }
+    },
+    "sources": { "type": "array", "items": { "type": "string" }, "description": "URL-источники характеристик (провенанс — обязателен)" },
+    "_meta": {
+      "type": "object",
+      "required": ["schema_version", "filled_by", "confidence"],
+      "properties": {
+        "schema_version": { "type": "string", "const": "1.0" },
+        "filled_by": { "type": "string", "description": "агент/человек, заполнивший (напр. researcher-creality)" },
+        "reviewed_by": { "type": ["string", "null"] },
+        "confidence": { "type": "string", "enum": ["high", "medium", "low"], "description": "уверенность в данных" },
+        "gaps": { "type": "array", "items": { "type": "string" }, "description": "поля, которые не удалось найти — честно перечислить" },
+        "updated_at": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}

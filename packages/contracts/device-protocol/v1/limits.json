@@ -1,0 +1,21 @@
+{
+  "protocol_version": "v1",
+  "max_text_frame_bytes": 131072,
+  "max_identifier_chars": 128,
+  "max_nonce_chars": 128,
+  "max_version_chars": 64,
+  "max_model_chars": 128,
+  "max_firmware_class_chars": 64,
+  "max_capabilities": 64,
+  "max_devices_per_heartbeat": 128,
+  "max_metrics_per_device": 32,
+  "max_identity_fields_per_device": 16,
+  "max_error_message_chars": 256,
+  "max_file_name_chars": 255,
+  "max_file_size_bytes": 1073741824,
+  "max_file_chunk_bytes": 65536,
+  "max_file_chunk_base64_chars": 87384,
+  "max_heartbeat_interval_seconds": 300,
+  "max_heartbeat_timeout_seconds": 600,
+  "max_safe_sequence": 9007199254740991
+}

@@ -1,0 +1,42 @@
+# systemd-юнит очереди слайсинга apps/mesh (slice_jobs, MF-1078). Отдельный процесс
+# от portal.mesh-worker.service (конвертация STL→3MF) — CPU-профиль и кардинальность
+# разные, см. докстринг mesh/slicing_queue.py. По образцу portal.mesh-worker.service.
+#
+# Установка на VDS (Ubuntu noble, пользователь plag, репо ~/portal.ru):
+#   cd ~/portal.ru/apps/mesh && uv sync --no-dev
+#   sudo cp deploy/portal.mesh-slice-worker.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now portal.mesh-slice-worker.service
+#   journalctl -u portal.mesh-slice-worker -f
+#
+# EnvironmentFile ~/portal.mesh.env (тот же, что portal.mesh-worker) + SLICER_BINARY_PATH
+# (обычно /usr/bin/prusa-slicer, MF-989) — без него воркер простаивает, логируя
+# предупреждение, без падения. XDG_RUNTIME_DIR/DBUS_SESSION_BUS_ADDRESS обязательны:
+# слайсер вызывается через `systemd-run --user --scope` (MF-989) для cgroup-лимитов
+# на внешний процесс — без рабочей user-шины (`loginctl enable-linger plag`) падает
+# `Failed to connect to bus: No medium found`.
+#
+# MF-1992: тот же ~/portal.mesh.env обязан содержать MESH_SLICE_TRUST_PRIVATE_KEY_PATH
+# (путь к Ed25519 PEM, chmod 600, вне git) и MESH_SLICE_TRUST_KEY_ID — без них воркер
+# простаивает по ВСЕЙ очереди слайсинга (обязательный slice-trust.v1, не только
+# Orca/U1), см. SECURITY.md § «Секреты» и docs/contracts/slice-trust.v1.md.
+
+[Unit]
+Description=portal.ru mesh slicing queue worker (slice_jobs pending->ready)
+After=network-online.target postgresql.service user@1000.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=plag
+WorkingDirectory=/home/plag/portal.ru/apps/mesh
+Environment=PYTHONUNBUFFERED=1
+Environment=XDG_RUNTIME_DIR=/run/user/1000
+Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
+EnvironmentFile=/home/plag/portal.mesh.env
+ExecStart=/home/plag/.local/bin/uv run --no-dev mesh-slice-worker
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

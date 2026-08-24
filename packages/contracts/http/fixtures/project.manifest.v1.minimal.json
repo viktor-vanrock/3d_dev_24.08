@@ -1,0 +1,36 @@
+{
+  "description": "Простой одиночный STL без авторского манифеста (project.manifest.md §8.1/§13 п.1: 'Minimal STL fixture создаёт README + manifest + default config'). project-import.v1 синтезирует этот граф: default-конфигурация + одна печатная фаза, без сцен/соединений/BOM.",
+  "manifest": {
+    "schema": "https://schemas.3mf.tech/project/v1",
+    "project": {
+      "uid": "benchy",
+      "title": "Benchy",
+      "default-configuration": "default",
+      "units": { "length": "mm", "coordinates": "right-handed-z-up" }
+    },
+    "artifacts": {
+      "benchy-stl": { "path": "print/benchy.stl", "kind": "print-model" }
+    },
+    "components": {
+      "benchy": { "kind": "manufactured", "artifact": "benchy-stl" }
+    },
+    "configurations": {
+      "default": {
+        "title": "Default",
+        "artifacts": ["benchy-stl"],
+        "components": ["benchy"],
+        "workflow": "print-only"
+      }
+    },
+    "workflows": {
+      "print-only": {
+        "phases": {
+          "print": { "type": "print", "steps": ["print-benchy"] }
+        },
+        "steps": {
+          "print-benchy": { "title": "Print Benchy" }
+        }
+      }
+    }
+  }
+}

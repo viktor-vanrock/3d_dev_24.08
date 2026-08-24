@@ -1,0 +1,31 @@
+{
+  "profile_class": "process",
+  "slicer": "orcaslicer",
+  "setting_id": "GP_0_20_STANDARD_X1C",
+  "name": "0.20mm Standard @BBL X1C",
+  "inherits": "GM_BBL_X1C_04",
+  "machine_ref": { "vendor_slug": "bambulab", "model": "X1 Carbon" },
+  "params": {
+    "layer_height_mm": 0.2,
+    "first_layer_height_mm": 0.2,
+    "print_speed_mm_s": 200,
+    "first_layer_speed_mm_s": 50,
+    "travel_speed_mm_s": 500,
+    "infill_density_pct": 15,
+    "infill_pattern": "grid",
+    "wall_loops": 2,
+    "top_shell_layers": 4,
+    "bottom_shell_layers": 3,
+    "support_enable": false,
+    "skirt_loops": 1,
+    "brim_width_mm": 0
+  },
+  "source": {
+    "name": "softfever_orcaslicer",
+    "url": "https://github.com/SoftFever/OrcaSlicer",
+    "ref": "resources/profiles/BBL/process/0.20mm Standard @BBL X1C.json",
+    "license": "AGPL-3.0"
+  },
+  "confidence": 1,
+  "schema_version": 1
+}

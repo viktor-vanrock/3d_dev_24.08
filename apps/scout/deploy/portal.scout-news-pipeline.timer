@@ -1,0 +1,12 @@
+[Unit]
+Description=portal.ru daily source-backed news canary rotation
+Documentation=file:/home/plag/portal.ru-dev/apps/scout/deploy/readme.md
+
+[Timer]
+OnCalendar=*-*-* 06:30:00
+RandomizedDelaySec=900
+Persistent=false
+Unit=portal.scout-news-pipeline.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,43 @@
+# Изолированный OpenCode runtime для приватных assistant-тредов Portal (MF-2045).
+# Отдельный compose-файл (не корневой compose.yaml — тот только для локальных
+# dev-зависимостей, см. его шапку), используется systemd-юнитом
+# portal.opencode-runtime.service и rollout-скриптом opencode.runtime.rollout.sh.
+#
+# Изоляция: без bind-mount хостовых каталогов (эфемерная FS контейнера, не
+# видит ни `~/portal.ru-dev`, ни чужие раны), без host-сети, публикуется
+# только на loopback — так же, как portal.giga-http (127.0.0.1:3102):
+# apps/api/gateway (MF-2044/2046) обращаются приватно, браузер порт никогда
+# не видит и nginx его не проксирует.
+#
+# Кредов провайдеров, кроме HYPERPC (Tailscale-only, см. env-файл), в
+# контейнере нет — тот же принцип "0 credentials", что и у ocsearch runtime
+# на `worker` (docs/process/hyperpc.local.llm.md): даже с открытым egress
+# сливать нечего, звонить платному провайдеру нечем.
+name: portal-opencode-runtime
+services:
+  opencode-runtime:
+    build:
+      context: ..
+      dockerfile: deploy/opencode.runtime.dockerfile
+      args:
+        OPENCODE_VERSION: ${OPENCODE_RUNTIME_VERSION:-1.18.4}
+    image: portal.opencode.runtime:${OPENCODE_RUNTIME_VERSION:-1.18.4}
+    container_name: portal-opencode-runtime
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${OPENCODE_RUNTIME_PORT:-3104}:4096"
+    environment:
+      HYPERPC_STRUCTURED_URL: ${HYPERPC_STRUCTURED_URL:-}
+      HYPERPC_FAST_URL: ${HYPERPC_FAST_URL:-}
+      OPENCODE_SERVER_PASSWORD: ${OPENCODE_SERVER_PASSWORD:-}
+    mem_limit: 768m
+    cpus: 1.0
+    healthcheck:
+      # CMD-SHELL, не CMD-массив — нужна expansion $OPENCODE_SERVER_PASSWORD внутри
+      # контейнера (basic auth включён, см. entrypoint/дока) — без него curl -f
+      # всегда видит 401 и контейнер никогда не станет healthy.
+      test: ["CMD-SHELL", "curl -sf -u \"opencode:${OPENCODE_SERVER_PASSWORD:-}\" http://127.0.0.1:4096/doc > /dev/null"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s

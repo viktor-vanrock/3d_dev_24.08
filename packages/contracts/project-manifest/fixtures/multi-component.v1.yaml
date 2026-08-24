@@ -1,0 +1,103 @@
+# Многокомпонентная самоделка (робо-рука): несколько печатных деталей + плата + код + сборка.
+# Полный пример под acceptance MF-1967 — упражняет все секции схемы + x-* расширение.
+schemaVersion: 1
+project:
+  name: "Робо-рука LeRobotDepot"
+  slug: lerobot-arm
+x-vendorTool: "fusion360-exporter/1.4"
+
+configurations:
+  - id: default
+    name: "Базовая сборка"
+    default: true
+    componentRefs: [base, shoulder, gripper, controller, firmware]
+
+artifacts:
+  - id: base-stl
+    role: source
+    path: print/base.stl
+  - id: shoulder-stl
+    role: source
+    path: print/shoulder.stl
+  - id: gripper-stl
+    role: source
+    path: print/gripper.stl
+  - id: controller-gerber
+    role: gerber
+    path: pcb/controller.zip
+  - id: firmware-src
+    role: code_archive
+    path: code/firmware.zip
+
+components:
+  - id: base
+    name: "Основание"
+    craft: 3d_printing
+    artifactRefs: [base-stl]
+    quantity: 1
+  - id: shoulder
+    name: "Плечевой сустав"
+    craft: 3d_printing
+    artifactRefs: [shoulder-stl]
+    quantity: 2
+  - id: gripper
+    name: "Захват"
+    craft: 3d_printing
+    artifactRefs: [gripper-stl]
+    quantity: 1
+  - id: controller
+    name: "Плата управления"
+    craft: electronics
+    artifactRefs: [controller-gerber]
+    quantity: 1
+  - id: firmware
+    name: "Прошивка"
+    craft: software
+    artifactRefs: [firmware-src]
+    quantity: 1
+
+bom:
+  - id: servo-mg996r
+    name: "Сервопривод MG996R"
+    quantity: 6
+    unit: "шт"
+    vendor:
+      name: "example-vendor"
+      url: "https://example.com/parts/mg996r"
+    notes: "Плечевые суставы + захват"
+  - id: bolt-m3x12
+    name: "Винт M3x12"
+    quantity: 20
+    unit: "шт"
+
+connections:
+  - id: base-to-shoulder
+    from: base
+    to: shoulder
+    kind: bolt
+    notes: "4x M3x12"
+  - id: shoulder-to-gripper
+    from: shoulder
+    to: gripper
+    kind: press_fit
+  - id: controller-to-shoulder
+    from: controller
+    to: shoulder
+    kind: wire
+
+phases:
+  - id: print-parts
+    name: "Печать деталей"
+    componentRefs: [base, shoulder, gripper]
+  - id: assemble-mechanics
+    name: "Механическая сборка"
+    dependsOn: [print-parts]
+    componentRefs: [base, shoulder, gripper]
+  - id: wire-electronics
+    name: "Монтаж электроники"
+    dependsOn: [assemble-mechanics]
+    componentRefs: [controller]
+  - id: flash-firmware
+    name: "Прошивка контроллера"
+    dependsOn: [wire-electronics]
+    componentRefs: [firmware]

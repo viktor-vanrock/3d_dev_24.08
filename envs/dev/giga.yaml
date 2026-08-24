@@ -1,0 +1,69 @@
+# giga — HTTP API ИИ (порт 3102). Снаружи не публикуется, api ходит на http://giga:3102.
+
+replicaCount: 1
+
+image:
+  repository: registry.sberdevices.ru/rndml/additive-ai-portal/3d-ai-portal/giga
+  pullPolicy: IfNotPresent
+  command: ["/bin/sh"]
+  args:
+    - "-c"
+    - ". /vault/secrets/config && exec uvicorn giga.main:app --host 0.0.0.0 --port 3102"
+
+imagePullSecrets:
+  - name: gitlab-registry-secret
+
+serviceAccount:
+  create: false
+  name: vault
+
+podAnnotations:
+  vault.hashicorp.com/agent-inject: "true"
+  vault.hashicorp.com/agent-pre-populate-only: "true"
+  vault.hashicorp.com/agent-inject-secret-config: rndml/aiportal/giga
+  vault.hashicorp.com/role: d-rndml-aiportal
+  vault.hashicorp.com/agent-inject-template-config: |
+    {{- with secret "rndml/aiportal/giga" -}}
+    {{ range $k, $v := .Data.data }}export {{ $k }}='{{ $v }}'
+    {{ end }}{{- end -}}
+
+configMap:
+  enabled: true
+  config:
+    S3_REGION: ru-central-1
+    S3_BUCKET_GENERATIONS: p-rndml-aiportal
+    S3_BUCKET_DIAGNOSTICS: p-rndml-aiportal
+    GIGA_LIFECYCLE_ENABLED: "0"
+    ASSISTANT_LIFECYCLE_ENABLED: "0"
+
+securityContext: {}
+podSecurityContext: {}
+
+service:
+  enabled: true
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 3102
+      protocol: TCP
+      targetPort: 3102
+
+ingress:
+  enabled: false
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: http
+readinessProbe:
+  httpGet:
+    path: /health
+    port: http
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: "2"
+    memory: 2Gi

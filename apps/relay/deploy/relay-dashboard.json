@@ -1,0 +1,13 @@
+{
+  "title": "Relay Nest data-plane",
+  "schemaVersion": 39,
+  "panels": [
+    {"type": "stat", "title": "Active sessions", "targets": [{"expr": "relay_active_sessions"}]},
+    {"type": "timeseries", "title": "Authorization outcomes", "targets": [{"expr": "rate(relay_auth_total[5m])"}]},
+    {"type": "timeseries", "title": "Heartbeat timeouts", "targets": [{"expr": "rate(relay_heartbeat_total{outcome=\"timeout\"}[5m])"}]},
+    {"type": "timeseries", "title": "Rejected protocol frames", "targets": [{"expr": "rate(relay_protocol_frames_total{outcome=\"rejected\"}[5m])"}]},
+    {"type": "timeseries", "title": "Backpressure", "targets": [{"expr": "rate(relay_backpressure_total[5m])"}]},
+    {"type": "timeseries", "title": "Command lifecycle", "targets": [{"expr": "rate(relay_command_lifecycle_total[5m])"}]},
+    {"type": "timeseries", "title": "Internal API outcomes", "targets": [{"expr": "rate(relay_internal_api_requests_total[5m])"}]}
+  ]
+}

@@ -1,0 +1,9 @@
+[Unit]
+Description=Прод-ошибка → авто-баг-карточка (journald → Multica)
+[Service]
+Type=oneshot
+User=plag
+Environment=APPLY=1
+Environment=HOME=/home/plag
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+ExecStart=/usr/local/bin/prod-error-watch

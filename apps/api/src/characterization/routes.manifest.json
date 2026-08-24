@@ -1,0 +1,3485 @@
+[
+  {
+    "method": "POST",
+    "path": "/me/agents",
+    "domain": "agents",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "src/agents/agents.route.ts:61",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/me/agents",
+    "domain": "agents",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "src/agents/agents.route.ts:96",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/me/agents/:id/revoke",
+    "domain": "agents",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "src/agents/agents.route.ts:119",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/me/agents/:id/keys",
+    "domain": "agents",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "src/agents/agents.route.ts:156",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/me/agents/:id/keys",
+    "domain": "agents",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "src/agents/agents.route.ts:194",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/me/agents/:id/keys/:keyId/revoke",
+    "domain": "agents",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "src/agents/agents.route.ts:229",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "keyId": "22222222-2222-4222-8222-222222222222"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/consent",
+    "domain": "analytics",
+    "authMode": "open",
+    "closedDevAuthed": true,
+    "ownGate": null,
+    "source": "src/modules/analytics/api/analytics.controller.ts:25",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/analytics/health",
+    "domain": "analytics",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "src/modules/analytics/api/analytics.controller.ts:37",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/assistant/threads",
+    "domain": "assistant",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "src/assistant/threads.ts:28",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/assistant/threads",
+    "domain": "assistant",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "src/assistant/threads.ts:46",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/assistant/threads/:id",
+    "domain": "assistant",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "src/assistant/threads.ts:80",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/assistant/threads/:id/read",
+    "domain": "assistant",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "src/assistant/threads.ts:102",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/assistant/threads/:id/events",
+    "domain": "assistant",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "src/assistant/threadEvents.ts:35",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/assistant/threads/:id/messages",
+    "domain": "assistant",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "src/assistant/messages.ts:35",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/assistant/threads/:id/messages",
+    "domain": "assistant",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "src/assistant/messages.ts:86",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/assistant/threads/:id/runs/:runId",
+    "domain": "assistant",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "src/assistant/runs.ts:15",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "runId": "22222222-2222-4222-8222-222222222222"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/assistant/runs/:id/events",
+    "domain": "assistant",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "src/assistant/events.ts:146",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/assistant/threads/:id/generations",
+    "domain": "assistant",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "src/assistant/generations.ts:40",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/assistant/prompt-variants",
+    "domain": "assistant",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "src/assistant/promptVariants.ts:251",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/health",
+    "domain": "auth",
+    "authMode": "open",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "server.ts:262",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/auth/session",
+    "domain": "auth",
+    "authMode": "open-own-gate",
+    "closedDevAuthed": false,
+    "ownGate": "bearer",
+    "source": "server.ts:269",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/auth/logout",
+    "domain": "auth",
+    "authMode": "open",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "server.ts:301",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/auth/plagid/start",
+    "domain": "auth",
+    "authMode": "open",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "auth/plagid.ts:46",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/auth/plagid/callback",
+    "domain": "auth",
+    "authMode": "open",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "auth/plagid.ts:64",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/auth/sberid/start",
+    "domain": "auth",
+    "authMode": "open",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "auth/sberid.ts:18",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/auth/sberid/callback",
+    "domain": "auth",
+    "authMode": "open",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "auth/sberid.ts:23",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/auth/email/start",
+    "domain": "auth",
+    "authMode": "open",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "auth/email.ts:36",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/auth/email/verify",
+    "domain": "auth",
+    "authMode": "open",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "auth/email.ts:77",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/auth/dev",
+    "domain": "auth",
+    "authMode": "open",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "auth/dev.ts:69",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/purchases",
+    "domain": "billing",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "billing/routes.ts:49",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/billing/webhooks/yookassa",
+    "domain": "billing",
+    "authMode": "open-own-gate",
+    "closedDevAuthed": false,
+    "ownGate": "provider-verify",
+    "source": "billing/routes.ts:115",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/purchases",
+    "domain": "billing",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "billing/routes.ts:231",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/purchases/:id",
+    "domain": "billing",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "billing/routes.ts:244",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/sales",
+    "domain": "billing",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "billing/routes.ts:261",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/me/balance",
+    "domain": "billing",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "billing/routes.ts:294",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/payouts",
+    "domain": "billing",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "billing/routes.ts:304",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/payouts",
+    "domain": "billing",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "billing/routes.ts:355",
+    "sampleParams": {}
+  },
+  {
+    "method": "PATCH",
+    "path": "/payouts/:id",
+    "domain": "billing",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "billing/routes.ts:385",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/releases",
+    "domain": "catalog",
+    "authMode": "public-GET",
+    "closedDevAuthed": true,
+    "ownGate": null,
+    "source": "catalog/releases.ts:99",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/catalog/metrics",
+    "domain": "catalog",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "catalog/metrics.ts:32",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/materials",
+    "domain": "catalog",
+    "authMode": "public-GET",
+    "closedDevAuthed": true,
+    "ownGate": null,
+    "source": "catalog/materials.ts:88",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/materials/:id",
+    "domain": "catalog",
+    "authMode": "public-GET",
+    "closedDevAuthed": true,
+    "ownGate": null,
+    "source": "catalog/materials.ts:184",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/material-candidates",
+    "domain": "catalog",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "catalog/material-candidates.ts:61",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/material-candidates",
+    "domain": "catalog",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "catalog/material-candidates.ts:100",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/material-candidates/:id/approve",
+    "domain": "catalog",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "catalog/material-candidates.ts:145",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/material-candidates/:id/reject",
+    "domain": "catalog",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "catalog/material-candidates.ts:248",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/machine-candidates",
+    "domain": "catalog",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "catalog/machine-candidates.ts:78",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/machine-candidates",
+    "domain": "catalog",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "catalog/machine-candidates.ts:130",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/machine-candidates/:id/approve",
+    "domain": "catalog",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "catalog/machine-candidates.ts:162",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/machine-candidates/:id/reject",
+    "domain": "catalog",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "catalog/machine-candidates.ts:296",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/vendors",
+    "domain": "catalog",
+    "authMode": "public-GET",
+    "closedDevAuthed": true,
+    "ownGate": null,
+    "source": "catalog/machines.ts:70",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/machines",
+    "domain": "catalog",
+    "authMode": "public-GET",
+    "closedDevAuthed": true,
+    "ownGate": null,
+    "source": "catalog/machines.ts:77",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/machines/:id",
+    "domain": "catalog",
+    "authMode": "public-GET",
+    "closedDevAuthed": true,
+    "ownGate": null,
+    "source": "catalog/machines.ts:148",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/printers",
+    "domain": "catalog",
+    "authMode": "public-GET-always",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "catalog/printers.ts:172",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/printers/:slug",
+    "domain": "catalog",
+    "authMode": "public-GET-always",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "catalog/printers.ts:328",
+    "sampleParams": {
+      "slug": "prusa-mk4"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/communities",
+    "domain": "community",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "community/communities.ts:111",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/communities",
+    "domain": "community",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "community/communities.ts:189",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/communities/:id",
+    "domain": "community",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "community/communities.ts:275",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/communities/:id/join",
+    "domain": "community",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "community/membership.ts:61",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/communities/:id/leave",
+    "domain": "community",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "community/membership.ts:75",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/communities/:id/subscribe",
+    "domain": "community",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "community/membership.ts:108",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "DELETE",
+    "path": "/communities/:id/subscribe",
+    "domain": "community",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "community/membership.ts:140",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/communities/:id/members/:userId/role",
+    "domain": "community",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "community/membership.ts:171",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "userId": "22222222-2222-4222-8222-222222222222"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/communities/:id/bootstrap-owner",
+    "domain": "community",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "community/membership.ts:226",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/communities/:id/feed",
+    "domain": "community",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "community/feed.ts:12",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/communities/:id/threads",
+    "domain": "community",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "community/threads.ts:71",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/communities/:id/threads",
+    "domain": "community",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "community/threads.ts:119",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/threads/:id",
+    "domain": "community",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "community/thread-detail.ts:54",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/threads/:id/posts",
+    "domain": "community",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "community/posts.ts:53",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/threads/:id/vote",
+    "domain": "community",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "community/vote.ts:85",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/posts/:id/vote",
+    "domain": "community",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "community/vote.ts:111",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/posts/:id/attachments",
+    "domain": "community",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "community/attachments.ts:139",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/posts/:id/attachments/:attachmentId",
+    "domain": "community",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "community/attachments.ts:214",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "attachmentId": "22222222-2222-4222-8222-222222222222"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/threads/:id/accept",
+    "domain": "community",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "community/accept.ts:15",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/me/devices/enroll-codes",
+    "domain": "devices",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "devices/enroll.route.ts:32",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/me/devices/enroll-codes/:enrollCodeId/revoke",
+    "domain": "devices",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "devices/enroll.route.ts:62",
+    "sampleParams": {
+      "enrollCodeId": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/me/devices/:deviceId/revoke",
+    "domain": "devices",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "devices/enroll.route.ts:81",
+    "sampleParams": {
+      "deviceId": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/devices/agent/install.sh",
+    "domain": "devices",
+    "authMode": "open",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "devices/enroll.route.ts:101",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/devices/agent/enroll",
+    "domain": "devices",
+    "authMode": "open-own-gate",
+    "closedDevAuthed": false,
+    "ownGate": "enroll-code",
+    "source": "devices/enroll.route.ts:106",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/devices/agent/recover",
+    "domain": "devices",
+    "authMode": "open-own-gate",
+    "closedDevAuthed": false,
+    "ownGate": "recovery-code",
+    "source": "modules/devices/api/devices.controller.ts",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/me/devices/:deviceId/shares",
+    "domain": "devices",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "devices/shares.route.ts:86",
+    "sampleParams": {
+      "deviceId": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "DELETE",
+    "path": "/me/devices/:deviceId/shares/:userId",
+    "domain": "devices",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "devices/shares.route.ts:122",
+    "sampleParams": {
+      "deviceId": "11111111-1111-4111-8111-111111111111",
+      "userId": "22222222-2222-4222-8222-222222222222"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/me/devices/:deviceId/commands",
+    "domain": "devices",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "devices/shares.route.ts:142",
+    "sampleParams": {
+      "deviceId": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/me/devices/:deviceId/commands/:commandId",
+    "domain": "devices",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "devices/shares.route.ts:262",
+    "sampleParams": {
+      "deviceId": "11111111-1111-4111-8111-111111111111",
+      "commandId": "22222222-2222-4222-8222-222222222222"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/me/devices/:deviceId/transfers",
+    "domain": "devices",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "devices/shares.route.ts:287",
+    "sampleParams": {
+      "deviceId": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/me/devices/:deviceId/transfers/:transferId",
+    "domain": "devices",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "devices/shares.route.ts:362",
+    "sampleParams": {
+      "deviceId": "11111111-1111-4111-8111-111111111111",
+      "transferId": "22222222-2222-4222-8222-222222222222"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/me/devices/:deviceId/incidents",
+    "domain": "devices",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "devices/incidents.route.ts:22",
+    "sampleParams": {
+      "deviceId": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/me/devices/:deviceId/incidents/:incidentId/acknowledge",
+    "domain": "devices",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "devices/incidents.route.ts:33",
+    "sampleParams": {
+      "deviceId": "11111111-1111-4111-8111-111111111111",
+      "incidentId": "22222222-2222-4222-8222-222222222222"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/me/devices/:deviceId/incidents/:incidentId/resolve",
+    "domain": "devices",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "devices/incidents.route.ts:47",
+    "sampleParams": {
+      "deviceId": "11111111-1111-4111-8111-111111111111",
+      "incidentId": "22222222-2222-4222-8222-222222222222"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/me/devices/:deviceId/profile-transfers",
+    "domain": "devices",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "devices/profileTransfers.route.ts:31",
+    "sampleParams": {
+      "deviceId": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/me/devices/:deviceId/print-requests",
+    "domain": "devices",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "devices/printJob.route.ts:170",
+    "sampleParams": {
+      "deviceId": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/me/devices/:deviceId/print-requests/:id",
+    "domain": "devices",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "devices/printJob.route.ts:331",
+    "sampleParams": {
+      "deviceId": "11111111-1111-4111-8111-111111111111",
+      "id": "22222222-2222-4222-8222-222222222222"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/me/devices/:deviceId/print-requests/:id/confirm-start",
+    "domain": "devices",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "devices/printJob.route.ts:353",
+    "sampleParams": {
+      "deviceId": "11111111-1111-4111-8111-111111111111",
+      "id": "22222222-2222-4222-8222-222222222222"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/internal/relay/session/open",
+    "domain": "devices",
+    "authMode": "open-own-gate",
+    "closedDevAuthed": false,
+    "ownGate": "relay-token",
+    "source": "HISTORICAL removed Fastify baseline: devices/relayInternal.ts:68",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/internal/relay/session/heartbeat",
+    "domain": "devices",
+    "authMode": "open-own-gate",
+    "closedDevAuthed": false,
+    "ownGate": "relay-token",
+    "source": "HISTORICAL removed Fastify baseline: devices/relayInternal.ts:120",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/internal/relay/session/close",
+    "domain": "devices",
+    "authMode": "open-own-gate",
+    "closedDevAuthed": false,
+    "ownGate": "relay-token",
+    "source": "HISTORICAL removed Fastify baseline: devices/relayInternal.ts:222",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/internal/relay/session/print-result",
+    "domain": "devices",
+    "authMode": "open-own-gate",
+    "closedDevAuthed": false,
+    "ownGate": "relay-token",
+    "source": "HISTORICAL removed Fastify baseline: devices/relayInternal.ts:277",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/internal/relay/commands/poll",
+    "domain": "devices",
+    "authMode": "open-own-gate",
+    "closedDevAuthed": false,
+    "ownGate": "relay-token",
+    "source": "HISTORICAL removed Fastify baseline: devices/relayInternal.ts:388",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/internal/relay/commands/:commandId/result",
+    "domain": "devices",
+    "authMode": "open-own-gate",
+    "closedDevAuthed": false,
+    "ownGate": "relay-token",
+    "source": "HISTORICAL removed Fastify baseline: devices/relayInternal.ts:458",
+    "sampleParams": {
+      "commandId": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/internal/relay/transfers/:transferId/metadata",
+    "domain": "devices",
+    "authMode": "open-own-gate",
+    "closedDevAuthed": false,
+    "ownGate": "relay-token",
+    "source": "HISTORICAL removed Fastify baseline: devices/relayInternal.ts:565",
+    "sampleParams": {
+      "transferId": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/internal/relay/transfers/:transferId/progress",
+    "domain": "devices",
+    "authMode": "open-own-gate",
+    "closedDevAuthed": false,
+    "ownGate": "relay-token",
+    "source": "HISTORICAL removed Fastify baseline: devices/relayInternal.ts:623",
+    "sampleParams": {
+      "transferId": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/feed",
+    "domain": "feed",
+    "authMode": "public-GET",
+    "closedDevAuthed": true,
+    "ownGate": null,
+    "source": "feed/routes.ts:43",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/feed/posts",
+    "domain": "feed",
+    "authMode": "open-exact-POST",
+    "closedDevAuthed": false,
+    "ownGate": "bearer",
+    "source": "feed/create.ts:135",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/feed/ingest",
+    "domain": "feed",
+    "authMode": "open-exact-POST",
+    "closedDevAuthed": false,
+    "ownGate": "bearer",
+    "source": "feed/ingest.ts:449",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/feed/posts/:id",
+    "domain": "feed",
+    "authMode": "public-GET",
+    "closedDevAuthed": true,
+    "ownGate": null,
+    "source": "feed/detail.ts:22",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/feed/posts/:id/media",
+    "domain": "feed",
+    "authMode": "public-GET",
+    "closedDevAuthed": true,
+    "ownGate": null,
+    "source": "feed/detail.ts:40",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/feed/posts/:id/poster",
+    "domain": "feed",
+    "authMode": "public-GET",
+    "closedDevAuthed": true,
+    "ownGate": null,
+    "source": "feed/detail.ts:53",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "PATCH",
+    "path": "/feed/posts/:id",
+    "domain": "feed",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "feed/mutate.ts:33",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "DELETE",
+    "path": "/feed/posts/:id",
+    "domain": "feed",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "feed/mutate.ts:107",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/feed/posts/:id/comments",
+    "domain": "feed",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "feed/comments.ts:114",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/feed/posts/:id/comments",
+    "domain": "feed",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "feed/comments.ts:163",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "DELETE",
+    "path": "/feed/comments/:id",
+    "domain": "feed",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "feed/comments.ts:255",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/feed/posts/:id/vote",
+    "domain": "feed",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "feed/vote.ts:140",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/feed/comments/:id/vote",
+    "domain": "feed",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "feed/vote.ts:194",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/feed/posts/:id/save",
+    "domain": "feed",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "feed/save.ts:14",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "DELETE",
+    "path": "/feed/posts/:id/save",
+    "domain": "feed",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "feed/save.ts:42",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/feed/events",
+    "domain": "feed",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "feed/events.ts:23",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/feed/gitverse/parse",
+    "domain": "feed",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "feed/gitverseParse.ts:13",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/feed/media",
+    "domain": "feed",
+    "authMode": "open-exact-POST",
+    "closedDevAuthed": false,
+    "ownGate": "bearer",
+    "source": "feed/media.ts:110",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/feed/posts/:id/images/:fileId",
+    "domain": "feed",
+    "authMode": "public-GET",
+    "closedDevAuthed": true,
+    "ownGate": null,
+    "source": "feed/images.ts:108",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "fileId": "22222222-2222-4222-8222-222222222222"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/feed/posts/:id/images",
+    "domain": "feed",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "feed/images.ts:54",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/generations/health",
+    "domain": "generations",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "generations/health.ts:74",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/scans",
+    "domain": "generations",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "generations/scans.ts:49",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/scans/:id/photos",
+    "domain": "generations",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "generations/scans.ts:59",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/scans/:id/manifest",
+    "domain": "generations",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "generations/scans.ts:96",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/scans/:id/start",
+    "domain": "generations",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "generations/scans.ts:177",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/generations/:id",
+    "domain": "generations",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "generations/detail.ts:13",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/concepts",
+    "domain": "generations",
+    "authMode": "public-GET-always",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "generations/concepts.ts:406",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/concepts/:id/preview",
+    "domain": "generations",
+    "authMode": "public-GET-always",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "generations/concepts.ts:492",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/generations/concepts",
+    "domain": "generations",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "generations/concepts.ts:496",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/generations",
+    "domain": "generations",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "generations/list.ts:14",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/generations/:id/catalog-draft",
+    "domain": "generations",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "generations/catalog-draft.ts:152",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/generations/:id/preview",
+    "domain": "generations",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "generations/asset.ts:109",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/generations/:id/artifact",
+    "domain": "generations",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "generations/asset.ts:112",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/generations/:id/preview/:angle",
+    "domain": "generations",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "generations/asset.ts:117",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "angle": "front"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/generations",
+    "domain": "generations",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "generations/create.ts:301",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/ideas/:id/vote",
+    "domain": "ideas",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "ideas/vote.ts:13",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/ideas/mine",
+    "domain": "ideas",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "ideas/mine.ts:37",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/ideas/:id/moderate",
+    "domain": "ideas",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "ideas/moderate.ts:35",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/ideas/similar",
+    "domain": "ideas",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "ideas/similar.ts:21",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/ideas",
+    "domain": "ideas",
+    "authMode": "public-GET",
+    "closedDevAuthed": true,
+    "ownGate": null,
+    "source": "ideas/list.ts:63",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/ideas/top",
+    "domain": "ideas",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "ideas/top.ts:42",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/ideas",
+    "domain": "ideas",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "ideas/create.ts:31",
+    "sampleParams": {}
+  },
+  {
+    "method": "PATCH",
+    "path": "/ideas/:id/status",
+    "domain": "ideas",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "ideas/status.ts:35",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/ideas/:id",
+    "domain": "ideas",
+    "authMode": "public-GET",
+    "closedDevAuthed": true,
+    "ownGate": null,
+    "source": "ideas/detail.ts:21",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/ideas/enrich",
+    "domain": "ideas",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "ideas/enrich.ts:25",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/ideas/:id/comments",
+    "domain": "ideas",
+    "authMode": "public-GET",
+    "closedDevAuthed": true,
+    "ownGate": null,
+    "source": "ideas/comments.ts:31",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/ideas/:id/comments",
+    "domain": "ideas",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "ideas/comments.ts:66",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/me/import-connections",
+    "domain": "import",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "import/cults3d.route.ts:16",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/me/import-connections/:id/models",
+    "domain": "import",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "import/cults3d.route.ts:43",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/me/import-connections",
+    "domain": "import",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "import/ownership.route.ts:15",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/me/import-connections/:id/challenge",
+    "domain": "import",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "import/ownership.route.ts:24",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/me/import-connections/:id/verify",
+    "domain": "import",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "import/ownership.route.ts:44",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/me/imports/jobs",
+    "domain": "imports",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "imports/route.ts:29",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/me/imports/jobs",
+    "domain": "imports",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "imports/route.ts:57",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/me/imports/jobs/:id",
+    "domain": "imports",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "imports/route.ts:69",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/makers/feed",
+    "domain": "makers",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "makers/feed.ts:38",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/users/:username/follow",
+    "domain": "makers",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "makers/follow.ts:10",
+    "sampleParams": {
+      "username": "testuser"
+    }
+  },
+  {
+    "method": "DELETE",
+    "path": "/users/:username/follow",
+    "domain": "makers",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "makers/follow.ts:30",
+    "sampleParams": {
+      "username": "testuser"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/me/maker-profile",
+    "domain": "makers",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "makers/profile.ts:197",
+    "sampleParams": {}
+  },
+  {
+    "method": "PUT",
+    "path": "/me/maker-profile",
+    "domain": "makers",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "makers/profile.ts:214",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/makers/nearby",
+    "domain": "makers",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "makers/nearby.ts:49",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/makes/:id/repost",
+    "domain": "makes",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "makes/repost.ts:13",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/makes/:id/view",
+    "domain": "makes",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "makes/view.ts:15",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/makes/:id/report",
+    "domain": "makes",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "makes/report.ts:28",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/makes/:makeId/photos/:photoId",
+    "domain": "makes",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "makes/photos.ts:40",
+    "sampleParams": {
+      "makeId": "11111111-1111-4111-8111-111111111111",
+      "photoId": "22222222-2222-4222-8222-222222222222"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/models/:id/makes/leaderboard",
+    "domain": "makes",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "makes/leaderboard.ts:42",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/makes/:id/vote",
+    "domain": "makes",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "makes/vote.ts:54",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/makes",
+    "domain": "makes",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "makes/create.ts:89",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/makes",
+    "domain": "makes",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "makes/list.ts:49",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/makes/:id/comments",
+    "domain": "makes",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "makes/comments.ts:78",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/makes/:id/comments",
+    "domain": "makes",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "makes/comments.ts:119",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/makes/mine",
+    "domain": "makes",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "makes/mine.ts:38",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/makes/:id",
+    "domain": "makes",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "makes/detail.ts:53",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/me/become-master",
+    "domain": "master",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "master/profile.ts:44",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/me/master",
+    "domain": "master",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "master/profile.ts:59",
+    "sampleParams": {}
+  },
+  {
+    "method": "PATCH",
+    "path": "/me/master-profile",
+    "domain": "master",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "master/profile.ts:73",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/masters/:userId",
+    "domain": "master",
+    "authMode": "public-GET",
+    "closedDevAuthed": true,
+    "ownGate": null,
+    "source": "master/profile.ts:120",
+    "sampleParams": {
+      "userId": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/master-equipment",
+    "domain": "masterEquipment",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "masterEquipment/routes.ts:85",
+    "sampleParams": {}
+  },
+  {
+    "method": "PATCH",
+    "path": "/master-equipment/:id",
+    "domain": "masterEquipment",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "masterEquipment/routes.ts:159",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "DELETE",
+    "path": "/master-equipment/:id",
+    "domain": "masterEquipment",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "masterEquipment/routes.ts:232",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/masters/:masterId/equipment",
+    "domain": "masterEquipment",
+    "authMode": "public-GET",
+    "closedDevAuthed": true,
+    "ownGate": null,
+    "source": "masterEquipment/routes.ts:254",
+    "sampleParams": {
+      "masterId": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/master-services",
+    "domain": "masterServices",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "masterServices/routes.ts:132",
+    "sampleParams": {}
+  },
+  {
+    "method": "PATCH",
+    "path": "/master-services/:id",
+    "domain": "masterServices",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "masterServices/routes.ts:242",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "DELETE",
+    "path": "/master-services/:id",
+    "domain": "masterServices",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "masterServices/routes.ts:413",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/master-services/:id",
+    "domain": "masterServices",
+    "authMode": "public-GET",
+    "closedDevAuthed": true,
+    "ownGate": null,
+    "source": "masterServices/routes.ts:432",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/masters/:masterId/services",
+    "domain": "masterServices",
+    "authMode": "public-GET",
+    "closedDevAuthed": true,
+    "ownGate": null,
+    "source": "masterServices/routes.ts:447",
+    "sampleParams": {
+      "masterId": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/models",
+    "domain": "models",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "models/upload.ts:108",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/models",
+    "domain": "models",
+    "authMode": "public-GET",
+    "closedDevAuthed": true,
+    "ownGate": null,
+    "source": "models/list.ts:442",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/models/:id",
+    "domain": "models",
+    "authMode": "public-GET",
+    "closedDevAuthed": true,
+    "ownGate": null,
+    "source": "models/detail.ts:60",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/models/:id/preview.glb",
+    "domain": "models",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "models/asset.ts:115",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/models/:id/thumb.webp",
+    "domain": "models",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "models/asset.ts:118",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/models/:id/preview.mobile.glb",
+    "domain": "models",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "models/asset.ts:121",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/models/:id/download.3mf",
+    "domain": "models",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "models/download.ts:63",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/models/:id/download.stl",
+    "domain": "models",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "models/download.ts:161",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/models/:id/files/:role/download",
+    "domain": "models",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "models/download.ts:233",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "role": "aux"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/models/:id/description-images",
+    "domain": "models",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "models/descriptionimage.ts:92",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/models/:id/description-images/:fileId",
+    "domain": "models",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "models/descriptionimage.ts:149",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "fileId": "22222222-2222-4222-8222-222222222222"
+    }
+  },
+  {
+    "method": "PATCH",
+    "path": "/models/:id",
+    "domain": "models",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "models/mutate.ts:49",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "DELETE",
+    "path": "/models/:id",
+    "domain": "models",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "models/mutate.ts:256",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/models/:id/files",
+    "domain": "models",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "models/files.ts:81",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "DELETE",
+    "path": "/models/:id/files/:fileId",
+    "domain": "models",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "models/files.ts:185",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "fileId": "22222222-2222-4222-8222-222222222222"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/models/:id/tree",
+    "domain": "models",
+    "authMode": "public-GET",
+    "closedDevAuthed": true,
+    "ownGate": null,
+    "source": "models/repository.ts:189",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/models/:id/readme",
+    "domain": "models",
+    "authMode": "public-GET",
+    "closedDevAuthed": true,
+    "ownGate": null,
+    "source": "models/repository.ts:221",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/models/:id/history",
+    "domain": "models",
+    "authMode": "public-GET",
+    "closedDevAuthed": true,
+    "ownGate": null,
+    "source": "models/repository.ts:235",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/models/:id/fork",
+    "domain": "models",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "models/repository.ts:296",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/models/:id/manifest",
+    "domain": "models",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "models/manifest.route.ts:50",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/models/:id/featured",
+    "domain": "models",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "models/featured.ts:32",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/models/:id/vote",
+    "domain": "models",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "models/vote.ts:24",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/models/:id/comments",
+    "domain": "models",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "models/comments.ts:75",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/models/:id/comments",
+    "domain": "models",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "models/comments.ts:102",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "DELETE",
+    "path": "/models/:id/comments/:commentId",
+    "domain": "models",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "models/comments.ts:162",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "commentId": "22222222-2222-4222-8222-222222222222"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/models/:id/build-guide",
+    "domain": "models",
+    "authMode": "public-GET",
+    "closedDevAuthed": true,
+    "ownGate": null,
+    "source": "models/buildGuide.route.ts:114",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/models/:id/build-guide/steps",
+    "domain": "models",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "models/buildGuide.route.ts:158",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "PATCH",
+    "path": "/models/:id/build-guide/steps/:stepId",
+    "domain": "models",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "models/buildGuide.route.ts:201",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "stepId": "22222222-2222-4222-8222-222222222222"
+    }
+  },
+  {
+    "method": "DELETE",
+    "path": "/models/:id/build-guide/steps/:stepId",
+    "domain": "models",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "models/buildGuide.route.ts:253",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "stepId": "22222222-2222-4222-8222-222222222222"
+    }
+  },
+  {
+    "method": "PUT",
+    "path": "/models/:id/build-guide/steps/reorder",
+    "domain": "models",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "models/buildGuide.route.ts:284",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/models/:id/build-guide/steps/:stepId/photos",
+    "domain": "models",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "models/buildGuide.route.ts:327",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "stepId": "22222222-2222-4222-8222-222222222222"
+    }
+  },
+  {
+    "method": "DELETE",
+    "path": "/models/:id/build-guide/steps/:stepId/photos/:photoId",
+    "domain": "models",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "models/buildGuide.route.ts:394",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "stepId": "22222222-2222-4222-8222-222222222222",
+      "photoId": "22222222-2222-4222-8222-222222222222"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/models/:id/slice",
+    "domain": "models",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "models/slicing.route.ts:278",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/slice-jobs/:jobId",
+    "domain": "models",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "models/slicing.route.ts:596",
+    "sampleParams": {
+      "jobId": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/models/:id/report",
+    "domain": "models",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "models/report.ts:25",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/models/:id/reports/:reportId/resolve",
+    "domain": "models",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "models/reportResolve.ts:39",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "reportId": "22222222-2222-4222-8222-222222222222"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/tags",
+    "domain": "models",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "models/tags.ts:66",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/users/:id/ban",
+    "domain": "moderation",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "moderation/banUser.ts:37",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/orders",
+    "domain": "orders",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "orders/routes.ts:12",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/orders/:id",
+    "domain": "orders",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "orders/routes.ts:36",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "PATCH",
+    "path": "/orders/:id/status",
+    "domain": "orders",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "orders/routes.ts:48",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/communities/:id/claim-owner",
+    "domain": "organizations",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "organizations/claimOwner.ts:34",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/vendor-claims",
+    "domain": "organizations",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "organizations/claims.ts:34",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/vendor-claims/mine",
+    "domain": "organizations",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "organizations/claims.ts:79",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/vendor-claims",
+    "domain": "organizations",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "organizations/claims.ts:93",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/vendor-claims/:id/verify",
+    "domain": "organizations",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "organizations/review.ts:21",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/vendor-claims/:id/revoke",
+    "domain": "organizations",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "organizations/review.ts:86",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/community-firmware",
+    "domain": "printers",
+    "authMode": "public-GET",
+    "closedDevAuthed": true,
+    "ownGate": null,
+    "source": "printers/communityFirmware.route.ts:61",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/community-firmware",
+    "domain": "printers",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "printers/communityFirmware.route.ts:109",
+    "sampleParams": {}
+  },
+  {
+    "method": "PATCH",
+    "path": "/community-firmware/:id",
+    "domain": "printers",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "printers/communityFirmware.route.ts:153",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "DELETE",
+    "path": "/community-firmware/:id",
+    "domain": "printers",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "printers/communityFirmware.route.ts:234",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/printer-connect",
+    "domain": "printers",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "printers/connect.route.ts:78",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/printers/identify",
+    "domain": "printers",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "printers/connect.route.ts:86",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/me/connectors/prusa",
+    "domain": "printers",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "printers/prusaConnect.route.ts:17",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/me/connectors/prusa/sync",
+    "domain": "printers",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "printers/prusaConnect.route.ts:39",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/me/connectors/prusa",
+    "domain": "printers",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "printers/prusaConnect.route.ts:60",
+    "sampleParams": {}
+  },
+  {
+    "method": "DELETE",
+    "path": "/me/connectors/prusa",
+    "domain": "printers",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "printers/prusaConnect.route.ts:73",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/research/printers",
+    "domain": "printers",
+    "authMode": "open-own-gate",
+    "closedDevAuthed": false,
+    "ownGate": "research-key",
+    "source": "printers/research.route.ts:94",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/research/printers/:slug",
+    "domain": "printers",
+    "authMode": "open-own-gate",
+    "closedDevAuthed": false,
+    "ownGate": "research-key",
+    "source": "printers/research.route.ts:297",
+    "sampleParams": {
+      "slug": "prusa-mk4"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/research/printers/media/presign",
+    "domain": "printers",
+    "authMode": "open-own-gate",
+    "closedDevAuthed": false,
+    "ownGate": "research-key",
+    "source": "printers/research.route.ts:312",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/research/media/*",
+    "domain": "printers",
+    "authMode": "open-own-gate",
+    "closedDevAuthed": false,
+    "ownGate": "research-key",
+    "source": "printers/research.route.ts:340",
+    "sampleParams": {
+      "*": "x.png"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/printers/:id/report",
+    "domain": "printers",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "printers/reports.route.ts:76",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/printers/reports",
+    "domain": "printers",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "printers/reports.route.ts:131",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/printers/reports/:reportId/reject",
+    "domain": "printers",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "printers/reports.route.ts:151",
+    "sampleParams": {
+      "reportId": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/printers/reports/:reportId/approve",
+    "domain": "printers",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "printers/reports.route.ts:172",
+    "sampleParams": {
+      "reportId": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/print-requests",
+    "domain": "printRequests",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "printRequests/routes.ts:37",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/print-requests/incoming",
+    "domain": "printRequests",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "printRequests/routes.ts:82",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/print-requests/mine",
+    "domain": "printRequests",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "printRequests/routes.ts:95",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/print-requests/:id",
+    "domain": "printRequests",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "printRequests/routes.ts:108",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "PATCH",
+    "path": "/print-requests/:id/status",
+    "domain": "printRequests",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "printRequests/routes.ts:124",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/me/achievements",
+    "domain": "profile",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "profile/achievements.ts:25",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/me/wardrobe/unlocks",
+    "domain": "profile",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "profile/achievements.ts:40",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/me/activation",
+    "domain": "profile",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "profile/activation.ts:121",
+    "sampleParams": {}
+  },
+  {
+    "method": "PATCH",
+    "path": "/me/activation",
+    "domain": "profile",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "profile/activation.ts:134",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/me/activation/events",
+    "domain": "profile",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "profile/activation.ts:178",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/me/printers",
+    "domain": "profile",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "profile/activation.ts:199",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/me/printers",
+    "domain": "profile",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "profile/activation.ts:278",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/me/printers/:id/compat",
+    "domain": "profile",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "profile/activation.ts:352",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "PATCH",
+    "path": "/me/printers/:id",
+    "domain": "profile",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "profile/activation.ts:441",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "DELETE",
+    "path": "/me/printers/:id",
+    "domain": "profile",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "profile/activation.ts:477",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/me/filaments",
+    "domain": "profile",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "profile/activation.ts:498",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/me/filaments",
+    "domain": "profile",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "profile/activation.ts:519",
+    "sampleParams": {}
+  },
+  {
+    "method": "PATCH",
+    "path": "/me/filaments/:id",
+    "domain": "profile",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "profile/activation.ts:529",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "DELETE",
+    "path": "/me/filaments/:id",
+    "domain": "profile",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "profile/activation.ts:571",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/me/printers/:id/live",
+    "domain": "profile",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "profile/activation.ts:585",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/me/printers/:id/commands",
+    "domain": "profile",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "profile/activation.ts:637",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/me/printers/:id/commands/:commandId",
+    "domain": "profile",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "profile/activation.ts:777",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "commandId": "22222222-2222-4222-8222-222222222222"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/me/avatar",
+    "domain": "profile",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "profile/avatar.ts:245",
+    "sampleParams": {}
+  },
+  {
+    "method": "PATCH",
+    "path": "/me/avatar",
+    "domain": "profile",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "profile/avatar.ts:258",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/me/avatar-photo",
+    "domain": "profile",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "profile/avatarphoto.ts:51",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/avatars/:userId",
+    "domain": "profile",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "profile/avatarphoto.ts:121",
+    "sampleParams": {
+      "userId": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/avatars/:userId/snapshots/:side",
+    "domain": "profile",
+    "authMode": "public-GET",
+    "closedDevAuthed": true,
+    "ownGate": null,
+    "source": "profile/avatarphoto.ts:155",
+    "sampleParams": {
+      "userId": "11111111-1111-4111-8111-111111111111",
+      "side": "front"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/avatars/:userId/snapshots/:revision/:side/:sha256.png",
+    "domain": "profile",
+    "authMode": "public-GET",
+    "closedDevAuthed": true,
+    "ownGate": null,
+    "source": "profile/avatarphoto.ts:181",
+    "sampleParams": {
+      "userId": "11111111-1111-4111-8111-111111111111",
+      "revision": "1",
+      "side": "front",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/users/:username",
+    "domain": "profile",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "profile/profile.ts:68",
+    "sampleParams": {
+      "username": "testuser"
+    }
+  },
+  {
+    "method": "PATCH",
+    "path": "/me",
+    "domain": "profile",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "profile/profile.ts:150",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/me/api-keys",
+    "domain": "publicapi",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "publicapi/keys.route.ts:21",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/me/api-keys",
+    "domain": "publicapi",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "publicapi/keys.route.ts:96",
+    "sampleParams": {}
+  },
+  {
+    "method": "DELETE",
+    "path": "/me/api-keys/:id",
+    "domain": "publicapi",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "publicapi/keys.route.ts:128",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/me/api-keys/:id/rotate",
+    "domain": "publicapi",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "publicapi/keys.route.ts:175",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/me/user-api-keys",
+    "domain": "publicapi",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "publicapi/userKeys.route.ts:23",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/me/user-api-keys",
+    "domain": "publicapi",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "publicapi/userKeys.route.ts:42",
+    "sampleParams": {}
+  },
+  {
+    "method": "DELETE",
+    "path": "/me/user-api-keys/:id",
+    "domain": "publicapi",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "publicapi/userKeys.route.ts:63",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/v0/printers",
+    "domain": "publicapi",
+    "authMode": "open-own-gate",
+    "closedDevAuthed": false,
+    "ownGate": "api-key",
+    "source": "publicapi/v0.route.ts:170",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/v0/printers/:id",
+    "domain": "publicapi",
+    "authMode": "open-own-gate",
+    "closedDevAuthed": false,
+    "ownGate": "api-key",
+    "source": "publicapi/v0.route.ts:185",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/v0/printers/:id/telemetry",
+    "domain": "publicapi",
+    "authMode": "open-own-gate",
+    "closedDevAuthed": false,
+    "ownGate": "api-key",
+    "source": "publicapi/v0.route.ts:201",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/v0/printers/:id/test-job/commands",
+    "domain": "publicapi",
+    "authMode": "open-own-gate",
+    "closedDevAuthed": false,
+    "ownGate": "api-key",
+    "source": "publicapi/v0.route.ts:239",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/v0/printers/:id/commands",
+    "domain": "publicapi",
+    "authMode": "open-own-gate",
+    "closedDevAuthed": false,
+    "ownGate": "api-key",
+    "source": "publicapi/v0.route.ts:353",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/v0/printers/:id/commands/:commandId",
+    "domain": "publicapi",
+    "authMode": "open-own-gate",
+    "closedDevAuthed": false,
+    "ownGate": "api-key",
+    "source": "publicapi/v0.route.ts:481",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "commandId": "22222222-2222-4222-8222-222222222222"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/push/vapid-public-key",
+    "domain": "push",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "push/routes.ts:28",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
+    "path": "/push/subscriptions",
+    "domain": "push",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "push/routes.ts:37",
+    "sampleParams": {}
+  },
+  {
+    "method": "DELETE",
+    "path": "/push/subscriptions",
+    "domain": "push",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "push/routes.ts:61",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/push/preferences",
+    "domain": "push",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "push/routes.ts:76",
+    "sampleParams": {}
+  },
+  {
+    "method": "PUT",
+    "path": "/push/preferences",
+    "domain": "push",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "push/routes.ts:90",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/models/_index/scan",
+    "domain": "security",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "security/honeypot.ts:15",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/seo/meta",
+    "domain": "seo",
+    "authMode": "open",
+    "closedDevAuthed": true,
+    "ownGate": null,
+    "source": "seo/meta.ts:295",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/seo/models/:id/og.webp",
+    "domain": "seo",
+    "authMode": "open",
+    "closedDevAuthed": true,
+    "ownGate": null,
+    "source": "seo/ogimage.ts:15",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/sitemap.xml",
+    "domain": "seo",
+    "authMode": "open",
+    "closedDevAuthed": true,
+    "ownGate": null,
+    "source": "seo/sitemap.ts:78",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/robots.txt",
+    "domain": "seo",
+    "authMode": "open",
+    "closedDevAuthed": true,
+    "ownGate": null,
+    "source": "seo/robots.ts:28",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/slicer-profiles",
+    "domain": "slicerProfiles",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "slicerProfiles/route.ts:56",
+    "sampleParams": {}
+  },
+  {
+    "method": "GET",
+    "path": "/slicer-profiles/:printerId/:filamentId",
+    "domain": "slicerProfiles",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "slicerProfiles/route.ts:90",
+    "sampleParams": {
+      "printerId": "11111111-1111-4111-8111-111111111111",
+      "filamentId": "22222222-2222-4222-8222-222222222222"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/slicer-profiles/:id/calibrations",
+    "domain": "slicerProfiles",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "slicerProfiles/calibrations.ts:40",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/slicer-profiles/:id/calibrations",
+    "domain": "slicerProfiles",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "slicerProfiles/calibrations.ts:171",
+    "sampleParams": {
+      "id": "11111111-1111-4111-8111-111111111111"
+    }
+  }
+]

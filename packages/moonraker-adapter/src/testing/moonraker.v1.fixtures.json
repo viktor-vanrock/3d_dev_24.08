@@ -1,0 +1,6 @@
+{
+  "happy_path": ["getState", "uploadFile", "start", "pause", "resume", "cancel"],
+  "timeout": {"expected": "unknown_outcome", "retry": "query_state_first"},
+  "duplicate_command": {"command_id": "00000000-0000-0000-0000-000000000001", "expected_rpc_calls": 1},
+  "reject": ["printer.gcode.script", "printer.emergency_stop", "printer.objects.list", "unknown.method"]
+}

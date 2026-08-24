@@ -1,0 +1,51 @@
+{
+  "user": {
+    "id": "00000000-0000-0000-0000-000000000001",
+    "reputationScore": 65
+  },
+  "events": [
+    {
+      "id": "00000000-0000-0000-0000-000000000203",
+      "points": 15,
+      "reason": "answer_accepted",
+      "subjectType": "post",
+      "subjectId": "00000000-0000-0000-0000-000000000101",
+      "createdAt": "2026-07-12T10:00:00Z",
+      "canonical": true
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000202",
+      "points": 15,
+      "reason": "answer_accepted",
+      "subjectType": "post",
+      "subjectId": "00000000-0000-0000-0000-000000000101",
+      "createdAt": "2026-07-12T11:00:00Z",
+      "canonical": false
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000201",
+      "points": 15,
+      "reason": "answer_accepted",
+      "subjectType": "post",
+      "subjectId": "00000000-0000-0000-0000-000000000102",
+      "createdAt": "2026-07-12T12:00:00Z",
+      "canonical": true
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000204",
+      "points": 10,
+      "reason": "post_upvoted",
+      "subjectType": "post",
+      "subjectId": "00000000-0000-0000-0000-000000000101",
+      "createdAt": "2026-07-12T13:00:00Z"
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000205",
+      "points": 10,
+      "reason": "post_upvoted",
+      "subjectType": "post",
+      "subjectId": "00000000-0000-0000-0000-000000000101",
+      "createdAt": "2026-07-12T14:00:00Z"
+    }
+  ]
+}

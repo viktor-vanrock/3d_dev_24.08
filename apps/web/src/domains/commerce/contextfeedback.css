@@ -1,0 +1,88 @@
+/* Связующий слой «Идей» (MF-694, docs/design/feedback.entrypoints.md) — дверь входа §1,
+   контекст-чип §3.2, TypeSelect §4.1, ProblemTag переиспользует .uiChip как есть (§4.2). */
+
+/* Дверь наследует .modelGlassBtn (см. market/model.css) — здесь только gap-подгонка иконки. */
+.cfbDoor {
+  gap: 8px;
+}
+
+/* Обёртка для нескольких действий в одном слоте EmptyState.action (напр. «В каталог» + дверь). */
+.cfbEmptyActions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.cfbContextChip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 6px 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.cfbContextChipLabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.cfbContextChipLabel:disabled {
+  cursor: default;
+}
+
+.cfbContextChipDismiss {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--touch-target-min);
+  height: var(--touch-target-min);
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: none;
+  background: none;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+.cfbTypeSelect {
+  display: grid;
+  gap: 6px;
+}
+
+.cfbTypeSelectLabel,
+.cfbTypeSelectHint {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.cfbTypeSelectControl {
+  width: 100%;
+  min-height: var(--ref-touch-target-min, 48px);
+  padding: 0 44px 0 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--control-radius);
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.cfbTypeSelectControl:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}

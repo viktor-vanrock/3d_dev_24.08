@@ -1,0 +1,1600 @@
+/*
+  UI-кит (эпик MF-40, сид) — переиспользуемые примитивы визуального языка design/readme.md:
+  стеклянные карточки с градиентом+зерном, карточки-действия с круглой иконкой-аффордансом,
+  статус-пилюли («яркость=важность»), чипы-подсказки, двухтоновые Unbounded-заголовки.
+  Метрики — из design/metrics.md (радиус 28, пилюли 999, чип ~50px и т.д.),
+  на узких экранах масштабируются clamp()'ом.
+*/
+
+/* --- Стеклянная карточка (градиент тёмный угол → чуть зеленее + тонкая обводка) --- */
+.uiCard {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--card-radius);
+  border: 1px solid var(--border);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--surface) 72%, transparent) 0%,
+    color-mix(in srgb, var(--surface) 58%, var(--accent) 7%) 100%
+  );
+  box-shadow: 0 12px 40px var(--shadow);
+  /* Стекло как в референсе: фон просвечивает и размывается, сверху — тонкий блик */
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+.uiCard::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.07) 0%, transparent 38%);
+}
+
+.uiCardGrain {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* --- Крупная карточка-действие (референс: нижний ряд 631×237, аспект 2.67, радиус 28) --- */
+.uiActionCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  min-height: clamp(88px, 16vw, 140px);
+  padding: clamp(16px, 3vw, 28px) clamp(18px, 3.5vw, 32px);
+  border-radius: var(--card-radius);
+  border: 1px solid var(--border);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--surface) 70%, transparent) 0%,
+    color-mix(in srgb, var(--surface) 56%, var(--accent) 6%) 100%
+  );
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  text-decoration: none;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.uiActionCard[data-variant="primary"] {
+  background: var(--accent);
+  border-color: transparent;
+  color: var(--accent-contrast);
+}
+
+/* --- data-selected/data-disabled (MF-903, printer.wizard.md §3.1): плитка уровня мастера
+   «добавить принтер» расширяет ActionCard, не заводит новый компонент. Заливка морфит, не
+   мгновенно переключается (motion.md §7 — тот же паттерн, что тумблер/сегмент-выбор). --- */
+.uiActionCard {
+  transition:
+    background-color var(--dur-toggle) var(--ease-spring),
+    border-color var(--dur-toggle) var(--ease-spring),
+    color var(--dur-toggle) var(--ease-spring),
+    opacity var(--dur-toggle) var(--ease-out);
+}
+
+.uiActionCard[data-selected="true"] {
+  background: var(--accent);
+  border-color: transparent;
+  color: var(--accent-contrast);
+}
+
+.uiActionCard[data-selected="true"] .uiActionCardSub {
+  color: inherit;
+  opacity: 0.82;
+}
+
+.uiActionCard[data-selected="true"] .uiActionCardIcon {
+  background: color-mix(in srgb, var(--accent-contrast) 22%, transparent);
+  color: var(--accent-contrast);
+}
+
+.uiActionCard[data-disabled="true"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .uiActionCard {
+    transition: none;
+  }
+  .uiActionCardIcon {
+    transition: none;
+  }
+}
+
+.uiActionCardTitle {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(15px, 2.4vw, 20px);
+  line-height: 1.25;
+}
+
+.uiActionCardSub {
+  margin-top: 4px;
+  font-size: clamp(12px, 1.8vw, 14px);
+  opacity: 0.66;
+}
+
+.uiActionCard[data-variant="primary"] .uiActionCardSub {
+  color: inherit;
+  opacity: 1;
+}
+
+/* Круглая иконка-аффорданс справа (референс ≈64px, кликабельна вся карточка) */
+.uiActionCardIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: clamp(44px, 6vw, 64px);
+  height: clamp(44px, 6vw, 64px);
+  border-radius: 50%;
+  border: 1px solid var(--card-action-border);
+  background: color-mix(in srgb, currentcolor 12%, transparent);
+  transition:
+    background-color var(--dur-toggle) var(--ease-out),
+    border-color var(--dur-toggle) var(--ease-out);
+}
+
+/* У карточки-действия граница вложенного аффорданса остаётся видимой: на мыши она темнеет
+   вместе с границей карточки. Это не меняет размеры/раскладку, а на touch остаётся :active
+   из .pressable (tokens.css). */
+@media (hover: hover) and (pointer: fine) {
+  .uiActionCard:not([data-disabled="true"]):hover {
+    border-color: var(--card-action-border-hover);
+  }
+
+  .uiActionCard:not([data-disabled="true"]):hover .uiActionCardIcon {
+    border-color: var(--card-action-border-hover);
+  }
+}
+
+/* --- Button из Figma UI-kit: все варианты — капсулы. Видимая геометрия не раздувается
+   системным touch-target: у компактных 42/36px-вариантов доступная область расширяется
+   прозрачным ::after, поэтому макет и pointer accessibility не спорят друг с другом. --- */
+.uiButton {
+  --ui-control-height: var(--control-height-m);
+  --ui-control-padding: var(--control-padding-m);
+  --ui-control-font: var(--control-font-m);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  position: relative;
+  height: var(--ui-control-height);
+  padding: 0 var(--ui-control-padding);
+  border-radius: var(--button-radius);
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: var(--ui-control-font);
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity var(--dur-toggle) var(--ease-out);
+}
+
+.uiButton::after,
+.uiChip::after,
+.uiIconButton::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(100%, var(--touch-target-min));
+  height: max(100%, var(--touch-target-min));
+  transform: translate(-50%, -50%);
+  border-radius: inherit;
+}
+
+.uiButton[data-size="l"],
+.uiIconButton[data-size="l"],
+.uiChip[data-size="l"],
+.uiField[data-size="l"] {
+  --ui-control-height: var(--control-height-l);
+  --ui-control-padding: var(--control-padding-l);
+  --ui-control-font: var(--control-font-l);
+}
+
+.uiButton[data-size="m"],
+.uiIconButton[data-size="m"],
+.uiChip[data-size="m"],
+.uiField[data-size="m"] {
+  --ui-control-height: var(--control-height-m);
+  --ui-control-padding: var(--control-padding-m);
+  --ui-control-font: var(--control-font-m);
+}
+
+.uiButton[data-size="s"],
+.uiIconButton[data-size="s"],
+.uiChip[data-size="s"],
+.uiField[data-size="s"] {
+  --ui-control-height: var(--control-height-s);
+  --ui-control-padding: var(--control-padding-s);
+  --ui-control-font: var(--control-font-s);
+}
+
+.uiButton[data-size="xs"],
+.uiIconButton[data-size="xs"],
+.uiChip[data-size="xs"],
+.uiField[data-size="xs"] {
+  --ui-control-height: var(--control-height-xs);
+  --ui-control-padding: var(--control-padding-xs);
+  --ui-control-font: var(--control-font-xs);
+}
+
+.uiButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .uiButton {
+    transition: none;
+  }
+}
+
+.uiButton[data-variant="primary"] {
+  justify-content: center;
+  padding-inline: var(--ui-control-padding);
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.uiButton[data-variant="secondary"] {
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+  color: var(--text);
+  font-weight: 500;
+}
+
+.uiButton[data-variant="accent"] {
+  border: 1px solid color-mix(in srgb, var(--accent) 42%, transparent);
+  background: color-mix(in srgb, var(--surface) 72%, var(--accent) 12%);
+  color: var(--accent);
+}
+
+.uiButton[data-variant="tertiary"] {
+  border: 1px solid transparent;
+  background: color-mix(in srgb, var(--surface) 48%, transparent);
+  color: var(--text);
+  font-weight: 500;
+}
+
+.uiButton[data-variant="translucent"] {
+  border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  background: color-mix(in srgb, var(--surface) 46%, transparent);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  color: var(--text);
+  font-weight: 500;
+}
+
+.uiButton[data-variant="transparent"],
+.uiButton[data-variant="ghost"] {
+  justify-content: flex-start;
+  background: transparent;
+  color: var(--text-dim);
+  font-weight: 500;
+}
+
+.uiButton[data-variant="danger"] {
+  padding: 0 16px;
+  border: 1px solid color-mix(in srgb, var(--accent-danger) 40%, transparent);
+  background: color-mix(in srgb, var(--accent-danger) 16%, transparent);
+  color: var(--accent-danger);
+  font-weight: 500;
+}
+
+.uiButtonIconPlain {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Спиннер `loading` (§Button): та же круглая/плоская обёртка иконки-аффорданса, стрелка/иконка
+   кросс-фейдится в кольцо на месте — без прыжка ширины кнопки. Вращение — единственный ambient-
+   луп на UI-элементе действия (не жест пользователя), поэтому длительность не токенизирована
+   (см. motion.md § «Осознанно НЕ токенизируем»), как и прочие ambient-циклы. */
+.uiButtonSpinner {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, currentcolor 30%, transparent);
+  border-top-color: currentcolor;
+  animation: uiButtonSpin 0.7s linear infinite;
+}
+
+@keyframes uiButtonSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .uiButtonSpinner {
+    animation-duration: 1.4s;
+  }
+}
+
+/* --- Поле ввода / группа полей (тач-высота из component-тира токенов) --- */
+.uiInput {
+  --ui-control-height: var(--control-height-m);
+  --ui-control-padding: var(--control-padding-m);
+  --ui-control-font: var(--control-font-m);
+  min-height: var(--ui-control-height);
+  padding: 10px var(--ui-control-padding);
+  border-radius: var(--input-radius);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: var(--ui-control-font);
+  transition:
+    border-color var(--dur-toggle) var(--ease-out),
+    background-color var(--dur-toggle) var(--ease-out),
+    box-shadow var(--dur-toggle) var(--ease-out);
+}
+
+.uiInput[data-size="l"] {
+  --ui-control-height: var(--control-height-l);
+  --ui-control-padding: var(--control-padding-l);
+  --ui-control-font: var(--control-font-l);
+}
+
+.uiInput[data-size="s"] {
+  --ui-control-height: var(--control-height-s);
+  --ui-control-padding: var(--control-padding-s);
+  --ui-control-font: var(--control-font-s);
+}
+
+.uiInput[data-size="xs"] {
+  --ui-control-height: var(--control-height-xs);
+  --ui-control-padding: var(--control-padding-xs);
+  --ui-control-font: var(--control-font-xs);
+}
+
+.uiInput:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--border) 62%, var(--text));
+}
+
+.uiInput:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+/* Text Input / Big Field / Select из Figma UI-kit. Label и hint являются частью одного
+   примитива, поэтому состояния hover/focus/error больше не собираются вручную на страницах. */
+.uiField {
+  --ui-control-height: var(--control-height-m);
+  --ui-control-padding: var(--control-padding-m);
+  --ui-control-font: var(--control-font-m);
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+  color: var(--text);
+}
+
+.uiFieldLabel {
+  font-size: 12px;
+  line-height: 1.2;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.uiFieldControl {
+  display: flex;
+  align-items: center;
+  min-height: var(--ui-control-height);
+  padding-inline: var(--ui-control-padding);
+  border: 1px solid var(--border);
+  border-radius: var(--input-radius);
+  background: color-mix(in srgb, var(--surface) 58%, var(--bg));
+  color: var(--text);
+  transition:
+    border-color var(--dur-toggle) var(--ease-out),
+    background-color var(--dur-toggle) var(--ease-out),
+    box-shadow var(--dur-toggle) var(--ease-out);
+}
+
+.uiField:hover .uiFieldControl {
+  border-color: color-mix(in srgb, var(--border) 60%, var(--text));
+}
+
+.uiField:focus-within .uiFieldControl {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--surface) 72%, var(--bg));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.uiField[data-error] .uiFieldControl {
+  border-color: var(--accent-danger);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-danger) 12%, transparent);
+}
+
+.uiFieldInput {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  min-height: calc(var(--ui-control-height) - 2px);
+  padding: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: var(--ui-control-font);
+  line-height: 1.35;
+}
+
+.uiFieldInput:focus-visible {
+  outline: none;
+}
+
+.uiFieldInput::placeholder {
+  color: var(--text-dim);
+  opacity: 0.9;
+}
+
+.uiFieldInput:disabled {
+  cursor: not-allowed;
+}
+
+.uiField:has(.uiFieldInput:disabled) {
+  opacity: 0.5;
+}
+
+.uiFieldAdornment {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  color: var(--text-dim);
+}
+
+.uiFieldAdornment:first-child {
+  margin-right: 10px;
+}
+
+.uiFieldAdornment:last-child {
+  margin-left: 10px;
+}
+
+.uiFieldAdornment--trailing {
+  /* В Figma trailing-символ не прилипает к правой границе: оставляем визуальный воздух
+     внутри уже существующего control-padding, не раздвигая само поле. */
+  margin-right: 7px;
+}
+
+.uiFieldMessage {
+  min-height: 16px;
+  color: var(--text-dim);
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.uiField[data-error] .uiFieldMessage {
+  color: var(--accent-danger);
+}
+
+.uiField--big .uiFieldControl {
+  align-items: flex-start;
+  min-height: 120px;
+  padding-block: 14px;
+}
+
+.uiFieldTextarea {
+  min-height: 90px;
+  resize: none;
+}
+
+.uiField--select .uiFieldControl {
+  position: relative;
+}
+
+.uiFieldSelect {
+  appearance: none;
+  padding-right: 30px;
+  cursor: pointer;
+}
+
+.uiFieldSelectChevron {
+  position: absolute;
+  right: var(--ui-control-padding);
+  color: var(--text-dim);
+  pointer-events: none;
+}
+
+.uiFieldGroup {
+  display: flex;
+  align-items: stretch;
+  min-height: var(--input-height);
+  border-radius: var(--input-radius);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  overflow: hidden;
+}
+
+.uiFieldGroup > input,
+.uiFieldGroup > select {
+  padding: 10px 12px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  outline: none;
+}
+
+.uiFieldGroup > input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* outline:none выше снят с самих input/select (рамка группы визуально их обрамляет) — фокус
+   с клавиатуры не должен пропадать, поэтому подсвечиваем всю группу (WCAG 2.4.7). */
+.uiFieldGroup:focus-within {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.uiFieldGroup > select {
+  border-left: 1px solid var(--border);
+  padding-left: 8px;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+/* --- Круглая icon-кнопка (back/close/bell — самостоятельный нав-элемент) --- */
+.uiIconButton {
+  --ui-control-height: var(--control-height-m);
+  --ui-control-padding: var(--control-padding-m);
+  --ui-control-font: var(--control-font-m);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: var(--ui-control-height);
+  height: var(--ui-control-height);
+  flex-shrink: 0;
+  border-radius: var(--icon-button-radius);
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.uiIconButton[data-variant="primary"] {
+  border-color: transparent;
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.uiIconButton[data-variant="secondary"] {
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+}
+
+.uiIconButton[data-variant="accent"] {
+  border-color: color-mix(in srgb, var(--accent) 42%, transparent);
+  background: color-mix(in srgb, var(--surface) 72%, var(--accent) 12%);
+  color: var(--accent);
+}
+
+.uiIconButton[data-variant="tertiary"] {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--surface) 48%, transparent);
+}
+
+.uiIconButton[data-variant="transparent"] {
+  border-color: transparent;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.uiIconButton[data-wide="true"] {
+  width: auto;
+  min-width: var(--ui-control-height);
+  border-radius: 999px;
+  padding: 0 var(--ui-control-padding);
+  gap: 8px;
+}
+
+.uiIconButtonBadge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+
+/* --- Поповер-меню (GAP-CSS docs/design/model.card.visual.md §6.3): та же формула стекла, что
+   .homePopover капсулы (home/home.css) — вынесена сюда как переиспользуемый примитив, второе
+   реальное применение — «⋯»-меню комментария. Позиционирует вызывающий (обёртка
+   position:relative вокруг триггера). --- */
+.uiPopover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: var(--z-sheet);
+  width: min(220px, calc(100vw - 32px));
+  padding: 6px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+  background: color-mix(in srgb, var(--bg-raised) 97%, transparent);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 20px 60px var(--shadow);
+  animation: uiPopoverIn 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+  transform-origin: top right;
+}
+
+.uiPopover--start {
+  right: auto;
+  left: 0;
+  transform-origin: top left;
+}
+
+@keyframes uiPopoverIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .uiPopover {
+    animation: none;
+  }
+}
+
+.uiPopoverItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: var(--touch-target-min);
+  padding: 0 10px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.uiPopoverItem[data-danger] {
+  color: var(--accent-danger);
+}
+
+@media (hover: hover) {
+  .uiPopoverItem:hover {
+    background: color-mix(in srgb, var(--text) 8%, transparent);
+  }
+}
+
+/* --- Статус-пилюля (иконка-точка + текст; цвет = статус, «яркость=важность») --- */
+.uiStatusPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  color: var(--text);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+/* Точка-индикатор — самостоятельный примитив (StatusDot) и внутренность StatusPill;
+   тон/пульс висят прямо на точке, чтобы работать и без пилюли-обёртки. */
+.uiStatusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--text-dim);
+}
+
+.uiStatusDot[data-tone="ok"] { background: var(--accent); }
+.uiStatusDot[data-tone="warn"] { background: var(--accent-warn); }
+.uiStatusDot[data-tone="danger"] { background: var(--accent-danger); }
+.uiStatusDot[data-tone="dim"] { background: var(--text-dim); }
+
+/* Раньше — flat `opacity: 0.66` на весь блок: компаундится с backdrop-blur фоном и на реально
+   отрендеренной странице даёт <3:1 вместо заявленных 4.5:1 (MF-1869, docs/audits/park.pilot.a11y.mf1588.md).
+   Текст теперь сплошной `--text-dim` (тот же токен уже проходит WCAG AA сам по себе), приглушение
+   фона/рамки не трогает цвет текста. */
+.uiStatusPill[data-tone="dim"] {
+  color: var(--text-dim);
+  background: color-mix(in srgb, var(--surface) 45%, transparent);
+  border-color: color-mix(in srgb, var(--border) 70%, transparent);
+}
+.uiStatusPill[data-tone="warn"] { color: var(--accent-warn); border-color: color-mix(in srgb, var(--accent-warn) 40%, transparent); }
+.uiStatusPill[data-tone="danger"] { color: var(--accent-danger); border-color: color-mix(in srgb, var(--accent-danger) 40%, transparent); }
+
+/* Рампа яркости tone="ok" level 1..4 (docs/design/ideas.md §6, «яркость=важность»): нарастание
+   мятной яркости к «готово» (level 4 — пик + мягкое свечение), а не бинарный ok/не-ok. */
+.uiStatusDot[data-tone="ok"][data-level="1"] { opacity: 0.55; }
+.uiStatusDot[data-tone="ok"][data-level="2"] { opacity: 0.72; }
+.uiStatusDot[data-tone="ok"][data-level="3"] { opacity: 0.88; }
+.uiStatusDot[data-tone="ok"][data-level="4"] {
+  opacity: 1;
+  box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+
+.uiStatusPill[data-tone="ok"][data-level] { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 30%, transparent); }
+.uiStatusPill[data-tone="ok"][data-level="1"] { opacity: 0.68; }
+.uiStatusPill[data-tone="ok"][data-level="2"] { opacity: 0.82; }
+/* Светлая тема даёт на level=2 только 3.51:1 (< WCAG AA 4.5:1, axe на /printers/creality.k1-max,
+   MF-1769) — форест-акцент на кремовом фоне темнее мяты тёмной темы, нужный запас непрозрачности
+   другой. Тёмная тема на 0.82 уже проходит (не трогаем), поэтому переопределение только здесь. */
+[data-theme="light"] .uiStatusPill[data-tone="ok"][data-level="2"] { opacity: 0.98; }
+.uiStatusPill[data-tone="ok"][data-level="3"] { opacity: 0.94; }
+.uiStatusPill[data-tone="ok"][data-level="4"] {
+  opacity: 1;
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+/* Пульс — только для «требует внимания» (design/status-alerts.md) */
+.uiStatusDot[data-pulse="true"] {
+  animation: uiPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes uiPulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, currentcolor 45%, transparent); }
+  50% { box-shadow: 0 0 0 6px transparent; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .uiStatusDot[data-pulse="true"] { animation: none; }
+}
+
+/* --- Агент-бейдж «в работе агентом» (docs/design/feedback.entrypoints.md §7): авторство —
+   отдельная ось от StatusPill/Chip, нейтральное тёмное стекло, без tone/level (единственный вид). */
+.uiAgentBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 45%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--text-dim);
+  font-size: 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* --- FlagshipBadge `support_level="custom"` (docs/design/printer.face.md §1.2) — инверсия
+   заливки вместо текста на прозрачности, тёмный текст на мятном фоне, без пульса (терминал
+   жизненного цикла, не тревога). */
+.uiFlagshipBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--bg);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* --- Chips из Figma UI-kit: капсула 42px в `s`, без автоматически дорисованной галочки.
+   Если продукту нужна иконка/галочка, она передаётся контентом, а не меняет базовый primitive. */
+.uiChip {
+  --ui-control-height: var(--control-height-s);
+  --ui-control-padding: var(--control-padding-s);
+  --ui-control-font: var(--control-font-s);
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  gap: 8px;
+  height: var(--ui-control-height);
+  padding: 0 var(--ui-control-padding);
+  border-radius: var(--chip-radius);
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: var(--ui-control-font);
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  /* Заливка проявляется морфом, не мгновенно (motion.md §7 — сегмент-выбор/сортировка) */
+  transition:
+    background-color var(--dur-toggle) var(--ease-spring),
+    border-color var(--dur-toggle) var(--ease-spring),
+    color var(--dur-toggle) var(--ease-spring),
+    box-shadow var(--dur-toggle) var(--ease-spring);
+}
+
+.uiChip[data-selected="true"] {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--text);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.uiChip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Текст связи остаётся в accessibility tree; плашка не ловит pointer, фиксируется под
+   контролом и не меняет раскладку. */
+.uiTooltipDescription {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.uiTooltipBubble {
+  position: fixed;
+  z-index: 80;
+  max-width: min(280px, calc(100vw - 32px));
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface) 92%, var(--bg));
+  box-shadow: 0 8px 24px var(--shadow);
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.35;
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .uiChip {
+    transition: none;
+  }
+}
+
+/* --- Футер-пилюли карточки контента (docs/design/feed.md §6.2, CardFooterActions) --- */
+.uiCardFooterActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.uiCardFooterPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--button-height);
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+  background: color-mix(in srgb, var(--surface) 45%, transparent);
+  color: var(--text-dim);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* --- Сегмент-тумблер (docs/design/motion.md §2/§7): общий якорь под скользящую заливку —
+   переиспользуется табами хедера и сортировкой каталога. */
+.uiSegmentToggle {
+  position: relative;
+  display: inline-flex;
+  gap: 2px;
+  padding: 4px;
+  border-radius: var(--tab-radius);
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--shadow) 42%, transparent);
+}
+
+/* Active item в Figma — полностью заполненная акцентная пилюля с контрастным текстом.
+   Пилюля остаётся drag-handle (segmenttoggle.tsx). */
+.uiSegmentToggleFill {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 0;
+  /* Заливка лежит под текстом. Активная option отключает pointer-events, поэтому жест всё
+     равно попадает в pill и сохраняет drag-контракт; соседние табы остаются кликабельными. */
+  z-index: 1;
+  border-radius: var(--tab-radius);
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  box-shadow: 0 5px 16px color-mix(in srgb, var(--accent) 26%, transparent);
+  transition:
+    transform var(--dur-toggle) var(--ease-spring),
+    width var(--dur-toggle) var(--ease-spring);
+  cursor: grab;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.uiSegmentToggleFill[data-dragging] {
+  /* Следует за пальцем/курсором 1:1, без пружинной задержки — задержка возвращается на
+     отпускании, когда обводка защёлкивается на итоговом табе. */
+  transition: none;
+  cursor: grabbing;
+  box-shadow: 0 7px 18px color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+/* Навигация верхнего меню использует более длинный тайминг перехода раздела и общий
+   view-transition-name, чтобы пилюля не перескакивала при полном ремаунте экрана. */
+.homeSectionTabs .uiSegmentToggleFill {
+  transition:
+    transform var(--dur-nav) var(--ease-out),
+    width var(--dur-nav) var(--ease-out);
+  view-transition-name: nav-pill;
+}
+
+::view-transition-group(nav-pill) {
+  animation-duration: var(--dur-nav);
+  animation-timing-function: var(--ease-out);
+}
+
+/* MF-1910: сама пилюля тоже несёт свой view-transition-name (вложена в site-header) —
+   без явного opacity её старый снапшот по умолчанию не гаснет (см. комментарий у
+   ::view-transition-old(site-header) в home.topbar.css) и виден рядом/поверх новой
+   обводки во время слайда. group-морф (transform/width выше) даёт нужное плавное
+   движение сам по себе — кросс-фейду старого/нового содержимого тут делать нечего. */
+::view-transition-old(nav-pill) {
+  opacity: 0;
+}
+
+.uiSegmentToggleOption {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(var(--button-height) - 8px);
+  padding: 0 18px;
+  border: none;
+  border-radius: var(--tab-radius);
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: var(--font-sans);
+  transition: color var(--dur-toggle) var(--ease-out);
+}
+
+@media (max-width: 639px) {
+  .uiSegmentToggleOption {
+    min-height: 36px;
+    padding-inline: 14px;
+  }
+}
+
+.uiSegmentToggleOption[data-active="true"] {
+  color: var(--accent-contrast);
+  font-weight: 600;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .uiSegmentToggleFill,
+  .uiSegmentToggleOption {
+    transition: none;
+  }
+}
+
+/* Тайл выбора (docs/design/motion.md §1/§7): SelectionTile (ui.tsx) даёт общее поведение
+   (press+selected+pointer-хуки) через .uiSelectionTile-маркер + pressable; вся визуальная
+   раскладка — в className варианта конкретного экрана (homePersonaTile/avedOption/…), поэтому
+   своих CSS-свойств у маркера нет — не хотим переопределять чужие font-size/border/etc. */
+
+/* --- Двухтоновый заголовок (SB Sans Display: белый + акцентное слово) ---
+   Вес 700 (было 300 light, фидбек оператора 2026-07-18: «больше жирности, уместно») —
+   главный заголовок экрана держит визуальный вес всей композиции, тонкое начертание на
+   крупном кегле терялось на фоне-луче. */
+.uiHeading {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--text);
+  font-size: clamp(26px, 4.5vw, 56px);
+}
+
+.uiHeading[data-size="md"] { font-size: clamp(20px, 3vw, 32px); }
+.uiHeadingAccent { color: var(--accent); }
+
+/* --- Eyebrow (UPPERCASE + трекинг + точки-разделители) --- */
+.uiEyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  user-select: none;
+}
+
+/* --- Метрика-плитка (docs/design/marketplace.v2.md §6.2): приглушена по умолчанию, тон
+   разгорается при важности («яркость=важность»); grid для ряда из 4 — .uiStatTileGrid. */
+.uiStatTileGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: clamp(10px, 2vw, 18px);
+}
+
+.uiStatTile {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: var(--touch-target-min);
+  padding: clamp(16px, 3vw, 24px);
+  border-radius: var(--card-radius-sm);
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  opacity: 0.7;
+  transition:
+    opacity var(--dur-toggle) var(--ease-out),
+    border-color var(--dur-toggle) var(--ease-out);
+}
+
+.uiStatTileValue {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(28px, 5vw, 40px);
+  line-height: 1.1;
+  color: var(--text);
+}
+
+.uiStatTileHint {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.uiStatTile[data-tone="dim"] { opacity: 0.66; }
+.uiStatTile[data-tone="ok"] { opacity: 1; border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
+.uiStatTile[data-tone="warn"] {
+  opacity: 1;
+  border-color: color-mix(in srgb, var(--accent-warn) 40%, transparent);
+}
+.uiStatTile[data-tone="warn"] .uiStatTileValue { color: var(--accent-warn); }
+.uiStatTile[data-tone="danger"] {
+  opacity: 1;
+  border-color: color-mix(in srgb, var(--accent-danger) 40%, transparent);
+}
+.uiStatTile[data-tone="danger"] .uiStatTileValue { color: var(--accent-danger); }
+
+/* Кликабельный вариант (GAP-CSS docs/design/model.card.visual.md §6.1) — тот же .uiStatTile,
+   просто <button> вместо <div>: сброс формы кнопки, визуал не меняется. */
+.uiStatTile.uiStatTile--clickable {
+  width: 100%;
+  align-items: flex-start;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.uiStatTile.uiStatTile--clickable:focus-visible {
+  border-color: var(--accent);
+}
+
+/* --- Виджет чек-листа активации (онбординг-примитив MF-40) --- */
+.uiChecklist {
+  padding: clamp(16px, 3vw, 24px);
+}
+
+.uiChecklistBar {
+  height: 6px;
+  margin: 12px 0 14px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--border) 70%, transparent);
+  overflow: hidden;
+}
+
+.uiChecklistBarFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  transition: width 0.4s ease;
+}
+
+.uiChecklistItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: var(--touch-target-min);
+  padding: 8px 4px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.uiChecklistItem[data-done="true"] { opacity: 0.55; text-decoration: line-through; }
+.uiChecklistItem[data-next="true"] { color: var(--accent); }
+
+.uiChecklistMark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  font-size: 13px;
+}
+
+.uiChecklistItem[data-done="true"] .uiChecklistMark {
+  background: var(--accent);
+  border-color: transparent;
+  color: var(--accent-contrast);
+}
+
+/* --- Empty-state (пассивный обучающий слой №1) --- */
+.uiEmptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: clamp(24px, 5vw, 40px);
+  text-align: center;
+  color: var(--text-dim);
+}
+
+.uiEmptyState .uiButton[data-variant="primary"] {
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.uiEmptyStateIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--surface) 85%, var(--accent) 8%);
+  color: var(--accent);
+}
+
+/* --- Coachmark (обучающий слой №3, точечная подсказка по одной) --- */
+.uiCoachmark {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px clamp(14px, 3vw, 20px);
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  background: color-mix(in srgb, var(--surface) 70%, var(--accent) 10%);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.uiCoachmarkNub {
+  position: absolute;
+  top: -6px;
+  left: 28px;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px 0 0 0;
+  background: inherit;
+  border-left: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  transform: rotate(45deg);
+}
+
+.uiCoachmarkText {
+  flex: 1;
+  min-width: 160px;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.uiCoachmarkOk {
+  min-height: var(--touch-target-min);
+  padding: 0 14px;
+  border-radius: 999px;
+  border: none;
+  font-size: 13px;
+  cursor: pointer;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  white-space: nowrap;
+}
+
+/* --- Switch: банальный on/off-тумблер (docs/design/push.notifications.md §2.1) ---
+   Визуальный трек 46×28 меньше 48px — паддинг доращивает тап-таргет до var(--touch-target-min),
+   тот же приём, что .uiIconButton. */
+.uiSwitch {
+  flex-shrink: 0;
+  width: var(--touch-target-min);
+  height: var(--touch-target-min);
+  padding: 0;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.uiSwitchTrack {
+  position: relative;
+  width: 46px;
+  height: 28px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--border) 140%, transparent);
+  transition: background var(--dur-toggle) var(--ease-spring);
+}
+
+.uiSwitch[data-checked] .uiSwitchTrack {
+  background: var(--accent);
+}
+
+.uiSwitchKnob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  box-shadow: 0 1px 3px color-mix(in srgb, black 30%, transparent);
+  transition: transform var(--dur-toggle) var(--ease-spring), background var(--dur-toggle) var(--ease-spring);
+}
+
+.uiSwitch[data-checked] .uiSwitchKnob {
+  background: var(--accent-contrast);
+  transform: translateX(18px);
+}
+
+.uiSwitch[data-pending] {
+  opacity: 0.5;
+  cursor: default;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .uiSwitchTrack,
+  .uiSwitchKnob {
+    transition: none;
+  }
+}
+
+/* --- Голосовалка идей (docs/design/ideas.md §5, components.md §Голосовалка) — compact/large/inline --- */
+.uiVoteCompact {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-width: 64px;
+  min-height: 38px;
+  padding: 0 13px;
+  border-radius: var(--pill-radius);
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+.uiVoteCompact:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.uiVoteCompact[data-voted] {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+.uiVoteCompactCount {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.uiVoteCompact[data-voted] .uiVoteCompactCount {
+  color: var(--accent);
+}
+
+.uiVoteCompact[data-bump] svg {
+  animation: uiVoteBounce var(--dur-pop) var(--ease-spring);
+}
+
+@keyframes uiVoteBounce {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.3) translateY(-2px); }
+  100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .uiVoteCompact[data-bump] svg { animation: none; }
+}
+
+/* --- large (страница идеи): крупный счётчик + широкая кнопка --- */
+.uiVoteLarge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.uiVoteLargeCount {
+  font-family: var(--font-display);
+  font-size: 48px;
+  line-height: 1;
+  color: var(--text);
+}
+
+.uiVoteLarge[data-bump] .uiVoteLargeCount {
+  animation: uiVoteBounce var(--dur-pop) var(--ease-spring);
+}
+
+.uiVoteLargeBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: var(--touch-target-min);
+  padding: 0 24px;
+  border-radius: var(--ref-radius-pill);
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  color: var(--text);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.uiVoteLargeBtn[data-voted] {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.uiVoteLargeBtn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.uiVoteLargeOwn {
+  min-height: var(--touch-target-min);
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-dim);
+  font-size: 14px;
+}
+
+/* --- inline (строка дедупа формы): счётчик + «Проголосовать/-ли» --- */
+.uiVoteInline {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.uiVoteInlineCount {
+  font-weight: 600;
+  color: var(--text);
+  min-width: 24px;
+  text-align: right;
+}
+
+.uiVoteInline[data-bump] .uiVoteInlineCount {
+  animation: uiVoteBounce var(--dur-pop) var(--ease-spring);
+}
+
+.uiVoteInlineBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--touch-target-min);
+  padding: 0 16px;
+  border-radius: var(--ref-radius-pill);
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.uiVoteInlineBtn[data-voted] {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.uiVoteInlineBtn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* --- Блок публичной причины (docs/design/ideas.md §3.3, components.md §Блок публичной причины) --- */
+.uiReasonPanel {
+  border: 1px solid var(--border);
+  border-radius: var(--ref-radius-md);
+  background: color-mix(in srgb, var(--surface) 50%, transparent);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.uiReasonPanelHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.uiReasonPanelDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--text-dim);
+}
+
+.uiReasonPanel[data-tone="danger"] .uiReasonPanelDot { background: var(--accent-danger); }
+
+.uiReasonPanelTitle {
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Заголовок остаётся --text (не тонируем в accent-danger) — тот же приём, что
+   ovlToastTitle/ovlAlert (overlay.css): тон несёт только точка/обводка, иначе на
+   некоторых участках aurora-фона коралл на полупрозрачном стекле не держит контраст AA. */
+.uiReasonPanel[data-tone="dim"] .uiReasonPanelTitle { color: var(--text-dim); }
+
+.uiReasonPanelText {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.uiReasonPanelLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-target-min);
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+  width: fit-content;
+}
+
+/* Летбокс-блюр (docs/design/feed.md §2.2/§6.3, MF-962): контейнер держит фикс. пропорции
+   вызывающей стороны (aspect-ratio/height через className), фон под кадром — та же картинка
+   блёрнутая, а не залитый --surface-2, чтобы неровные пропорции не читались серыми полями. */
+.uiLetterbox {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-2, var(--surface));
+}
+
+.uiLetterboxBg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  filter: blur(24px) brightness(0.55);
+  transform: scale(1.15);
+}
+
+/* Progressive media (MF-2050): контейнер всегда занимает итоговые размеры, shimmer живёт
+   отдельным слоем и не влияет на layout. Изображение проявляется после декодирования; при
+   reduced-motion длительность становится нулевой через общий --dur-reveal. */
+.uiProgressiveMedia {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.uiProgressiveMediaSkeleton {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(
+      105deg,
+      color-mix(in srgb, var(--surface) 54%, transparent) 24%,
+      color-mix(in srgb, var(--surface-strong) 82%, transparent) 43%,
+      color-mix(in srgb, var(--surface) 54%, transparent) 62%
+    );
+  background-size: 240% 100%;
+  animation: uiProgressiveShimmer 1.55s var(--ease-out) infinite;
+  transition: opacity var(--dur-reveal) var(--ease-out);
+}
+
+.uiProgressiveMediaImg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition:
+    opacity var(--dur-reveal) var(--ease-out),
+    transform 340ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.uiProgressiveMedia[data-state="ready"] .uiProgressiveMediaImg {
+  opacity: 1;
+}
+
+@keyframes uiProgressiveShimmer {
+  from { background-position: 140% 0; }
+  to { background-position: -140% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .uiProgressiveMediaSkeleton {
+    animation: none;
+  }
+}
+
+.uiLetterboxMedia {
+  position: absolute;
+  inset: 0;
+}
+
+.uiLetterboxFg {
+  object-fit: contain;
+}

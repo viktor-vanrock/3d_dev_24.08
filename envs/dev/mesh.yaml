@@ -1,0 +1,69 @@
+# mesh — HTTP API геометрии (порт 3101). Снаружи не публикуется, api ходит на http://mesh:3101.
+
+replicaCount: 1
+
+image:
+  repository: registry.sberdevices.ru/rndml/additive-ai-portal/3d-ai-portal/mesh
+  pullPolicy: IfNotPresent
+  command: ["/bin/sh"]
+  args:
+    - "-c"
+    - ". /vault/secrets/config && exec uvicorn mesh.main:app --host 0.0.0.0 --port 3101"
+
+imagePullSecrets:
+  - name: gitlab-registry-secret
+
+serviceAccount:
+  create: false
+  name: vault
+
+podAnnotations:
+  vault.hashicorp.com/agent-inject: "true"
+  vault.hashicorp.com/agent-pre-populate-only: "true"
+  vault.hashicorp.com/agent-inject-secret-config: rndml/aiportal/mesh
+  vault.hashicorp.com/role: d-rndml-aiportal
+  vault.hashicorp.com/agent-inject-template-config: |
+    {{- with secret "rndml/aiportal/mesh" -}}
+    {{ range $k, $v := .Data.data }}export {{ $k }}='{{ $v }}'
+    {{ end }}{{- end -}}
+
+configMap:
+  enabled: true
+  config:
+    S3_REGION: ru-central-1
+    S3_BUCKET_MODELS: p-rndml-aiportal
+    SLICER_BINARY_PATH: /usr/bin/prusa-slicer
+    MESH_REVISION_WORKER_ENABLED: "0"
+    MESH_SLICE_LIFECYCLE_ENABLED: "0"
+
+securityContext: {}
+podSecurityContext: {}
+
+service:
+  enabled: true
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 3101
+      protocol: TCP
+      targetPort: 3101
+
+ingress:
+  enabled: false
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: http
+readinessProbe:
+  httpGet:
+    path: /health
+    port: http
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: "2"
+    memory: 3Gi

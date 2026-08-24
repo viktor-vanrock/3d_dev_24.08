@@ -1,0 +1,1187 @@
+/*
+  Full-screen slicing workspace (MF-1094). Scene is the page; chrome floats over it.
+  All spacing is expressed from viewport/header safe zones, so there is no narrow article
+  container and no second background that jumps between routes.
+*/
+
+.plateExperience {
+  position: fixed;
+  inset: 0;
+  z-index: 8;
+  min-height: 100dvh;
+  overflow: hidden;
+  color: #18221d;
+  background:
+    radial-gradient(circle at 36% 44%, rgba(140, 229, 191, 0.34), transparent 33%),
+    radial-gradient(circle at 73% 22%, rgba(247, 220, 164, 0.34), transparent 32%),
+    linear-gradient(145deg, #d9e5dc 0%, #edf0e7 46%, #e8ded0 100%);
+}
+
+.plateExperience .homeTopbar {
+  z-index: calc(var(--z-header) + 2);
+}
+
+.plateExperience .homeTopbar[data-scrolled] {
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.plateWorkspace {
+  position: relative;
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.plateSceneLayer,
+.plateSceneLayer canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.plateSceneLayer {
+  z-index: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 45% 48%, rgba(152, 226, 195, 0.34), transparent 38%),
+    radial-gradient(circle at 8% 5%, rgba(165, 208, 184, 0.52), transparent 34%),
+    linear-gradient(135deg, #d8e4dd, #ece9df 56%, #e8ddd0);
+}
+
+.plateSceneLayer::before {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  content: "";
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(36, 71, 53, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(36, 71, 53, 0.035) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(circle at 42% 54%, black, transparent 72%);
+}
+
+.plateSceneLayer canvas {
+  z-index: 1;
+  display: block;
+  touch-action: none;
+  cursor: grab;
+}
+
+.plateSceneLayer canvas:active {
+  cursor: grabbing;
+}
+
+.plateSceneGlow {
+  position: absolute;
+  inset: auto 22% -22% 5%;
+  z-index: 0;
+  height: 48%;
+  pointer-events: none;
+  border-radius: 50%;
+  background: rgba(111, 202, 161, 0.17);
+  filter: blur(70px);
+}
+
+.plateContextHud {
+  position: absolute;
+  top: calc(var(--header-safe) + 12px);
+  left: max(24px, env(safe-area-inset-left));
+  z-index: 3;
+  display: grid;
+  max-width: min(430px, calc(100vw - 470px));
+  gap: 3px;
+  pointer-events: none;
+}
+
+.plateEyebrow {
+  color: #1b8651;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.plateContextHud strong {
+  overflow: hidden;
+  font-size: clamp(22px, 2.2vw, 36px);
+  font-weight: 760;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.plateContextHud > span:last-child {
+  color: rgba(24, 34, 29, 0.62);
+  font-size: 13px;
+}
+
+.plateSceneStatus {
+  position: absolute;
+  top: calc(var(--header-safe) + 14px);
+  left: 50%;
+  z-index: 3;
+  display: flex;
+  min-height: 36px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  border: 1px solid rgba(48, 78, 62, 0.13);
+  border-radius: 999px;
+  color: rgba(24, 34, 29, 0.72);
+  background: rgba(249, 248, 240, 0.66);
+  box-shadow: 0 10px 34px rgba(49, 66, 55, 0.08);
+  font-size: 11px;
+  font-weight: 650;
+  transform: translateX(-50%);
+  backdrop-filter: blur(22px) saturate(1.15);
+  -webkit-backdrop-filter: blur(22px) saturate(1.15);
+}
+
+.plateLiveDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #9b9c91;
+  box-shadow: 0 0 0 4px rgba(137, 139, 126, 0.1);
+}
+
+.plateLiveDot[data-online] {
+  background: #1c9a5b;
+  box-shadow: 0 0 0 4px rgba(28, 154, 91, 0.13), 0 0 16px rgba(28, 154, 91, 0.6);
+}
+
+.plateSceneTools {
+  position: absolute;
+  top: 50%;
+  left: max(24px, env(safe-area-inset-left));
+  z-index: 3;
+  display: grid;
+  gap: 6px;
+  padding: 7px;
+  border: 1px solid rgba(48, 78, 62, 0.14);
+  border-radius: 18px;
+  background: rgba(249, 248, 240, 0.7);
+  box-shadow: 0 18px 48px rgba(36, 54, 44, 0.12);
+  transform: translateY(-50%);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+.plateToolButton {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 12px;
+  color: rgba(24, 34, 29, 0.74);
+  background: transparent;
+  font-size: 18px;
+}
+
+.plateToolButton:hover,
+.plateToolButton:focus-visible {
+  color: #0e6f42;
+  background: rgba(34, 143, 85, 0.1);
+}
+
+.plateObjectDock {
+  position: absolute;
+  bottom: 24px;
+  left: max(24px, env(safe-area-inset-left));
+  z-index: 4;
+  width: min(360px, calc(100vw - 500px));
+  max-height: 38vh;
+  padding: 14px;
+  overflow: auto;
+  border: 1px solid rgba(48, 78, 62, 0.13);
+  border-radius: 22px;
+  background: rgba(247, 247, 238, 0.72);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.48),
+    0 18px 58px rgba(43, 55, 48, 0.14);
+  backdrop-filter: blur(28px) saturate(1.12);
+  -webkit-backdrop-filter: blur(28px) saturate(1.12);
+}
+
+.plateDockHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  color: rgba(24, 34, 29, 0.54);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.plateDockHeader button {
+  min-height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 999px;
+  color: rgba(24, 34, 29, 0.62);
+  background: rgba(255, 255, 255, 0.42);
+  font-size: 11px;
+}
+
+.plateDockItems {
+  display: grid;
+  gap: 7px;
+}
+
+.plateDockItem {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 54px;
+  padding: 6px;
+  border: 1px solid transparent;
+  border-radius: 15px;
+  color: inherit;
+  background: transparent;
+}
+
+.plateDockItem[data-selected] {
+  border-color: rgba(25, 133, 78, 0.42);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.plateDockSelect {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  text-align: left;
+}
+
+.plateDockActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.plateDockActions input {
+  width: 38px;
+  min-height: 32px;
+  padding: 0 3px;
+  border: 1px solid rgba(48, 78, 62, 0.12);
+  border-radius: 9px;
+  color: inherit;
+  background: rgba(255, 255, 255, 0.42);
+  font: inherit;
+  font-size: 10px;
+  text-align: center;
+}
+
+.plateDockActions button {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 9px;
+  color: rgba(24, 34, 29, 0.5);
+  background: transparent;
+}
+
+.plateDockThumb {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid rgba(38, 89, 60, 0.1);
+  border-radius: 12px;
+  color: #19794a;
+  background:
+    radial-gradient(circle, rgba(91, 221, 165, 0.45), transparent 62%),
+    rgba(223, 235, 224, 0.66);
+  font-size: 22px;
+}
+
+.plateDockThumb[data-state="loading"] {
+  animation: platePulse 1.4s ease-in-out infinite;
+}
+
+.plateDockThumb[data-state="failed"] {
+  color: #a74b45;
+  background: rgba(238, 201, 193, 0.62);
+}
+
+.plateDockTitle,
+.plateDockItem small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.plateDockTitle {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.plateDockItem small {
+  margin-top: 2px;
+  color: rgba(24, 34, 29, 0.54);
+  font-size: 10px;
+}
+
+.plateEmptyObject {
+  display: grid;
+  min-height: 70px;
+  align-content: center;
+  gap: 3px;
+  color: rgba(24, 34, 29, 0.58);
+  font-size: 12px;
+}
+
+.plateAddObject {
+  margin-top: 8px;
+}
+
+.plateAddObject summary {
+  min-height: 36px;
+  padding: 9px 2px 0;
+  color: #147a48;
+  font-size: 11px;
+  font-weight: 750;
+  cursor: pointer;
+  list-style: none;
+}
+
+.plateAddObject label {
+  display: block;
+  margin: 8px 0 4px;
+  color: rgba(24, 34, 29, 0.56);
+  font-size: 10px;
+}
+
+.plateAddObject input,
+.plateSelectField select,
+.plateSupportRow select {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid rgba(48, 78, 62, 0.14);
+  border-radius: 13px;
+  color: #18221d;
+  background: rgba(255, 255, 255, 0.52);
+  font: inherit;
+  outline: none;
+}
+
+.plateAddObject input:focus,
+.plateSelectField select:focus,
+.plateSupportRow select:focus {
+  border-color: #198650;
+  box-shadow: 0 0 0 3px rgba(25, 134, 80, 0.1);
+}
+
+.plateSearchResults {
+  display: grid;
+  max-height: 150px;
+  gap: 4px;
+  margin-top: 6px;
+  overflow-y: auto;
+}
+
+.plateSearchResultRow {
+  display: flex;
+  width: 100%;
+  min-height: 38px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 10px;
+  border: 1px solid rgba(48, 78, 62, 0.12);
+  border-radius: 11px;
+  color: inherit;
+  background: rgba(255, 255, 255, 0.44);
+  text-align: left;
+}
+
+.plateInspectorGrip {
+  position: absolute;
+  top: 50%;
+  right: 404px;
+  z-index: 6;
+  width: 32px;
+  height: 58px;
+  border: 1px solid rgba(48, 78, 62, 0.12);
+  border-right: 0;
+  border-radius: 16px 0 0 16px;
+  color: rgba(24, 34, 29, 0.54);
+  background: rgba(248, 247, 238, 0.66);
+  transform: translateY(-50%);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  transition: right 260ms var(--ease-out);
+}
+
+.plateWorkspace:has(.plateInspector:not([data-open])) .plateInspectorGrip {
+  right: 0;
+}
+
+.plateInspector {
+  position: absolute;
+  top: calc(var(--header-safe) + 8px);
+  right: 20px;
+  bottom: 20px;
+  z-index: 5;
+  display: flex;
+  width: 384px;
+  max-width: calc(100vw - 40px);
+  overflow: hidden;
+  border: 1px solid rgba(48, 78, 62, 0.14);
+  border-radius: 28px;
+  background: rgba(247, 247, 239, 0.78);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.52),
+    0 24px 76px rgba(39, 55, 46, 0.19);
+  opacity: 0;
+  transform: translateX(calc(100% + 32px));
+  flex-direction: column;
+  backdrop-filter: blur(34px) saturate(1.15);
+  -webkit-backdrop-filter: blur(34px) saturate(1.15);
+  transition:
+    opacity 220ms var(--ease-out),
+    transform 280ms var(--ease-out);
+}
+
+.plateInspector[data-open] {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.plateInspectorHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 18px 14px;
+  border-bottom: 1px solid rgba(48, 78, 62, 0.09);
+}
+
+.plateInspectorHeader h1 {
+  margin: 3px 0 0;
+  font-size: 26px;
+  letter-spacing: -0.045em;
+}
+
+.plateModeTabs {
+  min-width: 166px;
+  background: rgba(236, 236, 224, 0.72);
+}
+
+.plateModeTabs .uiSegmentToggleOption {
+  min-height: 38px;
+  padding-inline: 14px;
+  font-size: 11px;
+}
+
+.plateInspectorScroll {
+  display: grid;
+  min-height: 0;
+  gap: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+.plateInspectorSection {
+  display: grid;
+  gap: 12px;
+  padding: 16px 18px;
+  border-bottom: 1px solid rgba(48, 78, 62, 0.09);
+}
+
+.plateSectionHeading {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.plateSectionHeading > span:first-child {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border-radius: 9px;
+  color: #167d4b;
+  background: rgba(47, 172, 106, 0.1);
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.plateSectionHeading h2 {
+  margin: 0;
+  font-size: 15px;
+  letter-spacing: -0.015em;
+}
+
+.plateSectionHeading > small {
+  color: rgba(24, 34, 29, 0.5);
+  font-size: 9px;
+  font-weight: 650;
+  text-transform: uppercase;
+}
+
+.plateSelectField {
+  display: grid;
+  gap: 5px;
+}
+
+.plateSelectField > span {
+  color: rgba(24, 34, 29, 0.58);
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.plateSelectField select {
+  appearance: auto;
+}
+
+.plateMachineFacts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  overflow: hidden;
+  border: 1px solid rgba(48, 78, 62, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.plateMachineFacts span {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+  padding: 9px 8px;
+  border-right: 1px solid rgba(48, 78, 62, 0.08);
+  color: rgba(24, 34, 29, 0.52);
+  font-size: 8px;
+  text-align: center;
+}
+
+.plateMachineFacts span:last-child {
+  border-right: 0;
+}
+
+.plateMachineFacts b {
+  overflow: hidden;
+  color: #18221d;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.plateConnectMachine {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px;
+  border: 1px solid rgba(25, 134, 80, 0.2);
+  border-radius: 15px;
+  color: inherit;
+  background: rgba(46, 170, 105, 0.07);
+  text-align: left;
+}
+
+.plateConnectIcon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 11px;
+  color: #117343;
+  background: rgba(57, 190, 118, 0.13);
+  font-size: 20px;
+}
+
+.plateConnectMachine strong,
+.plateConnectMachine small {
+  display: block;
+}
+
+.plateConnectMachine strong {
+  font-size: 11px;
+}
+
+.plateConnectMachine small {
+  margin-top: 2px;
+  color: rgba(24, 34, 29, 0.54);
+  font-size: 9px;
+  line-height: 1.3;
+}
+
+.plateRelayRoute {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 34px;
+  border-radius: 12px;
+  color: rgba(24, 34, 29, 0.6);
+  background: rgba(35, 151, 89, 0.07);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.plateRelayRoute i {
+  color: #13824a;
+  font-style: normal;
+}
+
+.plateMaterialSlots {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 7px;
+}
+
+.plateMaterialSlot {
+  position: relative;
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  grid-template-rows: auto auto;
+  min-height: 54px;
+  align-items: center;
+  gap: 0 7px;
+  padding: 7px;
+  border: 1px solid rgba(48, 78, 62, 0.1);
+  border-radius: 13px;
+  color: rgba(24, 34, 29, 0.55);
+  background: rgba(255, 255, 255, 0.33);
+  text-align: left;
+}
+
+.plateMaterialSlot > span {
+  grid-row: 1 / 3;
+  width: 22px;
+  height: 22px;
+  border: 5px solid var(--spool-color);
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.7);
+}
+
+.plateMaterialSlot b {
+  font-size: 9px;
+}
+
+.plateMaterialSlot small {
+  overflow: hidden;
+  font-size: 8px;
+  text-overflow: ellipsis;
+}
+
+.plateMaterialSlot[data-active] {
+  border-color: rgba(25, 134, 80, 0.5);
+  color: #18221d;
+  background: rgba(255, 255, 255, 0.54);
+}
+
+.plateIntentGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+}
+
+.plateIntent {
+  display: grid;
+  min-height: 58px;
+  align-content: center;
+  gap: 2px;
+  padding: 8px;
+  border: 1px solid rgba(48, 78, 62, 0.1);
+  border-radius: 14px;
+  color: inherit;
+  background: rgba(255, 255, 255, 0.32);
+  text-align: left;
+}
+
+.plateIntent strong {
+  font-size: 10px;
+}
+
+.plateIntent small {
+  color: rgba(24, 34, 29, 0.5);
+  font-size: 8px;
+}
+
+.plateIntent[data-selected] {
+  border-color: #16824c;
+  background: rgba(38, 151, 88, 0.09);
+  box-shadow: inset 0 0 0 1px rgba(22, 130, 76, 0.12);
+}
+
+.plateSupportRow,
+.plateSwitchRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 106px;
+  align-items: center;
+  gap: 12px;
+}
+
+.plateSupportRow strong,
+.plateSupportRow small,
+.plateSwitchRow strong,
+.plateSwitchRow small {
+  display: block;
+}
+
+.plateSupportRow strong,
+.plateSwitchRow strong {
+  font-size: 11px;
+}
+
+.plateSupportRow small,
+.plateSwitchRow small {
+  margin-top: 2px;
+  color: rgba(24, 34, 29, 0.51);
+  font-size: 9px;
+  line-height: 1.35;
+}
+
+.plateSupportRow select {
+  min-height: 38px;
+  font-size: 10px;
+}
+
+.plateSwitchRow input {
+  justify-self: end;
+  width: 42px;
+  height: 24px;
+  accent-color: #14814a;
+}
+
+.plateProSection {
+  animation: plateSectionIn 220ms var(--ease-out) both;
+}
+
+.plateTransformGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+
+.plateTransformGrid button {
+  min-height: 40px;
+  border: 1px solid rgba(48, 78, 62, 0.12);
+  border-radius: 12px;
+  color: inherit;
+  background: rgba(255, 255, 255, 0.36);
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.plateCoordinates {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.plateCoordinates span {
+  display: flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 9px;
+  border-radius: 10px;
+  color: rgba(24, 34, 29, 0.5);
+  background: rgba(255, 255, 255, 0.3);
+  font-size: 9px;
+}
+
+.plateCoordinates b {
+  color: #18221d;
+}
+
+.plateInlineNotice {
+  margin: 12px 18px 0;
+  padding: 10px 12px;
+  border-radius: 13px;
+  color: #7d4339;
+  background: rgba(211, 128, 108, 0.12);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.plateContractNotice {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 10px;
+  margin: 14px 18px 4px;
+  padding: 12px;
+  border: 1px solid rgba(156, 113, 42, 0.17);
+  border-radius: 15px;
+  color: #654f2d;
+  background: rgba(224, 178, 90, 0.11);
+}
+
+.plateContractNotice > span {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 10px;
+  background: rgba(211, 159, 63, 0.13);
+}
+
+.plateContractNotice strong,
+.plateContractNotice small {
+  display: block;
+}
+
+.plateContractNotice strong {
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+.plateContractNotice small {
+  margin-top: 3px;
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.plateInspectorFooter {
+  display: grid;
+  gap: 9px;
+  padding: 14px 18px 16px;
+  border-top: 1px solid rgba(48, 78, 62, 0.09);
+  background: rgba(247, 247, 239, 0.72);
+}
+
+.plateSliceEstimate {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.plateSliceEstimate span {
+  display: grid;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.34);
+}
+
+.plateSliceEstimate small {
+  color: rgba(24, 34, 29, 0.46);
+  font-size: 8px;
+  text-transform: uppercase;
+}
+
+.plateSliceEstimate strong {
+  font-size: 11px;
+}
+
+.plateInspectorFooter .uiButton {
+  width: 100%;
+  min-height: 48px;
+}
+
+.plateFooterTrust {
+  color: rgba(24, 34, 29, 0.48);
+  font-size: 8px;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.plateJobProgress,
+.plateOutcome {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  left: 18px;
+  z-index: 8;
+  border: 1px solid rgba(48, 78, 62, 0.13);
+  border-radius: 18px;
+  background: rgba(248, 247, 239, 0.96);
+  box-shadow: 0 22px 62px rgba(38, 53, 44, 0.23);
+  animation: plateOutcomeIn 280ms var(--ease-out) both;
+}
+
+.plateJobProgress {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+}
+
+.plateJobProgress strong,
+.plateJobProgress small {
+  display: block;
+}
+
+.plateJobProgress strong {
+  font-size: 11px;
+}
+
+.plateJobProgress small {
+  margin-top: 2px;
+  color: rgba(24, 34, 29, 0.5);
+  font-size: 9px;
+}
+
+.plateJobSpinner,
+.plateJobIcon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 12px;
+  background: rgba(33, 155, 89, 0.11);
+}
+
+.plateJobSpinner::after {
+  width: 15px;
+  height: 15px;
+  border: 2px solid rgba(22, 130, 76, 0.18);
+  border-top-color: #16824c;
+  border-radius: 50%;
+  content: "";
+  animation: plateSpin 0.8s linear infinite;
+}
+
+.plateJobIcon[data-error] {
+  color: #a3443d;
+  background: rgba(193, 82, 68, 0.12);
+  font-weight: 800;
+}
+
+.plateOutcome {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 10px;
+  padding: 14px;
+}
+
+.plateOutcomeMark {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  grid-row: 1 / 2;
+  place-items: center;
+  border-radius: 14px;
+  color: white;
+  background: #16864e;
+  box-shadow: 0 9px 26px rgba(22, 134, 78, 0.24);
+  font-weight: 800;
+}
+
+.plateOutcome > div:nth-child(2) {
+  display: grid;
+  align-content: center;
+  gap: 2px;
+}
+
+.plateOutcome > div:nth-child(2) strong {
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.plateOutcomeMetrics {
+  color: rgba(24, 34, 29, 0.55);
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+}
+
+.plateOutcome .uiButton {
+  grid-column: 1 / -1;
+  width: 100%;
+}
+
+.plateVisuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@keyframes plateSpin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes platePulse {
+  50% { opacity: 0.55; transform: scale(0.94); }
+}
+
+@keyframes plateSectionIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes plateOutcomeIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (max-width: 900px) {
+  .plateContextHud {
+    left: 18px;
+    max-width: calc(100vw - 110px);
+  }
+
+  .plateContextHud strong {
+    font-size: 22px;
+  }
+
+  .plateSceneStatus {
+    top: calc(var(--header-safe) + 74px);
+    font-size: 9px;
+  }
+
+  .plateSceneTools {
+    top: calc(var(--header-safe) + 140px);
+    left: 12px;
+    transform: none;
+  }
+
+  .plateToolButton {
+    width: 36px;
+    height: 36px;
+  }
+
+  .plateObjectDock {
+    right: 14px;
+    bottom: 46vh;
+    left: 14px;
+    width: auto;
+    max-height: 106px;
+    padding: 9px;
+  }
+
+  .plateDockHeader,
+  .plateAddObject {
+    display: none;
+  }
+
+  .plateDockItems {
+    display: flex;
+    overflow-x: auto;
+  }
+
+  .plateDockItem {
+    min-width: 210px;
+  }
+
+  .plateInspectorGrip {
+    display: none;
+  }
+
+  .plateInspector,
+  .plateInspector[data-open] {
+    top: auto;
+    right: 8px;
+    bottom: max(8px, env(safe-area-inset-bottom));
+    left: 8px;
+    width: auto;
+    max-width: none;
+    height: 44vh;
+    border-radius: 24px;
+    opacity: 1;
+    transform: none;
+  }
+
+  .plateInspectorHeader {
+    padding: 11px 14px 9px;
+  }
+
+  .plateInspectorHeader::before {
+    position: absolute;
+    top: 5px;
+    left: 50%;
+    width: 36px;
+    height: 4px;
+    border-radius: 999px;
+    content: "";
+    background: rgba(24, 34, 29, 0.16);
+    transform: translateX(-50%);
+  }
+
+  .plateInspectorHeader h1 {
+    font-size: 20px;
+  }
+
+  .plateModeTabs {
+    min-width: 146px;
+  }
+
+  .plateModeTabs .uiSegmentToggleOption {
+    min-height: 34px;
+    padding-inline: 11px;
+  }
+
+  .plateInspectorSection {
+    padding: 13px 14px;
+  }
+
+  .plateInspectorFooter {
+    padding: 10px 14px max(12px, env(safe-area-inset-bottom));
+  }
+
+  .plateSliceEstimate,
+  .plateFooterTrust {
+    display: none;
+  }
+}
+
+@media (max-width: 540px) {
+  .plateContextHud {
+    top: calc(var(--header-safe) + 4px);
+  }
+
+  .plateContextHud .plateEyebrow,
+  .plateContextHud > span:last-child {
+    display: none;
+  }
+
+  .plateSceneStatus {
+    top: calc(var(--header-safe) + 42px);
+  }
+
+  .plateSceneTools {
+    top: calc(var(--header-safe) + 90px);
+  }
+
+  .plateObjectDock {
+    bottom: 47vh;
+  }
+
+  .plateSupportRow {
+    grid-template-columns: minmax(0, 1fr) 90px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plateInspector,
+  .plateInspectorGrip,
+  .plateProSection,
+  .plateOutcome,
+  .plateJobProgress {
+    transition: none;
+    animation: none;
+  }
+
+  .plateDockThumb[data-state="loading"] {
+    animation: none;
+  }
+}

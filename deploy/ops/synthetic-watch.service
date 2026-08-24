@@ -1,0 +1,8 @@
+[Unit]
+Description=Синтетик-мониторинг прода → карточки при сбое
+[Service]
+Type=oneshot
+User=plag
+Environment=HOME=/home/plag
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+ExecStart=/usr/local/bin/synthetic-watch

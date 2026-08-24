@@ -1,0 +1,47 @@
+{
+  "protocol_version": "v1",
+  "wire": [
+    "invalid_frame",
+    "unknown_frame_type",
+    "frame_too_large",
+    "unsupported_version",
+    "authentication_failed",
+    "authorization_failed",
+    "device_not_authorized",
+    "rate_limited",
+    "backpressure_limit",
+    "internal_error"
+  ],
+  "command_result": [
+    "device_not_authorized",
+    "device_unavailable",
+    "command_not_supported",
+    "role_not_allowed",
+    "replay_rejected",
+    "invalid_command",
+    "invalid_command_token",
+    "command_failed",
+    "command_timeout"
+  ],
+  "transfer_result": [
+    "device_not_authorized",
+    "invalid_transfer",
+    "transfer_conflict",
+    "unknown_transfer",
+    "invalid_sequence",
+    "invalid_data",
+    "source_changed",
+    "file_size_mismatch",
+    "checksum_mismatch",
+    "upload_failed",
+    "start_failed",
+    "transfer_timeout"
+  ],
+  "close": {
+    "4001": "protocol_or_authentication_failure",
+    "4002": "heartbeat_timeout",
+    "4003": "session_replaced",
+    "4004": "gateway_revoked",
+    "4005": "backpressure_limit"
+  }
+}

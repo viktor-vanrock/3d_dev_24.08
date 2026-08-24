@@ -1,0 +1,27 @@
+[Unit]
+Description=Multica agent daemon (Autofab squad worker) — DEV machine
+After=network-online.target docker.service wan-policy-routing.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=simple
+User=plag
+Group=plag
+WorkingDirectory=/home/plag
+Environment=HOME=/home/plag
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+# One shared quota for both Claude and Codex runtimes. Disk cleanup is not
+# performed here: workspace retention is an independent, evidence-based policy.
+ExecStart=/usr/local/bin/multica daemon start --foreground --max-concurrent-tasks 2
+Restart=always
+RestartSec=10
+
+# Host safety ceiling. The board, Postgres and nginx stay outside this cgroup.
+MemoryHigh=22G
+MemoryMax=26G
+MemorySwapMax=8G
+OOMScoreAdjust=300
+
+[Install]
+WantedBy=multi-user.target

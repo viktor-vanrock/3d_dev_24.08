@@ -1,0 +1,27 @@
+{
+  "profile_class": "filament",
+  "slicer": "orcaslicer",
+  "setting_id": null,
+  "name": "FDplast PLA (RU)",
+  "vendor_slug": "fdplast",
+  "material_ref": { "vendor_slug": "fdplast", "material_slug": "pla" },
+  "params": {
+    "nozzle_temperature_c": { "first_layer": 215, "other": 205 },
+    "bed_temperature_c": { "first_layer": 55, "other": 50 },
+    "flow_ratio": 1.0,
+    "density_g_cm3": 1.24,
+    "diameter_mm": 1.75
+  },
+  "source": {
+    "name": "manual_ru_vendor_site",
+    "url": "https://fdplast.ru",
+    "ref": null,
+    "license": "proprietary-attributed"
+  },
+  "confidence": 0.55,
+  "extrapolated_from": {
+    "profile_ref": "orcaslicer:GF_BBL_PLA_BASIC_X1C",
+    "reason": "нет базового профиля вендора FDplast — взят ближайший родственный материал (generic PLA) с поправкой на паспортные температуры сушки/печати FDplast"
+  },
+  "schema_version": 1
+}

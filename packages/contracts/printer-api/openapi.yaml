@@ -1,0 +1,496 @@
+openapi: 3.1.0
+info:
+  title: Printer command policy
+  version: 1.1.0
+  description: |
+    Контракт управления экземпляром принтера. API не устанавливает исходящие
+    соединения с LAN. Для managed-local команда выполняется только каналом
+    browser-to-Moonraker. Облачная команда принимается только для enrolled
+    agent с online-состоянием и объявленной capability.
+
+    MF-1143 (handoff нарезанного G-code в printer job): три эндпоинта ниже —
+    `POST /models/{id}/slice`, `GET /slice-jobs/{jobId}`, `POST /me/printers/{id}/commands`
+    (`command: gcode`) — образуют один атомарный контракт producer(mesh)→API→printer job.
+    Клиент никогда не передаёт account_id/gcode-объект напрямую — только opaque `slice_id`;
+    API резолвит account ownership, target capability (`config_fingerprint`) и подписанное
+    `slice_trust` evidence из `slice_jobs`, прежде чем поставить команду в очередь. Ни presigned
+    URL, ни storage-key не публикуются между аккаунтами (см. `PrinterCommandRequest.slice_id` и
+    `SliceJob.gcode_url`). Реализация: `apps/api/src/models/slicing.route.ts`,
+    `apps/api/src/models/sliceTrust.ts`, `apps/api/src/profile/activation.ts` (обработчик
+    `command: gcode` в `POST /me/printers/{id}/commands`). Test vectors (success/чужой
+    account/fingerprint mismatch/expired object/duplicate request) —
+    `apps/api/src/profile/activation.test.ts` (describe `gcode slice handoff (MF-1220)`) и
+    `apps/api/src/models/slicing.route.test.ts`.
+servers:
+  - url: https://3mf.tech
+paths:
+  /v0/printers/{id}/commands:
+    post:
+      operationId: enqueuePrinterCommand
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PrinterId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrinterCommandRequest'
+      responses:
+        '202':
+          description: Команда принята в очередь relay.
+        '400':
+          description: Некорректная команда или payload.
+        '403':
+          description: Команда запрещена политикой доступа или не объявлена агентом.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrinterCommandError'
+        '409':
+          description: Устройство offline либо конфликт идемпотентности.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrinterCommandError'
+  /me/printers/{id}/commands:
+    post:
+      operationId: enqueueSessionPrinterCommand
+      description: |
+        Для `command: gcode` единственный вход — `slice_id`; любые filename/profile/
+        config_fingerprint hints в теле запроса не доверенные и игнорируются. API читает
+        каноническую запись `slice_jobs` по `slice_id` и проверяет, в этом порядке: слайс
+        принадлежит вызывающему account (иначе `404 slice_not_found` — тот же код для
+        "не существует" и "чужой", чтобы не подтверждать чужой id), слайс `ready` с
+        собранным `gcode_s3_key` (иначе `409 slice_not_ready`), `slice_trust` evidence
+        полное и версии `slice-trust.v1` (иначе `409 slice_untrusted`), слайс собран под
+        именно этот `device_id` (иначе `409 slice_target_mismatch`), и живой
+        `config_fingerprint` цели равен зафиксированному в `slice_trust` (иначе
+        `409 fingerprint_mismatch`). Повтор с тем же `Idempotency-Key` возвращает уже
+        созданную команду (`202`, тот же `id`/`correlation_id`), не создавая вторую запись.
+      security:
+        - portalSession: []
+      parameters:
+        - $ref: '#/components/parameters/PrinterId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrinterCommandRequest'
+      responses:
+        '202':
+          description: Команда принята в очередь (создана или повторно отдана та же по Idempotency-Key).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrinterCommandAccepted'
+        '400':
+          description: Неизвестная команда, невалидный slice_id или Idempotency-Key.
+        '403':
+          description: Команда запрещена политикой доступа или не объявлена агентом.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrinterCommandError'
+        '404':
+          description: Принтер не найден/не принадлежит вызывающему, либо slice_id не существует/принадлежит другому account.
+        '409':
+          description: |
+            Устройство offline, конфликт идемпотентности, либо один из gcode-handoff гейтов:
+            `slice_not_ready` / `slice_untrusted` / `slice_target_mismatch` / `fingerprint_mismatch`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrinterCommandError'
+  /models/{id}/slice:
+    post:
+      operationId: createSliceJob
+      description: |
+        Ставит control-plane job слайсинга модели (сам слайсер — воркер `apps/mesh`, эта
+        ручка синхронно ничего не режет). Идемпотентна по `(account_id, slice_key, model_id)`:
+        повторный запрос с тем же составом `slice_trust` возвращает существующую job (`200`);
+        с иным — `409 SLICE_TRUST_CONFLICT`.
+      security:
+        - portalSession: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: model_id
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSliceJobRequest'
+      responses:
+        '201':
+          description: Новая job создана.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SliceJob'
+        '200':
+          description: Идентичный повторный запрос — отдана существующая job.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SliceJob'
+        '400':
+          description: |
+            Невалидный slice_trust/profile_id/filament_profile_id, либо (project-slice-request.v1)
+            LAYOUT_INVALID/SOURCE_MODEL_MISMATCH/SOURCE_ROLE_UNSUPPORTED/UNSUPPORTED_TOOLHEAD.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/SliceTrustError'
+                  - $ref: '#/components/schemas/ProjectSliceError'
+        '404':
+          description: |
+            Модель не найдена, не принадлежит вызывающему или не в статусе ready; либо
+            (project-slice-request.v1) SOURCE_NOT_FOUND — pinned artifact/build_session не резолвится.
+        '409':
+          description: |
+            Версия контракта не поддерживается либо конфликт с ранее принятым slice_trust; либо
+            (project-slice-request.v1) SOURCE_ARTIFACT_MISMATCH/BED_GEOMETRY_UNCONFIRMED/
+            LAYOUT_PREFLIGHT_FAILED (тело — PlatePreflightResult под ключом `preflight`).
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/SliceTrustError'
+                  - $ref: '#/components/schemas/ProjectSliceError'
+  /slice-jobs/{jobId}:
+    get:
+      operationId: getSliceJob
+      description: |
+        Владелец job (`requested_by`) читает статус/результат. Готовый результат отдаётся
+        только при полном versioned `slice_trust` evidence и storage-key в account-scoped
+        префиксе (`protected/slices/{account_id}/...`) — иначе fail-closed `409`, gcode/S3-key
+        никогда не публикуются. Если storage-объект истёк/удалён (retention), ответ — `200` с
+        `error: gcode_missing` в теле, без утечки storage key.
+      security:
+        - portalSession: []
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Статус job; при status=succeeded — presigned gcode_url либо error=gcode_missing.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SliceJob'
+        '404':
+          description: Job не найдена или принадлежит другому account.
+        '409':
+          description: Legacy/повреждённая запись без полного slice-trust.v1 evidence.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SliceTrustError'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+    portalSession:
+      type: apiKey
+      in: cookie
+      name: portal_session
+  parameters:
+    PrinterId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
+  schemas:
+    PrinterCommandRequest:
+      type: object
+      required: [command]
+      properties:
+        command:
+          type: string
+          enum: [gcode, start, pause, resume, stop, cancel]
+        script:
+          type: string
+          maxLength: 4000
+        file_name:
+          type: string
+          maxLength: 256
+        slice_id:
+          type: string
+          format: uuid
+          description: |
+            Обязателен для `command: gcode` на `/me/printers/{id}/commands` (session-контур,
+            MF-1143). Единственная опора для gcode-handoff — сам G-code никогда не идёт в теле
+            запроса и не резолвится клиентом.
+    PrinterCommandAccepted:
+      type: object
+      required: [id, correlation_id, device_id, command, status, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        correlation_id: { type: string }
+        device_id: { type: string, format: uuid }
+        command: { type: string }
+        status: { type: string, enum: [queued, accepted] }
+        created_at: { type: string, format: date-time }
+        error: { type: string, nullable: true }
+    PrinterCommandError:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          enum:
+            - LAN_FORBIDDEN
+            - DEVICE_OFFLINE
+            - CAPABILITY_UNSUPPORTED
+            - not_found
+            - unknown_command
+            - invalid_idempotency_key
+            - idempotency_conflict
+            - invalid_slice_id
+            - slice_not_found
+            - slice_not_ready
+            - slice_untrusted
+            - slice_target_mismatch
+            - fingerprint_mismatch
+    CreateSliceJobRequest:
+      type: object
+      required: [profile_id, device_id, slice_trust]
+      description: |
+        `layout`/`intent` — аддитивное расширение `project-slice-request.v1` (MF-1986, решение на
+        MF-1981): плоский путь (без `layout`) продолжает работать без изменений. Когда `layout`
+        присутствует, `intent` обязателен, а `layout.instances[].source.model_id` обязан
+        равняться `:id` из URL (один job = один проект, MVP-граница v1).
+      properties:
+        profile_id: { type: string, format: uuid }
+        filament_profile_id: { type: string, format: uuid, nullable: true }
+        device_id: { type: string, format: uuid }
+        scale: { type: number, exclusiveMinimum: 0, default: 1.0 }
+        slice_trust:
+          $ref: '#/components/schemas/SliceTrustRequest'
+        layout:
+          $ref: '#/components/schemas/PlateLayout'
+        intent:
+          $ref: '#/components/schemas/SliceIntent'
+    ProjectSliceSource:
+      type: object
+      description: |
+        Server резолвит pinned artifact сам (git blob по `revision` + `manifest.artifacts
+        [artifact_id].path`, project-code.v1) и сверяет пересчитанный sha256 с заявленным
+        клиентом — произвольный URL от клиента запрещён.
+      required: [model_id, revision, configuration_id, configuration_digest, workflow_step_id, artifact_id, artifact_sha256]
+      properties:
+        model_id: { type: string, format: uuid, description: 'Обязан равняться :id из URL — MVP-граница v1.' }
+        revision: { type: string, description: 'Commit SHA манифеста в git (не ref/branch).' }
+        configuration_id: { type: string }
+        configuration_digest: { type: string, pattern: '^[a-f0-9]{64}$' }
+        workflow_step_id: { type: string }
+        artifact_id: { type: string }
+        artifact_sha256: { type: string, pattern: '^[a-f0-9]{64}$' }
+        build_session_id: { type: string, format: uuid, nullable: true }
+    BedGeometry:
+      type: object
+      required: [shape, origin]
+      properties:
+        shape: { type: string, enum: [rect, circle, polygon] }
+        width_mm: { type: number, exclusiveMinimum: 0 }
+        depth_mm: { type: number, exclusiveMinimum: 0 }
+        diameter_mm: { type: number, exclusiveMinimum: 0 }
+        points_mm:
+          type: array
+          items: { type: array, items: { type: number }, minItems: 2, maxItems: 2 }
+        origin: { type: string, enum: [center, front_left, explicit] }
+        excluded_zones_mm:
+          type: array
+          items:
+            type: object
+            required: [x_mm, y_mm, width_mm, depth_mm]
+            properties:
+              x_mm: { type: number }
+              y_mm: { type: number }
+              width_mm: { type: number, exclusiveMinimum: 0 }
+              depth_mm: { type: number, exclusiveMinimum: 0 }
+    PlateInstance:
+      type: object
+      required: [instance_id, source, x_mm, y_mm, rotation_z_deg, scale]
+      properties:
+        instance_id: { type: string }
+        source:
+          $ref: '#/components/schemas/ProjectSliceSource'
+        x_mm: { type: number }
+        y_mm: { type: number }
+        rotation_z_deg: { type: number }
+        scale: { type: number, exclusiveMinimum: 0 }
+    PlateLayout:
+      type: object
+      required: [bed_geometry, instances, layout_snapshot_id]
+      properties:
+        bed_geometry:
+          $ref: '#/components/schemas/BedGeometry'
+        instances:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/PlateInstance'
+        layout_snapshot_id:
+          type: string
+          description: Client-side корреляция для reload — НЕ участвует в идемпотентности (та — на slice_key).
+    SliceIntent:
+      type: object
+      required: [supports]
+      properties:
+        quality:
+          type: string
+          enum: [strength, speed, appearance, miniatures]
+          description: Только аудит-метка — не переопределяет уже резолвленный profile_id.
+        supports: { type: string, enum: [auto, tree, off] }
+    PlatePreflightResult:
+      type: object
+      required: [ok, instances]
+      properties:
+        ok: { type: boolean }
+        instances:
+          type: array
+          items:
+            type: object
+            required: [instance_id, ok, codes]
+            properties:
+              instance_id: { type: string }
+              ok: { type: boolean }
+              codes:
+                type: array
+                items: { type: string, enum: [collision, outside_bed, height_exceeded, clearance_failed, unsupported_geometry] }
+              collides_with:
+                type: array
+                items: { type: string }
+    SliceTrustRequest:
+      type: object
+      required: [contract_version, slice_key, fingerprint_source, fingerprint_state]
+      description: Producer-подписываемый материал (MF-1698 slice-trust.v1) — не сырые config-поля.
+      properties:
+        contract_version: { type: string, enum: [slice-trust.v1] }
+        slice_key: { type: string, pattern: '^[a-f0-9]{64,}$' }
+        fingerprint_source: { type: string, enum: [agent, declared] }
+        fingerprint_state: { type: string, enum: [stock, custom, mismatch] }
+        stock_input:
+          type: object
+          description: Обязателен при fingerprint_state=stock; закрытый набор полей каталога.
+        config_fingerprint:
+          type: string
+          description: Обязателен при fingerprint_source=declared либо fingerprint_state=custom/mismatch.
+    SliceTrustMaterial:
+      type: object
+      description: |
+        Подписанный producer'ом (mesh) результат построения slice_trust — то, что реально
+        хранится в `slice_jobs.slice_trust_material` и отдаётся клиенту read-only.
+      required:
+        - contract_version
+        - account_id
+        - device_id
+        - profile_id
+        - slice_key
+        - fingerprint_source
+        - fingerprint_state
+        - fingerprint_algorithm_version
+        - config_fingerprint
+        - cross_account_reuse
+        - global_dedup_eligible
+      properties:
+        contract_version: { type: string, enum: [slice-trust.v1] }
+        account_id: { type: string, format: uuid }
+        device_id: { type: string, format: uuid }
+        profile_id: { type: string, format: uuid }
+        slice_key: { type: string }
+        fingerprint_source: { type: string, enum: [agent, declared] }
+        fingerprint_state: { type: string, enum: [stock, custom, mismatch] }
+        fingerprint_algorithm_version: { type: string, enum: [config-fingerprint.v1, agent-config.v1] }
+        config_fingerprint: { type: string }
+        canonical_config_fingerprint: { type: string, nullable: true }
+        cross_account_reuse:
+          type: boolean
+          enum: [false]
+          description: v1 всегда false — ни agent, ни declared не открывают cross-account выдачу.
+        global_dedup_eligible:
+          type: boolean
+          enum: [false]
+    SliceJob:
+      type: object
+      required: [id, status]
+      properties:
+        id: { type: string, format: uuid }
+        status: { type: string, enum: [queued, running, succeeded, failed] }
+        error: { type: string, nullable: true }
+        metrics: { type: object, nullable: true }
+        slice_trust:
+          $ref: '#/components/schemas/SliceTrustMaterial'
+        slice_trust_contract_version: { type: string, enum: [slice-trust.v1] }
+        gcode_url:
+          type: string
+          format: uri
+          description: Presigned, короткоживущий; отсутствует если объект отдаётся стримом или отсутствует.
+        layout_snapshot_id:
+          type: string
+          description: Присутствует только для job, созданной через project-slice-request.v1.
+        preflight:
+          $ref: '#/components/schemas/PlatePreflightResult'
+        preview_manifest_url:
+          type: string
+          format: uri
+          description: Presigned; консюмер (Mesh) ещё не пишет — поле появляется только после headless-слайса.
+        retryable:
+          type: boolean
+          description: Server-owned — UI не угадывает повтор по raw error.
+        error_code:
+          type: string
+          description: Безопасный код без raw path/stderr/S3-key.
+    SliceTrustError:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          enum:
+            - SLICE_TRUST_INVALID
+            - SLICE_TRUST_VERSION_UNSUPPORTED
+            - SLICE_TRUST_CONFLICT
+    ProjectSliceError:
+      type: object
+      description: |
+        project-slice-request.v1 (MF-1986, решение на MF-1981). `slice_trust.*` коды —
+        независимая ось, не пересекаются с этим enum.
+      required: [error]
+      properties:
+        error:
+          type: string
+          enum:
+            - SOURCE_NOT_FOUND
+            - SOURCE_ARTIFACT_MISMATCH
+            - SOURCE_ROLE_UNSUPPORTED
+            - SOURCE_MODEL_MISMATCH
+            - BED_GEOMETRY_UNCONFIRMED
+            - LAYOUT_INVALID
+            - LAYOUT_PREFLIGHT_FAILED
+            - UNSUPPORTED_TOOLHEAD
+        preflight:
+          $ref: '#/components/schemas/PlatePreflightResult'

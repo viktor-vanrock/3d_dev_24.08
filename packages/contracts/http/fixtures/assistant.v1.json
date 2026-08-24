@@ -1,0 +1,127 @@
+{
+  "search_results": {
+    "kind": "search_results",
+    "query": "подставка под телефон",
+    "items": [
+      { "model_id": "8f14e45f-ceea-467e-a1a1-000000000001", "title": "Подставка для телефона регулируемая", "relevance_rank": 1 },
+      { "model_id": "8f14e45f-ceea-467e-a1a1-000000000002", "title": "Держатель телефона на стол", "relevance_rank": 2 }
+    ]
+  },
+  "clarification": {
+    "kind": "clarification",
+    "question": "Под какой телефон — модель или примерные габариты корпуса?",
+    "reason": "без размеров нельзя предложить параметры генерации"
+  },
+  "answer": {
+    "kind": "answer",
+    "text": "Нашёл похожие подставки в каталоге — можно взять готовую модель или сгенерировать под ваш телефон.",
+    "citations": [
+      {
+        "model_id": "8f14e45f-ceea-467e-a1a1-000000000001",
+        "title": "Подставка для телефона регулируемая",
+        "snippet": "Регулируемый угол, подходит под кейсы толщиной до 12мм",
+        "score": 0.82,
+        "source_url": null
+      }
+    ],
+    "note": null
+  },
+  "generation_offer": {
+    "kind": "generation_offer",
+    "offer_id": "9c1f2e10-1111-4a11-8a11-000000000001",
+    "branch": "openscad",
+    "prompt_summary": "Подставка под телефон шириной 80мм, угол наклона 60 градусов",
+    "params": { "units": "mm" },
+    "note": null
+  },
+  "generation_progress": {
+    "kind": "generation_progress",
+    "generation_id": "9c1f2e10-2222-4a11-8a11-000000000002",
+    "status": "running"
+  },
+  "error": {
+    "kind": "error",
+    "code": "provider_timeout",
+    "message": "HYPERPC не ответил за бюджет ретраев",
+    "retryable": true
+  },
+  "idempotency_conflict": {
+    "status": 409,
+    "body": {
+      "error": "assistant_idempotency_conflict"
+    }
+  },
+  "run_progress": {
+    "queued": {
+      "phase": "queued",
+      "progress": null,
+      "eta_seconds": 40,
+      "estimate_updated_at": "2026-07-20T12:00:00Z"
+    },
+    "loading": {
+      "phase": "loading",
+      "progress": 5,
+      "eta_seconds": 35,
+      "estimate_updated_at": "2026-07-20T12:00:05Z"
+    },
+    "draft": {
+      "phase": "draft",
+      "progress": 25,
+      "eta_seconds": 28,
+      "estimate_updated_at": "2026-07-20T12:00:10Z"
+    },
+    "geometry": {
+      "phase": "geometry",
+      "progress": 55,
+      "eta_seconds": 18,
+      "estimate_updated_at": "2026-07-20T12:00:20Z"
+    },
+    "validation": {
+      "phase": "validation",
+      "progress": 80,
+      "eta_seconds": 8,
+      "estimate_updated_at": "2026-07-20T12:00:30Z"
+    },
+    "export": {
+      "phase": "export",
+      "progress": 95,
+      "eta_seconds": 2,
+      "estimate_updated_at": "2026-07-20T12:00:38Z"
+    }
+  },
+  "run_with_progress": {
+    "id": "3a5e9c10-0000-4a11-8a11-000000000002",
+    "thread_id": "3a5e9c10-0000-4a11-8a11-000000000001",
+    "triggering_message_id": "3a5e9c10-0000-4a11-8a11-000000000004",
+    "status": "running",
+    "result_type": null,
+    "result": {},
+    "error_code": null,
+    "confirmed_generation_id": null,
+    "queue_position": null,
+    "eta_seconds": null,
+    "progress": {
+      "phase": "geometry",
+      "progress": 55,
+      "eta_seconds": 18,
+      "estimate_updated_at": "2026-07-20T12:00:20Z"
+    },
+    "created_at": "2026-07-20T12:00:00Z",
+    "updated_at": "2026-07-20T12:00:20Z"
+  },
+  "run_without_progress": {
+    "id": "3a5e9c10-0000-4a11-8a11-000000000005",
+    "thread_id": "3a5e9c10-0000-4a11-8a11-000000000001",
+    "triggering_message_id": "3a5e9c10-0000-4a11-8a11-000000000006",
+    "status": "done",
+    "result_type": "answer",
+    "result": { "kind": "answer", "text": "…", "citations": [] },
+    "error_code": null,
+    "confirmed_generation_id": null,
+    "queue_position": null,
+    "eta_seconds": null,
+    "progress": null,
+    "created_at": "2026-07-20T12:00:00Z",
+    "updated_at": "2026-07-20T12:00:20Z"
+  }
+}

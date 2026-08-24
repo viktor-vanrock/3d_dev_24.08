@@ -1,0 +1,29 @@
+# systemd-юнит разового прогона apps/giga агента каталога станков (MF-649):
+# giga-catalog-agent — fetch (те же вендор-ньюсрумы, что calendar-агент) →
+# LLM-extract характеристик станка → идемпотентный upsert machine_candidates +
+# аудит-лог ingest_runs. Гоняется по расписанию через portal.giga-catalog.timer
+# (по образцу portal.giga-calendar.timer).
+#
+# Установка на VDS (после uv sync в apps/giga, см. portal.giga-worker.service):
+#   cd ~/portal.ru/apps/giga && uv sync --no-dev
+#   sudo cp deploy/portal.giga-catalog.service deploy/portal.giga-catalog.timer /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now portal.giga-catalog.timer
+#   journalctl -u portal.giga-catalog -f     # логи последнего прогона
+#
+# EnvironmentFile ~/portal.giga.env (общий с portal.giga-worker/-calendar.service) —
+# DATABASE_URL, GIGACHAT_CREDENTIALS (обяз., иначе прогон — no-op с warn).
+
+[Unit]
+Description=portal.ru giga catalog agent (free-form HTML -> machine_candidates)
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=plag
+WorkingDirectory=/home/plag/portal.ru/apps/giga
+EnvironmentFile=/home/plag/portal.giga.env
+ExecStart=/home/plag/.local/bin/uv run --no-dev giga-catalog-agent
+StandardOutput=journal
+StandardError=journal

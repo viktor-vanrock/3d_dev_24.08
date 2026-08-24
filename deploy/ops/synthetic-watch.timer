@@ -1,0 +1,7 @@
+[Unit]
+Description=synthetic-watch каждые 10 минут
+[Timer]
+OnBootSec=4min
+OnUnitActiveSec=10min
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,337 @@
+/* Профиль автора (design/marketplace.full.md §7): карточка авторa + галерея,
+   переиспользует .homeGallery/ModelTile и marketShowMore/marketAddAction. */
+
+.profileCard {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 22px 24px;
+}
+
+.profileAvatar {
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+  background: transparent;
+}
+
+.profileCharacterEditor {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 12px 0 20px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--surface) 68%, transparent);
+}
+
+.profileCharacterEditor > div {
+  display: grid;
+  gap: 6px;
+}
+
+.profileCharacterEditor span {
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.profileAvatar img,
+.profileAvatar svg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.profileUsername {
+  color: var(--text-dim);
+  font-size: 14px;
+  margin-top: 2px;
+}
+
+.profileCount {
+  color: var(--text-dim);
+  font-size: 13px;
+  margin-top: 6px;
+}
+
+/* Бейджи мастера (MF-993) — под @ником, над био. */
+.profileBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.profileBadge {
+  background: var(--accent-soft, rgba(255, 255, 255, 0.08));
+  color: var(--text);
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+/* Био/сайт/контакты (MF-357, Фаза 1 эпика MF-15) — под @ником, над счётчиком проектов. */
+.profileBio {
+  color: var(--text);
+  font-size: 13.5px;
+  margin-top: 6px;
+  max-width: 46ch;
+}
+
+.profileLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.profileLink {
+  color: var(--accent);
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.profileLink:hover {
+  text-decoration: underline;
+}
+
+.profileSection {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Дизайн-ревью MF-1757: один основной акцент на экран. Добавление проекта и сохранение
+   остаются заметными действиями, но не занимают всю ширину контента. */
+.profileSaveButton,
+.profileAddProjectButton {
+  width: fit-content;
+}
+
+.profileProjectsHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.profileProjectActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* При 4+ проектах новые карточки остаются слева, а сетка становится горизонтальной
+   полкой. Кнопки дают тот же сценарий клавиатуре, что drag/trackpad дают указателю. */
+.profileProjectCarousel {
+  min-width: 0;
+}
+
+.profileProjectTrack {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: calc((100% - 54px) / 4);
+  gap: 18px;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scroll-behavior: smooth;
+  scroll-snap-type: inline mandatory;
+  scrollbar-width: none;
+  padding: 3px;
+}
+
+.profileProjectTrack::-webkit-scrollbar {
+  display: none;
+}
+
+.profileProjectTrack > * {
+  scroll-snap-align: start;
+}
+
+@media (max-width: 1000px) {
+  .profileProjectTrack {
+    grid-auto-columns: calc((100% - 36px) / 3);
+  }
+}
+
+@media (max-width: 720px) {
+  .profileProjectsHead {
+    align-items: flex-start;
+  }
+
+  .profileProjectActions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .profileProjectTrack {
+    grid-auto-columns: min(82%, 320px);
+  }
+}
+
+/* --- «Мои идеи» (MF-695, docs/design/feedback.entrypoints.md §6): секция под галереей
+   проектов, своя страница профиля only. Строка — облегчённый вариант карточки ленты /issue. --- */
+.ideasSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ideaList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ideaRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  padding: 14px 16px;
+  border-radius: var(--ref-radius-lg, 16px);
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  cursor: pointer;
+  text-align: left;
+}
+
+.ideaRowMain {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ideaRowTitle {
+  color: var(--text);
+  font-size: 15px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ideaRowMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.ideaRowDot {
+  opacity: 0.6;
+}
+
+/* Скелет загрузки — тот же мерцающий градиент, что modelDownloadBtn[data-tone="processing"]
+   (market/model.css), локальная копия т.к. лента /issue со своим скелетом ещё не собрана. */
+.ideaRowSkeleton {
+  height: 62px;
+  border-radius: var(--ref-radius-lg, 16px);
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  position: relative;
+  overflow: hidden;
+}
+
+.ideaRowSkeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--text) 14%, transparent) 50%, transparent 70%);
+  animation: ideaRowShimmer 1.6s linear infinite;
+}
+
+@keyframes ideaRowShimmer {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ideaRowSkeleton::after {
+    animation: none;
+  }
+}
+
+.ideasErrorRow {
+  color: var(--text-dim);
+  font-size: 13.5px;
+}
+
+.ideasRetry {
+  border: none;
+  background: transparent;
+  color: var(--text);
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  min-height: 32px;
+}
+
+/* --- Уведомления (docs/design/push.notifications.md): та же строчная форма, что «Мои идеи»
+   (.ideaRow), с 3-колоночной раскладкой иконка+текст+Switch поверх неё. --- */
+.pushRow {
+  cursor: pointer;
+}
+
+.pushRowIcon {
+  flex-shrink: 0;
+  display: flex;
+  color: var(--text-dim);
+}
+
+.pushRowMain {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pushRowTitle {
+  color: var(--text);
+  font-size: 15px;
+}
+
+.pushRowSub {
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.pushList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: none;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+/* Подсказка permission_denied (§2.4) — инлайн-текст, тон warn (не danger: заблокированная
+   браузером фича, не поломка/ошибка юзера). */
+.pushHint {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 0 4px;
+  color: color-mix(in srgb, var(--accent-warn) 85%, var(--text-dim));
+  font-size: 13px;
+}
+
+.pushHint svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--accent-warn);
+}

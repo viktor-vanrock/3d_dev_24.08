@@ -1,0 +1,31 @@
+# systemd-юнит разового прогона источника slicer_print_profiles (MF-411, шаг 2
+# эпика MF-34): scout-slicer-print-profiles-agent (orca process+filament) →
+# slicer_profile_candidates/slicer_profiles. Отдельный юнит от
+# portal.scout-slicer-profiles.service (тот источник — machine-класс для
+# каталога станков, этот — print-настройки для unified slicer-profile схемы),
+# тот же принцип "не на тике portal.scout-worker" (MF-627/MF-719): источник
+# редкий, десятки вендоров × сотни/тысячи файлов GitHub за прогон.
+#
+# Установка на VDS (после uv sync в apps/scout, см. portal.scout-worker.service):
+#   sudo cp deploy/portal.scout-slicer-print-profiles.service deploy/portal.scout-slicer-print-profiles.timer /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now portal.scout-slicer-print-profiles.timer
+#   journalctl -u portal.scout-slicer-print-profiles -f     # логи последнего прогона
+#
+# EnvironmentFile ~/portal.scout.env (общий с portal.scout-worker.service) —
+# DATABASE_URL (обязателен), GITHUB_TOKEN (опционален — поднимает лимит
+# api.github.com с 60/ч, актуально только для первого вызова list-вендоров).
+
+[Unit]
+Description=portal.ru scout slicer_print_profiles agent (orca process+filament -> slicer_profiles)
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=plag
+WorkingDirectory=/home/plag/portal.ru/apps/scout
+EnvironmentFile=/home/plag/portal.scout.env
+ExecStart=/home/plag/.local/bin/uv run --no-dev scout-slicer-print-profiles-agent
+StandardOutput=journal
+StandardError=journal
