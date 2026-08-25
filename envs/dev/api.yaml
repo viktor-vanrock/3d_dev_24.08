@@ -46,6 +46,7 @@ configMap:
     GIGA_HTTP_URL: http://giga:3102
     GIT_REPOS_DIR: /srv/git/repos
     AUTH_DEV_BYPASS: "0"
+    RELAY_INTERNAL_BASE_URL: http://relay:9092
 
 securityContext: {}
 podSecurityContext: {}

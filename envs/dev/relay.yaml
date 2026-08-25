@@ -38,6 +38,8 @@ configMap:
     RELAY_GATEWAY_PORT: "8443"
     RELAY_OBSERVABILITY_HOST: 0.0.0.0
     RELAY_OBSERVABILITY_PORT: "9091"
+    RELAY_INTERNAL_LISTEN_HOST: 0.0.0.0
+    RELAY_INTERNAL_LISTEN_PORT: "9092"
     RELAY_TLS_CERT_FILE: /run/secrets/relay/tls.crt
     RELAY_TLS_KEY_FILE: /run/secrets/relay/tls.key
     RELAY_TLS_CA_FILE: /run/secrets/relay/ca.crt
@@ -54,6 +56,10 @@ service:
       port: 9091
       protocol: TCP
       targetPort: 9091
+    - name: control
+      port: 9092
+      protocol: TCP
+      targetPort: 9092
 
 ingress:
   enabled: false

@@ -23,6 +23,20 @@
         ]
       }
     },
+    "/metrics": {
+      "get": {
+        "operationId": "MetricsController_render",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Metrics"
+        ]
+      }
+    },
     "/consent": {
       "post": {
         "operationId": "AnalyticsController_consent",
@@ -20340,6 +20354,38 @@
         ]
       }
     },
+    "/auth/logout-all": {
+      "post": {
+        "operationId": "AuthController_logoutAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Revoke all active user sessions",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/auth/email/start": {
       "post": {
         "operationId": "AuthController_emailStart",
@@ -29534,7 +29580,13 @@
           "command": {
             "type": "string"
           },
-          "status": { "type": "string", "enum": ["queued", "accepted"] }, "error": { "type": "string", "nullable": true }, "created_at": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued"
+            ]
+          },
+          "created_at": {
             "type": "string",
             "format": "date-time"
           }
