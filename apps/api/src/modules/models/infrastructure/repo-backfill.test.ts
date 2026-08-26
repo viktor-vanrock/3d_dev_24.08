@@ -25,6 +25,16 @@ function dependencies(query: (text: string, values?: unknown[]) => Promise<{ row
 }
 
 describe("repository backfill current-schema contract", () => {
+  it("uses the staff/audit identity projection so restricted project owners are still backfilled", async () => {
+    const query = vi.fn(async (text: string) => {
+      if (text.includes("from projects p")) return { rows: [] };
+      return { rows: [{ db: "portal_dev" }] };
+    });
+    const deps = dependencies(query, { DATABASE_URL: "postgres://portal_dev", BACKFILL_REPOS_DB_NAME: "portal_dev" });
+    await runRepoBackfill({ limit: 1 }, deps);
+    expect(query.mock.calls.map(([text]) => text).join("\n")).toContain("join identity_read_all_v1");
+  });
+
   it("defines repository completion queries against projects, not legacy model metadata", () => {
     expect(REPO_BACKFILL_COMPLETION_QUERIES.pendingRepositoryMigration).toContain("from projects");
     expect(REPO_BACKFILL_COMPLETION_QUERIES.migratedProjects).toContain("from projects");

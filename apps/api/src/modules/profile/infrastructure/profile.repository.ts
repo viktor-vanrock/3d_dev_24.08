@@ -140,7 +140,7 @@ export class ProfileRepository implements ProfileReadPort, ProfileAdminPort, Pro
       // `user_id` aliased back to `id` to keep the port shape. This is the cross-domain author seam
       // (feed/community/makes read authors through PROFILE_CONTENT_PORT, never `users` directly).
       `select user_id as id, username, display_name, avatar_url, reputation_score, trust_level
-       from identity_read_v1 where user_id = any($1::uuid[]) and status = 'active'`,
+       from identity_read_v1 where user_id = any($1::uuid[])`,
       [userIds],
     );
     return new Map(
@@ -164,7 +164,7 @@ export class ProfileRepository implements ProfileReadPort, ProfileAdminPort, Pro
   async trustState(userId: UserIdType): Promise<{ readonly trustLevel: number; readonly reputationScore: number; readonly createdAt: Date } | null> {
     const row = (
       await this.pool.query<{ trust_level: number; reputation_score: number; created_at: Date }>(
-        `select trust_level,reputation_score,created_at from identity_read_v1 where user_id=$1 and status='active'`,
+        `select trust_level,reputation_score,created_at from identity_read_v1 where user_id=$1`,
         [userId],
       )
     ).rows[0];

@@ -134,7 +134,7 @@ async function fetchPendingProjects(limit: number, dependencies: RepoBackfillDep
   const result = await dependencies.database.query<PendingProjectRow>(
     `select p.id, p.description, p.owner_id, u.username as owner_username
        from projects p
-       join identity_read_v1 u on u.user_id = p.owner_id
+       join identity_read_all_v1 u on u.user_id = p.owner_id
       where p.repo_path is null and p.deleted_at is null
       order by p.created_at
       limit $1`,

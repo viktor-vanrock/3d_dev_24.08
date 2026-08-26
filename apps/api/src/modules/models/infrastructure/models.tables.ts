@@ -19,5 +19,5 @@ export const modelsTables: DomainTableManifest = {
     "model_tags",
     "storage_blobs",
   ],
-  readsForeignViews: ["projects", "models", "model_revisions", "model_revision_files", "project_revisions", "project_revision_models", "model_tags", "storage_blobs"],
+  readsForeignViews: ["projects", "models", "model_revisions", "model_revision_files", "project_revisions", "project_revision_models", "model_tags", "storage_blobs", "identity_read_all_v1"],
 };
