@@ -89,6 +89,11 @@ export interface ProfileAuthPort {
 
 /** Transaction-aware mutations for the sanctions cascade. The caller owns BEGIN/COMMIT. */
 export interface ProfileSanctionsPort {
+  loadSanctionActor(tx: PoolClient, input: { readonly actorId: UserId }): Promise<{ readonly isStaff: boolean } | null>;
+  loadSanctionTargetForUpdate(
+    tx: PoolClient,
+    input: { readonly targetId: UserId },
+  ): Promise<{ readonly id: UserId; readonly status: "active" | "restricted" | "banned" | "deleted" } | null>;
   restrictForSanction(tx: PoolClient, input: { readonly userId: UserId }): Promise<{ readonly changed: boolean; readonly sessionVersion: number }>;
   activateAfterSanctionExpiry(tx: PoolClient, input: { readonly userId: UserId }): Promise<{ readonly changed: boolean }>;
   isBootstrapAdmin(tx: PoolClient, input: { readonly userId: UserId; readonly adminUsername: string }): Promise<boolean>;

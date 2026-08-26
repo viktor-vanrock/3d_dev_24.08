@@ -1,0 +1,9 @@
+export class SanctionSelfTargetError extends Error {}
+export class SanctionInvalidReasonCodeError extends Error {}
+export class SanctionEndsAtInPastError extends Error {}
+export class SanctionIdempotencyConflictError extends Error {}
+export class SanctionActorNotStaffError extends Error {}
+export class SanctionTargetNotFoundError extends Error {}
+export class SanctionTargetIsBootstrapAdminError extends Error {}
+export class SanctionAlreadyActiveError extends Error {}
+export class SanctionNotActiveError extends Error {}

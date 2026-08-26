@@ -194,6 +194,24 @@ export class ProfileRepository implements ProfileReadPort, ProfileAdminPort, Pro
     return (await this.pool.query(`update users set session_version = session_version + 1, updated_at = now() where id = $1`, [userId])).rowCount !== 0;
   }
 
+  async loadSanctionActor(tx: PoolClient, input: { readonly actorId: UserIdType }): Promise<{ readonly isStaff: boolean } | null> {
+    const row = (await tx.query<{ is_staff: boolean }>(`select is_staff from users where id = $1`, [input.actorId])).rows[0];
+    return row === undefined ? null : { isStaff: row.is_staff };
+  }
+
+  async loadSanctionTargetForUpdate(
+    tx: PoolClient,
+    input: { readonly targetId: UserIdType },
+  ): Promise<{ readonly id: UserIdType; readonly status: "active" | "restricted" | "banned" | "deleted" } | null> {
+    const row = (
+      await tx.query<{ id: string; status: "active" | "restricted" | "banned" | "deleted" }>(
+        `select id, status from users where id = $1 for update`,
+        [input.targetId],
+      )
+    ).rows[0];
+    return row === undefined ? null : { id: UserId(row.id), status: row.status };
+  }
+
   async restrictForSanction(tx: PoolClient, input: { readonly userId: UserIdType }): Promise<{ readonly changed: boolean; readonly sessionVersion: number }> {
     const result = await tx.query<{ session_version: number }>(
       `update users set status = 'restricted', session_version = session_version + 1, updated_at = now()

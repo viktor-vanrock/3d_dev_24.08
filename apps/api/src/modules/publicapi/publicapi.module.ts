@@ -1,9 +1,10 @@
-import { Module } from "@nestjs/common";
+import { Global, Module } from "@nestjs/common";
 import { DatabaseModule } from "../../nest/database/database.module.ts";
 import { PublicApiController } from "./api/publicapi.controller.ts";
 import { PublicApiService } from "./application/publicapi.service.ts";
 import { PublicApiRepository } from "./infrastructure/publicapi.repository.ts";
 import { AGENT_API_KEYS_PORT, PUBLICAPI_PORT, PUBLICAPI_SANCTIONS_PORT } from "./public/index.ts";
+@Global()
 @Module({
   imports: [DatabaseModule],
   controllers: [PublicApiController],

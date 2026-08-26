@@ -1,11 +1,11 @@
 import { Inject, Injectable } from "@nestjs/common";
-import type { Pool } from "pg";
+import type { Pool, PoolClient } from "pg";
 import { DATABASE_POOL } from "../../../nest/database/database.constants.ts";
 import { SanctionAppealId, SanctionId, UserId, type UserId as UserIdType } from "../../_kernel/brandedIds.ts";
 import type { Sanction, SanctionAppeal, SanctionAppealState, SanctionReasonCode, SanctionState, SanctionType } from "../domain/sanctions.ts";
 import type { SanctionsReadPort } from "../public/index.ts";
 
-interface SanctionRow {
+export interface SanctionRow {
   id: string; user_id: string; type: SanctionType; state: SanctionState; reason_code: SanctionReasonCode; reason_note: string | null; evidence_url: string | null;
   starts_at: Date; ends_at: Date | null; created_by: string; cancelled_at: Date | null; cancelled_by: string | null; cancel_reason: string | null;
   idempotency_key: string; idempotency_payload_hash: Buffer; created_at: Date; updated_at: Date;
@@ -39,13 +39,58 @@ export class SanctionsRepository implements SanctionsReadPort {
   async listHistoryForUser(userId: UserIdType): Promise<readonly Sanction[]> {
     return (await this.pool.query<SanctionRow>(`select ${SANCTION_COLUMNS} from sanctions where user_id = $1 order by created_at desc, id desc`, [userId])).rows.map(sanctionFromRow);
   }
-  async insertSanction(input: Omit<Sanction, "id" | "createdAt" | "updatedAt">): Promise<Sanction> {
-    const result = await this.pool.query<SanctionRow>(
+  async findByIdempotencyKey(tx: PoolClient, key: string): Promise<Sanction | null> {
+    const row = (await tx.query<SanctionRow>(`select ${SANCTION_COLUMNS} from sanctions where idempotency_key = $1`, [key])).rows[0];
+    return row === undefined ? null : sanctionFromRow(row);
+  }
+
+  async findById(tx: PoolClient, id: ReturnType<typeof SanctionId>): Promise<Sanction | null> {
+    const row = (await tx.query<SanctionRow>(`select ${SANCTION_COLUMNS} from sanctions where id = $1`, [id])).rows[0];
+    return row === undefined ? null : sanctionFromRow(row);
+  }
+
+  async findByIdForUpdate(tx: PoolClient, id: ReturnType<typeof SanctionId>): Promise<Sanction | null> {
+    const row = (await tx.query<SanctionRow>(`select ${SANCTION_COLUMNS} from sanctions where id = $1 for update`, [id])).rows[0];
+    return row === undefined ? null : sanctionFromRow(row);
+  }
+
+  async insertSanction(tx: PoolClient, input: Omit<Sanction, "id" | "createdAt" | "updatedAt">): Promise<Sanction>;
+  async insertSanction(input: Omit<Sanction, "id" | "createdAt" | "updatedAt">): Promise<Sanction>;
+  async insertSanction(
+    txOrInput: PoolClient | Omit<Sanction, "id" | "createdAt" | "updatedAt">,
+    maybeInput?: Omit<Sanction, "id" | "createdAt" | "updatedAt">,
+  ): Promise<Sanction> {
+    const tx = maybeInput === undefined ? this.pool : txOrInput as PoolClient;
+    const input = maybeInput ?? txOrInput as Omit<Sanction, "id" | "createdAt" | "updatedAt">;
+    const result = await tx.query<SanctionRow>(
       `insert into sanctions (user_id, type, state, reason_code, reason_note, evidence_url, starts_at, ends_at, created_by, cancelled_at, cancelled_by, cancel_reason, idempotency_key, idempotency_payload_hash)
        values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) returning ${SANCTION_COLUMNS}`,
       [input.userId, input.type, input.state, input.reasonCode, input.reasonNote, input.evidenceUrl, input.startsAt, input.endsAt, input.createdBy, input.cancelledAt, input.cancelledBy, input.cancelReason, input.idempotencyKey, input.idempotencyPayloadHash],
     );
     return sanctionFromRow(result.rows[0]!);
+  }
+
+  async cancelSanction(tx: PoolClient, id: ReturnType<typeof SanctionId>, input: { readonly actorId: UserIdType; readonly reason: string }): Promise<Sanction | null> {
+    const row = (
+      await tx.query<SanctionRow>(
+        `update sanctions set state = 'cancelled', cancelled_at = now(), cancelled_by = $2, cancel_reason = $3, updated_at = now()
+         where id = $1 and state = 'active' returning ${SANCTION_COLUMNS}`,
+        [id, input.actorId, input.reason],
+      )
+    ).rows[0];
+    return row === undefined ? null : sanctionFromRow(row);
+  }
+
+  async findActiveByUserId(tx: PoolClient, userId: UserIdType): Promise<Sanction | null> {
+    const row = (await tx.query<SanctionRow>(`select ${SANCTION_COLUMNS} from sanctions where user_id = $1 and state = 'active'`, [userId])).rows[0];
+    return row === undefined ? null : sanctionFromRow(row);
+  }
+
+  async countOtherActiveByUser(tx: PoolClient, input: { readonly userId: UserIdType; readonly excludingId: ReturnType<typeof SanctionId> }): Promise<number> {
+    const row = (
+      await tx.query<{ count: string }>(`select count(*) as count from sanctions where user_id = $1 and state = 'active' and id <> $2`, [input.userId, input.excludingId])
+    ).rows[0];
+    return Number(row?.count ?? "0");
   }
   async insertAppeal(input: Omit<SanctionAppeal, "id" | "submittedAt" | "createdAt" | "updatedAt"> & { readonly submittedAt?: Date }): Promise<SanctionAppeal> {
     const result = await this.pool.query<SanctionAppealRow>(

@@ -12,6 +12,21 @@ async function user(status: "active" | "deleted" = "active"): Promise<ReturnType
 afterAll(async () => { if (created.length > 0) await pool.query(`delete from users where id = any($1::uuid[])`, [created]); });
 
 describe("ProfileSanctionsPort", () => {
+  it("loads sanction actor and target under a row lock", async () => {
+    const id = await user(); const repo = new ProfileRepository(pool); const tx1 = await pool.connect(); const tx2 = await pool.connect();
+    try {
+      await pool.query(`update users set is_staff = true where id = $1`, [id]);
+      await tx1.query("begin");
+      await expect(repo.loadSanctionActor(tx1, { actorId: id })).resolves.toEqual({ isStaff: true });
+      await expect(repo.loadSanctionActor(tx1, { actorId: UserId("ffffffff-ffff-4fff-8fff-ffffffffffff") })).resolves.toBeNull();
+      await expect(repo.loadSanctionTargetForUpdate(tx1, { targetId: id })).resolves.toMatchObject({ id, status: "active" });
+      await tx2.query("begin"); await tx2.query("set local lock_timeout = '500ms'");
+      await expect(tx2.query(`update users set display_name = 'blocked' where id = $1`, [id])).rejects.toMatchObject({ code: "55P03" });
+      await tx2.query("rollback"); await tx1.query("commit");
+      await expect(tx2.query(`update users set display_name = 'released' where id = $1`, [id])).resolves.toMatchObject({ rowCount: 1 });
+    } finally { await tx1.query("rollback").catch(() => undefined); tx1.release(); tx2.release(); }
+  });
+
   it("restricts only active users without changing PII, and is idempotent", async () => {
     const id = await user(); const repo = new ProfileRepository(pool); const tx = await pool.connect();
     try {

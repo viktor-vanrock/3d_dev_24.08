@@ -1,4 +1,4 @@
-import { Module } from "@nestjs/common";
+import { Global, Module } from "@nestjs/common";
 import { DatabaseModule } from "../../nest/database/database.module.ts";
 import { ProjectsController } from "./api/projects.controller.ts";
 import { ProjectCommandService } from "./application/project-command.service.ts";
@@ -8,6 +8,7 @@ import { PostgresProjectRepository } from "./infrastructure/postgres-project.rep
 import { ProjectsOutboxRepository } from "./infrastructure/outbox.repository.ts";
 import { OUTBOX_PORT, PROJECT_COMMAND_SERVICE, PROJECT_PROCESSING_SERVICE, PROJECT_QUERY_SERVICE } from "./public/index.ts";
 
+@Global()
 @Module({
   imports: [DatabaseModule],
   controllers: [ProjectsController],
