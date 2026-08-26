@@ -48,6 +48,7 @@
     "resolve:run": "tsx scripts/resolve-run.ts",
     "import:run": "tsx scripts/import-run.ts",
     "feed:score-worker": "tsx scripts/feed-score-worker.ts",
+    "sanctions:relay-outbox": "tsx scripts/sanctions-relay-outbox.ts",
     "backfill:repos": "tsx scripts/backfill-repos.ts",
     "db:migrate": "dbmate --migrations-dir db/migrations --schema-file db/schema.sql up",
     "db:rollback": "dbmate --migrations-dir db/migrations --schema-file db/schema.sql rollback",

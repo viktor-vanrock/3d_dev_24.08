@@ -4,6 +4,7 @@ import type { Sanction } from "../domain/sanctions.ts";
 /** Read-only cross-domain surface. Mutation/cascade ports land in PR-3. */
 export const SANCTIONS_READ_PORT = Symbol("SANCTIONS_READ_PORT");
 export const SANCTIONS_PORT = Symbol("SANCTIONS_PORT");
+export const SANCTIONS_RELAY_DISPATCH_PORT = Symbol("SANCTIONS_RELAY_DISPATCH_PORT");
 
 export interface SanctionsReadPort {
   findActiveForUser(userId: UserId): Promise<Sanction | null>;
@@ -45,6 +46,10 @@ export type CancelSanctionCommand = { readonly actorId: UserId; readonly sanctio
 export interface SanctionsPort {
   create(input: CreateSanctionCommand): Promise<CreateSanctionResult>;
   cancel(input: CancelSanctionCommand): Promise<SanctionRecord>;
+}
+
+export interface SanctionsRelayDispatchPort {
+  dispatchDueRelayCloseEvents(input: { readonly limit: number; readonly workerId: string }): Promise<{ readonly claimed: number; readonly completed: number; readonly failed: number }>;
 }
 
 export type { Sanction, SanctionAppeal, SanctionAppealState, SanctionReasonCode, SanctionState, SanctionType } from "../domain/sanctions.ts";

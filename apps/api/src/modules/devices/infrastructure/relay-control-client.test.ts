@@ -23,7 +23,7 @@ describe("RelayControlClient metrics", () => {
   it("counts one transport failure for the whole call", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")));
     const { client, metrics } = setup();
-    await client.closeAgentSessions(["a", "b"], "agent_revoked");
+    await expect(client.closeAgentSessions(["a", "b"], "agent_revoked")).rejects.toThrow("offline");
     expect(metrics.incRelayPushClose).toHaveBeenCalledOnce();
     expect(metrics.incRelayPushClose).toHaveBeenCalledWith("failed");
   });

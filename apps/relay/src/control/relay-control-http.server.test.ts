@@ -45,6 +45,13 @@ describe("RelayControlHttpServer", () => {
     expect(valid.status).toBe(200);
     await expect(valid.json()).resolves.toEqual({ closed: ["11111111-1111-4111-8111-111111111111"], notConnected: [] });
 
+    const sanctioned = await fetch(`${baseUrl}/internal/relay/v1/sessions/close`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-relay-service-token": SERVICE_TOKEN },
+      body: JSON.stringify({ agentIds: ["11111111-1111-4111-8111-111111111111"], reason: "owner_sanctioned" }),
+    });
+    expect(sanctioned.status).toBe(200);
+
     const unauthorized = await fetch(`${baseUrl}/internal/relay/v1/sessions/close`, { method: "POST", body: "{}" });
     expect(unauthorized.status).toBe(401);
     const invalid = await fetch(`${baseUrl}/internal/relay/v1/sessions/close`, {
