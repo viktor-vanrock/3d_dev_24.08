@@ -18,7 +18,7 @@ export const DEVICE_ADMIN_PORT = Symbol("DEVICE_ADMIN_PORT");
 export const DEVICE_RELAY_PUSH_PORT = Symbol("DEVICE_RELAY_PUSH_PORT");
 export const DEVICE_SANCTIONS_PORT = Symbol("DEVICE_SANCTIONS_PORT");
 
-export type RelayControlCloseReason = "agent_revoked" | "owner_blocked" | "owner_sanctioned" | "admin_action";
+export type RelayControlCloseReason = "agent_revoked" | "owner_sanctioned" | "admin_action";
 
 export interface DeviceAdminPort {
   revokeAllActiveByOwner(ownerId: UserId, reason: string, actorId: UserId): Promise<readonly string[]>;

@@ -36,6 +36,10 @@ export class SanctionsRepository implements SanctionsReadPort {
     const result = await this.pool.query<SanctionRow>(`select ${SANCTION_COLUMNS} from sanctions where user_id = $1 and state = 'active'`, [userId]);
     const row = result.rows[0]; return row === undefined ? null : sanctionFromRow(row);
   }
+  async findActiveForUserTx(tx: PoolClient, userId: UserIdType): Promise<Sanction | null> {
+    const result = await tx.query<SanctionRow>(`select ${SANCTION_COLUMNS} from sanctions where user_id = $1 and state = 'active'`, [userId]);
+    const row = result.rows[0]; return row === undefined ? null : sanctionFromRow(row);
+  }
   async listHistoryForUser(userId: UserIdType): Promise<readonly Sanction[]> {
     return (await this.pool.query<SanctionRow>(`select ${SANCTION_COLUMNS} from sanctions where user_id = $1 order by created_at desc, id desc`, [userId])).rows.map(sanctionFromRow);
   }

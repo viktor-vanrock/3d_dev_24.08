@@ -3990,23 +3990,6 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/users/{id}/ban": {
-        readonly parameters: {
-            readonly query?: never;
-            readonly header?: never;
-            readonly path?: never;
-            readonly cookie?: never;
-        };
-        readonly get?: never;
-        readonly put?: never;
-        /** Ban and irreversibly anonymize a user */
-        readonly post: operations["ModerationController_ban"];
-        readonly delete?: never;
-        readonly options?: never;
-        readonly head?: never;
-        readonly patch?: never;
-        readonly trace?: never;
-    };
     readonly "/users/{username}": {
         readonly parameters: {
             readonly query?: never;
@@ -4648,15 +4631,6 @@ export interface components {
             readonly availableMinor: number;
             readonly currency: string;
             readonly holdMinor: number;
-        };
-        readonly BannedUserResponseDto: {
-            /** Format: uuid */
-            readonly id: string;
-            /** @enum {string} */
-            readonly status: "banned";
-        };
-        readonly BanUserDto: {
-            readonly reason?: string;
         };
         readonly BboxMmDto: {
             readonly max: readonly number[];
@@ -23153,40 +23127,6 @@ export interface operations {
                 };
                 content: {
                     readonly "application/json": components["schemas"]["VoteResponseDto"];
-                };
-            };
-            /** @description Session is absent or invalid */
-            readonly 401: {
-                headers: {
-                    readonly [name: string]: unknown;
-                };
-                content: {
-                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
-                };
-            };
-        };
-    };
-    readonly ModerationController_ban: {
-        readonly parameters: {
-            readonly query?: never;
-            readonly header?: never;
-            readonly path: {
-                readonly id: string;
-            };
-            readonly cookie?: never;
-        };
-        readonly requestBody: {
-            readonly content: {
-                readonly "application/json": components["schemas"]["BanUserDto"];
-            };
-        };
-        readonly responses: {
-            readonly 200: {
-                headers: {
-                    readonly [name: string]: unknown;
-                };
-                content: {
-                    readonly "application/json": components["schemas"]["BannedUserResponseDto"];
                 };
             };
             /** @description Session is absent or invalid */

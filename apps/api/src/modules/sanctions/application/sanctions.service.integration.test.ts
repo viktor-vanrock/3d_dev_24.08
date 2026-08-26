@@ -20,7 +20,7 @@ function service(config: Record<string, string> = {}): SanctionsService {
     new DevicesRepository(pool, {} as never), new PublicApiRepository(pool, profiles), new ProjectsOutboxRepository(pool),
   );
 }
-async function user(input: { staff?: boolean; status?: "active" | "restricted" | "banned" | "deleted"; username?: string } = {}): Promise<ReturnType<typeof UserId>> {
+async function user(input: { staff?: boolean; status?: "active" | "restricted" | "deleted"; username?: string } = {}): Promise<ReturnType<typeof UserId>> {
   const row = await pool.query<{ id: string }>(
     `insert into users(username, is_staff, status) values($1,$2,$3) returning id`,
     [input.username ?? `sanctions-service-${randomUUID()}`, input.staff ?? false, input.status ?? "active"],

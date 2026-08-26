@@ -51,7 +51,7 @@ describe("extractTableRefs", () => {
 
   it("classifies INSERT/UPDATE/DELETE of KNOWN tables as writes", () => {
     expect(extractTableRefs("insert into agents (id) values ($1)")).toEqual([{ table: "agents", kind: "write" }]);
-    expect(extractTableRefs("update users set status = 'banned' where id = $1")).toEqual([{ table: "users", kind: "write" }]);
+    expect(extractTableRefs("update users set status = 'restricted' where id = $1")).toEqual([{ table: "users", kind: "write" }]);
     expect(extractTableRefs("delete from votes where id = $1")).toEqual([{ table: "votes", kind: "write" }]);
   });
 

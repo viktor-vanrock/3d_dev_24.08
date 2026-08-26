@@ -1,4 +1,3 @@
-import { randomBytes } from "node:crypto";
 import type { PoolClient } from "pg";
 import { pool } from "../../../db/client.ts";
 
@@ -29,13 +28,16 @@ export async function claimBootstrapAdminUser(client: PoolClient, username: stri
   return { id: row.id, created: false };
 }
 
-export async function activateBootstrapAdminUser(client: PoolClient, userId: string): Promise<void> {
+export async function activateBootstrapAdminUser(client: PoolClient, userId: string, hasActiveSanction: boolean): Promise<void> {
   await client.query(
     `update users
-     set status = 'active', handle_confirmed = true, is_staff = true,
-         session_version = session_version + 1, updated_at = now()
+     set handle_confirmed = true,
+         is_staff = true,
+         status = case when $2 then status else 'active' end,
+         session_version = case when $2 then session_version else session_version + 1 end,
+         updated_at = now()
      where id = $1`,
-    [userId],
+    [userId, hasActiveSanction],
   );
 }
 
@@ -54,29 +56,6 @@ export async function upsertDevUser(): Promise<OwnedUserSummary | null> {
   );
   const row = result.rows[0];
   return row !== undefined && row.status === "active" ? { id: row.id, username: row.username } : null;
-}
-
-export async function banOwnedUser(userId: string): Promise<"banned" | "not_found"> {
-  const current = await pool.query<{ status: string }>(`select status from users where id = $1`, [userId]);
-  const row = current.rows[0];
-  if (row === undefined) return "not_found";
-  if (row.status === "banned") return "banned";
-
-  await pool.query(
-    `update users
-     set status = 'banned',
-         username = $2,
-         display_name = null,
-         avatar_url = null,
-         avatar_s3_key = null,
-         bio = null,
-         website_url = null,
-         contacts = '[]'::jsonb,
-         updated_at = now()
-     where id = $1`,
-    [userId, `deleted.${randomBytes(6).toString("hex")}`],
-  );
-  return "banned";
 }
 
 export async function becomeMaster<TProfile = unknown>(userId: string): Promise<OwnedMasterRow<TProfile> | null> {

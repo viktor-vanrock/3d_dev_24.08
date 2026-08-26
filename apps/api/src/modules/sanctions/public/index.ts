@@ -1,5 +1,6 @@
 import type { SanctionAppealId, SanctionId, UserId } from "../../_kernel/brandedIds.ts";
 import type { Sanction, SanctionAppeal } from "../domain/sanctions.ts";
+import type { PoolClient } from "pg";
 
 /** Read-only cross-domain surface. Mutation/cascade ports land in PR-3. */
 export const SANCTIONS_READ_PORT = Symbol("SANCTIONS_READ_PORT");
@@ -10,6 +11,7 @@ export const SANCTIONS_EXPIRATION_PORT = Symbol("SANCTIONS_EXPIRATION_PORT");
 
 export interface SanctionsReadPort {
   findActiveForUser(userId: UserId): Promise<Sanction | null>;
+  findActiveForUserTx(tx: PoolClient, userId: UserId): Promise<Sanction | null>;
   listHistoryForUser(userId: UserId): Promise<readonly Sanction[]>;
 }
 

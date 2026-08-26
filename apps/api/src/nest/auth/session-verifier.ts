@@ -52,7 +52,7 @@ export class SessionVerifier {
   constructor(
     @Inject(ConfigService) private readonly config: ConfigService,
     @Inject(PROFILE_AUTH_PORT) private readonly profiles: ProfileAuthPort,
-    @Inject(SANCTIONS_READ_PORT) private readonly sanctions: SanctionsReadPort,
+    @Optional() @Inject(SANCTIONS_READ_PORT) private readonly sanctions: SanctionsReadPort | undefined,
     @Inject(RuntimeLogger) private readonly logger: RuntimeLogger,
     @Optional() @Inject(MetricsService) private readonly metrics?: MetricsService,
   ) {}
@@ -83,8 +83,10 @@ export class SessionVerifier {
     const state = await this.profiles.loadOwnerAuthState(UserId(claims.sub));
     if (state === null) return this.rejected("unknown");
     if (state.status === "deleted") return this.rejected("user_blocked");
-    const sanction = await this.sanctions.findActiveForUser(UserId(claims.sub));
-    if (sanction !== null) throw new AccountRestrictedException(sanction.endsAt?.toISOString() ?? null);
+    if (this.sanctions) {
+      const sanction = await this.sanctions.findActiveForUser(UserId(claims.sub));
+      if (sanction !== null) throw new AccountRestrictedException(sanction.endsAt?.toISOString() ?? null);
+    }
     if (state.status !== "active") return this.rejected("user_blocked");
     if (claims.sessionVersion !== state.sessionVersion) return this.rejected("version_mismatch");
 

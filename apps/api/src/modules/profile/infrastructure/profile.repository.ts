@@ -181,8 +181,8 @@ export class ProfileRepository implements ProfileReadPort, ProfileAdminPort, Pro
     return result.rows[0] === undefined ? null : mapSession(result.rows[0]);
   }
 
-  async loadOwnerAuthState(userId: UserIdType): Promise<{ readonly status: "active" | "restricted" | "banned" | "deleted"; readonly sessionVersion: number } | null> {
-    const result = await this.pool.query<{ status: "active" | "restricted" | "banned" | "deleted"; session_version: number }>(
+  async loadOwnerAuthState(userId: UserIdType): Promise<{ readonly status: "active" | "restricted" | "deleted"; readonly sessionVersion: number } | null> {
+    const result = await this.pool.query<{ status: "active" | "restricted" | "deleted"; session_version: number }>(
       `select status, session_version from users where id = $1`,
       [userId],
     );
@@ -202,9 +202,9 @@ export class ProfileRepository implements ProfileReadPort, ProfileAdminPort, Pro
   async loadSanctionTargetForUpdate(
     tx: PoolClient,
     input: { readonly targetId: UserIdType },
-  ): Promise<{ readonly id: UserIdType; readonly status: "active" | "restricted" | "banned" | "deleted" } | null> {
+  ): Promise<{ readonly id: UserIdType; readonly status: "active" | "restricted" | "deleted" } | null> {
     const row = (
-      await tx.query<{ id: string; status: "active" | "restricted" | "banned" | "deleted" }>(
+      await tx.query<{ id: string; status: "active" | "restricted" | "deleted" }>(
         `select id, status from users where id = $1 for update`,
         [input.targetId],
       )
@@ -326,21 +326,6 @@ export class ProfileRepository implements ProfileReadPort, ProfileAdminPort, Pro
           avatarUrl: row.avatar_url,
           masterProfile: row.master_profile,
         };
-  }
-
-  async banUser(userId: UserIdType): Promise<{ readonly status: "banned"; readonly transitioned: boolean } | "not_found"> {
-    const transitioned = await this.pool.query(
-      `update users
-       set status = 'banned', username = $2, display_name = null, avatar_url = null,
-           avatar_s3_key = null, bio = null, website_url = null, contacts = '[]'::jsonb,
-           session_version = session_version + 1, updated_at = now()
-       where id = $1 and status <> 'banned'
-       returning id`,
-      [userId, `deleted.${randomBytes(6).toString("hex")}`],
-    );
-    if ((transitioned.rowCount ?? 0) > 0) return { status: "banned", transitioned: true };
-    const existing = await this.pool.query(`select 1 from users where id = $1`, [userId]);
-    return (existing.rowCount ?? 0) > 0 ? { status: "banned", transitioned: false } : "not_found";
   }
 
   async findProfilePage(username: string): Promise<ProfilePageRow | null> {

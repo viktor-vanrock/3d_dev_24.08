@@ -44,7 +44,7 @@ describe("PublicApiService", () => {
   });
   it("refuses to issue a key for an inactive owner", async () => {
     const { service, repository, profiles } = setup();
-    profiles.loadOwnerAuthState.mockResolvedValue({ status: "banned", sessionVersion: 1 });
+    profiles.loadOwnerAuthState.mockResolvedValue({ status: "restricted", sessionVersion: 1 });
     await expect(service.createApiKey(UserId("00000000-0000-4000-8000-000000000001"), {}, { request: request(), requestId: "request-id" })).rejects.toBeInstanceOf(
       ForbiddenException,
     );

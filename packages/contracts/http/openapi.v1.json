@@ -19438,66 +19438,6 @@
         ]
       }
     },
-    "/users/{id}/ban": {
-      "post": {
-        "operationId": "ModerationController_ban",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BanUserDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BannedUserResponseDto"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Session is absent or invalid",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "portal_session": []
-          },
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Ban and irreversibly anonymize a user",
-        "tags": [
-          "moderation"
-        ]
-      }
-    },
     "/me/achievements": {
       "get": {
         "operationId": "AchievementsController_list",
@@ -37982,34 +37922,6 @@
         "required": [
           "state",
           "resolutionNote"
-        ]
-      },
-      "BanUserDto": {
-        "type": "object",
-        "properties": {
-          "reason": {
-            "type": "string",
-            "maxLength": 500
-          }
-        }
-      },
-      "BannedUserResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "banned"
-            ]
-          }
-        },
-        "required": [
-          "id",
-          "status"
         ]
       },
       "AchievementDto": {

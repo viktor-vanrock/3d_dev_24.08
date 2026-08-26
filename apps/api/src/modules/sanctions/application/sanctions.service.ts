@@ -57,7 +57,7 @@ export class SanctionsService implements SanctionsPort {
         throw new SanctionIdempotencyConflictError();
       }
       const target = await this.profiles.loadSanctionTargetForUpdate(tx, { targetId: input.targetId });
-      if (target === null || target.status === "deleted" || target.status === "banned") throw new SanctionTargetNotFoundError();
+      if (target === null || target.status === "deleted") throw new SanctionTargetNotFoundError();
       const actor = await this.profiles.loadSanctionActor(tx, { actorId: input.actorId });
       if (actor === null || !actor.isStaff) throw new SanctionActorNotStaffError();
       const isBootstrapAdmin = await this.profiles.isBootstrapAdmin(tx, { userId: input.targetId, adminUsername: this.config.get<string>("ADMIN_USERNAME") ?? "" });

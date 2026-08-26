@@ -1,9 +1,10 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, Optional } from "@nestjs/common";
 import type { Pool } from "pg";
 import { DATABASE_POOL } from "../../../nest/database/database.constants.ts";
 import { UserId, type UserId as UserIdType } from "../../_kernel/brandedIds.ts";
 import type { AuthIdentityReadPort } from "../public/index.ts";
 import { activateBootstrapAdminUser, claimBootstrapAdminUser } from "../../profile/public/legacy.ts";
+import { SANCTIONS_READ_PORT, type SanctionsReadPort } from "../../sanctions/public/index.ts";
 
 export interface PasswordCredentialUser {
   readonly id: UserIdType;
@@ -20,7 +21,10 @@ interface OtpRow {
 
 @Injectable()
 export class AuthRepository implements AuthIdentityReadPort {
-  constructor(@Inject(DATABASE_POOL) private readonly pool: Pool) {}
+  constructor(
+    @Inject(DATABASE_POOL) private readonly pool: Pool,
+    @Optional() @Inject(SANCTIONS_READ_PORT) private readonly sanctions?: SanctionsReadPort,
+  ) {}
 
   async latestOtpCreatedAt(emailHash: Buffer): Promise<Date | null> {
     const result = await this.pool.query<{ created_at: Date | string }>(`select created_at from email_otp where email_hash = $1 order by created_at desc limit 1`, [emailHash]);
@@ -88,7 +92,8 @@ export class AuthRepository implements AuthIdentityReadPort {
           throw new Error("ADMIN_USERNAME is already owned by a non-bootstrap account");
         }
       }
-      await activateBootstrapAdminUser(client, claimed.id);
+      const activeSanction = this.sanctions ? await this.sanctions.findActiveForUserTx(client, UserId(claimed.id)) : null;
+      await activateBootstrapAdminUser(client, claimed.id, activeSanction !== null);
 
       await client.query(
         `insert into user_password_credentials (user_id, password_hash)

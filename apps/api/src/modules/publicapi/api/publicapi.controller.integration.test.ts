@@ -110,7 +110,7 @@ describe.skipIf(!canRun)("Nest publicapi migration", () => {
     const second = (await rotated.json()) as { key: string };
     expect((await fetch(`${baseUrl}/v0/printers`, { headers: { authorization: `Bearer ${replacementKey}` } })).status).toBe(401);
     expect((await fetch(`${baseUrl}/v0/printers`, { headers: { authorization: `Bearer ${second.key}` } })).status).toBe(200);
-    await pool.query(`update users set status = 'banned' where id = $1`, [userId]);
+    await pool.query(`update users set status = 'restricted' where id = $1`, [userId]);
     expect((await fetch(`${baseUrl}/v0/printers`, { headers: { authorization: `Bearer ${second.key}` } })).status).toBe(401);
     await pool.query(`update users set status = 'active' where id = $1`, [userId]);
   });

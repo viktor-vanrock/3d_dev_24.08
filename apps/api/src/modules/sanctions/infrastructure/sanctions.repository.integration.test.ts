@@ -34,6 +34,12 @@ describe("SanctionsRepository", () => {
     });
     createdSanctions.push(sanction.id);
     await expect(repository.findActiveForUser(target)).resolves.toMatchObject({ id: sanction.id, state: "active" });
+    const tx = await pool.connect();
+    try {
+      await tx.query("begin");
+      await expect(repository.findActiveForUserTx(tx, target)).resolves.toMatchObject({ id: sanction.id, state: "active" });
+      await tx.query("commit");
+    } finally { tx.release(); }
     await expect(repository.listHistoryForUser(target)).resolves.toMatchObject([{ id: sanction.id }]);
   });
 

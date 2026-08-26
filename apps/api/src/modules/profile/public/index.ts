@@ -24,7 +24,6 @@ export interface ProfileReadPort {
 
 export interface ProfileAdminPort {
   isStaff(userId: UserId): Promise<boolean>;
-  banUser(userId: UserId): Promise<{ readonly status: "banned"; readonly transitioned: boolean } | "not_found">;
 }
 
 export interface PublicContentAuthor {
@@ -81,7 +80,7 @@ export interface NewUserSeed {
 
 export interface ProfileAuthPort {
   findSessionUser(userId: UserId): Promise<SessionProfile | null>;
-  loadOwnerAuthState(userId: UserId): Promise<{ readonly status: "active" | "restricted" | "banned" | "deleted"; readonly sessionVersion: number } | null>;
+  loadOwnerAuthState(userId: UserId): Promise<{ readonly status: "active" | "restricted" | "deleted"; readonly sessionVersion: number } | null>;
   bumpSessionVersion(userId: UserId): Promise<boolean>;
   createUserWithFreeHandle(seed: NewUserSeed): Promise<UserId>;
   upsertDevUser(): Promise<SessionProfile | null>;
@@ -93,7 +92,7 @@ export interface ProfileSanctionsPort {
   loadSanctionTargetForUpdate(
     tx: PoolClient,
     input: { readonly targetId: UserId },
-  ): Promise<{ readonly id: UserId; readonly status: "active" | "restricted" | "banned" | "deleted" } | null>;
+  ): Promise<{ readonly id: UserId; readonly status: "active" | "restricted" | "deleted" } | null>;
   restrictForSanction(tx: PoolClient, input: { readonly userId: UserId }): Promise<{ readonly changed: boolean; readonly sessionVersion: number }>;
   activateAfterSanctionExpiry(tx: PoolClient, input: { readonly userId: UserId }): Promise<{ readonly changed: boolean }>;
   isBootstrapAdmin(tx: PoolClient, input: { readonly userId: UserId; readonly adminUsername: string }): Promise<boolean>;

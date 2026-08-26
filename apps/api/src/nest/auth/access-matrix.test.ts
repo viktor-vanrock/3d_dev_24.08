@@ -26,8 +26,8 @@ function concreteUrl(route: RouteEntry): string {
 
 describe("Nest auth access matrix", () => {
   it("matches normal-mode decisions for every active route in the immutable manifest", () => {
-    expect(routes).toHaveLength(316);
-    expect(activeRoutes).toHaveLength(269);
+    expect(routes).toHaveLength(315);
+    expect(activeRoutes).toHaveLength(268);
     for (const route of activeRoutes) {
       expect(requiresSession({ method: route.method, url: concreteUrl(route), closedDev: false }), `${route.method} ${route.path}`).toBe(route.authMode === "authed");
     }
