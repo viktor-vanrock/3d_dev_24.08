@@ -92,6 +92,22 @@ export class SanctionsRepository implements SanctionsReadPort {
     ).rows[0];
     return Number(row?.count ?? "0");
   }
+  async claimDueActiveSanctionsForUpdate(tx: PoolClient, input: { readonly limit: number }): Promise<readonly { readonly id: ReturnType<typeof SanctionId>; readonly userId: UserIdType }[]> {
+    return (
+      await tx.query<{ id: string; user_id: string }>(
+        `select id, user_id from sanctions where state = 'active' and ends_at is not null and ends_at < now()
+         order by ends_at, id for update skip locked limit $1`,
+        [input.limit],
+      )
+    ).rows.map((row) => ({ id: SanctionId(row.id), userId: UserId(row.user_id) }));
+  }
+  async markExpired(tx: PoolClient, input: { readonly id: ReturnType<typeof SanctionId> }): Promise<boolean> {
+    return (await tx.query(`update sanctions set state = 'expired', updated_at = now() where id = $1 and state = 'active'`, [input.id])).rowCount === 1;
+  }
+  async countActiveSanctionsForUser(tx: PoolClient, input: { readonly userId: UserIdType }): Promise<number> {
+    const row = (await tx.query<{ count: string }>(`select count(*) as count from sanctions where user_id = $1 and state = 'active'`, [input.userId])).rows[0];
+    return Number(row?.count ?? "0");
+  }
   async findAppealById(tx: PoolClient, id: ReturnType<typeof SanctionAppealId>): Promise<SanctionAppeal | null> {
     const row = (await tx.query<SanctionAppealRow>(`select ${APPEAL_COLUMNS} from sanction_appeals where id = $1`, [id])).rows[0];
     return row === undefined ? null : appealFromRow(row);

@@ -42,6 +42,7 @@ Run package commands from `apps/api`, or from the repository root with `pnpm --f
 - Legacy import defaults to dry-run, accepts only checked source schema fingerprints, requires a distinct empty Project API v1 baseline target, verifies owner/file/relation accounting, and writes an `0600` reconciliation report. `--apply` is the only mutating mode.
 - Recurring commands use `DATABASE_URL`; catalog adapters have bounded retry/timeout behavior, feed score work exits non-zero on its database connection failure, and all CLIs close their database pool on completion/failure.
 - `sanctions:relay-outbox` runs each minute from `portal.sanctions-relay-outbox.timer`, claims only `sanction.relay_close.v1` events, batches Relay close requests in groups of 100, and retries failed deliveries with capped exponential backoff.
+- `sanctions:expire` runs each minute from `portal.sanctions-expire.timer`, materializes due active sanctions as expired, and reactivates restricted users only when no active sanction remains; it never restores credentials or bumps session versions.
 
 Run `pnpm typecheck`, `pnpm lint`, `pnpm boundaries`, `pnpm --filter @portal/api run test:operational-scripts`, and `pnpm build` before rollout. The full environment, data target, side-effect, safety, and per-entry verification contract is kept in the checked inventory.
 

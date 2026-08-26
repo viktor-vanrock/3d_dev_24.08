@@ -6,6 +6,7 @@ export const SANCTIONS_READ_PORT = Symbol("SANCTIONS_READ_PORT");
 export const SANCTIONS_PORT = Symbol("SANCTIONS_PORT");
 export const SANCTIONS_RELAY_DISPATCH_PORT = Symbol("SANCTIONS_RELAY_DISPATCH_PORT");
 export const SANCTION_APPEALS_PORT = Symbol("SANCTION_APPEALS_PORT");
+export const SANCTIONS_EXPIRATION_PORT = Symbol("SANCTIONS_EXPIRATION_PORT");
 
 export interface SanctionsReadPort {
   findActiveForUser(userId: UserId): Promise<Sanction | null>;
@@ -53,6 +54,10 @@ export interface SanctionsPort {
 
 export interface SanctionsRelayDispatchPort {
   dispatchDueRelayCloseEvents(input: { readonly limit: number; readonly workerId: string }): Promise<{ readonly claimed: number; readonly completed: number; readonly failed: number }>;
+}
+
+export interface SanctionsExpirationPort {
+  expireDue(input: { readonly limit: number; readonly workerId: string }): Promise<{ readonly expired: number; readonly activatedUsers: number }>;
 }
 
 export type SanctionAppealRecord = SanctionAppeal;

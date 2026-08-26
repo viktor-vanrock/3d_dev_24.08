@@ -374,6 +374,17 @@
       "verification": "vitest run src/modules/sanctions/application/sanction-relay-outbox-dispatcher.test.ts"
     },
     {
+      "file": "sanctions-expire.ts",
+      "lifecycle": "active recurring work",
+      "owner": "sanctions/profile",
+      "invocations": ["pnpm run sanctions:expire", "portal.sanctions-expire.service/timer"],
+      "requiredEnvironment": ["DATABASE_URL"],
+      "dataTargets": ["sanctions", "users"],
+      "sideEffects": "transitions sanctions.state active→expired; activates users.status restricted→active only without other active sanctions; does not restore revoked credentials or bump session_version",
+      "safetyMode": "transactional FOR UPDATE SKIP LOCKED claim, bounded 500-row batch, idempotent active-state predicate",
+      "verification": "vitest run src/modules/sanctions/application/sanctions-expiration.service.test.ts and isolated migrated-database smoke"
+    },
+    {
       "file": "operational-entrypoints.inventory.json",
       "lifecycle": "CI guard",
       "owner": "API operations",

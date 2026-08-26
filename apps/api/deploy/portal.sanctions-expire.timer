@@ -1,0 +1,10 @@
+[Unit]
+Description=portal.ru sanctions expiration worker every minute
+
+[Timer]
+OnCalendar=*-*-* *:*:00
+RandomizedDelaySec=10
+Persistent=true
+
+[Install]
+WantedBy=timers.target
