@@ -1,10 +1,11 @@
-import type { SanctionId, UserId } from "../../_kernel/brandedIds.ts";
-import type { Sanction } from "../domain/sanctions.ts";
+import type { SanctionAppealId, SanctionId, UserId } from "../../_kernel/brandedIds.ts";
+import type { Sanction, SanctionAppeal } from "../domain/sanctions.ts";
 
 /** Read-only cross-domain surface. Mutation/cascade ports land in PR-3. */
 export const SANCTIONS_READ_PORT = Symbol("SANCTIONS_READ_PORT");
 export const SANCTIONS_PORT = Symbol("SANCTIONS_PORT");
 export const SANCTIONS_RELAY_DISPATCH_PORT = Symbol("SANCTIONS_RELAY_DISPATCH_PORT");
+export const SANCTION_APPEALS_PORT = Symbol("SANCTION_APPEALS_PORT");
 
 export interface SanctionsReadPort {
   findActiveForUser(userId: UserId): Promise<Sanction | null>;
@@ -46,10 +47,20 @@ export type CancelSanctionCommand = { readonly actorId: UserId; readonly sanctio
 export interface SanctionsPort {
   create(input: CreateSanctionCommand): Promise<CreateSanctionResult>;
   cancel(input: CancelSanctionCommand): Promise<SanctionRecord>;
+  activeForUser(input: { readonly requesterId: UserId; readonly userId: UserId }): Promise<{ readonly sanctions: readonly SanctionRecord[]; readonly requesterIsStaff: boolean }>;
+  historyForUser(input: { readonly requesterId: UserId; readonly userId: UserId }): Promise<{ readonly sanctions: readonly SanctionRecord[]; readonly requesterIsStaff: boolean }>;
 }
 
 export interface SanctionsRelayDispatchPort {
   dispatchDueRelayCloseEvents(input: { readonly limit: number; readonly workerId: string }): Promise<{ readonly claimed: number; readonly completed: number; readonly failed: number }>;
+}
+
+export type SanctionAppealRecord = SanctionAppeal;
+
+export interface SanctionAppealsPort {
+  submit(input: { readonly submitterId: UserId; readonly sanctionId: SanctionId; readonly message: string }): Promise<SanctionAppealRecord>;
+  list(input: { readonly sanctionId: SanctionId; readonly requesterId: UserId }): Promise<{ readonly appeals: readonly SanctionAppealRecord[]; readonly requesterIsStaff: boolean }>;
+  resolve(input: { readonly resolverId: UserId; readonly appealId: SanctionAppealId; readonly state: "accepted" | "rejected"; readonly resolutionNote: string }): Promise<SanctionAppealRecord>;
 }
 
 export type { Sanction, SanctionAppeal, SanctionAppealState, SanctionReasonCode, SanctionState, SanctionType } from "../domain/sanctions.ts";

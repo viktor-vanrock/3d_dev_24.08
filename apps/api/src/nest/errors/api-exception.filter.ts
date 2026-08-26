@@ -5,6 +5,8 @@ import type { ApiErrorCode } from "@portal/contracts/http/error-envelope";
 import { getRequestId, type RequestWithId } from "../observability/request-id.ts";
 import { RuntimeLogger } from "../observability/runtime-logger.ts";
 import { ProjectError } from "../../modules/projects/domain/project.errors.ts";
+import { AccountRestrictedException } from "../auth/account-restricted.exception.ts";
+import * as SanctionErrors from "../../modules/sanctions/domain/sanction.errors.ts";
 
 interface ClassifiedError {
   readonly status: number;
@@ -43,6 +45,11 @@ function isMalformedJson(exception: unknown): boolean {
 }
 
 export function classifyError(exception: unknown, projectRoute = false): ClassifiedError {
+  if (exception instanceof AccountRestrictedException) return { status: HttpStatus.UNAUTHORIZED, code: "account_restricted" as ApiErrorCode, message: "Account is restricted" };
+  const sanctionErrorMap = new Map<new (...args: never[]) => Error, [number, string]>([
+    [SanctionErrors.SanctionSelfTargetError, [400, "sanction.self_target"]], [SanctionErrors.SanctionInvalidReasonCodeError, [400, "sanction.invalid_reason_code"]], [SanctionErrors.SanctionEndsAtInPastError, [400, "sanction.ends_at_in_past"]], [SanctionErrors.SanctionIdempotencyConflictError, [409, "sanction.idempotency_conflict"]], [SanctionErrors.SanctionActorNotStaffError, [403, "sanction.actor_not_staff"]], [SanctionErrors.SanctionTargetNotFoundError, [404, "sanction.target_not_found"]], [SanctionErrors.SanctionTargetIsBootstrapAdminError, [403, "sanction.target_is_bootstrap_admin"]], [SanctionErrors.SanctionAlreadyActiveError, [409, "sanction.already_active"]], [SanctionErrors.SanctionNotActiveError, [409, "sanction.not_active"]], [SanctionErrors.SanctionAppealSubmitterMismatchError, [403, "sanction.appeal_submitter_mismatch"]], [SanctionErrors.SanctionAppealTargetSanctionNotActiveError, [409, "sanction.appeal_target_sanction_not_active"]], [SanctionErrors.SanctionAppealAlreadyPendingError, [409, "sanction.appeal_already_pending"]], [SanctionErrors.SanctionAppealNotFoundError, [404, "sanction.appeal_not_found"]], [SanctionErrors.SanctionAppealNotPendingError, [409, "sanction.appeal_not_pending"]], [SanctionErrors.SanctionAppealResolverIsCreatorError, [403, "sanction.appeal_resolver_is_creator"]], [SanctionErrors.SanctionAppealForbiddenError, [403, "sanction.appeal_forbidden"]],
+  ]);
+  for (const [type, [status, code]] of sanctionErrorMap) if (exception instanceof type) return { status, code: code as ApiErrorCode, message: "Sanction request rejected" };
   if (exception instanceof ProjectError) {
     return { status: exception.status, code: exception.code, message: exception.safeMessage };
   }
@@ -92,7 +99,10 @@ export class ApiExceptionFilter implements ExceptionFilter<unknown> {
     const requestId = getRequestId(request);
     const url = request.originalUrl ?? request.url ?? "";
     const projectRoute = /^\/projects(?:\/|\?|$)/.test(url);
-    const classified = classifyError(exception, projectRoute);
+    const initial = classifyError(exception, projectRoute);
+    const classified = /^\/(?:sanctions|appeals|users\/[0-9a-f-]+\/sanctions)(?:\/|\?|$)/i.test(url) && initial.status === 422
+      ? { status: HttpStatus.BAD_REQUEST, code: "http.bad_request.v1" as ApiErrorCode, message: "Некорректный запрос" }
+      : initial;
 
     if (exception instanceof ProjectError) {
       for (const [name, value] of Object.entries(exception.headers)) response.setHeader(name, value);
@@ -112,10 +122,12 @@ export class ApiExceptionFilter implements ExceptionFilter<unknown> {
       },
       "api request failed",
     );
+    const restricted = exception instanceof AccountRestrictedException;
     response.status(classified.status).json({
       error: {
         code: classified.code,
         message: classified.message,
+        ...(restricted ? { endsAt: exception.endsAt } : {}),
         requestId,
       },
     });

@@ -181,8 +181,8 @@ export class ProfileRepository implements ProfileReadPort, ProfileAdminPort, Pro
     return result.rows[0] === undefined ? null : mapSession(result.rows[0]);
   }
 
-  async loadOwnerAuthState(userId: UserIdType): Promise<{ readonly status: "active" | "banned" | "deleted"; readonly sessionVersion: number } | null> {
-    const result = await this.pool.query<{ status: "active" | "banned" | "deleted"; session_version: number }>(
+  async loadOwnerAuthState(userId: UserIdType): Promise<{ readonly status: "active" | "restricted" | "banned" | "deleted"; readonly sessionVersion: number } | null> {
+    const result = await this.pool.query<{ status: "active" | "restricted" | "banned" | "deleted"; session_version: number }>(
       `select status, session_version from users where id = $1`,
       [userId],
     );

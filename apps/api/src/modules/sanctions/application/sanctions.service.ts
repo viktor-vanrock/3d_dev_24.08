@@ -2,6 +2,7 @@ import { ConfigService } from "@nestjs/config";
 import { Inject, Injectable } from "@nestjs/common";
 import type { Pool } from "pg";
 import { DATABASE_POOL } from "../../../nest/database/database.constants.ts";
+import type { UserId } from "../../_kernel/brandedIds.ts";
 import { DEVICE_SANCTIONS_PORT, type DeviceSanctionsPort } from "../../devices/public/index.ts";
 import { PROFILE_SANCTIONS_PORT, type ProfileSanctionsPort } from "../../profile/public/index.ts";
 import { OUTBOX_PORT, type OutboxPort } from "../../projects/public/index.ts";
@@ -114,5 +115,26 @@ export class SanctionsService implements SanctionsPort {
     } finally {
       tx.release();
     }
+  }
+
+  async activeForUser(input: { readonly requesterId: UserId; readonly userId: UserId }): Promise<{ readonly sanctions: readonly SanctionRecord[]; readonly requesterIsStaff: boolean }> {
+    return this.readForUser(input, true);
+  }
+
+  async historyForUser(input: { readonly requesterId: UserId; readonly userId: UserId }): Promise<{ readonly sanctions: readonly SanctionRecord[]; readonly requesterIsStaff: boolean }> {
+    return this.readForUser(input, false);
+  }
+
+  private async readForUser(input: { readonly requesterId: UserId; readonly userId: UserId }, active: boolean): Promise<{ readonly sanctions: readonly SanctionRecord[]; readonly requesterIsStaff: boolean }> {
+    const tx = await this.pool.connect();
+    try {
+      await tx.query("begin");
+      const actor = await this.profiles.loadSanctionActor(tx, { actorId: input.requesterId });
+      const requesterIsStaff = actor?.isStaff === true;
+      if (!requesterIsStaff && input.requesterId !== input.userId) throw new SanctionActorNotStaffError();
+      const sanctions = active ? [await this.repository.findActiveByUserId(tx, input.userId)].filter((value): value is Sanction => value !== null) : await this.repository.listHistoryForUser(input.userId);
+      await tx.query("commit");
+      return { sanctions: sanctions.map(recordOf), requesterIsStaff };
+    } catch (error) { await tx.query("rollback").catch(() => undefined); throw error; } finally { tx.release(); }
   }
 }

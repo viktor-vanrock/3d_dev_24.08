@@ -10,7 +10,7 @@ export interface SanctionRow {
   starts_at: Date; ends_at: Date | null; created_by: string; cancelled_at: Date | null; cancelled_by: string | null; cancel_reason: string | null;
   idempotency_key: string; idempotency_payload_hash: Buffer; created_at: Date; updated_at: Date;
 }
-interface SanctionAppealRow {
+export interface SanctionAppealRow {
   id: string; sanction_id: string; submitted_by: string; submitted_at: Date; message: string; state: SanctionAppealState; resolved_by: string | null;
   resolved_at: Date | null; resolution_note: string | null; created_at: Date; updated_at: Date;
 }
@@ -92,7 +92,34 @@ export class SanctionsRepository implements SanctionsReadPort {
     ).rows[0];
     return Number(row?.count ?? "0");
   }
-  async insertAppeal(input: Omit<SanctionAppeal, "id" | "submittedAt" | "createdAt" | "updatedAt"> & { readonly submittedAt?: Date }): Promise<SanctionAppeal> {
+  async findAppealById(tx: PoolClient, id: ReturnType<typeof SanctionAppealId>): Promise<SanctionAppeal | null> {
+    const row = (await tx.query<SanctionAppealRow>(`select ${APPEAL_COLUMNS} from sanction_appeals where id = $1`, [id])).rows[0];
+    return row === undefined ? null : appealFromRow(row);
+  }
+
+  async findAppealsBySanction(tx: PoolClient, sanctionId: ReturnType<typeof SanctionId>, input: { readonly onlyForUserId?: UserIdType } = {}): Promise<readonly SanctionAppeal[]> {
+    return (
+      await tx.query<SanctionAppealRow>(
+        `select ${APPEAL_COLUMNS} from sanction_appeals where sanction_id = $1 and ($2::uuid is null or submitted_by = $2) order by submitted_at desc, id desc`,
+        [sanctionId, input.onlyForUserId ?? null],
+      )
+    ).rows.map(appealFromRow);
+  }
+
+  async insertAppeal(tx: PoolClient, input: { readonly sanctionId: ReturnType<typeof SanctionId>; readonly submitterId: UserIdType; readonly message: string }): Promise<SanctionAppeal>;
+  async insertAppeal(input: Omit<SanctionAppeal, "id" | "submittedAt" | "createdAt" | "updatedAt"> & { readonly submittedAt?: Date }): Promise<SanctionAppeal>;
+  async insertAppeal(
+    txOrInput: PoolClient | (Omit<SanctionAppeal, "id" | "submittedAt" | "createdAt" | "updatedAt"> & { readonly submittedAt?: Date }),
+    maybeInput?: { readonly sanctionId: ReturnType<typeof SanctionId>; readonly submitterId: UserIdType; readonly message: string },
+  ): Promise<SanctionAppeal> {
+    if (maybeInput !== undefined) {
+      const result = await (txOrInput as PoolClient).query<SanctionAppealRow>(
+        `insert into sanction_appeals (sanction_id, submitted_by, message) values ($1,$2,$3) returning ${APPEAL_COLUMNS}`,
+        [maybeInput.sanctionId, maybeInput.submitterId, maybeInput.message],
+      );
+      return appealFromRow(result.rows[0]!);
+    }
+    const input = txOrInput as Omit<SanctionAppeal, "id" | "submittedAt" | "createdAt" | "updatedAt"> & { readonly submittedAt?: Date };
     const result = await this.pool.query<SanctionAppealRow>(
       `insert into sanction_appeals (sanction_id, submitted_by, submitted_at, message, state, resolved_by, resolved_at, resolution_note)
        values ($1,$2,coalesce($3,now()),$4,$5,$6,$7,$8) returning ${APPEAL_COLUMNS}`,
@@ -102,5 +129,15 @@ export class SanctionsRepository implements SanctionsReadPort {
   }
   async listAppealsForSanction(sanctionId: ReturnType<typeof SanctionId>): Promise<readonly SanctionAppeal[]> {
     return (await this.pool.query<SanctionAppealRow>(`select ${APPEAL_COLUMNS} from sanction_appeals where sanction_id = $1 order by submitted_at desc, id desc`, [sanctionId])).rows.map(appealFromRow);
+  }
+  async resolveAppeal(tx: PoolClient, id: ReturnType<typeof SanctionAppealId>, input: { readonly resolverId: UserIdType; readonly state: "accepted" | "rejected"; readonly resolutionNote: string }): Promise<SanctionAppeal | null> {
+    const row = (
+      await tx.query<SanctionAppealRow>(
+        `update sanction_appeals set state = $3, resolved_by = $2, resolved_at = now(), resolution_note = $4, updated_at = now()
+         where id = $1 and state = 'pending' returning ${APPEAL_COLUMNS}`,
+        [id, input.resolverId, input.state, input.resolutionNote],
+      )
+    ).rows[0];
+    return row === undefined ? null : appealFromRow(row);
   }
 }

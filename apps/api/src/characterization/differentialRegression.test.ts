@@ -119,9 +119,9 @@ describe("live Nest auth-gate regression (task 5.1, Nest-only after cutover 7.4)
     delete process.env.JWT_SECRET;
   });
 
-  it("replays the migrated subset of the baseline (261 of 308; 47 formally removed)", () => {
-    expect(routes).toHaveLength(308);
-    expect(migratedRoutes).toHaveLength(261);
+  it("replays the migrated subset of the baseline (268 of 315; 47 formally removed)", () => {
+    expect(routes).toHaveLength(315);
+    expect(migratedRoutes).toHaveLength(268);
   });
 
   const authed = migratedRoutes.filter((r) => r.authMode === "authed");
