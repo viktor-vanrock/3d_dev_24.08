@@ -1,4 +1,5 @@
 import type { UserId } from "../../_kernel/brandedIds.ts";
+import type { PoolClient } from "pg";
 
 export const PROFILE_READ_PORT = Symbol("PROFILE_READ_PORT");
 export const PROFILE_ADMIN_PORT = Symbol("PROFILE_ADMIN_PORT");
@@ -6,6 +7,7 @@ export const PROFILE_AUTH_PORT = Symbol("PROFILE_AUTH_PORT");
 export const PROFILE_AGGREGATES_PORT = Symbol("PROFILE_AGGREGATES_PORT");
 export const PROFILE_CONTENT_PORT = Symbol("PROFILE_CONTENT_PORT");
 export const PROFILE_MASTER_PORT = Symbol("PROFILE_MASTER_PORT");
+export const PROFILE_SANCTIONS_PORT = Symbol("PROFILE_SANCTIONS_PORT");
 
 export interface PublicProfile {
   readonly id: UserId;
@@ -83,6 +85,13 @@ export interface ProfileAuthPort {
   bumpSessionVersion(userId: UserId): Promise<boolean>;
   createUserWithFreeHandle(seed: NewUserSeed): Promise<UserId>;
   upsertDevUser(): Promise<SessionProfile | null>;
+}
+
+/** Transaction-aware mutations for the sanctions cascade. The caller owns BEGIN/COMMIT. */
+export interface ProfileSanctionsPort {
+  restrictForSanction(tx: PoolClient, input: { readonly userId: UserId }): Promise<{ readonly changed: boolean; readonly sessionVersion: number }>;
+  activateAfterSanctionExpiry(tx: PoolClient, input: { readonly userId: UserId }): Promise<{ readonly changed: boolean }>;
+  isBootstrapAdmin(tx: PoolClient, input: { readonly userId: UserId; readonly adminUsername: string }): Promise<boolean>;
 }
 
 export interface ProfileAggregates {

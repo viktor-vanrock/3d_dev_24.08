@@ -1,5 +1,5 @@
 import type { Request } from "express";
-import type { QueryResult, QueryResultRow } from "pg";
+import type { PoolClient, QueryResult, QueryResultRow } from "pg";
 import type { CommandVerificationKeySet } from "@portal/contracts/device-agent-runtime/v1";
 import type { PrinterQueryExecutor } from "../../printers/public/index.ts";
 import type { DeviceId, UserId } from "../../_kernel/brandedIds.ts";
@@ -16,11 +16,20 @@ export const DEVICE_COMMAND_RELAY_PORT = Symbol("DEVICE_COMMAND_RELAY_PORT");
 export const DEVICE_RELAY_CONTROL_PORT = Symbol("DEVICE_RELAY_CONTROL_PORT");
 export const DEVICE_ADMIN_PORT = Symbol("DEVICE_ADMIN_PORT");
 export const DEVICE_RELAY_PUSH_PORT = Symbol("DEVICE_RELAY_PUSH_PORT");
+export const DEVICE_SANCTIONS_PORT = Symbol("DEVICE_SANCTIONS_PORT");
 
 export type RelayControlCloseReason = "agent_revoked" | "owner_blocked" | "admin_action";
 
 export interface DeviceAdminPort {
   revokeAllActiveByOwner(ownerId: UserId, reason: string, actorId: UserId): Promise<readonly string[]>;
+}
+
+/** Transaction-aware credential revocation for the sanctions cascade. */
+export interface DeviceSanctionsPort {
+  revokeCredentialsForSanction(
+    tx: PoolClient,
+    input: { readonly ownerId: UserId; readonly actorId: UserId },
+  ): Promise<{ readonly agentIds: readonly string[]; readonly agentsRevoked: number; readonly enrollCodesRevoked: number }>;
 }
 
 export interface DeviceRelayPushPort {

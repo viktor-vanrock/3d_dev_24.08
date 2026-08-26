@@ -1,6 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { randomBytes } from "node:crypto";
-import type { Pool } from "pg";
+import type { Pool, PoolClient } from "pg";
 import { DATABASE_POOL } from "../../../nest/database/database.constants.ts";
 import { UserId, type UserId as UserIdType } from "../../_kernel/brandedIds.ts";
 import {
@@ -20,6 +20,7 @@ import type {
   ProfileMasterPort,
   ProfileMasterState,
   ProfileReadPort,
+  ProfileSanctionsPort,
   PublicContentAuthor,
   PublicMasterProfile,
   PublicProfile,
@@ -102,7 +103,7 @@ const AVATAR_SELECT = `
 `;
 
 @Injectable()
-export class ProfileRepository implements ProfileReadPort, ProfileAdminPort, ProfileAuthPort, ProfileContentPort, ProfileMasterPort {
+export class ProfileRepository implements ProfileReadPort, ProfileAdminPort, ProfileAuthPort, ProfileContentPort, ProfileMasterPort, ProfileSanctionsPort {
   constructor(@Inject(DATABASE_POOL) private readonly pool: Pool) {}
 
   async findById(userId: UserIdType): Promise<PublicProfile | null> {
@@ -191,6 +192,28 @@ export class ProfileRepository implements ProfileReadPort, ProfileAdminPort, Pro
 
   async bumpSessionVersion(userId: UserIdType): Promise<boolean> {
     return (await this.pool.query(`update users set session_version = session_version + 1, updated_at = now() where id = $1`, [userId])).rowCount !== 0;
+  }
+
+  async restrictForSanction(tx: PoolClient, input: { readonly userId: UserIdType }): Promise<{ readonly changed: boolean; readonly sessionVersion: number }> {
+    const result = await tx.query<{ session_version: number }>(
+      `update users set status = 'restricted', session_version = session_version + 1, updated_at = now()
+       where id = $1 and status = 'active' returning session_version`,
+      [input.userId],
+    );
+    const row = result.rows[0];
+    if (row !== undefined) return { changed: true, sessionVersion: row.session_version };
+    const existing = await tx.query<{ session_version: number }>(`select session_version from users where id = $1`, [input.userId]);
+    return { changed: false, sessionVersion: existing.rows[0]?.session_version ?? 0 };
+  }
+
+  async activateAfterSanctionExpiry(tx: PoolClient, input: { readonly userId: UserIdType }): Promise<{ readonly changed: boolean }> {
+    const result = await tx.query(`update users set status = 'active', updated_at = now() where id = $1 and status = 'restricted'`, [input.userId]);
+    return { changed: (result.rowCount ?? 0) > 0 };
+  }
+
+  async isBootstrapAdmin(tx: PoolClient, input: { readonly userId: UserIdType; readonly adminUsername: string }): Promise<boolean> {
+    const result = await tx.query(`select 1 from users where id = $1 and username = $2`, [input.userId, input.adminUsername]);
+    return (result.rowCount ?? 0) > 0;
   }
 
   async createUserWithFreeHandle(seed: NewUserSeed): Promise<UserIdType> {

@@ -17,6 +17,7 @@ import {
   DEVICE_RELAY_CONTROL_PORT,
   DEVICE_ADMIN_PORT,
   DEVICE_RELAY_PUSH_PORT,
+  DEVICE_SANCTIONS_PORT,
 } from "./public/index.ts";
 
 @Global()
@@ -39,6 +40,7 @@ import {
     { provide: DEVICE_RELAY_CONTROL_PORT, useExisting: RelayControlRepository },
     { provide: DEVICE_ADMIN_PORT, useExisting: DevicesService },
     { provide: DEVICE_RELAY_PUSH_PORT, useExisting: RelayControlClient },
+    { provide: DEVICE_SANCTIONS_PORT, useExisting: DevicesRepository },
   ],
   exports: [
     DEVICES_PORT,
@@ -50,6 +52,7 @@ import {
     DEVICE_RELAY_CONTROL_PORT,
     DEVICE_ADMIN_PORT,
     DEVICE_RELAY_PUSH_PORT,
+    DEVICE_SANCTIONS_PORT,
   ],
 })
 export class DevicesModule {}

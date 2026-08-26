@@ -1,4 +1,5 @@
 import type { Request } from "express";
+import type { PoolClient } from "pg";
 import type { UserId } from "../../_kernel/brandedIds.ts";
 import type { PublicCommandStatusResponse, PublicPrinterResponse, PublicQueuedCommandResponse, PublicTelemetryItem, PublicTestQueryResponse } from "../../devices/public/index.ts";
 
@@ -6,6 +7,7 @@ export const PUBLICAPI_PORT = Symbol("PUBLICAPI_PORT");
 export const PUBLICAPI_EXTERNAL_PORT = Symbol("PUBLICAPI_EXTERNAL_PORT");
 export const PUBLICAPI_DEVICES_PORT = Symbol("PUBLICAPI_DEVICES_PORT");
 export const AGENT_API_KEYS_PORT = Symbol("AGENT_API_KEYS_PORT");
+export const PUBLICAPI_SANCTIONS_PORT = Symbol("PUBLICAPI_SANCTIONS_PORT");
 export const PUBLIC_API_KEY_SCOPES = ["read", "control"] as const;
 export type PublicApiKeyScope = (typeof PUBLIC_API_KEY_SCOPES)[number];
 
@@ -109,6 +111,11 @@ export interface AgentApiKeysPort {
   revokeAgentKey(ownerId: UserId, agentId: string, keyId: string): Promise<boolean>;
   hasAgentKey(ownerId: UserId, agentId: string, keyId: string): Promise<boolean>;
   revokeAllAgentKeys(agentId: string): Promise<number>;
+}
+
+/** Transaction-aware key revocation for the sanctions cascade. */
+export interface PublicApiSanctionsPort {
+  revokeCredentialsForSanction(tx: PoolClient, input: { readonly ownerId: UserId }): Promise<{ readonly apiKeysRevoked: number; readonly userApiKeysRevoked: number }>;
 }
 export interface PublicApiPort {
   createApiKey(ownerId: UserId, body: PublicApiKeyInput, context: PublicApiRequestContext): Promise<PublicApiKeySecret>;
