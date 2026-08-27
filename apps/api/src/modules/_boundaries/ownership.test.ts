@@ -6,9 +6,9 @@ import { extractTableRefs, ownedTables, ownerOf, ownership, KNOWN_TABLES } from 
 // sqlOwnership manifest test relies on it against migrated domains.
 
 describe("ownership map", () => {
-  it("loads the authoritative map (126 tables, 29 domains)", () => {
-    expect(Object.keys(ownership.tables).length).toBe(126);
-    expect(Object.keys(ownership.domains).length).toBe(29);
+  it("loads the authoritative map (128 tables, 30 domains)", () => {
+    expect(Object.keys(ownership.tables).length).toBe(128);
+    expect(Object.keys(ownership.domains).length).toBe(30);
   });
 
   it("every owned table resolves back to its domain", () => {
@@ -25,8 +25,8 @@ describe("ownership map", () => {
     expect(ownedTables("projects")).toContain("model_revision_files");
   });
 
-  it("KNOWN_TABLES covers the physical schema (146) and every owned table", () => {
-    expect(KNOWN_TABLES.size).toBe(146);
+  it("KNOWN_TABLES covers the physical schema (148) and every owned table", () => {
+    expect(KNOWN_TABLES.size).toBe(148);
     for (const t of Object.keys(ownership.tables)) {
       expect(KNOWN_TABLES.has(t)).toBe(true);
     }
@@ -51,7 +51,7 @@ describe("extractTableRefs", () => {
 
   it("classifies INSERT/UPDATE/DELETE of KNOWN tables as writes", () => {
     expect(extractTableRefs("insert into agents (id) values ($1)")).toEqual([{ table: "agents", kind: "write" }]);
-    expect(extractTableRefs("update users set status = 'banned' where id = $1")).toEqual([{ table: "users", kind: "write" }]);
+    expect(extractTableRefs("update users set status = 'restricted' where id = $1")).toEqual([{ table: "users", kind: "write" }]);
     expect(extractTableRefs("delete from votes where id = $1")).toEqual([{ table: "votes", kind: "write" }]);
   });
 

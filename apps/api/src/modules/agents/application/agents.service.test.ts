@@ -61,7 +61,7 @@ describe("AgentsService", () => {
   });
   it("refuses to mint a key for an inactive owner", async () => {
     const { service, keys, profiles } = setup();
-    profiles.loadOwnerAuthState.mockResolvedValue({ status: "banned", sessionVersion: 1 });
+    profiles.loadOwnerAuthState.mockResolvedValue({ status: "restricted", sessionVersion: 1 });
     await expect(service.mintKey(OWNER, AGENT, "x", { request: {} as never, requestId: "r" })).rejects.toBeInstanceOf(ForbiddenException);
     expect(keys.mintAgentKey).not.toHaveBeenCalled();
   });

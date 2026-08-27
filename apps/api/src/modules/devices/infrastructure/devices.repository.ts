@@ -1,12 +1,12 @@
 import { createHash, randomBytes } from "node:crypto";
 import { Inject, Injectable, Optional } from "@nestjs/common";
-import type { Pool } from "pg";
+import type { Pool, PoolClient } from "pg";
 import { decodeJwt } from "jose";
 import { DATABASE_POOL } from "../../../nest/database/database.constants.ts";
 import { RuntimeLogger } from "../../../nest/observability/runtime-logger.ts";
 import { DeviceId, UserId, type DeviceId as DeviceIdType, type UserId as UserIdType } from "../../_kernel/brandedIds.ts";
 import { PRINTER_OWNER_PORT, type OwnedUserPrinter, type PrinterOwnerPort } from "../../printers/public/index.ts";
-import type { DeviceCommandResult, DeviceExternalPort, DeviceMetrics, DeviceOperatingStateInput, DeviceRole, DeviceShareResponse } from "../public/index.ts";
+import type { DeviceCommandResult, DeviceExternalPort, DeviceMetrics, DeviceOperatingStateInput, DeviceRole, DeviceSanctionsPort, DeviceShareResponse } from "../public/index.ts";
 import type { DeviceIncidentEvent, DeviceIncidentEventReadPort, DeviceIncidentEventWritePort, DeviceQueryExecutor } from "../public/index.ts";
 import type { DeviceControlCommand, DeviceShareRole, FirmwareClass } from "../domain/devices.ts";
 
@@ -130,7 +130,7 @@ export interface DeviceOperatingRow extends DeviceOperatingStateInput {
 }
 
 @Injectable()
-export class DevicesRepository implements DeviceIncidentEventReadPort, DeviceIncidentEventWritePort {
+export class DevicesRepository implements DeviceIncidentEventReadPort, DeviceIncidentEventWritePort, DeviceSanctionsPort {
   constructor(
     @Inject(DATABASE_POOL) private readonly pool: Pool,
     @Inject(PRINTER_OWNER_PORT) private readonly printers: PrinterOwnerPort,
@@ -323,6 +323,30 @@ export class DevicesRepository implements DeviceIncidentEventReadPort, DeviceInc
     } finally {
       client.release();
     }
+  }
+
+  async revokeCredentialsForSanction(
+    tx: PoolClient,
+    input: { readonly ownerId: UserIdType; readonly actorId: UserIdType },
+  ): Promise<{ readonly agentIds: readonly string[]; readonly agentsRevoked: number; readonly enrollCodesRevoked: number }> {
+    const agents = await tx.query<{ id: string }>(
+      `update agents set revoked_at = now(), revoked_reason = 'owner_sanctioned', updated_at = now()
+       where owner_id = $1 and revoked_at is null returning id::text as id`,
+      [input.ownerId],
+    );
+    const codes = await tx.query<{ id: string }>(
+      `with revoked as (
+         update device_enroll_codes set revoked_at = now()
+          where owner_id = $1 and used_at is null and revoked_at is null and expires_at > now()
+          returning id, device_id
+       ), audited as (
+         insert into device_enrollment_audit(credential_id, owner_id, device_id, event_type, meta)
+         select id, $1, device_id, 'credential.revoked', jsonb_build_object('reason', 'owner_sanctioned', 'actor_id', $2::uuid)
+           from revoked
+       ) select id::text as id from revoked`,
+      [input.ownerId, input.actorId],
+    );
+    return { agentIds: agents.rows.map((row) => row.id), agentsRevoked: agents.rowCount ?? 0, enrollCodesRevoked: codes.rowCount ?? 0 };
   }
 
   async upsertShare(deviceId: DeviceIdType, userId: UserIdType, role: DeviceShareRole): Promise<{ created: boolean; row: DeviceShareResponse }> {

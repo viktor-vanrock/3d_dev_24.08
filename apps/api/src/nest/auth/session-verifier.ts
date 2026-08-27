@@ -5,6 +5,8 @@ import type { Request } from "express";
 import { jwtVerify } from "jose";
 import { UserId } from "../../modules/_kernel/brandedIds.ts";
 import { PROFILE_AUTH_PORT, type ProfileAuthPort } from "../../modules/profile/public/index.ts";
+import { SANCTIONS_READ_PORT, type SanctionsReadPort } from "../../modules/sanctions/public/index.ts";
+import { AccountRestrictedException } from "./account-restricted.exception.ts";
 import { RuntimeLogger } from "../observability/runtime-logger.ts";
 import { MetricsService } from "../observability/metrics.service.ts";
 
@@ -50,6 +52,7 @@ export class SessionVerifier {
   constructor(
     @Inject(ConfigService) private readonly config: ConfigService,
     @Inject(PROFILE_AUTH_PORT) private readonly profiles: ProfileAuthPort,
+    @Optional() @Inject(SANCTIONS_READ_PORT) private readonly sanctions: SanctionsReadPort | undefined,
     @Inject(RuntimeLogger) private readonly logger: RuntimeLogger,
     @Optional() @Inject(MetricsService) private readonly metrics?: MetricsService,
   ) {}
@@ -79,6 +82,11 @@ export class SessionVerifier {
 
     const state = await this.profiles.loadOwnerAuthState(UserId(claims.sub));
     if (state === null) return this.rejected("unknown");
+    if (state.status === "deleted") return this.rejected("user_blocked");
+    if (this.sanctions) {
+      const sanction = await this.sanctions.findActiveForUser(UserId(claims.sub));
+      if (sanction !== null) throw new AccountRestrictedException(sanction.endsAt?.toISOString() ?? null);
+    }
     if (state.status !== "active") return this.rejected("user_blocked");
     if (claims.sessionVersion !== state.sessionVersion) return this.rejected("version_mismatch");
 

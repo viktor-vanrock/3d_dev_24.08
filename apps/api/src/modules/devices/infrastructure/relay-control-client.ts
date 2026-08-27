@@ -19,13 +19,13 @@ export class RelayControlClient implements DeviceRelayPushPort {
     @Inject(MetricsService) private readonly metrics: MetricsService,
   ) {}
 
-  async closeAgentSessions(agentIds: readonly string[], reason: RelayControlCloseReason): Promise<void> {
-    if (agentIds.length === 0) return;
+  async closeAgentSessions(agentIds: readonly string[], reason: RelayControlCloseReason): Promise<CloseSessionsResponse> {
+    if (agentIds.length === 0) return { closed: [], notConnected: [] };
     const baseUrl = this.config.get<string>("RELAY_INTERNAL_BASE_URL")?.trim();
     if (!baseUrl) {
       this.metrics.incRelayPushClose("failed");
       this.logger.warn({ event: "relay.control.push_failed", reason }, "relay control endpoint is not configured");
-      return;
+      throw new Error("relay_control_not_configured");
     }
     const token = this.config.get<string>("RELAY_SERVICE_TOKEN") ?? "";
     try {
@@ -39,9 +39,11 @@ export class RelayControlClient implements DeviceRelayPushPort {
       const result = await response.json() as CloseSessionsResponse;
       for (const _agentId of result.closed) this.metrics.incRelayPushClose("sent");
       for (const _agentId of result.notConnected) this.metrics.incRelayPushClose("agent_not_connected");
-    } catch {
+      return result;
+    } catch (error) {
       this.metrics.incRelayPushClose("failed");
       this.logger.warn({ event: "relay.control.push_failed", reason }, "relay control push failed safely");
+      throw error;
     }
   }
 }

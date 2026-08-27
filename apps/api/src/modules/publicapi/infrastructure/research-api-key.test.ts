@@ -45,7 +45,7 @@ describe("проверка research API-ключа", () => {
 
   it("rejects an inactive key owner", async () => {
     const db = database([row]);
-    const blockedProfiles = { loadOwnerAuthState: vi.fn().mockResolvedValue({ status: "banned", sessionVersion: 1 }) };
+    const blockedProfiles = { loadOwnerAuthState: vi.fn().mockResolvedValue({ status: "restricted", sessionVersion: 1 }) };
     const metrics = { incRevokedCredentialUse: vi.fn() };
     await expect(createResearchApiKeyVerifier(db as never, blockedProfiles as never, metrics as never).verify(secret)).resolves.toBeNull();
     expect(metrics.incRevokedCredentialUse).toHaveBeenCalledWith("research_key", "user_blocked");

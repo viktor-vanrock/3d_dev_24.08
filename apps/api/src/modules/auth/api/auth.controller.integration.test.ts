@@ -8,6 +8,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { UserId, type UserId as UserIdType } from "../../_kernel/brandedIds.ts";
 import { ANALYTICS_PORT } from "../../analytics/public/index.ts";
 import { PROFILE_AUTH_PORT, type NewUserSeed, type ProfileAuthPort, type SessionProfile } from "../../profile/public/index.ts";
+import { SANCTIONS_READ_PORT } from "../../sanctions/public/index.ts";
 import { createNestApp } from "../../../nest/bootstrap.ts";
 import { SessionVerifierModule } from "../../../nest/auth/session-verifier.module.ts";
 import { AuthGuard } from "../../../nest/auth/auth.guard.ts";
@@ -54,8 +55,8 @@ class TestProfileAuthPort implements ProfileAuthPort {
       };
   }
 
-  async loadOwnerAuthState(userId: UserIdType): Promise<{ readonly status: "active" | "banned" | "deleted"; readonly sessionVersion: number } | null> {
-    const result = await this.pool.query<{ status: "active" | "banned" | "deleted"; session_version: number }>(`select status, session_version from users where id = $1`, [userId]);
+  async loadOwnerAuthState(userId: UserIdType): Promise<{ readonly status: "active" | "restricted" | "deleted"; readonly sessionVersion: number } | null> {
+    const result = await this.pool.query<{ status: "active" | "restricted" | "deleted"; session_version: number }>(`select status, session_version from users where id = $1`, [userId]);
     const row = result.rows[0];
     return row === undefined ? null : { status: row.status, sessionVersion: row.session_version };
   }
@@ -90,6 +91,7 @@ class TestProfileAuthPort implements ProfileAuthPort {
   providers: [
     TestProfileAuthPort,
     { provide: PROFILE_AUTH_PORT, useExisting: TestProfileAuthPort },
+    { provide: SANCTIONS_READ_PORT, useValue: { findActiveForUser: async (): Promise<null> => null, findActiveForUserTx: async (): Promise<null> => null } },
     { provide: ANALYTICS_PORT, useValue: { emitEvent: (): Promise<void> => Promise.resolve() } },
   ],
   exports: [PROFILE_AUTH_PORT, ANALYTICS_PORT],

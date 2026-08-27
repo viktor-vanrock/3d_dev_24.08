@@ -149,15 +149,15 @@ describe("route-status ledger (task 5.2)", () => {
     await app?.close();
   });
 
-  it("assigns exactly one status to all 308 baseline routes", () => {
-    expect(ledger).toHaveLength(308);
+  it("assigns exactly one status to all 315 baseline routes", () => {
+    expect(ledger).toHaveLength(315);
     const counts = {
       migrated: ledger.filter((r) => r.status === "migrated").length,
       formallyRemoved: ledger.filter((r) => r.status === "formally-removed").length,
       compatibilityRemoved: ledger.filter((r) => r.status === "compatibility-removed").length,
       deferred: ledger.filter((r) => r.status === "deferred-fastify").length,
     };
-    expect(counts).toEqual({ migrated: 261, formallyRemoved: 47, compatibilityRemoved: 0, deferred: 0 });
+    expect(counts).toEqual({ migrated: 268, formallyRemoved: 47, compatibilityRemoved: 0, deferred: 0 });
   });
 
   it("has ZERO active deferred Fastify routes (cutover gate)", () => {

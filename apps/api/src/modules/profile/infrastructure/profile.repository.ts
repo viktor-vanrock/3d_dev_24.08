@@ -1,6 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { randomBytes } from "node:crypto";
-import type { Pool } from "pg";
+import type { Pool, PoolClient } from "pg";
 import { DATABASE_POOL } from "../../../nest/database/database.constants.ts";
 import { UserId, type UserId as UserIdType } from "../../_kernel/brandedIds.ts";
 import {
@@ -20,6 +20,7 @@ import type {
   ProfileMasterPort,
   ProfileMasterState,
   ProfileReadPort,
+  ProfileSanctionsPort,
   PublicContentAuthor,
   PublicMasterProfile,
   PublicProfile,
@@ -102,7 +103,7 @@ const AVATAR_SELECT = `
 `;
 
 @Injectable()
-export class ProfileRepository implements ProfileReadPort, ProfileAdminPort, ProfileAuthPort, ProfileContentPort, ProfileMasterPort {
+export class ProfileRepository implements ProfileReadPort, ProfileAdminPort, ProfileAuthPort, ProfileContentPort, ProfileMasterPort, ProfileSanctionsPort {
   constructor(@Inject(DATABASE_POOL) private readonly pool: Pool) {}
 
   async findById(userId: UserIdType): Promise<PublicProfile | null> {
@@ -140,7 +141,7 @@ export class ProfileRepository implements ProfileReadPort, ProfileAdminPort, Pro
       // `user_id` aliased back to `id` to keep the port shape. This is the cross-domain author seam
       // (feed/community/makes read authors through PROFILE_CONTENT_PORT, never `users` directly).
       `select user_id as id, username, display_name, avatar_url, reputation_score, trust_level
-       from identity_read_v1 where user_id = any($1::uuid[]) and status = 'active'`,
+       from identity_read_v1 where user_id = any($1::uuid[])`,
       [userIds],
     );
     return new Map(
@@ -164,7 +165,7 @@ export class ProfileRepository implements ProfileReadPort, ProfileAdminPort, Pro
   async trustState(userId: UserIdType): Promise<{ readonly trustLevel: number; readonly reputationScore: number; readonly createdAt: Date } | null> {
     const row = (
       await this.pool.query<{ trust_level: number; reputation_score: number; created_at: Date }>(
-        `select trust_level,reputation_score,created_at from identity_read_v1 where user_id=$1 and status='active'`,
+        `select trust_level,reputation_score,created_at from identity_read_v1 where user_id=$1`,
         [userId],
       )
     ).rows[0];
@@ -180,8 +181,8 @@ export class ProfileRepository implements ProfileReadPort, ProfileAdminPort, Pro
     return result.rows[0] === undefined ? null : mapSession(result.rows[0]);
   }
 
-  async loadOwnerAuthState(userId: UserIdType): Promise<{ readonly status: "active" | "banned" | "deleted"; readonly sessionVersion: number } | null> {
-    const result = await this.pool.query<{ status: "active" | "banned" | "deleted"; session_version: number }>(
+  async loadOwnerAuthState(userId: UserIdType): Promise<{ readonly status: "active" | "restricted" | "deleted"; readonly sessionVersion: number } | null> {
+    const result = await this.pool.query<{ status: "active" | "restricted" | "deleted"; session_version: number }>(
       `select status, session_version from users where id = $1`,
       [userId],
     );
@@ -191,6 +192,46 @@ export class ProfileRepository implements ProfileReadPort, ProfileAdminPort, Pro
 
   async bumpSessionVersion(userId: UserIdType): Promise<boolean> {
     return (await this.pool.query(`update users set session_version = session_version + 1, updated_at = now() where id = $1`, [userId])).rowCount !== 0;
+  }
+
+  async loadSanctionActor(tx: PoolClient, input: { readonly actorId: UserIdType }): Promise<{ readonly isStaff: boolean } | null> {
+    const row = (await tx.query<{ is_staff: boolean }>(`select is_staff from users where id = $1`, [input.actorId])).rows[0];
+    return row === undefined ? null : { isStaff: row.is_staff };
+  }
+
+  async loadSanctionTargetForUpdate(
+    tx: PoolClient,
+    input: { readonly targetId: UserIdType },
+  ): Promise<{ readonly id: UserIdType; readonly status: "active" | "restricted" | "deleted" } | null> {
+    const row = (
+      await tx.query<{ id: string; status: "active" | "restricted" | "deleted" }>(
+        `select id, status from users where id = $1 for update`,
+        [input.targetId],
+      )
+    ).rows[0];
+    return row === undefined ? null : { id: UserId(row.id), status: row.status };
+  }
+
+  async restrictForSanction(tx: PoolClient, input: { readonly userId: UserIdType }): Promise<{ readonly changed: boolean; readonly sessionVersion: number }> {
+    const result = await tx.query<{ session_version: number }>(
+      `update users set status = 'restricted', session_version = session_version + 1, updated_at = now()
+       where id = $1 and status = 'active' returning session_version`,
+      [input.userId],
+    );
+    const row = result.rows[0];
+    if (row !== undefined) return { changed: true, sessionVersion: row.session_version };
+    const existing = await tx.query<{ session_version: number }>(`select session_version from users where id = $1`, [input.userId]);
+    return { changed: false, sessionVersion: existing.rows[0]?.session_version ?? 0 };
+  }
+
+  async activateAfterSanctionExpiry(tx: PoolClient, input: { readonly userId: UserIdType }): Promise<{ readonly changed: boolean }> {
+    const result = await tx.query(`update users set status = 'active', updated_at = now() where id = $1 and status = 'restricted'`, [input.userId]);
+    return { changed: (result.rowCount ?? 0) > 0 };
+  }
+
+  async isBootstrapAdmin(tx: PoolClient, input: { readonly userId: UserIdType; readonly adminUsername: string }): Promise<boolean> {
+    const result = await tx.query(`select 1 from users where id = $1 and username = $2`, [input.userId, input.adminUsername]);
+    return (result.rowCount ?? 0) > 0;
   }
 
   async createUserWithFreeHandle(seed: NewUserSeed): Promise<UserIdType> {
@@ -285,21 +326,6 @@ export class ProfileRepository implements ProfileReadPort, ProfileAdminPort, Pro
           avatarUrl: row.avatar_url,
           masterProfile: row.master_profile,
         };
-  }
-
-  async banUser(userId: UserIdType): Promise<{ readonly status: "banned"; readonly transitioned: boolean } | "not_found"> {
-    const transitioned = await this.pool.query(
-      `update users
-       set status = 'banned', username = $2, display_name = null, avatar_url = null,
-           avatar_s3_key = null, bio = null, website_url = null, contacts = '[]'::jsonb,
-           session_version = session_version + 1, updated_at = now()
-       where id = $1 and status <> 'banned'
-       returning id`,
-      [userId, `deleted.${randomBytes(6).toString("hex")}`],
-    );
-    if ((transitioned.rowCount ?? 0) > 0) return { status: "banned", transitioned: true };
-    const existing = await this.pool.query(`select 1 from users where id = $1`, [userId]);
-    return (existing.rowCount ?? 0) > 0 ? { status: "banned", transitioned: false } : "not_found";
   }
 
   async findProfilePage(username: string): Promise<ProfilePageRow | null> {

@@ -1,6 +1,6 @@
 {
   "liveState": "live-unverified: no deployed environment",
-  "sharedTechnicalImports": ["../src/db/client.ts", "../src/git/paths.ts", "../src/git/repo.ts", "../src/storage/s3.ts"],
+  "sharedTechnicalImports": ["../src/db/client.ts", "../src/git/paths.ts", "../src/git/repo.ts", "../src/storage/s3.ts", "../src/nest/app.module.ts"],
   "retired": [
     {
       "file": "rehearse-split.sh",
@@ -361,6 +361,28 @@
       "sideEffects": "generate updates artifact; check is read-only",
       "safetyMode": "check mode compares without write",
       "verification": "pnpm run openapi:check"
+    },
+    {
+      "file": "sanctions-relay-outbox.ts",
+      "lifecycle": "active recurring work",
+      "owner": "sanctions/devices",
+      "invocations": ["pnpm run sanctions:relay-outbox", "portal.sanctions-relay-outbox.service/timer"],
+      "requiredEnvironment": ["DATABASE_URL", "RELAY_INTERNAL_BASE_URL", "RELAY_SERVICE_TOKEN"],
+      "dataTargets": ["outbox_events", "Relay internal close-sessions endpoint"],
+      "sideEffects": "claims sanctions Relay-close events, closes active Relay sessions, and completes or retries each event",
+      "safetyMode": "event-type-filtered claim, 100-agent Relay chunks, bounded exponential retry backoff",
+      "verification": "vitest run src/modules/sanctions/application/sanction-relay-outbox-dispatcher.test.ts"
+    },
+    {
+      "file": "sanctions-expire.ts",
+      "lifecycle": "active recurring work",
+      "owner": "sanctions/profile",
+      "invocations": ["pnpm run sanctions:expire", "portal.sanctions-expire.service/timer"],
+      "requiredEnvironment": ["DATABASE_URL"],
+      "dataTargets": ["sanctions", "users"],
+      "sideEffects": "transitions sanctions.state active→expired; activates users.status restricted→active only without other active sanctions; does not restore revoked credentials or bump session_version",
+      "safetyMode": "transactional FOR UPDATE SKIP LOCKED claim, bounded 500-row batch, idempotent active-state predicate",
+      "verification": "vitest run src/modules/sanctions/application/sanctions-expiration.service.test.ts and isolated migrated-database smoke"
     },
     {
       "file": "operational-entrypoints.inventory.json",

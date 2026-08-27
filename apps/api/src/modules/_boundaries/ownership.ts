@@ -45,6 +45,7 @@ export function ownerOf(table: string): string | undefined {
 // the contract version.
 export const PUBLISHED_READ_VIEWS: ReadonlySet<string> = new Set<string>([
   "identity_read_v1", // users god-table (R:16) — published by profile (task 6.0)
+  "identity_read_all_v1", // profile-owned staff/audit identity projection (PR-2)
 ]);
 
 // ── SQL table-reference extraction ───────────────────────────────────────────────────────────────

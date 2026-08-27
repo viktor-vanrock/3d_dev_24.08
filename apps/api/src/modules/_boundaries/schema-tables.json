@@ -109,6 +109,8 @@
   "push_subscriptions",
   "release_events",
   "reports",
+  "sanction_appeals",
+  "sanctions",
   "reputation_events",
   "schema_migrations",
   "search_index_jobs",

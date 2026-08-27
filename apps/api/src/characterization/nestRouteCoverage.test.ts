@@ -35,7 +35,7 @@ describe("Nest route inventory coverage", () => {
     await app?.close();
   });
 
-  it("accounts for all 308 baseline routes: 261 migrated and 47 formally removed", () => {
+  it("accounts for all 315 baseline routes: 268 migrated and 47 formally removed", () => {
     const baseline = routeManifest.map((route) => `${route.method} ${normalizePath(route.path)}`);
     const migrated = baseline.filter((route) => nestRoutes.has(route));
     const linkedChange = routeManifest.filter((route) => FORMALLY_REMOVED_ROUTES.has(`${route.method} ${route.path}`));
@@ -44,8 +44,8 @@ describe("Nest route inventory coverage", () => {
       return !nestRoutes.has(normalized) && !FORMALLY_REMOVED_ROUTES.has(`${route.method} ${route.path}`);
     });
 
-    expect(baseline).toHaveLength(308);
-    expect(migrated).toHaveLength(261);
+    expect(baseline).toHaveLength(315);
+    expect(migrated).toHaveLength(268);
     expect(linkedChange).toHaveLength(47);
     expect(unaccounted).toEqual([]);
   });

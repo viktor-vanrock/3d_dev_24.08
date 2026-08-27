@@ -71,7 +71,7 @@ describe.skipIf(!canRun)("DevicesRepository administrative device-agent revoke",
     await pool.query(`insert into agents(id,owner_id) values($1,$2),($3,$2)`, [activeId, ownerId, revokedId]);
     await pool.query(`update agents set revoked_at=now(),revoked_reason='existing' where id=$1`, [revokedId]);
     try {
-      await expect(repository.revokeAllActiveByOwner(ownerId, "owner_blocked", actorId)).resolves.toEqual([activeId]);
+      await expect(repository.revokeAllActiveByOwner(ownerId, "admin_action", actorId)).resolves.toEqual([activeId]);
       const rows = await pool.query<{ id: string; revoked_at: Date | null; authorization_revision: string }>(
         `select id::text,revoked_at,authorization_revision::text from agents where id=any($1::uuid[]) order by id`,
         [[activeId, revokedId]],

@@ -1,0 +1,13 @@
+[Unit]
+Description=portal.ru sanctions Relay close outbox dispatcher
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=plag
+WorkingDirectory=/home/plag/portal.ru/apps/api
+EnvironmentFile=/home/plag/portal.api.env
+ExecStart=/usr/bin/pnpm run sanctions:relay-outbox
+StandardOutput=journal
+StandardError=journal

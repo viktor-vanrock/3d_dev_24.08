@@ -63,6 +63,7 @@ import { GenerationsIntegrationModule } from "./integration/generations.adapters
 import { GenerationsModule } from "../modules/generations/generations.module.ts";
 import { AssistantIntegrationModule } from "./integration/assistant.adapters.ts";
 import { AssistantModule } from "../modules/assistant/assistant.module.ts";
+import { SanctionsModule } from "../modules/sanctions/sanctions.module.ts";
 import { createApiValidationPipe } from "./validation/api-validation.pipe.ts";
 
 @Module({
@@ -94,6 +95,7 @@ import { createApiValidationPipe } from "./validation/api-validation.pipe.ts";
     GenerationsModule,
     AssistantIntegrationModule,
     AssistantModule,
+    SanctionsModule,
     ProfilePrintersIntegrationModule,
     ProfileModule,
     SeoModule,

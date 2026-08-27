@@ -699,6 +699,20 @@
       ],
       "crossDomain": true
     },
+    "sanction_appeals": {
+      "owner": "sanctions",
+      "writers": [
+        "sanctions"
+      ],
+      "crossDomain": false
+    },
+    "sanctions": {
+      "owner": "sanctions",
+      "writers": [
+        "sanctions"
+      ],
+      "crossDomain": false
+    },
     "reputation_events": {
       "owner": "community",
       "writers": [
@@ -1101,6 +1115,10 @@
     "slicerProfiles": [
       "slicer_profile_calibrations",
       "slicer_profiles"
+    ],
+    "sanctions": [
+      "sanction_appeals",
+      "sanctions"
     ]
   }
 }

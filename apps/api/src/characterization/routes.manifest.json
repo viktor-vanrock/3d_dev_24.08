@@ -2548,16 +2548,25 @@
     "sampleParams": {}
   },
   {
-    "method": "POST",
-    "path": "/users/:id/ban",
-    "domain": "moderation",
-    "authMode": "authed",
-    "closedDevAuthed": false,
-    "ownGate": null,
-    "source": "moderation/banUser.ts:37",
-    "sampleParams": {
-      "id": "11111111-1111-4111-8111-111111111111"
-    }
+    "method": "POST", "path": "/sanctions", "domain": "sanctions", "authMode": "authed", "closedDevAuthed": false, "ownGate": null, "source": "src/modules/sanctions/api/sanctions.controller.ts", "sampleParams": {}
+  },
+  {
+    "method": "POST", "path": "/sanctions/:id/cancel", "domain": "sanctions", "authMode": "authed", "closedDevAuthed": false, "ownGate": null, "source": "src/modules/sanctions/api/sanctions.controller.ts", "sampleParams": { "id": "11111111-1111-4111-8111-111111111111" }
+  },
+  {
+    "method": "GET", "path": "/users/:id/sanctions/active", "domain": "sanctions", "authMode": "authed", "closedDevAuthed": false, "ownGate": null, "source": "src/modules/sanctions/api/sanctions.controller.ts", "sampleParams": { "id": "11111111-1111-4111-8111-111111111111" }
+  },
+  {
+    "method": "GET", "path": "/users/:id/sanctions/history", "domain": "sanctions", "authMode": "authed", "closedDevAuthed": false, "ownGate": null, "source": "src/modules/sanctions/api/sanctions.controller.ts", "sampleParams": { "id": "11111111-1111-4111-8111-111111111111" }
+  },
+  {
+    "method": "POST", "path": "/sanctions/:id/appeals", "domain": "sanctions", "authMode": "authed", "closedDevAuthed": false, "ownGate": null, "source": "src/modules/sanctions/api/appeals.controller.ts", "sampleParams": { "id": "11111111-1111-4111-8111-111111111111" }
+  },
+  {
+    "method": "GET", "path": "/sanctions/:id/appeals", "domain": "sanctions", "authMode": "authed", "closedDevAuthed": false, "ownGate": null, "source": "src/modules/sanctions/api/appeals.controller.ts", "sampleParams": { "id": "11111111-1111-4111-8111-111111111111" }
+  },
+  {
+    "method": "POST", "path": "/appeals/:id/resolve", "domain": "sanctions", "authMode": "authed", "closedDevAuthed": false, "ownGate": null, "source": "src/modules/sanctions/api/appeals.controller.ts", "sampleParams": { "id": "11111111-1111-4111-8111-111111111111" }
   },
   {
     "method": "POST",

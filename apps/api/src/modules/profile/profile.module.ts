@@ -14,7 +14,7 @@ import { ProfileStorageAdapter } from "./infrastructure/profile-storage.adapter.
 import { ActivationRepository } from "./infrastructure/activation.repository.ts";
 import { ProfileFilamentsRepository } from "./infrastructure/filaments.repository.ts";
 import { ProfileMaterialsRepository } from "./infrastructure/materials.repository.ts";
-import { PROFILE_ADMIN_PORT, PROFILE_AGGREGATES_PORT, PROFILE_AUTH_PORT, PROFILE_CONTENT_PORT, PROFILE_MASTER_PORT, PROFILE_READ_PORT } from "./public/index.ts";
+import { PROFILE_ADMIN_PORT, PROFILE_AGGREGATES_PORT, PROFILE_AUTH_PORT, PROFILE_CONTENT_PORT, PROFILE_MASTER_PORT, PROFILE_READ_PORT, PROFILE_SANCTIONS_PORT } from "./public/index.ts";
 import { PROFILE_ACTIVATION_PRINTERS_PORT, PROFILE_MATERIAL_CATALOG_PORT } from "./application/profile-inventory.ports.ts";
 
 @Global()
@@ -43,7 +43,8 @@ import { PROFILE_ACTIVATION_PRINTERS_PORT, PROFILE_MATERIAL_CATALOG_PORT } from 
     { provide: PROFILE_AUTH_PORT, useExisting: ProfileRepository },
     { provide: PROFILE_CONTENT_PORT, useExisting: ProfileRepository },
     { provide: PROFILE_MASTER_PORT, useExisting: ProfileRepository },
+    { provide: PROFILE_SANCTIONS_PORT, useExisting: ProfileRepository },
   ],
-  exports: [PROFILE_READ_PORT, PROFILE_ADMIN_PORT, PROFILE_AUTH_PORT, PROFILE_CONTENT_PORT, PROFILE_MASTER_PORT],
+  exports: [PROFILE_READ_PORT, PROFILE_ADMIN_PORT, PROFILE_AUTH_PORT, PROFILE_CONTENT_PORT, PROFILE_MASTER_PORT, PROFILE_SANCTIONS_PORT],
 })
 export class ProfileModule {}

@@ -4,6 +4,6 @@ import { RELAY_CONTROL_CLOSE_REASONS, RELAY_CONTROL_CLOSE_SESSIONS_PATH } from "
 describe("relay control v1 contract", () => {
   it("keeps the close-sessions path and compatible close reasons stable", () => {
     expect(RELAY_CONTROL_CLOSE_SESSIONS_PATH).toBe("/internal/relay/v1/sessions/close");
-    expect(RELAY_CONTROL_CLOSE_REASONS).toEqual(["agent_revoked", "owner_blocked", "admin_action"]);
+    expect(RELAY_CONTROL_CLOSE_REASONS).toEqual(["agent_revoked", "owner_sanctioned", "admin_action"]);
   });
 });

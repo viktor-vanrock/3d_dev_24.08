@@ -1,0 +1,10 @@
+[Unit]
+Description=portal.ru sanctions Relay close outbox dispatcher every minute
+
+[Timer]
+OnCalendar=*-*-* *:*:00
+RandomizedDelaySec=10
+Persistent=true
+
+[Install]
+WantedBy=timers.target

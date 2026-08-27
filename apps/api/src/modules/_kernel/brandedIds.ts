@@ -44,6 +44,14 @@ export type GenerationId = Branded<"GenerationId">;
 export type ImportBindingId = Branded<"ImportBindingId">;
 export type ApiKeyId = Branded<"ApiKeyId">;
 export type OrderId = Branded<"OrderId">;
+export type SanctionId = Branded<"SanctionId">;
+export type SanctionAppealId = Branded<"SanctionAppealId">;
+
+/**
+ * Migration-owned technical actor for historical sanctions. It has no password credentials and is
+ * never a public identity; regular registration cannot create its reserved `__system__` username.
+ */
+export const SYSTEM_USER_ID = "00000000-0000-0000-0000-000000000001" as UserId;
 
 // Convenience constructors — self-documenting call sites at trust boundaries.
 export const UserId = (raw: string): UserId => brand<UserId>(raw);
@@ -62,3 +70,5 @@ export const GenerationId = (raw: string): GenerationId => brand<GenerationId>(r
 export const ImportBindingId = (raw: string): ImportBindingId => brand<ImportBindingId>(raw);
 export const ApiKeyId = (raw: string): ApiKeyId => brand<ApiKeyId>(raw);
 export const OrderId = (raw: string): OrderId => brand<OrderId>(raw);
+export const SanctionId = (raw: string): SanctionId => brand<SanctionId>(raw);
+export const SanctionAppealId = (raw: string): SanctionAppealId => brand<SanctionAppealId>(raw);

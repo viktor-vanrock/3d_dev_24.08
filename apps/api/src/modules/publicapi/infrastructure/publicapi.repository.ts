@@ -1,9 +1,9 @@
 import { Inject, Injectable } from "@nestjs/common";
-import type { Pool } from "pg";
+import type { Pool, PoolClient } from "pg";
 import { DATABASE_POOL } from "../../../nest/database/database.constants.ts";
 import type { UserId } from "../../_kernel/brandedIds.ts";
 import { PROFILE_AUTH_PORT, type ProfileAuthPort } from "../../profile/public/index.ts";
-import type { PublicApiKeyScope } from "../public/index.ts";
+import type { PublicApiKeyScope, PublicApiSanctionsPort } from "../public/index.ts";
 
 export interface ApiKeyRow {
   readonly id: string;
@@ -30,7 +30,7 @@ export type ApiKeyVerification =
   | { readonly kind: "revoked" | "unknown" | "user_blocked" };
 
 @Injectable()
-export class PublicApiRepository {
+export class PublicApiRepository implements PublicApiSanctionsPort {
   constructor(
     @Inject(DATABASE_POOL) private readonly pool: Pool,
     @Inject(PROFILE_AUTH_PORT) private readonly profiles: ProfileAuthPort,
@@ -163,5 +163,15 @@ export class PublicApiRepository {
   async revokeAllAgentKeys(agentId: string): Promise<number> {
     const result = await this.pool.query(`update user_api_keys set status='revoked',revoked_at=now(),revoked_reason='agent_revoked' where agent_id=$1 and status='active'`, [agentId]);
     return result.rowCount ?? 0;
+  }
+
+  async revokeCredentialsForSanction(tx: PoolClient, input: { readonly ownerId: UserId }): Promise<{ readonly apiKeysRevoked: number; readonly userApiKeysRevoked: number }> {
+    const apiKeys = await tx.query(`update api_keys set revoked_at = now() where owner_id = $1 and revoked_at is null`, [input.ownerId]);
+    const userApiKeys = await tx.query(
+      `update user_api_keys set status = 'revoked', revoked_at = now(), revoked_reason = 'owner_sanctioned', updated_at = now()
+       where user_id = $1 and status = 'active'`,
+      [input.ownerId],
+    );
+    return { apiKeysRevoked: apiKeys.rowCount ?? 0, userApiKeysRevoked: userApiKeys.rowCount ?? 0 };
   }
 }
