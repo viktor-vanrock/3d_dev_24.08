@@ -18,12 +18,12 @@
   },
   "dependencies": {
     "@portal/contracts": "workspace:*",
-    "dompurify": "^3.4.11",
+    "dompurify": "^3.4.13",
     "marked": "^18.0.5",
-    "mermaid": "^11.16.0",
+    "mermaid": "^11.16.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-router": "^7.1.0",
+    "react-router": "^7.18.2",
     "three": "^0.185.1"
   },
   "devDependencies": {
