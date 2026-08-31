@@ -1,0 +1,60 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:base"
+  ],
+  "timezone": "Europe/Moscow",
+  "schedule": ["before 6am on Monday"],
+  "labels": ["dependencies"],
+  "assignees": ["@viktor-vanrock"],
+  "packageRules": [
+    {
+      "description": "Автообновление patch-версий — без ревью",
+      "matchUpdateTypes": ["patch"],
+      "automerge": true,
+      "automergeType": "branch"
+    },
+    {
+      "description": "Minor и major — требуют ревью",
+      "matchUpdateTypes": ["minor", "major"],
+      "automerge": false
+    },
+    {
+      "description": "Исключения с временным waiver — не обновлять автоматически",
+      "matchPackageNames": [
+        "brace-expansion",
+        "fast-uri",
+        "js-yaml",
+        "undici",
+        "nanoid",
+        "postcss"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "Python сервисы — отдельная группа",
+      "matchManagers": ["pip_requirements", "poetry", "uv"],
+      "groupName": "python dependencies",
+      "automerge": false
+    },
+    {
+      "description": "Групповое обновление NestJS",
+      "matchPackagePatterns": ["^@nestjs/"],
+      "groupName": "nestjs packages",
+      "automerge": false
+    },
+    {
+      "description": "Групповое обновление AWS SDK",
+      "matchPackagePatterns": ["^@aws-sdk/"],
+      "groupName": "aws sdk",
+      "automerge": true,
+      "matchUpdateTypes": ["patch", "minor"]
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": ["security"],
+    "assignees": ["@viktor-vanrock"]
+  },
+  "osvVulnerabilityAlerts": true
+}
