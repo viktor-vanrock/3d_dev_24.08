@@ -55,9 +55,14 @@ WORKDIR /app
 # The API manages Git-backed project repositories at runtime. dbmate is kept in the
 # image so the same artifact can be used by a GitLab migration job or at startup.
 RUN apt-get update \
-    && apt-get install --yes --no-install-recommends ca-certificates git \
+    && apt-get install --yes --no-install-recommends ca-certificates git curl \
     && rm -rf /var/lib/apt/lists/* \
-    && npm install --global dbmate@2.33.0
+    && curl -fsSL \
+       https://github.com/amacneil/dbmate/releases/download/v2.33.0/dbmate-linux-amd64 \
+       -o /usr/local/bin/dbmate \
+    && echo "dfd4027141b6e4357158099bdfe6c02b286af70f8e49057937744cf80b38ea1c  /usr/local/bin/dbmate" \
+       | sha256sum -c - \
+    && chmod +x /usr/local/bin/dbmate
 
 COPY --from=builder --chown=node:node /runtime ./
 COPY --chown=node:node apps/api/db ./db
