@@ -1,15 +1,12 @@
---
--- PostgreSQL database dump
---
-
-\restrict 9pdRNTobY7dD8mH9RNJManEFhj92cDeviNFDtCnJ88LbWHOLoc9ExaJOgqj0GbC
+\restrict dbmate
 
 -- Dumped from database version 16.13 (Debian 16.13-1.pgdg12+1)
--- Dumped by pg_dump version 16.13 (Debian 16.13-1.pgdg12+1)
+-- Dumped by pg_dump version 18.3
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SELECT pg_catalog.set_config('search_path', '', false);
@@ -1350,7 +1347,7 @@ CREATE TABLE public.generations (
     attempts integer DEFAULT 0 NOT NULL,
     lease_expires_at timestamp with time zone,
     CONSTRAINT generations_attempts_check CHECK ((attempts >= 0)),
-    CONSTRAINT generations_branch_check CHECK ((branch = ANY (ARRAY['openscad'::text, 'kzd'::text, 'hueforge'::text, 'trellis'::text, 'concepts'::text, 'scan'::text]))),
+    CONSTRAINT generations_branch_check CHECK ((branch = ANY (ARRAY['openscad'::text, 'kzd'::text, 'hueforge'::text, 'trellis'::text, 'concepts'::text, 'scan'::text, 'rudalle'::text]))),
     CONSTRAINT generations_eta_seconds_check CHECK (((eta_seconds IS NULL) OR (eta_seconds >= 0))),
     CONSTRAINT generations_lease_generation_check CHECK ((lease_generation >= 0)),
     CONSTRAINT generations_phase_check CHECK (((phase IS NULL) OR (phase = ANY (ARRAY['queued'::text, 'loading'::text, 'draft'::text, 'geometry'::text, 'validation'::text, 'export'::text])))),
@@ -1569,7 +1566,7 @@ CREATE TABLE public.users (
     master_profile jsonb,
     session_version integer DEFAULT 1 NOT NULL,
     CONSTRAINT users_role_check CHECK ((role = ANY (ARRAY['user'::text, 'researcher'::text]))),
-    CONSTRAINT users_status_check CHECK ((status = ANY (ARRAY['active'::text, 'banned'::text, 'deleted'::text]))),
+    CONSTRAINT users_status_check CHECK ((status = ANY (ARRAY['active'::text, 'restricted'::text, 'deleted'::text]))),
     CONSTRAINT users_trust_level_check CHECK (((trust_level >= 0) AND (trust_level <= 4)))
 );
 
@@ -1596,6 +1593,32 @@ COMMENT ON COLUMN public.users.master_profile IS 'Шапка публичной 
 
 
 --
+-- Name: identity_read_all_v1; Type: VIEW; Schema: public; Owner: -
+--
+
+CREATE VIEW public.identity_read_all_v1 AS
+ SELECT id AS user_id,
+    username,
+    display_name,
+    avatar_url,
+    avatar_s3_key,
+    status,
+    trust_level,
+    reputation_score,
+    maker_verified,
+    is_master,
+    created_at
+   FROM public.users u;
+
+
+--
+-- Name: VIEW identity_read_all_v1; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON VIEW public.identity_read_all_v1 IS 'Versioned staff/audit read-view (contract v1) over the users god-table. Includes inactive and technical identities; do not use in public content paths.';
+
+
+--
 -- Name: identity_read_v1; Type: VIEW; Schema: public; Owner: -
 --
 
@@ -1611,7 +1634,8 @@ CREATE VIEW public.identity_read_v1 AS
     maker_verified,
     is_master,
     created_at
-   FROM public.users u;
+   FROM public.users u
+  WHERE ((status = 'active'::text) AND (id <> '00000000-0000-0000-0000-000000000001'::uuid));
 
 
 --
@@ -3274,6 +3298,58 @@ CREATE TABLE public.reputation_events (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     CONSTRAINT reputation_events_reason_check CHECK ((reason = ANY (ARRAY['post_upvoted'::text, 'question_upvoted'::text, 'post_downvoted'::text, 'answer_accepted'::text, 'daily_cap_reached'::text]))),
     CONSTRAINT reputation_events_subject_type_check CHECK ((subject_type = ANY (ARRAY['post'::text, 'thread'::text])))
+);
+
+
+--
+-- Name: sanction_appeals; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.sanction_appeals (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    sanction_id uuid NOT NULL,
+    submitted_by uuid NOT NULL,
+    submitted_at timestamp with time zone DEFAULT now() NOT NULL,
+    message text NOT NULL,
+    state text DEFAULT 'pending'::text NOT NULL,
+    resolved_by uuid,
+    resolved_at timestamp with time zone,
+    resolution_note text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT sanction_appeals_message_nonempty_check CHECK ((btrim(message) <> ''::text)),
+    CONSTRAINT sanction_appeals_resolution_fields_check CHECK ((((state = 'pending'::text) AND (resolved_by IS NULL) AND (resolved_at IS NULL) AND (resolution_note IS NULL)) OR ((state = ANY (ARRAY['accepted'::text, 'rejected'::text])) AND (resolved_by IS NOT NULL) AND (resolved_at IS NOT NULL) AND (resolution_note IS NOT NULL) AND (btrim(resolution_note) <> ''::text)))),
+    CONSTRAINT sanction_appeals_state_check CHECK ((state = ANY (ARRAY['pending'::text, 'accepted'::text, 'rejected'::text])))
+);
+
+
+--
+-- Name: sanctions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.sanctions (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    type text NOT NULL,
+    state text DEFAULT 'active'::text NOT NULL,
+    reason_code text NOT NULL,
+    reason_note text,
+    evidence_url text,
+    starts_at timestamp with time zone DEFAULT now() NOT NULL,
+    ends_at timestamp with time zone,
+    created_by uuid NOT NULL,
+    cancelled_at timestamp with time zone,
+    cancelled_by uuid,
+    cancel_reason text,
+    idempotency_key text NOT NULL,
+    idempotency_payload_hash bytea NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT sanctions_cancellation_fields_check CHECK ((((state = 'cancelled'::text) AND (cancelled_at IS NOT NULL) AND (cancelled_by IS NOT NULL) AND (cancel_reason IS NOT NULL) AND (btrim(cancel_reason) <> ''::text)) OR ((state <> 'cancelled'::text) AND (cancelled_at IS NULL) AND (cancelled_by IS NULL) AND (cancel_reason IS NULL)))),
+    CONSTRAINT sanctions_ends_after_starts_check CHECK (((ends_at IS NULL) OR (ends_at > starts_at))),
+    CONSTRAINT sanctions_reason_code_check CHECK ((reason_code = ANY (ARRAY['spam'::text, 'abuse'::text, 'fraud'::text, 'tos_violation'::text, 'security'::text, 'other'::text, 'legacy'::text]))),
+    CONSTRAINT sanctions_state_check CHECK ((state = ANY (ARRAY['active'::text, 'cancelled'::text, 'expired'::text]))),
+    CONSTRAINT sanctions_type_check CHECK ((type = ANY (ARRAY['suspension'::text, 'ban'::text])))
 );
 
 
@@ -5256,6 +5332,22 @@ ALTER TABLE ONLY public.reputation_events
 
 
 --
+-- Name: sanction_appeals sanction_appeals_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sanction_appeals
+    ADD CONSTRAINT sanction_appeals_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: sanctions sanctions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sanctions
+    ADD CONSTRAINT sanctions_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: schema_migrations schema_migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -7202,6 +7294,41 @@ CREATE UNIQUE INDEX reputation_events_answer_accept_once_idx ON public.reputatio
 --
 
 CREATE INDEX reputation_events_user_idx ON public.reputation_events USING btree (user_id, created_at DESC);
+
+
+--
+-- Name: sanction_appeals_one_pending_per_sanction_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX sanction_appeals_one_pending_per_sanction_idx ON public.sanction_appeals USING btree (sanction_id) WHERE (state = 'pending'::text);
+
+
+--
+-- Name: sanction_appeals_sanction_history_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX sanction_appeals_sanction_history_idx ON public.sanction_appeals USING btree (sanction_id, submitted_at DESC);
+
+
+--
+-- Name: sanctions_idempotency_key_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX sanctions_idempotency_key_idx ON public.sanctions USING btree (idempotency_key);
+
+
+--
+-- Name: sanctions_one_active_per_user_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX sanctions_one_active_per_user_idx ON public.sanctions USING btree (user_id) WHERE (state = 'active'::text);
+
+
+--
+-- Name: sanctions_user_history_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX sanctions_user_history_idx ON public.sanctions USING btree (user_id, created_at DESC);
 
 
 --
@@ -9348,6 +9475,54 @@ ALTER TABLE ONLY public.reputation_events
 
 
 --
+-- Name: sanction_appeals sanction_appeals_resolved_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sanction_appeals
+    ADD CONSTRAINT sanction_appeals_resolved_by_fkey FOREIGN KEY (resolved_by) REFERENCES public.users(id);
+
+
+--
+-- Name: sanction_appeals sanction_appeals_sanction_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sanction_appeals
+    ADD CONSTRAINT sanction_appeals_sanction_id_fkey FOREIGN KEY (sanction_id) REFERENCES public.sanctions(id);
+
+
+--
+-- Name: sanction_appeals sanction_appeals_submitted_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sanction_appeals
+    ADD CONSTRAINT sanction_appeals_submitted_by_fkey FOREIGN KEY (submitted_by) REFERENCES public.users(id);
+
+
+--
+-- Name: sanctions sanctions_cancelled_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sanctions
+    ADD CONSTRAINT sanctions_cancelled_by_fkey FOREIGN KEY (cancelled_by) REFERENCES public.users(id);
+
+
+--
+-- Name: sanctions sanctions_created_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sanctions
+    ADD CONSTRAINT sanctions_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.users(id);
+
+
+--
+-- Name: sanctions sanctions_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sanctions
+    ADD CONSTRAINT sanctions_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
 -- Name: search_index_jobs search_index_jobs_model_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -9935,46 +10110,25 @@ ALTER TABLE ONLY public.zones
 -- PostgreSQL database dump complete
 --
 
-
---
--- PostgreSQL database dump
---
-
-\restrict 18hLxoHmGRrEJORYbT6UkweaENfwdnFY8iufXn8ehsZSNyx9Wu17bBp4LtSh5oi
-
--- Dumped from database version 16.13 (Debian 16.13-1.pgdg12+1)
--- Dumped by pg_dump version 16.13 (Debian 16.13-1.pgdg12+1)
-
-SET statement_timeout = 0;
-SET lock_timeout = 0;
-SET idle_in_transaction_session_timeout = 0;
-SET client_encoding = 'UTF8';
-SET standard_conforming_strings = on;
-SELECT pg_catalog.set_config('search_path', '', false);
-SET check_function_bodies = false;
-SET xmloption = content;
-SET client_min_messages = warning;
-SET row_security = off;
-
---
--- Data for Name: schema_migrations; Type: TABLE DATA; Schema: public; Owner: -
---
-
-INSERT INTO public.schema_migrations VALUES ('20260810150000');
-INSERT INTO public.schema_migrations VALUES ('20260811120000');
-INSERT INTO public.schema_migrations VALUES ('20260811130000');
-INSERT INTO public.schema_migrations VALUES ('20260811140000');
-INSERT INTO public.schema_migrations VALUES ('20260811150000');
-INSERT INTO public.schema_migrations VALUES ('20260811160000');
-INSERT INTO public.schema_migrations VALUES ('20260811170000');
-INSERT INTO public.schema_migrations VALUES ('20260811180000');
-INSERT INTO public.schema_migrations VALUES ('20260812120000');
-INSERT INTO public.schema_migrations VALUES ('20260812130000');
-INSERT INTO public.schema_migrations VALUES ('20260812140000');
+\unrestrict dbmate
 
 
 --
--- PostgreSQL database dump complete
+-- Dbmate schema migrations
 --
 
-
+INSERT INTO public.schema_migrations (version) VALUES
+    ('20260810150000'),
+    ('20260811120000'),
+    ('20260811130000'),
+    ('20260811140000'),
+    ('20260811150000'),
+    ('20260811160000'),
+    ('20260811170000'),
+    ('20260811180000'),
+    ('20260812120000'),
+    ('20260812130000'),
+    ('20260812140000'),
+    ('20260812150000'),
+    ('20260812160000'),
+    ('20260812170000');

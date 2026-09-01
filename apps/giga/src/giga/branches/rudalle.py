@@ -18,7 +18,7 @@ def run_rudalle(job: GenerationJob, report: ProgressReporter = NOOP_REPORTER) ->
     if config is None:
         raise GenerationError("RuDALL-E не сконфигурирован (RUDALLE_API_TOKEN)")
 
-    report("submit", 5)
+    report("loading", 5)
     model_bytes = rudalle_client.generate_3d(config, job.prompt, str(uuid.uuid4()))
     report("export", 100)
     return GenerationResult(
