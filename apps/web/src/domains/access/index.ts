@@ -6,6 +6,7 @@ export {
   EMAIL_DOMAINS,
   startEmailAuth,
   verifyEmailAuth,
+  passwordLogin,
   updateProfile,
   uploadAvatarPhoto,
   resolveAvatarUrl,

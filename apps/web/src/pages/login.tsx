@@ -3,6 +3,7 @@ import { ThemeToggle } from "@platform/theme";
 import { AuroraBackground, Button } from "@shared/ui";
 import { EmailLogin } from "./emaillogin.tsx";
 import { MethodIcon } from "./methodicon.tsx";
+import { PasswordLogin } from "./passwordlogin.tsx";
 import "./login.css";
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -58,6 +59,13 @@ export function LoginPage() {
               PlagID
             </Button>
           </div>
+
+          <div className="loginDivider">
+            <div className="loginDividerLine" />
+            <span>Для администратора</span>
+            <div className="loginDividerLine" />
+          </div>
+          <PasswordLogin />
         </section>
       </div>
     </main>

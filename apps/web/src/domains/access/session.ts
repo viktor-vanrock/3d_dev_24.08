@@ -71,6 +71,10 @@ export function verifyEmailAuth(localPart: string, domain: EmailDomain, code: st
   return postJson("/auth/email/verify", { localPart, domain, code });
 }
 
+export function passwordLogin(username: string, password: string) {
+  return postJson("/auth/password", { username, password });
+}
+
 // Правка профиля / подтверждение хендла (MF-355, Фаза 2; био/сайт/контакты — MF-357, Фаза 1
 // эпика MF-15): PATCH /me, apps/api/src/profile/profile.ts. Ошибки — invalid_username/
 // invalid_display_name/invalid_avatar_url/invalid_bio/invalid_website_url/invalid_contacts
