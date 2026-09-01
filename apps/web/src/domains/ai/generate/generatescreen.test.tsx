@@ -135,6 +135,14 @@ describe("GenerateScreen — завершение генерации", () => {
 });
 
 describe("GenerateScreen — дизайн-ревью формы", () => {
+  it("показывает ветку RuDALL-E в списке режимов", () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ generations: [] }), { status: 200 })));
+
+    renderGenerateScreen();
+
+    expect(screen.getByRole("button", { name: "3D из текста (Kandinsky)" })).toBeTruthy();
+  });
+
   it("показывает понятное действие генерации вместо кнопки-звёздочки", () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ generations: [] }), { status: 200 })));
 
@@ -175,6 +183,26 @@ describe("GenerateScreen — дизайн-ревью формы", () => {
     expect(screen.queryByRole("button", { name: "Чертёж КЗД" })).toBeNull();
     expect(screen.queryByRole("button", { name: "HueForge (много цветов)" })).toBeNull();
     expect(screen.queryByText("ветка: 3D-модель")).toBeNull();
+  });
+
+  it("показывает статус RuDALL-E генерации", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.endsWith("/generations/rudalle-queued")) {
+          return new Response(
+            JSON.stringify({ generation: { ...generation("queued"), id: "rudalle-queued", branch: "rudalle" } }),
+            { status: 200 },
+          );
+        }
+        return new Response(JSON.stringify({ generations: [] }), { status: 200 });
+      }),
+    );
+
+    renderGenerateScreen("rudalle-queued");
+
+    expect(await screen.findByText("В очереди")).toBeTruthy();
   });
 });
 
@@ -248,6 +276,38 @@ describe("GenerateScreen — история с веткой trellis", () => {
     );
 
     const { container } = renderGenerateScreen("gen-trellis-ready");
+
+    expect(await screen.findByRole("button", { name: /Покрутить/u })).toBeTruthy();
+    expect(container.querySelector(".modelViewerStage")).not.toBeNull();
+    expect(container.querySelector(".generateImageFrame")).toBeNull();
+  });
+
+  it("открывает готовый RuDALL-E GLB в настоящем 3D-вьюере", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.endsWith("/generations/rudalle-ready")) {
+          return new Response(
+            JSON.stringify({
+              generation: {
+                ...generation("done"),
+                id: "rudalle-ready",
+                branch: "rudalle",
+                prompt: "космонавт",
+                preview_url: "/generations/rudalle-ready/preview",
+                artifact_url: "/generations/rudalle-ready/artifact.glb",
+              },
+            }),
+            { status: 200 },
+          );
+        }
+        if (url.endsWith("/generations")) return new Response(JSON.stringify({ generations: [] }), { status: 200 });
+        return new Response(null, { status: 404 });
+      }),
+    );
+
+    const { container } = renderGenerateScreen("rudalle-ready");
 
     expect(await screen.findByRole("button", { name: /Покрутить/u })).toBeTruthy();
     expect(container.querySelector(".modelViewerStage")).not.toBeNull();

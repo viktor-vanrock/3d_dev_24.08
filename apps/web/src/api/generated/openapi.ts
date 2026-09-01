@@ -5654,7 +5654,7 @@ export interface components {
         readonly GenerationDto: {
             readonly artifact_url: string | null;
             /** @enum {string} */
-            readonly branch: "openscad" | "kzd" | "hueforge" | "trellis" | "concepts" | "scan";
+            readonly branch: "openscad" | "kzd" | "hueforge" | "trellis" | "rudalle" | "concepts" | "scan";
             /** Format: date-time */
             readonly created_at: string;
             readonly delayed: boolean | null;
@@ -5682,7 +5682,7 @@ export interface components {
         };
         readonly GenerationHealthBranchDto: {
             /** @enum {string} */
-            readonly branch: "openscad" | "kzd" | "hueforge" | "trellis" | "concepts" | "scan";
+            readonly branch: "openscad" | "kzd" | "hueforge" | "trellis" | "rudalle" | "concepts" | "scan";
             readonly last_error: string | null;
             /** Format: date-time */
             readonly last_success_at: string | null;
