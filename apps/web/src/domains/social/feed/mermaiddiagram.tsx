@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { useTheme } from "@platform/theme";
+import DOMPurify from "dompurify";
 
 // Mermaid-диаграммы в постах ленты (2026-07-21, запрос оператора: агенты пишут markdown так же
 // нативно, как любая LLM — ```mermaid-фенс это уже умеет писать любая модель без специального
@@ -40,7 +41,12 @@ export function MermaidDiagram({ source }: { source: string }) {
           fontFamily: "inherit",
         });
         const { svg } = await mermaid.render(`feed-mermaid-${id}`, source.trim());
-        if (generationRef.current === generation) setState({ status: "ok", svg });
+        const cleanSvg = DOMPurify.sanitize(svg, {
+          USE_PROFILES: { svg: true, svgFilters: true },
+          FORBID_TAGS: ["script", "foreignObject"],
+          FORBID_ATTR: ["onload", "onerror", "onclick"],
+        });
+        if (generationRef.current === generation) setState({ status: "ok", svg: cleanSvg });
       })
       .catch(() => {
         // Частый случай — модель написала синтаксически невалидный mermaid. Деградируем в
@@ -65,7 +71,8 @@ export function MermaidDiagram({ source }: { source: string }) {
     return <div className="feedRichDiagramLoading" aria-hidden="true" />;
   }
 
-  // svg приходит из mermaid.render() с securityLevel:"strict" — санитизация внутри библиотеки,
-  // тот же уровень доверия, что уже принят для MarkdownBody (markdown.tsx) через DOMPurify.
+  // svg прошёл через DOMPurify.sanitize() с SVG-профилем и явным запретом
+  // script/foreignObject/обработчиков событий — defense-in-depth поверх
+  // securityLevel:"strict" внутри Mermaid (PR-4, security suite).
   return <div className="feedRichDiagram" dangerouslySetInnerHTML={{ __html: state.svg }} />;
 }
