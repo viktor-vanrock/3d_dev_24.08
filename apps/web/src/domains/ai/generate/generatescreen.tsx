@@ -422,7 +422,8 @@ function GenerationPreview({ generation, onAgain }: { generation: Generation; on
           : "Скачать PNG";
   // kzd — чертёж, "модель" каталога сырую картинку не принимает (apps/api/src/generations/catalog-draft.ts
   // DRAFT_SOURCE_FORMAT), кнопку не показываем вовсе, а не даём её нажать с ошибкой.
-  const canCreateCard = generation.branch !== "kzd";
+  // TODO: показать после добавления поддержки GLB в catalog-draft
+  const canCreateCard = generation.branch !== "kzd" && generation.branch !== "rudalle";
 
   async function createCard() {
     if (creatingDraft) return;
