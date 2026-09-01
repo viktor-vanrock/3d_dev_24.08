@@ -2,7 +2,6 @@ import { useRef, type CSSProperties } from "react";
 import { useOverlay } from "@platform/overlay";
 import { EmailLogin } from "../../pages/emaillogin.tsx";
 import { MethodIcon } from "../../pages/methodicon.tsx";
-import { PasswordLogin } from "../../pages/passwordlogin.tsx";
 import { Button } from "@shared/ui";
 import { clearGuestIntent, saveGuestIntent, type GuestIntent } from "./guestintent.ts";
 import { plagIdStartUrl } from "./session.ts";
@@ -41,12 +40,6 @@ function GuestLoginPromptBody() {
       <Button variant="secondary" href={plagIdStartUrl()} icon={<MethodIcon provider="plagid" />}>
         PlagID
       </Button>
-      <div style={dividerRowStyle}>
-        <div style={dividerLineStyle} />
-        <span style={dividerLabelStyle}>Для администратора</span>
-        <div style={dividerLineStyle} />
-      </div>
-      <PasswordLogin />
     </div>
   );
 }
