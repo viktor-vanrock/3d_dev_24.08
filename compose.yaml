@@ -25,7 +25,7 @@ services:
 
   # Локальная эмуляция S3 (cloud.ru-бакетов `3mf`/`auth`) — не поднимать в проде.
   minio:
-    image: minio/minio:RELEASE.2025-10-15T17-29-55Z
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
     container_name: portal.minio
     command: server /data --console-address ":9001"
     environment:
