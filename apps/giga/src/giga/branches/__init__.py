@@ -16,6 +16,7 @@ from .concepts import run_concepts
 from .hueforge import run_hueforge
 from .kzd import run_kzd
 from .openscad import run_openscad
+from .rudalle import run_rudalle
 from .scan import run_scan
 from .trellis import run_trellis
 
@@ -28,6 +29,7 @@ BRANCHES: dict[str, Callable[[GenerationJob, ProgressReporter], GenerationResult
     # scan — единственная ветка, которая ничего не придумывает: она измеряет форму
     # настоящего предмета по десяткам его фотографий (MF-2075).
     "scan": run_scan,
+    "rudalle": run_rudalle,
 }
 
 
@@ -42,4 +44,5 @@ __all__ = [
     "GenerationResult",
     "ProgressReporter",
     "get_executor",
+    "run_rudalle",
 ]

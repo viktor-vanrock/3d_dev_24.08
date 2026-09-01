@@ -73,7 +73,7 @@ export type AssistantRunJobErrorCode = (typeof ASSISTANT_RUN_JOB_ERROR_CODES)[nu
 
 export const GENERATION_JOB_CONTRACT_VERSION = "generation.v2" as const;
 
-export const GENERATION_JOB_BRANCHES = ["openscad", "kzd", "hueforge", "trellis", "concepts", "scan"] as const;
+export const GENERATION_JOB_BRANCHES = ["openscad", "kzd", "hueforge", "trellis", "concepts", "scan", "rudalle"] as const;
 export type GenerationJobBranch = (typeof GENERATION_JOB_BRANCHES)[number];
 export type GenerationJobParameterValue =
   | string
