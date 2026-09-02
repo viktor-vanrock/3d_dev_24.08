@@ -4,7 +4,7 @@ import { MakesController } from "./api/makes.controller.ts";
 import { MakesService } from "./application/makes.service.ts";
 import { MakesRepository } from "./infrastructure/makes.repository.ts";
 import { MAKES_PORT, MAKES_READ_PORT } from "./public/index.ts";
-import { PermissionsModule } from "../permissions/permissions.module.ts";
+import { PermissionsModule } from "../permissions/public/index.ts";
 
 @Global()
 @Module({

@@ -16,7 +16,7 @@ import { ProfileFilamentsRepository } from "./infrastructure/filaments.repositor
 import { ProfileMaterialsRepository } from "./infrastructure/materials.repository.ts";
 import { PROFILE_AGGREGATES_PORT, PROFILE_AUTH_PORT, PROFILE_CONTENT_PORT, PROFILE_MASTER_PORT, PROFILE_READ_PORT, PROFILE_SANCTIONS_PORT } from "./public/index.ts";
 import { PROFILE_ADMIN_PORT } from "./public/index.ts";
-import { PermissionsModule } from "../permissions/permissions.module.ts";
+import { PermissionsModule } from "../permissions/public/index.ts";
 import { PROFILE_ACTIVATION_PRINTERS_PORT, PROFILE_MATERIAL_CATALOG_PORT } from "./application/profile-inventory.ports.ts";
 
 @Global()

@@ -19,8 +19,7 @@ import {
   UserApiKeySecretDto,
 } from "./publicapi.dto.ts";
 import { ApiPublicApiOperation } from "./openapi.ts";
-import { Internal } from "../../permissions/decorators/internal.decorator.ts";
-import { User } from "../../permissions/decorators/user.decorator.ts";
+import { Internal, User } from "../../permissions/public/index.ts";
 function user(request: RequestWithSession): UserIdType {
   const value = request[SESSION_USER];
   if (value === undefined) throw new UnauthorizedException();

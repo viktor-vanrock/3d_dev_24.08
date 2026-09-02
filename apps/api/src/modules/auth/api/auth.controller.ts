@@ -25,9 +25,7 @@ import {
   ApiSberIdStubOperation,
   ApiSessionOperation,
 } from "./openapi.ts";
-import { Internal } from "../../permissions/decorators/internal.decorator.ts";
-import { Public } from "../../permissions/decorators/public.decorator.ts";
-import { User } from "../../permissions/decorators/user.decorator.ts";
+import { Internal, Public, User } from "../../permissions/public/index.ts";
 
 const APP_CALLBACK_SCHEME = "ultradevice";
 const APP_INTENT_TTL_MS = 600 * 1000;

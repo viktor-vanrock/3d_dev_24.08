@@ -24,10 +24,7 @@ import { isUuid, SUBSCRIBE_SOURCES, type SubscribeSource } from "../domain/commu
 import { AcceptDto, BootstrapOwnerDto, CreateCommunityDto, CreatePostDto, CreateThreadDto, RoleDto, SubscriptionDto, VoteDto } from "./community.dto.ts";
 import { ApiCommunityOperation } from "./openapi.ts";
 import { COMMUNITY_STORAGE_PORT, type CommunityStoragePort } from "../application/community.ports.ts";
-import { Permission } from "../../permissions/decorators/permission.decorator.ts";
-import { Public } from "../../permissions/decorators/public.decorator.ts";
-import { User } from "../../permissions/decorators/user.decorator.ts";
-import { Permissions } from "../../permissions/domain/permissions.catalog.ts";
+import { Permission, Permissions, Public, User } from "../../permissions/public/index.ts";
 const uid = (r: RequestWithSession): UserIdType => UserId(r[SESSION_USER]!.id);
 const id = (v: string) => {
   if (!isUuid(v)) throw new NotFoundException();

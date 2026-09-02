@@ -33,7 +33,7 @@ import {
   UpdateProfilePrinterDto,
 } from "./profile-inventory.dto.ts";
 import { ApiProfileInventoryOperation } from "./profile-inventory.openapi.ts";
-import { User } from "../../permissions/decorators/user.decorator.ts";
+import { User } from "../../permissions/public/index.ts";
 
 type ProfileRequest = Request & RequestWithSession & RequestWithId;
 const ANON_COOKIE_MAX_AGE_MS = 730 * 24 * 60 * 60 * 1000;

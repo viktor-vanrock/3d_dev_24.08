@@ -4,9 +4,7 @@ import { UserId, type UserId as UserIdType } from "../../_kernel/brandedIds.ts";
 import { ORGANIZATIONS_PORT, type OrganizationsPort } from "../public/index.ts";
 import { ReviewVendorClaimDto, SubmitVendorClaimDto, VendorClaimQueryDto } from "./organizations.dto.ts";
 import { ApiOrganizationsOperation } from "./openapi.ts";
-import { Permission } from "../../permissions/decorators/permission.decorator.ts";
-import { User } from "../../permissions/decorators/user.decorator.ts";
-import { Permissions } from "../../permissions/domain/permissions.catalog.ts";
+import { Permission, Permissions, User } from "../../permissions/public/index.ts";
 
 function userId(request: RequestWithSession): UserIdType {
   const session = request[SESSION_USER];

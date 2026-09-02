@@ -4,8 +4,7 @@ import { UserId, type UserId as UserIdType } from "../../_kernel/brandedIds.ts";
 import { MASTER_SERVICES_PORT, type MasterServicesPort } from "../public/index.ts";
 import { MasterServiceBodyDto, MasterServicesQueryDto } from "./master-services.dto.ts";
 import { ApiMasterServicesOperation } from "./openapi.ts";
-import { Public } from "../../permissions/decorators/public.decorator.ts";
-import { User } from "../../permissions/decorators/user.decorator.ts";
+import { Public, User } from "../../permissions/public/index.ts";
 
 function user(request: RequestWithSession): UserIdType {
   const session = request[SESSION_USER];

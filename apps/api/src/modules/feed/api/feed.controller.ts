@@ -52,10 +52,7 @@ import {
   FeedVoteResponseDto,
 } from "./feed.dto.ts";
 import { ApiFeedOperation, ApiFeedUpload } from "./openapi.ts";
-import { Internal } from "../../permissions/decorators/internal.decorator.ts";
-import { Public } from "../../permissions/decorators/public.decorator.ts";
-import { User } from "../../permissions/decorators/user.decorator.ts";
-import { UserOrAgent } from "../../permissions/decorators/user-or-agent.decorator.ts";
+import { Internal, Public, User, UserOrAgent } from "../../permissions/public/index.ts";
 
 const MAX_FEED_VIDEO_BYTES = 200 * 1024 * 1024;
 const MAX_FEED_IMAGE_BYTES = 15 * 1024 * 1024;

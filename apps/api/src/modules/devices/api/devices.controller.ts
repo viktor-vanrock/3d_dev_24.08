@@ -18,9 +18,7 @@ import {
   DeviceTransferDto,
 } from "./devices.dto.ts";
 import { ApiDevicesOperation } from "./openapi.ts";
-import { Internal } from "../../permissions/decorators/internal.decorator.ts";
-import { Public } from "../../permissions/decorators/public.decorator.ts";
-import { User } from "../../permissions/decorators/user.decorator.ts";
+import { Internal, Public, User } from "../../permissions/public/index.ts";
 
 function actor(request: RequestWithSession): UserIdType {
   const session = request[SESSION_USER];

@@ -19,8 +19,7 @@ import {
   PublicationResponseDto,
   PublishedProjectResponseDto,
 } from "./projects.response.dto.ts";
-import { Public } from "../../permissions/decorators/public.decorator.ts";
-import { User } from "../../permissions/decorators/user.decorator.ts";
+import { Public, User } from "../../permissions/public/index.ts";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 

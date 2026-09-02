@@ -4,10 +4,7 @@ import { UserId, type UserId as UserIdType } from "../../_kernel/brandedIds.ts";
 import { BILLING_PORT, type BillingPort } from "../public/index.ts";
 import { BillingLooseBodyDto } from "./billing.dto.ts";
 import { ApiBillingOperation } from "./openapi.ts";
-import { Internal } from "../../permissions/decorators/internal.decorator.ts";
-import { Permission } from "../../permissions/decorators/permission.decorator.ts";
-import { User } from "../../permissions/decorators/user.decorator.ts";
-import { Permissions } from "../../permissions/domain/permissions.catalog.ts";
+import { Internal, Permission, Permissions, User } from "../../permissions/public/index.ts";
 function user(request: RequestWithSession): UserIdType {
   const value = request[SESSION_USER];
   if (value === undefined) throw new UnauthorizedException();

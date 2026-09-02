@@ -13,8 +13,7 @@ import {
   VapidPublicKeyResponseDto,
 } from "./push.dto.ts";
 import { UserId, type UserId as UserIdType } from "../../_kernel/brandedIds.ts";
-import { Public } from "../../permissions/decorators/public.decorator.ts";
-import { User } from "../../permissions/decorators/user.decorator.ts";
+import { Public, User } from "../../permissions/public/index.ts";
 
 function userId(request: RequestWithSession): UserIdType {
   const session = request[SESSION_USER];

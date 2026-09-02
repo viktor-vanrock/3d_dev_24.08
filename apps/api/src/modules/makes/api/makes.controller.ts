@@ -26,8 +26,7 @@ import {
   MakeVoteResponseDto,
 } from "./makes.dto.ts";
 import { ApiMakeCreate, ApiMakesOperation } from "./openapi.ts";
-import { Public } from "../../permissions/decorators/public.decorator.ts";
-import { User } from "../../permissions/decorators/user.decorator.ts";
+import { Public, User } from "../../permissions/public/index.ts";
 
 interface UploadedMakeFile {
   readonly fieldname: string;

@@ -28,7 +28,7 @@ import { RelayInternalService } from "../application/relay-internal.service.ts";
 import { RelayInternalExceptionFilter } from "./relay-internal.filter.ts";
 import { RelayBody, RelayParam, RelayQuery } from "./relay-internal.validation.ts";
 import { RelayServiceGuard } from "./relay-service.guard.ts";
-import { Internal } from "../../permissions/decorators/internal.decorator.ts";
+import { Internal } from "../../permissions/public/index.ts";
 
 @Controller("internal/relay/v1")
 @Internal()

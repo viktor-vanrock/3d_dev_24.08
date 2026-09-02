@@ -7,8 +7,7 @@ import { MAX_SCAN_PHOTO_BYTES } from "../domain/generations.ts";
 import { GENERATIONS_PORT, type AssetResult, type GenerationsPort } from "../public/index.ts";
 import { GenerationLooseBodyDto } from "./generations.dto.ts";
 import { ApiGenerationsOperation } from "./openapi.ts";
-import { Public } from "../../permissions/decorators/public.decorator.ts";
-import { User } from "../../permissions/decorators/user.decorator.ts";
+import { Public, User } from "../../permissions/public/index.ts";
 
 interface UploadedScanFile {
   readonly buffer: Buffer;

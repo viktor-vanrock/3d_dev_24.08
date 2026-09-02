@@ -5,7 +5,7 @@ import { UserId } from "../../_kernel/brandedIds.ts";
 import { AGENTS_PORT, type AgentsPort } from "../public/index.ts";
 import { AgentAccountResponseDto, AgentBodyDto, AgentKeyListResponseDto, AgentListResponseDto, MintedAgentContentKeyDto } from "./agents.dto.ts";
 import { ApiAgentsOperation } from "./openapi.ts";
-import { User } from "../../permissions/decorators/user.decorator.ts";
+import { User } from "../../permissions/public/index.ts";
 
 function session(request: RequestWithSession) {
   const value = request[SESSION_USER];

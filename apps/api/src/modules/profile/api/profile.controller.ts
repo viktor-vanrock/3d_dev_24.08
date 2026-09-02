@@ -8,8 +8,7 @@ import { ProfileService, MAX_AVATAR_PHOTO_BYTES } from "../application/profile.s
 import { AVATAR_SNAPSHOT_SIDES, type AvatarSnapshotSide, IMAGE_FORMATS } from "../domain/profile.ts";
 import { ApiAvatarPhotoUpload, ApiProfileOperation } from "./openapi.ts";
 import { AvatarResponseDto, PatchAvatarDto, PatchProfileDto, PublicProfileResponseDto, UpdatedProfileResponseDto } from "./profile.dto.ts";
-import { Public } from "../../permissions/decorators/public.decorator.ts";
-import { User } from "../../permissions/decorators/user.decorator.ts";
+import { Public, User } from "../../permissions/public/index.ts";
 
 interface UploadedAvatarFile {
   readonly buffer: Buffer;

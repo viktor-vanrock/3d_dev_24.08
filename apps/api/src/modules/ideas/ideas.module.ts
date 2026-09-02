@@ -4,7 +4,7 @@ import { IdeasController } from "./api/ideas.controller.ts";
 import { IdeasService } from "./application/ideas.service.ts";
 import { IdeasRepository } from "./infrastructure/ideas.repository.ts";
 import { IDEAS_PORT } from "./public/index.ts";
-import { PermissionsModule } from "../permissions/permissions.module.ts";
+import { PermissionsModule } from "../permissions/public/index.ts";
 
 @Module({
   imports: [DatabaseModule, PermissionsModule],

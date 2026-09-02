@@ -26,10 +26,7 @@ import {
   ModerateIdeaDto,
 } from "./ideas.dto.ts";
 import { ApiIdeasOperation } from "./openapi.ts";
-import { Permission } from "../../permissions/decorators/permission.decorator.ts";
-import { Public } from "../../permissions/decorators/public.decorator.ts";
-import { User } from "../../permissions/decorators/user.decorator.ts";
-import { Permissions } from "../../permissions/domain/permissions.catalog.ts";
+import { Permission, Permissions, Public, User } from "../../permissions/public/index.ts";
 
 function optionalUser(request: RequestWithSession): UserIdType | null {
   const session = request[SESSION_USER];

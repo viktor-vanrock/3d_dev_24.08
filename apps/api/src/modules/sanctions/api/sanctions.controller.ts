@@ -4,8 +4,7 @@ import { SanctionId, UserId } from "../../_kernel/brandedIds.ts";
 import { SANCTIONS_PORT, type SanctionRecord, type SanctionsPort } from "../public/index.ts";
 import { ApiSanctionOperation } from "./openapi.ts";
 import { CancelSanctionDto, CreateSanctionDto } from "./sanctions.dto.ts";
-import { Permission } from "../../permissions/decorators/permission.decorator.ts";
-import { Permissions } from "../../permissions/domain/permissions.catalog.ts";
+import { Permission, Permissions } from "../../permissions/public/index.ts";
 const uuid = (value: string): string => { if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)) throw new NotFoundException(); return value; };
 const actor = (request: RequestWithSession) => { const current = request[SESSION_USER]; if (current === undefined) throw new UnauthorizedException(); return UserId(current.id); };
 function response(sanction: SanctionRecord, staff: boolean) { const { createdBy: _createdBy, cancelledBy: _cancelledBy, ...self } = sanction; return staff ? sanction : self; }

@@ -20,8 +20,7 @@ import {
   type MakeUpload,
 } from "../domain/makes.ts";
 import { MakesRepository } from "../infrastructure/makes.repository.ts";
-import { PermissionsService } from "../../permissions/application/permissions.service.ts";
-import { Permissions } from "../../permissions/domain/permissions.catalog.ts";
+import { Permissions, PermissionsService } from "../../permissions/public/index.ts";
 import {
   MAKE_COMMENTS_PORT,
   MAKE_FEED_SIGNAL_PORT,

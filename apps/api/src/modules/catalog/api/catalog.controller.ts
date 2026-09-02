@@ -2,10 +2,7 @@ import { Body, Controller, Get, HttpCode, Inject, Param, Post, Query, Req, Unaut
 import { SESSION_USER, type RequestWithSession } from "../../../nest/auth/session-verifier.ts";
 import { CATALOG_PORT, type CatalogPort, type CatalogQuery } from "../public/index.ts";
 import { ApiCatalogRead } from "./openapi.ts";
-import { Permission } from "../../permissions/decorators/permission.decorator.ts";
-import { Public } from "../../permissions/decorators/public.decorator.ts";
-import { User } from "../../permissions/decorators/user.decorator.ts";
-import { Permissions } from "../../permissions/domain/permissions.catalog.ts";
+import { Permission, Permissions, Public, User } from "../../permissions/public/index.ts";
 
 @Controller()
 export class CatalogController {

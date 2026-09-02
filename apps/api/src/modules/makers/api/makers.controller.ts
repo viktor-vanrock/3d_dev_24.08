@@ -4,8 +4,7 @@ import { UserId, type UserId as UserIdType } from "../../_kernel/brandedIds.ts";
 import { MAKERS_PORT, type MakersPort } from "../public/index.ts";
 import { ApiMakersOperation } from "./openapi.ts";
 import { MakerFeedResponseDto, MakerProfileInputDto, MakerProfileResponseDto, MakersFeedQueryDto, MakersNearbyQueryDto, NearbyMakersResponseDto } from "./makers.dto.ts";
-import { Public } from "../../permissions/decorators/public.decorator.ts";
-import { User } from "../../permissions/decorators/user.decorator.ts";
+import { Public, User } from "../../permissions/public/index.ts";
 
 function user(request: RequestWithSession): UserIdType {
   const session = request[SESSION_USER];

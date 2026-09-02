@@ -4,7 +4,7 @@ import { UserId, type UserId as UserIdType } from "../../_kernel/brandedIds.ts";
 import { ORDERS_PORT, type OrdersPort } from "../public/index.ts";
 import { CreateOrderDto, TransitionOrderDto } from "./orders.dto.ts";
 import { ApiOrdersOperation } from "./openapi.ts";
-import { User } from "../../permissions/decorators/user.decorator.ts";
+import { User } from "../../permissions/public/index.ts";
 
 function user(request: RequestWithSession): UserIdType {
   const session = request[SESSION_USER];
