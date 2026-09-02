@@ -11,12 +11,14 @@
     ENVIRONMENT: develop
     OC_SERVER: "https://api.advosd.sberdevices.ru:6443"
     OC_TOKEN: $OC_TOKEN
+    # API запускает pre-upgrade Job миграций, которому может быть мало 15m.
+    HELM_TIMEOUT: "20m0s"
   rules: !reference [.rules, dev]
-
-# 1 волна 
 
 deploy_dev_api:
   extends: .deploy_dev
+  when: manual
+  allow_failure: false
   needs: [get_version, build_api]
   dependencies: [get_version, build_api]
   variables:
@@ -30,8 +32,6 @@ deploy_dev_web:
   variables:
     APP_NAME: web
     VALUES_PATH: envs/dev/web.yaml
-
-# потом 2 волна
 
 deploy_dev_relay:
   extends: .deploy_dev
@@ -72,8 +72,6 @@ deploy_dev_giga:
   variables:
     APP_NAME: giga
     VALUES_PATH: envs/dev/giga.yaml
-
-# совсем потом
 
 deploy_dev_scout:
   extends: .deploy_dev

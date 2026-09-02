@@ -258,7 +258,7 @@ export function AssistantWorkshopScreen({
                 previewUrl={
                   generation.branch === "openscad"
                     ? generation.artifact_url
-                    : generation.branch === "trellis"
+                    : generation.branch === "trellis" || generation.branch === "rudalle"
                       ? (generation.preview_url ?? generation.artifact_url)
                       : generation.preview_url
                 }

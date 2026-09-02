@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { OBJLoader } from "three/addons/loaders/OBJLoader.js";
 import { STLLoader } from "three/addons/loaders/STLLoader.js";
 import { prefersReducedMotionNow } from "@platform/theme";
 
@@ -122,7 +123,7 @@ export function createModelScene(
   canvas: HTMLCanvasElement,
   url: string,
   callbacks: { onLoaded?: () => void; onError?: () => void } = {},
-  format: "gltf" | "stl" = "gltf",
+  format: "gltf" | "stl" | "obj" = "gltf",
   mobileProfile = false,
 ): ModelSceneHandle {
   const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
@@ -243,6 +244,18 @@ export function createModelScene(
           const loadedGroup = new THREE.Group();
           loadedGroup.add(mesh);
           group = fitAndAdd(loadedGroup);
+        }),
+      undefined,
+      handleLoadError,
+    );
+  } else if (format === "obj") {
+    const loader = new OBJLoader();
+    loader.setWithCredentials(withCredentials);
+    loader.load(
+      url,
+      (object) =>
+        handleLoaded(() => {
+          group = fitAndAdd(object);
         }),
       undefined,
       handleLoadError,

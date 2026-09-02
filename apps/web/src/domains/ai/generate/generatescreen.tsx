@@ -42,6 +42,7 @@ const BRANCH_META: Record<CreatableGenerationBranch, { label: string; placeholde
   kzd: { label: "Чертёж КЗД", placeholder: "Что начертить?", icon: DraftIcon },
   hueforge: { label: "HueForge (много цветов)", placeholder: "Какую многоцветную сцену собрать?", icon: LayersIcon },
   trellis: { label: "3D по референсам", placeholder: "Что смоделировать по референс-изображениям?", icon: ScanIcon },
+  rudalle: { label: "3D из текста (Kandinsky)", placeholder: "Опишите что нужно смоделировать...", icon: CubeIcon },
 };
 
 function branchMeta(branch: GenerationBranch) {
@@ -390,7 +391,7 @@ function HistoryThumb({ generation }: { generation: Generation }) {
 }
 
 // Предпросмотр готового результата (docs/design/generation.md §4): 3D для openscad (STL —
-// GAP-STL, ModelViewer format="stl"), GLB для trellis и картинка для kzd/hueforge (оба
+// GAP-STL, ModelViewer format="stl"), GLB/OBJ для trellis/rudalle и картинка для kzd/hueforge (оба
 // отдают preview_url — для hueforge это квантованный PNG, apps/giga/src/giga/branches/hueforge.py).
 function GenerationPreview({ generation, onAgain }: { generation: Generation; onAgain: () => void }) {
   const overlay = useOverlay();
@@ -414,14 +415,15 @@ function GenerationPreview({ generation, onAgain }: { generation: Generation; on
   const downloadLabel =
     generation.branch === "openscad"
       ? "Скачать STL"
-      : generation.branch === "trellis"
+      : generation.branch === "trellis" || generation.branch === "rudalle"
         ? "Скачать 3D-модель"
         : generation.branch === "hueforge"
           ? "Скачать архив"
           : "Скачать PNG";
   // kzd — чертёж, "модель" каталога сырую картинку не принимает (apps/api/src/generations/catalog-draft.ts
   // DRAFT_SOURCE_FORMAT), кнопку не показываем вовсе, а не даём её нажать с ошибкой.
-  const canCreateCard = generation.branch !== "kzd";
+  // TODO: показать после добавления поддержки GLB в catalog-draft
+  const canCreateCard = generation.branch !== "kzd" && generation.branch !== "rudalle";
 
   async function createCard() {
     if (creatingDraft) return;
@@ -449,13 +451,13 @@ function GenerationPreview({ generation, onAgain }: { generation: Generation; on
 
       {generation.branch === "openscad" ? (
         <ModelViewer modelId={generation.id} title={generation.prompt} previewUrl={generation.artifact_url} thumbUrl={null} format="stl" />
-      ) : generation.branch === "trellis" ? (
+      ) : generation.branch === "trellis" || generation.branch === "rudalle" ? (
         <ModelViewer
           modelId={generation.id}
           title={generation.prompt}
           previewUrl={generation.preview_url ?? generation.artifact_url}
           thumbUrl={null}
-          format="gltf"
+          format={isObjArtifact(generation.preview_url ?? generation.artifact_url) ? "obj" : "gltf"}
         />
       ) : generation.preview_url ? (
         <button type="button" className="generateImageFrame pressable reveal" onClick={openFullscreen}>
@@ -480,6 +482,10 @@ function GenerationPreview({ generation, onAgain }: { generation: Generation; on
       </div>
     </div>
   );
+}
+
+function isObjArtifact(url: string | null): boolean {
+  return url?.split(/[?#]/, 1)[0]?.toLowerCase().endsWith(".obj") ?? false;
 }
 
 function CheckIcon() {

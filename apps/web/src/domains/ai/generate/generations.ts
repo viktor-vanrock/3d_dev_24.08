@@ -10,7 +10,7 @@ import { apiFetch, API_URL } from "@shared/api";
 // `generation.branch` с сервера может прийти как "trellis"; в рантайме generatescreen.tsx падал
 // на `BRANCH_META[generation.branch].icon` для истории с trellis-генерацией (TypeError: Cannot
 // read properties of undefined) — не гипотетически, воспроизведено вживую на dev.3mf.tech.
-export const GENERATION_BRANCHES = ["openscad", "kzd", "hueforge", "trellis"] as const;
+export const GENERATION_BRANCHES = ["openscad", "kzd", "hueforge", "trellis", "rudalle"] as const;
 export type CreatableGenerationBranch = (typeof GENERATION_BRANCHES)[number];
 export type GenerationBranch = CreatableGenerationBranch | "concepts";
 

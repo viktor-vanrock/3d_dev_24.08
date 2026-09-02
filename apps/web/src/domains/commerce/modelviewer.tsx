@@ -39,8 +39,8 @@ export function ModelViewer({
   thumbUrl: string | null;
   statusOverlay?: ReactNode;
   // "stl" — генерация ветки openscad отдаёт STL напрямую как артефакт, без GLB-превью
-  // (GAP-STL, docs/design/generation.md §6.1) — см. modelscene.ts.
-  format?: "gltf" | "stl";
+  // (GAP-STL, docs/design/generation.md §6.1), а "obj" — fallback RuDALL-E — см. modelscene.ts.
+  format?: "gltf" | "stl" | "obj";
   // Полноэкранный вьюер поверх карточки модели переводит шапку в `data-shell="back"`
   // (header.capsule.md § «Четыре режима оболочки», MF-1022) — родитель (model.tsx) сам не
   // знает о fullscreen-состоянии вьюера, узнаёт только через этот колбэк.

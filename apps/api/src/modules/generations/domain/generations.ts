@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import type { RunProgressSnapshot } from "@portal/contracts/http/assistant";
 
-export const GENERATION_BRANCHES = ["openscad", "kzd", "hueforge", "trellis", "concepts", "scan"] as const;
+export const GENERATION_BRANCHES = ["openscad", "kzd", "hueforge", "trellis", "concepts", "scan", "rudalle"] as const;
 export type GenerationBranch = (typeof GENERATION_BRANCHES)[number];
 export const CONCEPT_ANGLES = ["front", "three_quarter", "back"] as const;
 export type ConceptAngle = (typeof CONCEPT_ANGLES)[number];

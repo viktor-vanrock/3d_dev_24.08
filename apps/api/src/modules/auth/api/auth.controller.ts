@@ -34,7 +34,8 @@ const SBER_NOT_READY = "SberID пока недоступен: ждём Client ID
 
 function devBypassEnabled(config: ConfigService): boolean {
   const raw = config.get<string>("AUTH_DEV_BYPASS")?.trim().toLowerCase();
-  return config.get<string>("NODE_ENV") !== "production" && (raw === "1" || raw === "true");
+  // AUTH_DEV_BYPASS явно управляет bypass независимо от NODE_ENV
+  return raw === "1" || raw === "true";
 }
 
 @Controller("auth")
