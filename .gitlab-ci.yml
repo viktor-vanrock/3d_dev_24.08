@@ -33,7 +33,7 @@ variables:
 get_version:
   extends: .getversion
   stage: prepare
-  tags: [kube-stage]
+  tags: [d-rndml-build]
   before_script:
     - version=$(node -p "const v=require('./version.json'); v.year + '.' + v.release + '.' + v.minor")
   rules: !reference [.rules, dev]
@@ -43,10 +43,16 @@ get_version:
 .build_image:
   extends: .kaniko
   stage: pack
-  tags: [kube-stage]
+  tags: [d-rndml-build]
   dependencies: [get_version]
   rules: !reference [.rules, dev]
-  # Один kaniko-под за раз: kube-stage не вытягивает 7 concurrent runner pod.
+  variables:
+    KANIKO_CACHE_ENABLED: "true"
+    DOCKER_ADDITION_ARGS_LIST: --cache-repo=${CI_REGISTRY}/${CI_PROJECT_PATH}/${PROJECT_NAME}/cache
+
+.build_python_image:
+  extends: .build_image
+  tags: [kube-stage]
   resource_group: kaniko-kube-stage
 
 build_web:
@@ -55,6 +61,7 @@ build_web:
     PROJECT_NAME: web
     DOCKERFILE: ${CI_PROJECT_DIR}/apps/web/Dockerfile
     DOCKER_ADDITION_ARGS_LIST: >-
+      --cache-repo=${CI_REGISTRY}/${CI_PROJECT_PATH}/${PROJECT_NAME}/cache
       --build-arg VITE_API_URL=$DEV_API_URL
       --build-arg VITE_CLOSED_DEV=1
       --build-arg VITE_DEV_BANNER=1
@@ -67,35 +74,32 @@ build_api:
 
 build_relay:
   extends: .build_image
-  rules: !reference [.rules, dev_manual]
+  tags: [kube-stage]
+  resource_group: kaniko-kube-stage
   variables:
     PROJECT_NAME: relay
     DOCKERFILE: ${CI_PROJECT_DIR}/apps/relay/Dockerfile
 
 build_search:
-  extends: .build_image
-  rules: !reference [.rules, dev_manual]
+  extends: .build_python_image
   variables:
     PROJECT_NAME: search
     DOCKERFILE: ${CI_PROJECT_DIR}/apps/search/Dockerfile
 
 build_mesh:
-  extends: .build_image
-  rules: !reference [.rules, dev_manual]
+  extends: .build_python_image
   variables:
     PROJECT_NAME: mesh
     DOCKERFILE: ${CI_PROJECT_DIR}/apps/mesh/Dockerfile
 
 build_giga:
-  extends: .build_image
-  rules: !reference [.rules, dev_manual]
+  extends: .build_python_image
   variables:
     PROJECT_NAME: giga
     DOCKERFILE: ${CI_PROJECT_DIR}/apps/giga/Dockerfile
 
 build_scout:
-  extends: .build_image
-  rules: !reference [.rules, dev_manual]
+  extends: .build_python_image
   variables:
     PROJECT_NAME: scout
     DOCKERFILE: ${CI_PROJECT_DIR}/apps/scout/Dockerfile

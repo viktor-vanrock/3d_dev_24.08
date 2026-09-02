@@ -12,8 +12,16 @@ image:
   command: ["/bin/bash"]
   args:
     - "-c"
-    - "source /vault/secrets/config && dbmate --migrations-dir db/migrations --schema-file db/schema.sql --no-dump-schema up && exec node dist/nest/main.js"
+    - "source /vault/secrets/config && exec node dist/nest/main.js"
 
+  # Миграции выполняются pre-install/pre-upgrade hook; ошибка останавливает деплой.
+  migration:
+    enabled: true
+    command: ["/bin/bash"]
+    args:
+      - "-c"
+      - "source /vault/secrets/config && dbmate --migrations-dir db/migrations --schema-file db/schema.sql --no-dump-schema up"
+      
 imagePullSecrets:
   - name: gitlab-registry-secret
 
