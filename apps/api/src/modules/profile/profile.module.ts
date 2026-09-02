@@ -14,12 +14,14 @@ import { ProfileStorageAdapter } from "./infrastructure/profile-storage.adapter.
 import { ActivationRepository } from "./infrastructure/activation.repository.ts";
 import { ProfileFilamentsRepository } from "./infrastructure/filaments.repository.ts";
 import { ProfileMaterialsRepository } from "./infrastructure/materials.repository.ts";
-import { PROFILE_ADMIN_PORT, PROFILE_AGGREGATES_PORT, PROFILE_AUTH_PORT, PROFILE_CONTENT_PORT, PROFILE_MASTER_PORT, PROFILE_READ_PORT, PROFILE_SANCTIONS_PORT } from "./public/index.ts";
+import { PROFILE_AGGREGATES_PORT, PROFILE_AUTH_PORT, PROFILE_CONTENT_PORT, PROFILE_MASTER_PORT, PROFILE_READ_PORT, PROFILE_SANCTIONS_PORT } from "./public/index.ts";
+import { PROFILE_ADMIN_PORT } from "./public/index.ts";
+import { PermissionsModule } from "../permissions/permissions.module.ts";
 import { PROFILE_ACTIVATION_PRINTERS_PORT, PROFILE_MATERIAL_CATALOG_PORT } from "./application/profile-inventory.ports.ts";
 
 @Global()
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, PermissionsModule],
   controllers: [ProfileController, ProfileInventoryController, ProfilePrintersController],
   providers: [
     ProfileRepository,

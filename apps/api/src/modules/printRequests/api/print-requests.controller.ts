@@ -5,6 +5,7 @@ import { UserId, type UserId as UserIdType } from "../../_kernel/brandedIds.ts";
 import { PRINT_REQUESTS_PORT, PRINT_REQUESTS_RATE_LIMIT_PORT, type PrintRequestsPort, type PrintRequestsRateLimitPort } from "../public/index.ts";
 import { CreatePrintRequestDto, PrintRequestListQueryDto, TransitionPrintRequestDto } from "./print-requests.dto.ts";
 import { ApiPrintRequestsOperation } from "./openapi.ts";
+import { User } from "../../permissions/decorators/user.decorator.ts";
 
 function user(request: RequestWithSession): UserIdType {
   const session = request[SESSION_USER];
@@ -20,6 +21,7 @@ function identity(request: RequestWithSession) {
 }
 
 @Controller("print-requests")
+@User()
 export class PrintRequestsController {
   constructor(
     @Inject(PRINT_REQUESTS_PORT)

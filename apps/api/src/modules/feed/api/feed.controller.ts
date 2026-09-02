@@ -52,6 +52,10 @@ import {
   FeedVoteResponseDto,
 } from "./feed.dto.ts";
 import { ApiFeedOperation, ApiFeedUpload } from "./openapi.ts";
+import { Internal } from "../../permissions/decorators/internal.decorator.ts";
+import { Public } from "../../permissions/decorators/public.decorator.ts";
+import { User } from "../../permissions/decorators/user.decorator.ts";
+import { UserOrAgent } from "../../permissions/decorators/user-or-agent.decorator.ts";
 
 const MAX_FEED_VIDEO_BYTES = 200 * 1024 * 1024;
 const MAX_FEED_IMAGE_BYTES = 15 * 1024 * 1024;
@@ -85,18 +89,21 @@ export class FeedController {
   ) {}
 
   @Get()
+  @Public()
   @ApiFeedOperation("List feed posts", { session: false, responseType: FeedPageResponseDto })
   async list(@Req() request: RequestWithSession, @Query() query: FeedListQueryDto) {
     return this.feed.list({ ...query }, await this.optionalActor(request));
   }
 
   @Post("posts")
+  @UserOrAgent()
   @ApiFeedOperation("Create a feed post", { session: false, status: 201, responseType: FeedPostEnvelopeDto })
   async create(@Req() request: RequestWithSession, @Headers("authorization") authorization: string | undefined, @Body() body: FeedPostBodyDto) {
     return this.feed.create({ ...body }, await this.sessionOrAgent(request, authorization), request);
   }
 
   @Post("ingest")
+  @Internal()
   @ApiFeedOperation("Ingest a feed post", { session: false, status: 201, responseType: FeedPostEnvelopeDto })
   async ingest(
     @Req() request: Request,
@@ -113,54 +120,63 @@ export class FeedController {
   }
 
   @Get("posts/:id")
+  @Public()
   @ApiFeedOperation("Read a feed post", { session: false, responseType: FeedPostEnvelopeDto })
   detail(@Param("id") id: string) {
     return this.feed.detail(postId(id));
   }
 
   @Get("posts/:id/media")
+  @Public()
   @ApiFeedOperation("Read feed post media", { session: false, binary: true })
   async media(@Param("id") id: string, @Res() response: Response): Promise<void> {
     this.sendAsset(await this.feed.asset(postId(id), "media"), response);
   }
 
   @Get("posts/:id/poster")
+  @Public()
   @ApiFeedOperation("Read feed post poster", { session: false, binary: true })
   async poster(@Param("id") id: string, @Res() response: Response): Promise<void> {
     this.sendAsset(await this.feed.asset(postId(id), "poster"), response);
   }
 
   @Patch("posts/:id")
+  @User()
   @ApiFeedOperation("Edit a feed post", { responseType: FeedPostEnvelopeDto })
   patch(@Req() request: RequestWithSession, @Param("id") id: string, @Body() body: FeedPatchDto) {
     return this.feed.patch(postId(id), { ...body }, this.guardedActor(request));
   }
 
   @Delete("posts/:id")
+  @User()
   @ApiFeedOperation("Delete a feed post", { responseType: FeedOkDto })
   delete(@Req() request: RequestWithSession, @Param("id") id: string): Promise<{ readonly ok: true }> {
     return this.feed.delete(postId(id), this.guardedActor(request));
   }
 
   @Get("posts/:id/comments")
+  @Public()
   @ApiFeedOperation("List feed post comments", { responseType: FeedCommentsResponseDto })
   comments(@Param("id") id: string, @Query() query: FeedCommentsQueryDto) {
     return this.feed.comments(postId(id), { ...query });
   }
 
   @Post("posts/:id/comments")
+  @User()
   @ApiFeedOperation("Create a feed post comment", { status: 201, responseType: FeedCommentEnvelopeDto })
   createComment(@Req() request: RequestWithSession, @Param("id") id: string, @Body() body: FeedCommentBodyDto) {
     return this.feed.createComment(postId(id), { ...body }, this.guardedActor(request), request);
   }
 
   @Delete("comments/:id")
+  @User()
   @ApiFeedOperation("Delete a feed comment", { responseType: FeedOkDto })
   deleteComment(@Req() request: RequestWithSession, @Param("id") id: string): Promise<{ readonly ok: true }> {
     return this.feed.deleteComment(commentId(id), this.guardedActor(request));
   }
 
   @Post("posts/:id/vote")
+  @User()
   @HttpCode(200)
   @ApiFeedOperation("Vote on a feed post", { responseType: FeedVoteResponseDto })
   votePost(@Req() request: RequestWithSession, @Param("id") id: string, @Body() body: FeedVoteBodyDto) {
@@ -168,6 +184,7 @@ export class FeedController {
   }
 
   @Post("comments/:id/vote")
+  @User()
   @HttpCode(200)
   @ApiFeedOperation("Vote on a feed comment", { responseType: FeedVoteResponseDto })
   voteComment(@Req() request: RequestWithSession, @Param("id") id: string, @Body() body: FeedVoteBodyDto) {
@@ -175,6 +192,7 @@ export class FeedController {
   }
 
   @Post("posts/:id/save")
+  @User()
   @HttpCode(200)
   @ApiFeedOperation("Save a feed post", { responseType: FeedSavedResponseDto })
   save(@Req() request: RequestWithSession, @Param("id") id: string): Promise<{ readonly saved: boolean }> {
@@ -182,12 +200,14 @@ export class FeedController {
   }
 
   @Delete("posts/:id/save")
+  @User()
   @ApiFeedOperation("Unsave a feed post", { responseType: FeedSavedResponseDto })
   unsave(@Req() request: RequestWithSession, @Param("id") id: string): Promise<{ readonly saved: boolean }> {
     return this.feed.unsave(postId(id), this.guardedActor(request));
   }
 
   @Post("events")
+  @User()
   @HttpCode(202)
   @ApiFeedOperation("Record a feed event", { status: 202, responseType: FeedOkDto })
   event(@Req() request: RequestWithSession, @Body() body: FeedEventBodyDto): Promise<{ readonly ok: true }> {
@@ -195,12 +215,14 @@ export class FeedController {
   }
 
   @Get("gitverse/parse")
+  @User()
   @ApiFeedOperation("Parse a GitVerse repository", { responseType: FeedGitverseMetaDto })
   parseGitverse(@Req() request: RequestWithSession, @Query() query: FeedGitverseQueryDto) {
     return this.feed.parseGitverse(query.url, this.guardedActor(request), request);
   }
 
   @Post("media")
+  @UserOrAgent()
   @UseInterceptors(FileInterceptor("file", { limits: { fileSize: MAX_FEED_VIDEO_BYTES, files: 1 } }))
   @ApiFeedUpload("Upload feed media", FeedMediaUploadResponseDto)
   uploadMedia(@Req() request: RequestWithSession, @Headers("authorization") authorization: string | undefined, @UploadedFile() file: UploadedFeedFile | undefined) {
@@ -208,6 +230,7 @@ export class FeedController {
   }
 
   @Post("posts/:id/images")
+  @User()
   @UseInterceptors(FileInterceptor("file", { limits: { fileSize: MAX_FEED_IMAGE_BYTES, files: 1 } }))
   @ApiFeedUpload("Upload an inline feed image", FeedImageUploadResponseDto)
   uploadImage(@Req() request: RequestWithSession, @Param("id") id: string, @UploadedFile() file: UploadedFeedFile | undefined) {
@@ -215,6 +238,7 @@ export class FeedController {
   }
 
   @Get("posts/:id/images/:fileId")
+  @Public()
   @ApiFeedOperation("Read an inline feed image", { session: false, binary: true })
   async image(@Param("id") id: string, @Param("fileId") fileId: string, @Res() response: Response): Promise<void> {
     this.sendAsset(await this.feed.image(postId(id), fileId), response);

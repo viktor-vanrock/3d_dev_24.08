@@ -22,9 +22,10 @@ function service(config: Record<string, string> = {}): SanctionsService {
 }
 async function user(input: { staff?: boolean; status?: "active" | "restricted" | "deleted"; username?: string } = {}): Promise<ReturnType<typeof UserId>> {
   const row = await pool.query<{ id: string }>(
-    `insert into users(username, is_staff, status) values($1,$2,$3) returning id`,
-    [input.username ?? `sanctions-service-${randomUUID()}`, input.staff ?? false, input.status ?? "active"],
+    `insert into users(username, status) values($1,$2) returning id`,
+    [input.username ?? `sanctions-service-${randomUUID()}`, input.status ?? "active"],
   );
+  if (input.staff) await pool.query(`insert into permission_grants(user_id, permission, granted_by, reason) values($1, 'moderation.manage_sanctions', $1, 'test fixture')`, [row.rows[0]!.id]);
   users.push(row.rows[0]!.id);
   return UserId(row.rows[0]!.id);
 }

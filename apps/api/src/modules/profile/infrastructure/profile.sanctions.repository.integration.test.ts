@@ -15,7 +15,7 @@ describe("ProfileSanctionsPort", () => {
   it("loads sanction actor and target under a row lock", async () => {
     const id = await user(); const repo = new ProfileRepository(pool); const tx1 = await pool.connect(); const tx2 = await pool.connect();
     try {
-      await pool.query(`update users set is_staff = true where id = $1`, [id]);
+      await pool.query(`insert into permission_grants(user_id, permission, granted_by, reason) values($1, 'moderation.manage_sanctions', $1, 'test fixture')`, [id]);
       await tx1.query("begin");
       await expect(repo.loadSanctionActor(tx1, { actorId: id })).resolves.toEqual({ isStaff: true });
       await expect(repo.loadSanctionActor(tx1, { actorId: UserId("ffffffff-ffff-4fff-8fff-ffffffffffff") })).resolves.toBeNull();

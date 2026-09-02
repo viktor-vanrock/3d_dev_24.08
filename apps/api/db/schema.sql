@@ -1552,7 +1552,6 @@ CREATE TABLE public.users (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     handle_confirmed boolean DEFAULT true NOT NULL,
-    is_staff boolean DEFAULT false NOT NULL,
     reputation_score integer DEFAULT 0 NOT NULL,
     trust_level smallint DEFAULT 0 NOT NULL,
     trust_level_manual boolean DEFAULT false NOT NULL,
@@ -10107,6 +10106,56 @@ ALTER TABLE ONLY public.zones
 
 
 --
+-- Name: permission_grants; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.permission_grants (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL REFERENCES public.users(id),
+    permission text NOT NULL,
+    scope jsonb DEFAULT '{}'::jsonb NOT NULL,
+    granted_by uuid NOT NULL REFERENCES public.users(id),
+    reason text NOT NULL,
+    granted_at timestamp with time zone DEFAULT now() NOT NULL,
+    expires_at timestamp with time zone,
+    revoked_at timestamp with time zone,
+    revoked_by uuid REFERENCES public.users(id),
+    revoke_reason text,
+    CONSTRAINT permission_grants_pkey PRIMARY KEY (id),
+    CONSTRAINT permission_grants_permission_check CHECK ((permission = ANY (ARRAY['user.view_any'::text, 'user.edit_any'::text, 'user.deactivate'::text, 'user.grant_permission'::text, 'user.revoke_permission'::text, 'moderation.delete_content'::text, 'moderation.ban_user'::text, 'moderation.view_reports'::text, 'moderation.resolve_report'::text, 'moderation.manage_sanctions'::text, 'moderation.resolve_appeal'::text, 'moderation.manage_community_members'::text, 'analytics.view_platform'::text, 'analytics.export'::text, 'analytics.view_health'::text, 'audit.view_log'::text, 'catalog.publish_any'::text, 'catalog.unpublish_any'::text, 'catalog.edit_any'::text, 'catalog.feature'::text, 'catalog.review_candidates'::text, 'catalog.review_vendor_claims'::text, 'catalog.review_printer_reports'::text, 'research.access'::text, 'research.manage'::text, 'research.manage_printers'::text, 'support.view_tickets'::text, 'support.manage_devices'::text, 'support.view_device_incidents'::text, 'support.resolve_device_incidents'::text]))),
+    CONSTRAINT permission_grants_scope_object_check CHECK ((jsonb_typeof(scope) = 'object'::text)),
+    CONSTRAINT permission_grants_reason_nonempty_check CHECK ((btrim(reason) <> ''::text)),
+    CONSTRAINT permission_grants_expiry_after_grant_check CHECK (((expires_at IS NULL) OR (expires_at > granted_at))),
+    CONSTRAINT permission_grants_revocation_after_grant_check CHECK (((revoked_at IS NULL) OR (revoked_at >= granted_at))),
+    CONSTRAINT permission_grants_revocation_fields_check CHECK ((((revoked_at IS NULL) AND (revoked_by IS NULL) AND (revoke_reason IS NULL)) OR ((revoked_at IS NOT NULL) AND (revoked_by IS NOT NULL) AND (revoke_reason IS NOT NULL) AND (btrim(revoke_reason) <> ''::text))))
+);
+
+--
+-- Name: audit_log; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.audit_log (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    actor_user_id uuid NOT NULL REFERENCES public.users(id),
+    action text NOT NULL,
+    target_type text NOT NULL,
+    target_id uuid NOT NULL,
+    details jsonb DEFAULT '{}'::jsonb NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT audit_log_pkey PRIMARY KEY (id),
+    CONSTRAINT audit_log_action_nonempty_check CHECK ((btrim(action) <> ''::text)),
+    CONSTRAINT audit_log_target_type_nonempty_check CHECK ((btrim(target_type) <> ''::text)),
+    CONSTRAINT audit_log_details_object_check CHECK ((jsonb_typeof(details) = 'object'::text))
+);
+
+CREATE INDEX permission_grants_user_permission_idx ON public.permission_grants USING btree (user_id, permission);
+CREATE INDEX permission_grants_expires_at_idx ON public.permission_grants USING btree (expires_at) WHERE (expires_at IS NOT NULL);
+CREATE INDEX permission_grants_granted_by_idx ON public.permission_grants USING btree (granted_by);
+CREATE INDEX audit_log_actor_created_idx ON public.audit_log USING btree (actor_user_id, created_at DESC);
+CREATE INDEX audit_log_target_idx ON public.audit_log USING btree (target_type, target_id, created_at DESC);
+
+
+--
 -- PostgreSQL database dump complete
 --
 
@@ -10131,4 +10180,6 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260812140000'),
     ('20260812150000'),
     ('20260812160000'),
-    ('20260812170000');
+    ('20260812170000'),
+    ('20260902090000'),
+    ('20260902091000');

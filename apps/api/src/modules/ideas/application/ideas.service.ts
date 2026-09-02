@@ -22,9 +22,9 @@ import {
 import { IdeasRepository } from "../infrastructure/ideas.repository.ts";
 import {
   IDEAS_ENRICHMENT_PORT,
+  IDEAS_STAFF_PORT,
   IDEAS_PUSH_PORT,
   IDEAS_RATE_LIMIT_PORT,
-  IDEAS_STAFF_PORT,
   IDEAS_VERIFIED_IDENTITY_PORT,
   type CreateIdeaInput,
   type IdeaListQuery,

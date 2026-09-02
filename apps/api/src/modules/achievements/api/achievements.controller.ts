@@ -5,6 +5,7 @@ import { UserId, type UserId as UserIdType } from "../../_kernel/brandedIds.ts";
 import { ACHIEVEMENTS_PORT, type AchievementsPort } from "../public/index.ts";
 import type { AchievementsResponseDto, WardrobeUnlocksResponseDto } from "./achievements.dto.ts";
 import { ApiMyAchievementsOperation, ApiWardrobeUnlocksOperation } from "./openapi.ts";
+import { User } from "../../permissions/decorators/user.decorator.ts";
 
 function currentUserId(request: RequestWithSession): UserIdType {
   const session = request[SESSION_USER];
@@ -13,6 +14,7 @@ function currentUserId(request: RequestWithSession): UserIdType {
 }
 
 @Controller("me")
+@User()
 export class AchievementsController {
   constructor(@Inject(ACHIEVEMENTS_PORT) private readonly achievements: AchievementsPort) {}
 

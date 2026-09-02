@@ -4,6 +4,9 @@ import { UserId, type UserId as UserIdType } from "../../_kernel/brandedIds.ts";
 import { ORGANIZATIONS_PORT, type OrganizationsPort } from "../public/index.ts";
 import { ReviewVendorClaimDto, SubmitVendorClaimDto, VendorClaimQueryDto } from "./organizations.dto.ts";
 import { ApiOrganizationsOperation } from "./openapi.ts";
+import { Permission } from "../../permissions/decorators/permission.decorator.ts";
+import { User } from "../../permissions/decorators/user.decorator.ts";
+import { Permissions } from "../../permissions/domain/permissions.catalog.ts";
 
 function userId(request: RequestWithSession): UserIdType {
   const session = request[SESSION_USER];
@@ -12,6 +15,7 @@ function userId(request: RequestWithSession): UserIdType {
 }
 
 @Controller()
+@User()
 export class OrganizationsController {
   constructor(@Inject(ORGANIZATIONS_PORT) private readonly organizations: OrganizationsPort) {}
 
@@ -35,12 +39,14 @@ export class OrganizationsController {
   }
 
   @Get("vendor-claims")
+  @Permission(Permissions.CATALOG_REVIEW_VENDOR_CLAIMS)
   @ApiOrganizationsOperation("List the staff vendor-claim review queue", 200, "claims")
   reviewQueue(@Req() request: RequestWithSession, @Query() query: VendorClaimQueryDto) {
     return this.organizations.reviewQueue(userId(request), query.status);
   }
 
   @Post("vendor-claims/:id/verify")
+  @Permission(Permissions.CATALOG_REVIEW_VENDOR_CLAIMS)
   @HttpCode(200)
   @ApiOrganizationsOperation("Verify a vendor representation claim")
   verifyClaim(@Req() request: RequestWithSession, @Param("id") id: string, @Body() body: ReviewVendorClaimDto) {
@@ -48,6 +54,7 @@ export class OrganizationsController {
   }
 
   @Post("vendor-claims/:id/revoke")
+  @Permission(Permissions.CATALOG_REVIEW_VENDOR_CLAIMS)
   @HttpCode(200)
   @ApiOrganizationsOperation("Revoke a vendor representation claim")
   revokeClaim(@Req() request: RequestWithSession, @Param("id") id: string, @Body() body: ReviewVendorClaimDto) {

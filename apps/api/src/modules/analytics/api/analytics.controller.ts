@@ -8,6 +8,9 @@ import { SessionVerifier } from "../../../nest/auth/session-verifier.ts";
 import { ANALYTICS_PORT, type AnalyticsPort } from "../public/index.ts";
 import { RecordConsentDto } from "./analytics.dto.ts";
 import { ApiAnalyticsHealthOperation, ApiConsentOperation } from "./openapi.ts";
+import { Permission } from "../../permissions/decorators/permission.decorator.ts";
+import { Public } from "../../permissions/decorators/public.decorator.ts";
+import { Permissions } from "../../permissions/domain/permissions.catalog.ts";
 
 const ANON_COOKIE_NAME = "portal_anon";
 const ANON_COOKIE_MAX_AGE_MS = 730 * 24 * 60 * 60 * 1000;
@@ -21,6 +24,7 @@ export class AnalyticsController {
   ) {}
 
   @Post("consent")
+  @Public()
   @HttpCode(201)
   @ApiConsentOperation()
   async consent(@Req() request: Request, @Res({ passthrough: true }) response: Response, @Body() body: RecordConsentDto): Promise<{ ok: true }> {
@@ -42,6 +46,7 @@ export class AnalyticsController {
   }
 
   @Get("analytics/health")
+  @Permission(Permissions.ANALYTICS_VIEW_HEALTH)
   @ApiAnalyticsHealthOperation()
   async health() {
     return this.analytics.health();

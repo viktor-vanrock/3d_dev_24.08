@@ -24,6 +24,10 @@ import { isUuid, SUBSCRIBE_SOURCES, type SubscribeSource } from "../domain/commu
 import { AcceptDto, BootstrapOwnerDto, CreateCommunityDto, CreatePostDto, CreateThreadDto, RoleDto, SubscriptionDto, VoteDto } from "./community.dto.ts";
 import { ApiCommunityOperation } from "./openapi.ts";
 import { COMMUNITY_STORAGE_PORT, type CommunityStoragePort } from "../application/community.ports.ts";
+import { Permission } from "../../permissions/decorators/permission.decorator.ts";
+import { Public } from "../../permissions/decorators/public.decorator.ts";
+import { User } from "../../permissions/decorators/user.decorator.ts";
+import { Permissions } from "../../permissions/domain/permissions.catalog.ts";
 const uid = (r: RequestWithSession): UserIdType => UserId(r[SESSION_USER]!.id);
 const id = (v: string) => {
   if (!isUuid(v)) throw new NotFoundException();
@@ -35,6 +39,7 @@ const n = (v: string | undefined, d: number, max: number) => {
 };
 const source = (v: unknown): SubscribeSource | null => (SUBSCRIBE_SOURCES.includes(v as SubscribeSource) ? (v as SubscribeSource) : null);
 @Controller()
+@User()
 export class CommunityController {
   constructor(
     @Inject(COMMUNITY_PORT) private readonly community: CommunityPort,
@@ -89,10 +94,10 @@ export class CommunityController {
   ) {
     return this.community.setRole(id(x), UserId(id(u)), uid(r), b.role);
   }
-  @Post("communities/:id/bootstrap-owner") @ApiCommunityOperation("Bootstrap owner") bootstrap(@Req() r: RequestWithSession, @Param("id") x: string, @Body() b: BootstrapOwnerDto) {
+  @Post("communities/:id/bootstrap-owner") @Permission(Permissions.MODERATION_MANAGE_COMMUNITY_MEMBERS) @ApiCommunityOperation("Bootstrap owner") bootstrap(@Req() r: RequestWithSession, @Param("id") x: string, @Body() b: BootstrapOwnerDto) {
     return this.community.bootstrapOwner(id(x), UserId(b.user_id), uid(r));
   }
-  @Get("communities/:id/feed") @ApiCommunityOperation("Community feed") feed(@Param("id") x: string, @Query() q: { sort?: string; cursor?: string; limit?: string }) {
+  @Get("communities/:id/feed") @Public() @ApiCommunityOperation("Community feed") feed(@Param("id") x: string, @Query() q: { sort?: string; cursor?: string; limit?: string }) {
     const sort = q.sort ?? "hot";
     if (!["hot", "new", "top"].includes(sort)) throw new UnprocessableEntityException();
     return this.community.feed(id(x), sort, n(q.limit, 24, 60), q.cursor ?? null);
@@ -104,13 +109,13 @@ export class CommunityController {
   ) {
     return this.community.createThread(id(x), uid(r), { ...b, tags: b.tags ?? [] });
   }
-  @Get("communities/:id/threads") @ApiCommunityOperation("List threads") threads(
+  @Get("communities/:id/threads") @Public() @ApiCommunityOperation("List threads") threads(
     @Param("id") x: string,
     @Query() q: { type?: "discussion" | "question"; cursor?: string; limit?: string },
   ) {
     return this.community.threads({ communityId: id(x), ...q, limit: n(q.limit, 24, 60) });
   }
-  @Get("threads/:id") @ApiCommunityOperation("Thread detail") thread(@Param("id") x: string) {
+  @Get("threads/:id") @Public() @ApiCommunityOperation("Thread detail") thread(@Param("id") x: string) {
     return this.community.thread(id(x));
   }
   @Post("threads/:id/posts") @HttpCode(201) @ApiCommunityOperation("Create post", 201) post(@Req() r: RequestWithSession, @Param("id") x: string, @Body() b: CreatePostDto) {
@@ -130,7 +135,7 @@ export class CommunityController {
     if (!f) throw new NotFoundException();
     return this.community.uploadAttachment(id(x), uid(r), f);
   }
-  @Get("posts/:id/attachments/:attachmentId") @ApiCommunityOperation("Download attachment") async attachment(
+  @Get("posts/:id/attachments/:attachmentId") @Public() @ApiCommunityOperation("Download attachment") async attachment(
     @Param("id") p: string,
     @Param("attachmentId") a: string,
     @Res() res: Response,

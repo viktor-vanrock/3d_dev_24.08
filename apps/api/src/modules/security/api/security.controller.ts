@@ -4,6 +4,7 @@ import { SESSION_USER, type RequestWithSession } from "../../../nest/auth/sessio
 import { UserId } from "../../_kernel/brandedIds.ts";
 import { SECURITY_PORT, type SecurityPort, type SecurityRequestIdentity } from "../public/index.ts";
 import { ApiHoneypotOperation } from "./openapi.ts";
+import { User } from "../../permissions/decorators/user.decorator.ts";
 
 function requestIdentity(request: Request): SecurityRequestIdentity {
   const headers: Record<string, string | readonly string[] | undefined> = {};
@@ -12,6 +13,7 @@ function requestIdentity(request: Request): SecurityRequestIdentity {
 }
 
 @Controller()
+@User()
 export class SecurityController {
   constructor(@Inject(SECURITY_PORT) private readonly security: SecurityPort) {}
 

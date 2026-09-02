@@ -4,6 +4,8 @@ import { UserId } from "../../_kernel/brandedIds.ts";
 import { MASTER_PORT, type MasterPort } from "../public/index.ts";
 import { MasterProfilePatchDto } from "./master.dto.ts";
 import { ApiMasterOperation } from "./openapi.ts";
+import { Public } from "../../permissions/decorators/public.decorator.ts";
+import { User } from "../../permissions/decorators/user.decorator.ts";
 
 function userId(request: RequestWithSession) {
   const session = request[SESSION_USER];
@@ -12,6 +14,7 @@ function userId(request: RequestWithSession) {
 }
 
 @Controller()
+@User()
 export class MasterController {
   constructor(@Inject(MASTER_PORT) private readonly master: MasterPort) {}
 
@@ -35,6 +38,7 @@ export class MasterController {
   }
 
   @Get("masters/:userId")
+  @Public()
   @ApiMasterOperation("Read a public master storefront profile", { session: false, publicProfile: true })
   publicProfile(@Param("userId") id: string) {
     return this.master.publicProfile(id);

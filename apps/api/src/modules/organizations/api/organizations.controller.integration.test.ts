@@ -25,7 +25,9 @@ async function cookie(userId: string, username: string): Promise<string> {
 }
 
 async function insertUser(label: string, staff = false): Promise<string> {
-  return (await pool.query<{ id: string }>(`insert into users (username, is_staff) values ($1, $2) returning id`, [`nest-org-${label}-${randomUUID()}`, staff])).rows[0]!.id;
+  const id = (await pool.query<{ id: string }>(`insert into users (username) values ($1) returning id`, [`nest-org-${label}-${randomUUID()}`])).rows[0]!.id;
+  if (staff) await pool.query(`insert into permission_grants(user_id, permission, granted_by, reason) values($1, 'catalog.review_vendor_claims', $1, 'test fixture')`, [id]);
+  return id;
 }
 
 describe.skipIf(!canRun)("Nest organizations migration", () => {

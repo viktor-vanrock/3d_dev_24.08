@@ -7,6 +7,8 @@ import { MAX_SCAN_PHOTO_BYTES } from "../domain/generations.ts";
 import { GENERATIONS_PORT, type AssetResult, type GenerationsPort } from "../public/index.ts";
 import { GenerationLooseBodyDto } from "./generations.dto.ts";
 import { ApiGenerationsOperation } from "./openapi.ts";
+import { Public } from "../../permissions/decorators/public.decorator.ts";
+import { User } from "../../permissions/decorators/user.decorator.ts";
 
 interface UploadedScanFile {
   readonly buffer: Buffer;
@@ -26,10 +28,11 @@ function stream(response: Response, asset: AssetResult): void {
 }
 
 @Controller()
+@User()
 export class GenerationsController {
   constructor(@Inject(GENERATIONS_PORT) private readonly generations: GenerationsPort) {}
 
-  @Get("generations/health") @ApiGenerationsOperation("Generation branch availability", { response: "health" }) health() {
+  @Get("generations/health") @Public() @ApiGenerationsOperation("Generation branch availability", { response: "health" }) health() {
     return this.generations.health();
   }
   @Post("scans") @ApiGenerationsOperation("Create scan", { status: 201, response: "scan" }) createScan(@Req() request: RequestWithSession) {
@@ -62,12 +65,12 @@ export class GenerationsController {
   @Get("generations/:id") @ApiGenerationsOperation("Generation detail", { response: "generation" }) detail(@Req() request: RequestWithSession, @Param("id") id: string) {
     return this.generations.detail(user(request), id);
   }
-  @Get("concepts") @ApiGenerationsOperation("Browse generated concepts", { session: false, response: "concepts" }) concepts(
+  @Get("concepts") @Public() @ApiGenerationsOperation("Browse generated concepts", { session: false, response: "concepts" }) concepts(
     @Query() query: { q?: string; limit?: string; cursor?: string },
   ) {
     return this.generations.listConcepts(query);
   }
-  @Get("concepts/:id/preview") @ApiGenerationsOperation("Stream concept preview", { session: false, binary: true }) async conceptPreview(
+  @Get("concepts/:id/preview") @Public() @ApiGenerationsOperation("Stream concept preview", { session: false, binary: true }) async conceptPreview(
     @Param("id") id: string,
     @Res() response: Response,
   ) {

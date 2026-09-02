@@ -19,6 +19,8 @@ import {
   PublicationResponseDto,
   PublishedProjectResponseDto,
 } from "./projects.response.dto.ts";
+import { Public } from "../../permissions/decorators/public.decorator.ts";
+import { User } from "../../permissions/decorators/user.decorator.ts";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -47,6 +49,7 @@ function pageBody(page: { items: readonly unknown[]; next_cursor: string | null 
 }
 
 @Controller("projects")
+@User()
 export class ProjectsController {
   constructor(
     @Inject(ProjectCommandService) private readonly commands: ProjectCommandService,
@@ -72,6 +75,7 @@ export class ProjectsController {
   }
 
   @Get()
+  @Public()
   @ApiProjectOperation({
     operationId: "projectsListPublished",
     summary: "List published Projects",
@@ -98,6 +102,7 @@ export class ProjectsController {
   }
 
   @Get(":projectId")
+  @Public()
   @ApiProjectOperation({
     operationId: "projectsGetPublished",
     summary: "Read a published Project snapshot",

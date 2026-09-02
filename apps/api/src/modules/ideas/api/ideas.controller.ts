@@ -26,6 +26,10 @@ import {
   ModerateIdeaDto,
 } from "./ideas.dto.ts";
 import { ApiIdeasOperation } from "./openapi.ts";
+import { Permission } from "../../permissions/decorators/permission.decorator.ts";
+import { Public } from "../../permissions/decorators/public.decorator.ts";
+import { User } from "../../permissions/decorators/user.decorator.ts";
+import { Permissions } from "../../permissions/domain/permissions.catalog.ts";
 
 function optionalUser(request: RequestWithSession): UserIdType | null {
   const session = request[SESSION_USER];
@@ -52,18 +56,21 @@ export class IdeasController {
   constructor(@Inject(IDEAS_PORT) private readonly ideas: IdeasPort) {}
 
   @Get()
+  @Public()
   @ApiIdeasOperation("List ideas", IdeasPageDto)
   list(@Query() query: IdeasListQueryDto) {
     return this.ideas.list(query);
   }
 
   @Get("mine")
+  @User()
   @ApiIdeasOperation("List the current user's ideas", IdeasPageDto, { auth: true })
   mine(@Req() request: RequestWithSession, @Query() query: IdeasMineQueryDto) {
     return this.ideas.mine(user(request), query);
   }
 
   @Get("top")
+  @User()
   @Header("Cache-Control", "private, max-age=300")
   @ApiIdeasOperation("Read the top ideas digest", IdeaTopResponseDto, { auth: true })
   top(@Req() request: RequestWithSession, @Query() query: IdeasTopQueryDto) {
@@ -71,24 +78,28 @@ export class IdeasController {
   }
 
   @Get("similar")
+  @User()
   @ApiIdeasOperation("Find similar idea titles", IdeaSimilarResponseDto, { auth: true })
   similar(@Req() request: RequestWithSession, @Query() query: IdeasSimilarQueryDto) {
     return this.ideas.similar(user(request), query.q);
   }
 
   @Get(":id/comments")
+  @Public()
   @ApiIdeasOperation("List comments on an idea", IdeaCommentsResponseDto)
   comments(@Param("id") rawId: string, @Query() query: IdeasMineQueryDto) {
     return this.ideas.comments(assertUuid(rawId), query.cursor, query.limit);
   }
 
   @Post(":id/comments")
+  @User()
   @ApiIdeasOperation("Comment on an idea", IdeaCommentResponseDto, { auth: true, created: true })
   comment(@Req() request: RequestWithSession, @Param("id") rawId: string, @Body() body: IdeaCommentDto) {
     return this.ideas.comment(user(request), assertUuid(rawId), body.body);
   }
 
   @Post(":id/vote")
+  @User()
   @HttpCode(200)
   @ApiIdeasOperation("Toggle an idea vote", IdeaVoteResponseDto, { auth: true })
   vote(@Req() request: RequestWithSession, @Param("id") rawId: string) {
@@ -96,12 +107,14 @@ export class IdeasController {
   }
 
   @Patch(":id/status")
+  @Permission(Permissions.MODERATION_DELETE_CONTENT)
   @ApiIdeasOperation("Change an idea status", IdeaStatusResponseDto, { auth: true })
   status(@Req() request: RequestWithSession, @Param("id") rawId: string, @Body() body: IdeaStatusDto) {
     return this.ideas.changeStatus(user(request), IdeaId(rawId), body);
   }
 
   @Post(":id/moderate")
+  @Permission(Permissions.MODERATION_DELETE_CONTENT)
   @HttpCode(200)
   @ApiIdeasOperation("Moderate an idea", IdeaModerationResponseDto, { auth: true })
   moderate(@Req() request: RequestWithSession, @Param("id") rawId: string, @Body() body: ModerateIdeaDto) {
@@ -109,12 +122,14 @@ export class IdeasController {
   }
 
   @Get(":id")
+  @Public()
   @ApiIdeasOperation("Read an idea detail", IdeaDetailDto)
   detail(@Req() request: RequestWithSession, @Param("id") rawId: string) {
     return this.ideas.detail(assertUuid(rawId), optionalUser(request));
   }
 
   @Post("enrich")
+  @User()
   @HttpCode(200)
   @ApiIdeasOperation("Enrich an idea draft", IdeaEnrichmentResponseDto, { auth: true })
   enrich(@Req() request: RequestWithSession, @Body() body: EnrichIdeaDto) {
@@ -123,6 +138,7 @@ export class IdeasController {
   }
 
   @Post()
+  @User()
   @ApiIdeasOperation("Create an idea", IdeaCreateResponseDto, { auth: true, created: true })
   create(@Req() request: RequestWithSession, @Body() body: CreateIdeaDto) {
     const identity = rateLimitIdentity(request);

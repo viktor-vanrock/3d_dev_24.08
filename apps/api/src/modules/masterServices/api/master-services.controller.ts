@@ -4,6 +4,8 @@ import { UserId, type UserId as UserIdType } from "../../_kernel/brandedIds.ts";
 import { MASTER_SERVICES_PORT, type MasterServicesPort } from "../public/index.ts";
 import { MasterServiceBodyDto, MasterServicesQueryDto } from "./master-services.dto.ts";
 import { ApiMasterServicesOperation } from "./openapi.ts";
+import { Public } from "../../permissions/decorators/public.decorator.ts";
+import { User } from "../../permissions/decorators/user.decorator.ts";
 
 function user(request: RequestWithSession): UserIdType {
   const session = request[SESSION_USER];
@@ -12,6 +14,7 @@ function user(request: RequestWithSession): UserIdType {
 }
 
 @Controller()
+@User()
 export class MasterServicesController {
   constructor(@Inject(MASTER_SERVICES_PORT) private readonly services: MasterServicesPort) {}
   @Post("master-services") @ApiMasterServicesOperation("Create master service", { auth: true, status: 201, body: true }) create(
@@ -33,10 +36,10 @@ export class MasterServicesController {
   ) {
     return this.services.delete(user(request), id);
   }
-  @Get("master-services/:id") @ApiMasterServicesOperation("Read master service") detail(@Param("id") id: string) {
+  @Get("master-services/:id") @Public() @ApiMasterServicesOperation("Read master service") detail(@Param("id") id: string) {
     return this.services.detail(id);
   }
-  @Get("masters/:masterId/services") @ApiMasterServicesOperation("List master services", { list: true }) list(
+  @Get("masters/:masterId/services") @Public() @ApiMasterServicesOperation("List master services", { list: true }) list(
     @Param("masterId") masterId: string,
     @Query() query: MasterServicesQueryDto,
   ) {

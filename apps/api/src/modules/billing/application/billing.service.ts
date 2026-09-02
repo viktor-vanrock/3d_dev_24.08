@@ -15,8 +15,8 @@ import { BillingRepository, type PurchaseRow } from "../infrastructure/billing.r
 import {
   BILLING_ANALYTICS_PORT,
   BILLING_MODEL_READ_PORT,
-  BILLING_PROVIDER_PORT,
   BILLING_STAFF_PORT,
+  BILLING_PROVIDER_PORT,
   BillingProviderNotConfiguredError,
   type BillingAnalyticsPort,
   type BillingWebhookResult,

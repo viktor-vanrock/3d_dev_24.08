@@ -18,6 +18,9 @@ import {
   DeviceTransferDto,
 } from "./devices.dto.ts";
 import { ApiDevicesOperation } from "./openapi.ts";
+import { Internal } from "../../permissions/decorators/internal.decorator.ts";
+import { Public } from "../../permissions/decorators/public.decorator.ts";
+import { User } from "../../permissions/decorators/user.decorator.ts";
 
 function actor(request: RequestWithSession): UserIdType {
   const session = request[SESSION_USER];
@@ -26,6 +29,7 @@ function actor(request: RequestWithSession): UserIdType {
 }
 
 @Controller()
+@User()
 export class DevicesController {
   constructor(@Inject(DEVICES_PORT) private readonly devices: DevicesPort) {}
 
@@ -50,6 +54,7 @@ export class DevicesController {
   }
 
   @Get("devices/agent/install.sh")
+  @Public()
   @ApiDevicesOperation("Download the device agent installer", { session: false, contentType: "text/x-shellscript" })
   install(@Res() res: Response): void {
     const out = this.devices.installScript();
@@ -57,6 +62,7 @@ export class DevicesController {
   }
 
   @Post("devices/agent/enroll")
+  @Internal()
   @ApiDevicesOperation("Redeem an enrollment code", { session: false, status: 201, body: true, responseType: DeviceEnrollmentDto })
   async enroll(@Req() req: RequestWithSession, @Body() body: DeviceLooseBodyDto, @Res() res: Response) {
     const out = await this.devices.enrollAgent({ ...body }, getRequestId(req));
@@ -64,6 +70,7 @@ export class DevicesController {
   }
 
   @Post("devices/agent/recover")
+  @Internal()
   @ApiDevicesOperation("Recover or rotate a device agent identity from a one-time recovery credential", { session: false, status: 201, body: true, responseType: DeviceEnrollmentDto })
   async recover(@Req() req: RequestWithSession, @Body() body: DeviceLooseBodyDto, @Res() res: Response) {
     const out = await this.devices.enrollAgent({ ...body }, getRequestId(req), "recovery");

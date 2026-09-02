@@ -5,6 +5,7 @@ import { UserId, type UserId as UserIdType } from "../../_kernel/brandedIds.ts";
 import { ASSISTANT_PORT, type AssistantPort } from "../public/index.ts";
 import { AssistantListQueryDto, AssistantLooseBodyDto } from "./assistant.dto.ts";
 import { ApiAssistantOperation } from "./openapi.ts";
+import { User } from "../../permissions/decorators/user.decorator.ts";
 
 function user(request: RequestWithSession): UserIdType {
   const session = request[SESSION_USER];
@@ -30,6 +31,7 @@ async function stream(response: Response, source: AsyncIterable<string>): Promis
 }
 
 @Controller()
+@User()
 export class AssistantController {
   constructor(@Inject(ASSISTANT_PORT) private readonly assistant: AssistantPort) {}
 

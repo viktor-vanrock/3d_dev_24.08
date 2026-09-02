@@ -15,6 +15,7 @@ import { RequestContext } from "../../../nest/observability/request-context.ts";
 import { RuntimeLogger } from "../../../nest/observability/runtime-logger.ts";
 import { createApiValidationPipe } from "../../../nest/validation/api-validation.pipe.ts";
 import { PRINTER_RESEARCH_AUTH_PORT, PRINTERS_PORT, type PrintersPort } from "../public/index.ts";
+import { PROFILE_AUTH_PORT } from "../../profile/public/index.ts";
 import { PrintersController } from "./printers.controller.ts";
 
 let researchUser: UserIdType | null = null;
@@ -32,11 +33,13 @@ const fakePrinters = {
 @Global()
 @Module({
   providers: [
+    RuntimeLogger,
     SessionVerifier,
+    { provide: PROFILE_AUTH_PORT, useValue: { loadOwnerAuthState: () => Promise.resolve(null) } },
     { provide: PRINTERS_PORT, useValue: fakePrinters },
     { provide: PRINTER_RESEARCH_AUTH_PORT, useValue: { resolveUser: () => Promise.resolve(researchUser), isResearcher: () => Promise.resolve(researchUser !== null) } },
   ],
-  exports: [SessionVerifier, PRINTERS_PORT, PRINTER_RESEARCH_AUTH_PORT],
+  exports: [RuntimeLogger, SessionVerifier, PROFILE_AUTH_PORT, PRINTERS_PORT, PRINTER_RESEARCH_AUTH_PORT],
 })
 class PrintersTestPortsModule {}
 
