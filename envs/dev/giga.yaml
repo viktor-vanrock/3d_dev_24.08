@@ -8,7 +8,7 @@ image:
   command: ["/bin/sh"]
   args:
     - "-c"
-    - ". /vault/secrets/config && exec uvicorn giga.main:app --host 0.0.0.0 --port 3102"
+    - ". /vault/secrets/config && uvicorn giga.main:app --host 0.0.0.0 --port 3102 & exec giga-worker"
 
 imagePullSecrets:
   - name: gitlab-registry-secret
