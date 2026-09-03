@@ -35,7 +35,7 @@ configMap:
     S3_BUCKET_DIAGNOSTICS: p-rndml-aiportal
     GIGA_LIFECYCLE_ENABLED: "1"
     ASSISTANT_LIFECYCLE_ENABLED: "0"
-    RUDALLE_API_URL: "https://rudalle-coordinator.sberdevices.ru/api/"
+    RUDALLE_API_URL: "https://rudalle-coordinator.dev.sberdevices.ru/api/"
     RUDALLE_TIMEOUT_SECONDS: "300"
     RUDALLE_MAX_RETRIES: "2"
     RUDALLE_RETRY_BACKOFF_SECONDS: "5.0"
