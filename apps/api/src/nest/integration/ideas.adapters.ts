@@ -2,28 +2,29 @@ import { Global, Inject, Injectable, Module } from "@nestjs/common";
 import { enrichIdeaDraft } from "../../modules/ideas/public/index.ts";
 import { checkRateLimit } from "../../modules/security/public/index.ts";
 import { AUTH_IDENTITY_READ_PORT, type AuthIdentityReadPort } from "../../modules/auth/public/index.ts";
-import { PROFILE_ADMIN_PORT, type ProfileAdminPort } from "../../modules/profile/public/index.ts";
 import type {
   IdeasEnrichmentPort,
   IdeasPushPort,
   IdeasRateLimitIdentity,
   IdeasRateLimitPort,
   IdeasRateLimitScope,
-  IdeasStaffPort,
   IdeasVerifiedIdentityPort,
 } from "../../modules/ideas/public/index.ts";
 import type { IdeaId, UserId } from "../../modules/_kernel/brandedIds.ts";
 import { AuthModule } from "../../modules/auth/auth.module.ts";
-import { ProfileModule } from "../../modules/profile/profile.module.ts";
 import { PushModule } from "../../modules/push/push.module.ts";
 import { PUSH_PORT, type PushPort } from "../../modules/push/public/index.ts";
+import { PermissionsService } from "../../modules/permissions/application/permissions.service.ts";
+import { Permissions } from "../../modules/permissions/domain/permissions.catalog.ts";
+import { PermissionsModule } from "../../modules/permissions/permissions.module.ts";
 import { IDEAS_ENRICHMENT_PORT, IDEAS_PUSH_PORT, IDEAS_RATE_LIMIT_PORT, IDEAS_STAFF_PORT, IDEAS_VERIFIED_IDENTITY_PORT } from "../../modules/ideas/public/index.ts";
+import type { IdeasStaffPort } from "../../modules/ideas/public/index.ts";
 
 @Injectable()
 export class IdeasStaffAdapter implements IdeasStaffPort {
-  constructor(@Inject(PROFILE_ADMIN_PORT) private readonly profiles: ProfileAdminPort) {}
+  constructor(private readonly permissions: PermissionsService) {}
   isStaff(userId: UserId): Promise<boolean> {
-    return this.profiles.isStaff(userId);
+    return this.permissions.hasPermission(userId, Permissions.MODERATION_DELETE_CONTENT);
   }
 }
 
@@ -75,7 +76,7 @@ export class IdeasRateLimitAdapter implements IdeasRateLimitPort {
 
 @Global()
 @Module({
-  imports: [AuthModule, ProfileModule, PushModule],
+  imports: [AuthModule, PushModule, PermissionsModule],
   providers: [
     IdeasStaffAdapter,
     IdeasVerifiedIdentityAdapter,

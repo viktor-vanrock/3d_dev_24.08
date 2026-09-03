@@ -4,6 +4,7 @@ import { UserId, type UserId as UserIdType } from "../../_kernel/brandedIds.ts";
 import { MASTER_EQUIPMENT_PORT, type MasterEquipmentPort } from "../public/index.ts";
 import { MasterEquipmentBodyDto, MasterEquipmentQueryDto } from "./master-equipment.dto.ts";
 import { ApiMasterEquipmentOperation } from "./openapi.ts";
+import { Public, User } from "../../permissions/public/index.ts";
 
 function user(request: RequestWithSession): UserIdType {
   const session = request[SESSION_USER];
@@ -12,6 +13,7 @@ function user(request: RequestWithSession): UserIdType {
 }
 
 @Controller()
+@User()
 export class MasterEquipmentController {
   constructor(@Inject(MASTER_EQUIPMENT_PORT) private readonly equipment: MasterEquipmentPort) {}
 
@@ -34,6 +36,7 @@ export class MasterEquipmentController {
   }
 
   @Get("masters/:masterId/equipment")
+  @Public()
   @ApiMasterEquipmentOperation("List a master's public equipment", { public: true })
   list(@Param("masterId") masterId: string, @Query() query: MasterEquipmentQueryDto) {
     return this.equipment.list(masterId, { ...query });

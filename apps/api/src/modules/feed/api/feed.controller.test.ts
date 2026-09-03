@@ -17,6 +17,7 @@ import { createApiValidationPipe } from "../../../nest/validation/api-validation
 import { FeedController } from "./feed.controller.ts";
 import { FEED_AGENT_AUTH_PORT, FEED_INGEST_AUTH_PORT, FEED_PORT, type FeedPort, type FeedPostResponse } from "../public/index.ts";
 import { CommentId, FeedPostId, UserId } from "../../_kernel/brandedIds.ts";
+import { PROFILE_AUTH_PORT } from "../../profile/public/index.ts";
 import routeManifest from "../../../characterization/routes.manifest.json" with { type: "json" };
 
 const JWT_SECRET = "nest-feed-domain-test-secret";
@@ -86,8 +87,13 @@ const fakeFeed: FeedPort = {
 @Global()
 @Module({
   providers: [
+    RuntimeLogger,
     SessionVerifier,
     { provide: FEED_PORT, useValue: fakeFeed },
+    {
+      provide: PROFILE_AUTH_PORT,
+      useValue: { loadOwnerAuthState: () => Promise.resolve({ status: "active" as const, sessionVersion: 1 }) },
+    },
     {
       provide: FEED_AGENT_AUTH_PORT,
       useValue: {
@@ -102,7 +108,7 @@ const fakeFeed: FeedPort = {
       },
     },
   ],
-  exports: [SessionVerifier, FEED_PORT, FEED_AGENT_AUTH_PORT, FEED_INGEST_AUTH_PORT],
+  exports: [RuntimeLogger, SessionVerifier, FEED_PORT, FEED_AGENT_AUTH_PORT, FEED_INGEST_AUTH_PORT, PROFILE_AUTH_PORT],
 })
 class FeedTestPortsModule {}
 

@@ -22,10 +22,6 @@ export interface ProfileReadPort {
   findActiveByIds(userIds: readonly UserId[]): Promise<ReadonlyMap<UserId, PublicProfile>>;
 }
 
-export interface ProfileAdminPort {
-  isStaff(userId: UserId): Promise<boolean>;
-}
-
 export interface PublicContentAuthor {
   readonly id: UserId;
   readonly username: string;
@@ -133,3 +129,6 @@ export type {
   UserInventoryRecord,
   UserPrinterRecord,
 } from "../domain/inventory.types.ts";
+export interface ProfileAdminPort {
+  isStaff(userId: UserId): Promise<boolean>;
+}

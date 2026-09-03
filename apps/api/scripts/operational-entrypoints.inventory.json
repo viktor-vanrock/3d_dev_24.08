@@ -33,6 +33,17 @@
       "verification": "vitest run src/modules/models/infrastructure/repo-backfill.test.ts"
     },
     {
+      "file": "bootstrap-admin-grants.ts",
+      "lifecycle": "active one-shot maintenance",
+      "owner": "permissions",
+      "invocations": ["ADMIN_USERNAME=<username> pnpm exec tsx scripts/bootstrap-admin-grants.ts"],
+      "requiredEnvironment": ["DATABASE_URL", "ADMIN_USERNAME"],
+      "dataTargets": ["users", "permission_grants", "audit_log"],
+      "sideEffects": "idempotently grants every catalog permission to the selected existing user and records audit events",
+      "safetyMode": "explicit ADMIN_USERNAME required; existing user locked and all writes committed atomically; active grants are skipped",
+      "verification": "run against an explicitly selected migrated database and verify created/skipped totals plus permission_grants audit rows"
+    },
+    {
       "file": "check-migrate-replay-gate.sh",
       "lifecycle": "CI guard",
       "owner": "database migrations",

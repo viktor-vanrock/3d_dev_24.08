@@ -26,6 +26,7 @@ import {
   MakeVoteResponseDto,
 } from "./makes.dto.ts";
 import { ApiMakeCreate, ApiMakesOperation } from "./openapi.ts";
+import { Public, User } from "../../permissions/public/index.ts";
 
 interface UploadedMakeFile {
   readonly fieldname: string;
@@ -45,6 +46,7 @@ export class MakesController {
   constructor(@Inject(MAKES_PORT) private readonly makes: MakesPort) {}
 
   @Post(":id/repost")
+  @Public()
   @HttpCode(200)
   @ApiMakesOperation("Repost a make", 200, MakeCounterResponseDto)
   repost(@Param("id") id: string) {
@@ -52,6 +54,7 @@ export class MakesController {
   }
 
   @Post(":id/view")
+  @Public()
   @HttpCode(200)
   @ApiMakesOperation("Record a make view", 200, MakeViewsResponseDto)
   view(@Param("id") id: string) {
@@ -59,6 +62,7 @@ export class MakesController {
   }
 
   @Post(":id/report")
+  @User()
   @HttpCode(202)
   @ApiMakesOperation("Report a make", 202, MakeReportResponseDto)
   report(@Req() request: RequestWithSession, @Param("id") id: string, @Body() body: MakeReportDto) {
@@ -66,6 +70,7 @@ export class MakesController {
   }
 
   @Get(":makeId/photos/:photoId")
+  @User()
   @ApiMakesOperation("Read a make photo")
   async photo(@Req() request: RequestWithSession, @Param("makeId") rawMakeId: string, @Param("photoId") photoId: string, @Res() response: Response): Promise<void> {
     const asset = await this.makes.photo(makeId(rawMakeId), photoId, userId(request), request);
@@ -82,6 +87,7 @@ export class MakesController {
   }
 
   @Post(":id/vote")
+  @User()
   @HttpCode(200)
   @ApiMakesOperation("Toggle a make like", 200, MakeVoteResponseDto)
   vote(@Req() request: RequestWithSession, @Param("id") id: string) {
@@ -89,6 +95,7 @@ export class MakesController {
   }
 
   @Post()
+  @User()
   @UseInterceptors(AnyFilesInterceptor({ limits: { fileSize: MAX_MAKE_PHOTO_BYTES, files: MAX_MAKE_PHOTOS } }))
   @ApiMakeCreate(MakeCreateResponseDto)
   create(@Req() request: RequestWithSession, @Body() body: MakeCreateDto, @UploadedFiles() files: readonly UploadedMakeFile[] | undefined) {
@@ -103,30 +110,35 @@ export class MakesController {
   }
 
   @Get()
+  @Public()
   @ApiMakesOperation("List published makes", 200, MakePageResponseDto)
   list(@Query() query: MakesListQueryDto) {
     return this.makes.list({ ...query });
   }
 
   @Get(":id/comments")
+  @Public()
   @ApiMakesOperation("List make comments", 200, MakeCommentsResponseDto)
   comments(@Param("id") id: string, @Query() query: MakeCommentsQueryDto) {
     return this.makes.comments(makeId(id), { ...query });
   }
 
   @Post(":id/comments")
+  @User()
   @ApiMakesOperation("Create a make comment", 201, MakeCommentResponseDto)
   comment(@Req() request: RequestWithSession, @Param("id") id: string, @Body() body: MakeCommentDto) {
     return this.makes.comment(makeId(id), userId(request), body.body, body.parent_id);
   }
 
   @Get("mine")
+  @User()
   @ApiMakesOperation("List the current user's makes", 200, MakePageResponseDto)
   mine(@Req() request: RequestWithSession, @Query() query: MakesMineQueryDto) {
     return this.makes.mine(userId(request), { ...query });
   }
 
   @Get(":id")
+  @User()
   @ApiMakesOperation("Read a make detail", 200, MakeDetailResponseDto)
   detail(@Req() request: RequestWithSession, @Param("id") id: string) {
     return this.makes.detail(makeId(id), userId(request));
@@ -138,6 +150,7 @@ export class ModelMakesController {
   constructor(@Inject(MAKES_PORT) private readonly makes: MakesPort) {}
 
   @Get(":id/makes/leaderboard")
+  @Public()
   @ApiMakesOperation("List the best makes for a model", 200, MakeLeaderboardResponseDto)
   leaderboard(@Param("id") id: string, @Query() query: MakeLeaderboardQueryDto) {
     return this.makes.leaderboard(modelId(id), query.limit);

@@ -25,6 +25,7 @@ import {
   ApiSberIdStubOperation,
   ApiSessionOperation,
 } from "./openapi.ts";
+import { Internal, Public, User } from "../../permissions/public/index.ts";
 
 const APP_CALLBACK_SCHEME = "ultradevice";
 const APP_INTENT_TTL_MS = 600 * 1000;
@@ -50,6 +51,7 @@ export class AuthController {
   ) {}
 
   @Get("session")
+  @User()
   @ApiSessionOperation()
   async session(@Req() request: Request) {
     const claims = await this.verifier.readSession(request);
@@ -69,6 +71,7 @@ export class AuthController {
   }
 
   @Post("logout")
+  @Public()
   @HttpCode(200)
   @ApiLogoutOperation()
   logout(@Res({ passthrough: true }) response: Response): { readonly ok: true } {
@@ -77,6 +80,7 @@ export class AuthController {
   }
 
   @Post("logout-all")
+  @User()
   @HttpCode(200)
   @ApiLogoutAllOperation()
   async logoutAll(@Req() request: RequestWithSession, @Res({ passthrough: true }) response: Response): Promise<{ readonly ok: true }> {
@@ -89,6 +93,7 @@ export class AuthController {
   }
 
   @Post("email/start")
+  @Public()
   @HttpCode(200)
   @ApiEmailStartOperation()
   async emailStart(@Body() body: EmailStartDto): Promise<{ readonly ok: true }> {
@@ -97,6 +102,7 @@ export class AuthController {
   }
 
   @Post("email/verify")
+  @Public()
   @HttpCode(200)
   @ApiEmailVerifyOperation()
   async emailVerify(@Req() request: Request, @Res({ passthrough: true }) response: Response, @Body() body: EmailVerifyDto): Promise<{ readonly ok: true }> {
@@ -109,6 +115,7 @@ export class AuthController {
   }
 
   @Post("password")
+  @Public()
   @HttpCode(200)
   @ApiPasswordLoginOperation()
   async passwordLogin(
@@ -124,6 +131,7 @@ export class AuthController {
   }
 
   @Get("plagid/start")
+  @Public()
   @ApiPlagIdStartOperation()
   plagIdStart(@Query() query: PlagIdStartQueryDto, @Res() response: Response): void {
     const callbackUrl = this.config.get<string>("PLAGID_CALLBACK_URL") ?? "https://api.3mf.tech/auth/plagid/callback";
@@ -142,6 +150,7 @@ export class AuthController {
   }
 
   @Get("plagid/callback")
+  @Public()
   @ApiPlagIdCallbackOperation()
   async plagIdCallback(@Req() request: Request, @Res() response: Response, @Query() query: PlagIdCallbackQueryDto): Promise<void> {
     const cookies = parseCookie(request.headers.cookie ?? "");
@@ -173,18 +182,21 @@ export class AuthController {
   }
 
   @Get("sberid/start")
+  @Public()
   @ApiSberIdStubOperation()
   sberIdStart(@Req() request: RequestWithId, @Res() response: Response): void {
     this.sberUnavailable(request, response);
   }
 
   @Get("sberid/callback")
+  @Public()
   @ApiSberIdStubOperation()
   sberIdCallback(@Req() request: RequestWithId, @Res() response: Response): void {
     this.sberUnavailable(request, response);
   }
 
   @Post("dev")
+  @Internal()
   @HttpCode(200)
   @ApiDevLoginOperation()
   async devLogin(@Res({ passthrough: true }) response: Response) {

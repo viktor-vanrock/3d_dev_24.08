@@ -39,7 +39,6 @@ export interface MakeAuthor {
   readonly avatar_url: string | null;
   readonly avatar_config: MakeAvatarConfig | null;
   readonly avatar_snapshots: MakeAvatarSnapshots | null;
-  readonly is_staff: boolean;
 }
 
 export interface MakeAvatarConfig {

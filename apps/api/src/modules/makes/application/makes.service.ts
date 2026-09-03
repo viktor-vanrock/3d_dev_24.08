@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger, NotFoundException, PayloadTooLargeException, UnprocessableEntityException } from "@nestjs/common";
+import { Inject, Injectable, Logger, NotFoundException, Optional, PayloadTooLargeException, UnprocessableEntityException } from "@nestjs/common";
 import type { Request } from "express";
 import { MakeId, ModelId, type MakeId as MakeIdType, type ModelId as ModelIdType, type UserId } from "../../_kernel/brandedIds.ts";
 import { ACHIEVEMENTS_PORT, type AchievementsPort } from "../../achievements/public/index.ts";
@@ -20,6 +20,7 @@ import {
   type MakeUpload,
 } from "../domain/makes.ts";
 import { MakesRepository } from "../infrastructure/makes.repository.ts";
+import { Permissions, PermissionsService } from "../../permissions/public/index.ts";
 import {
   MAKE_COMMENTS_PORT,
   MAKE_FEED_SIGNAL_PORT,
@@ -131,6 +132,7 @@ export class MakesService implements MakesPort {
     @Inject(ACHIEVEMENTS_PORT) private readonly achievements: AchievementsPort,
     @Inject(MAKE_STORAGE_PORT) private readonly storage: MakeStoragePort,
     @Inject(MAKE_RATE_LIMIT_PORT) private readonly rateLimits: MakeRateLimitPort,
+    @Optional() private readonly permissions?: PermissionsService,
   ) {}
 
   async list(query: MakesListQuery): Promise<MakePageResponse> {
@@ -324,8 +326,8 @@ export class MakesService implements MakesPort {
     if (record.user_id === userId) invalid();
     const { openCount } = await this.reports.enqueue("make", makeId, userId, reason);
     let status = record.status;
-    const author = (await this.profiles.authors([userId])).get(userId);
-    if (status !== "hidden" && (author?.is_staff === true || openCount >= this.reportHideThreshold())) {
+    const mayModerate = (await this.permissions?.hasPermission(userId, Permissions.MODERATION_DELETE_CONTENT)) === true;
+    if (status !== "hidden" && (mayModerate || openCount >= this.reportHideThreshold())) {
       status = await this.repository.hide(makeId);
       await this.reports.resolveOpen("make", makeId);
     }

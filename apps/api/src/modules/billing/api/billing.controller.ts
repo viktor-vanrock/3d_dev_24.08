@@ -4,12 +4,14 @@ import { UserId, type UserId as UserIdType } from "../../_kernel/brandedIds.ts";
 import { BILLING_PORT, type BillingPort } from "../public/index.ts";
 import { BillingLooseBodyDto } from "./billing.dto.ts";
 import { ApiBillingOperation } from "./openapi.ts";
+import { Internal, Permission, Permissions, User } from "../../permissions/public/index.ts";
 function user(request: RequestWithSession): UserIdType {
   const value = request[SESSION_USER];
   if (value === undefined) throw new UnauthorizedException();
   return UserId(value.id);
 }
 @Controller()
+@User()
 export class BillingController {
   constructor(@Inject(BILLING_PORT) private readonly billing: BillingPort) {}
   @Post("purchases")
@@ -18,6 +20,7 @@ export class BillingController {
     return this.billing.createPurchase(user(r), b.modelId);
   }
   @Post("billing/webhooks/yookassa")
+  @Internal()
   @HttpCode(200)
   @ApiBillingOperation("Process YooKassa webhook", { response: "webhook" })
   webhook(@Body() b: BillingLooseBodyDto) {
@@ -52,6 +55,7 @@ export class BillingController {
     return this.billing.payouts(user(r));
   }
   @Patch("payouts/:id")
+  @Permission(Permissions.BILLING_MANAGE_PAYOUTS)
   @ApiBillingOperation("Transition payout", { auth: true, response: "payout-transition" })
   payoutTransition(@Req() r: RequestWithSession, @Param("id") id: string, @Body() b: BillingLooseBodyDto) {
     return this.billing.transitionPayout(user(r), id, b.status);
