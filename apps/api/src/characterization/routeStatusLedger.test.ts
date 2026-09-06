@@ -1,5 +1,5 @@
 import { readFile, writeFile } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { INestApplication } from "@nestjs/common";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -122,8 +122,8 @@ function renderLedgerMarkdown(ledger: readonly LedgerRow[]): string {
 }
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
-// openspec/ lives at the true repo root (parent of portal.ru): src/characterization → up 5.
-const LEDGER_PATH = resolve(scriptDir, "../../../../../openspec/changes/backend-nest-migration/inventory/route-status-ledger.md");
+// Снимок хранится рядом с characterization suite, чтобы checkout был самодостаточным.
+const LEDGER_PATH = join(scriptDir, "route-status-ledger.md");
 
 describe("route-status ledger (task 5.2)", () => {
   let app: INestApplication;

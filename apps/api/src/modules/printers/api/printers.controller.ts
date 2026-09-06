@@ -18,6 +18,7 @@ import {
   ResearchMediaDto,
   ResearchPrinterDto,
 } from "./printers.dto.ts";
+import { Internal, Permission, Permissions, Public, User } from "../../permissions/public/index.ts";
 
 function user(request: RequestWithSession): UserIdType {
   const session = request[SESSION_USER];
@@ -29,6 +30,7 @@ const ANON_COOKIE_NAME = "portal_anon";
 const ANON_COOKIE_MAX_AGE_MS = 730 * 24 * 60 * 60 * 1000;
 
 @Controller()
+@User()
 export class PrintersController {
   constructor(
     @Inject(PRINTERS_PORT) private readonly printers: PrintersPort,
@@ -43,6 +45,7 @@ export class PrintersController {
   }
 
   @Get("community-firmware")
+  @Public()
   @ApiPrintersOperation("List community firmware")
   firmware(@Query() query: CommunityFirmwareQueryDto) {
     return this.printers.communityFirmwareList({ model: query.model, printer_id: query.printer_id, limit: query.limit, offset: query.offset });
@@ -101,6 +104,7 @@ export class PrintersController {
   }
 
   @Post("research/printers")
+  @Internal()
   @HttpCode(200)
   @ApiPrintersOperation("Upsert researched printer", { auth: true })
   async researchUpsert(@Req() request: Request, @Res({ passthrough: true }) response: Response, @Body() body: ResearchPrinterDto) {
@@ -121,17 +125,20 @@ export class PrintersController {
     return result.body;
   }
   @Get("research/printers/:slug")
+  @Internal()
   @ApiPrintersOperation("Read researched printer", { auth: true })
   async researchDetail(@Req() request: Request, @Param("slug") slug: string) {
     return this.printers.researchDetail(await this.researchUser(request), slug);
   }
   @Post("research/printers/media/presign")
+  @Internal()
   @HttpCode(200)
   @ApiPrintersOperation("Create printer media upload", { auth: true })
   async researchUpload(@Req() request: Request, @Body() body: ResearchMediaDto) {
     return this.printers.researchUpload(await this.researchUser(request), body.slug, body.content_type);
   }
   @Get("research/media/*key")
+  @Internal()
   @ApiPrintersOperation("Read printer research media", { auth: true, status: 302 })
   async researchMedia(@Req() request: Request, @Param("key") rawKey: string | string[], @Res() response: Response) {
     const key = Array.isArray(rawKey) ? rawKey.join("/") : rawKey;
@@ -144,17 +151,20 @@ export class PrintersController {
     return this.printers.report(user(request), id, { ...body });
   }
   @Get("printers/reports")
+  @Permission(Permissions.CATALOG_REVIEW_PRINTER_REPORTS)
   @ApiPrintersOperation("List printer reports", { auth: true })
   reports(@Req() request: RequestWithSession, @Query() query: PrinterReportsQueryDto) {
     return this.printers.reports(user(request), query.status);
   }
   @Post("printers/reports/:reportId/reject")
+  @Permission(Permissions.CATALOG_REVIEW_PRINTER_REPORTS)
   @HttpCode(200)
   @ApiPrintersOperation("Reject printer report", { auth: true })
   reject(@Req() request: RequestWithSession, @Param("reportId") reportId: string) {
     return this.printers.rejectReport(user(request), reportId);
   }
   @Post("printers/reports/:reportId/approve")
+  @Permission(Permissions.CATALOG_REVIEW_PRINTER_REPORTS)
   @HttpCode(200)
   @ApiPrintersOperation("Approve printer report", { auth: true })
   approve(@Req() request: RequestWithSession, @Param("reportId") reportId: string) {

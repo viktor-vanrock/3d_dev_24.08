@@ -3,6 +3,7 @@ import { SESSION_USER, type RequestWithSession } from "../../../nest/auth/sessio
 import { UserId, type UserId as UserIdType } from "../../_kernel/brandedIds.ts";
 import { IMPORT_CONNECTIONS_PORT, type ImportConnectionsPort } from "../public/index.ts";
 import { ApiImportConnectionsOperation } from "./openapi.ts";
+import { User } from "../../permissions/public/index.ts";
 import { ConnectImportAccountDto, ImportConnectionChallengeDto, ImportConnectionVerifyDto } from "./import-connections.dto.ts";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -19,6 +20,7 @@ function connectionId(value: string): string {
 }
 
 @Controller("me/import-connections")
+@User()
 export class ImportConnectionsController {
   constructor(@Inject(IMPORT_CONNECTIONS_PORT) private readonly connections: ImportConnectionsPort) {}
 

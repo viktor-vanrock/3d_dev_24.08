@@ -1,6 +1,7 @@
 import { base, tseslint } from "@portal/config/eslint.base.mjs";
 import boundaries from "eslint-plugin-boundaries";
 import ts from "typescript";
+import { permissionsLintConfig } from "./.eslintrc.permissions.js";
 
 // Строгие type-aware правила раскатаны на ВЕСЬ пакет (задача 7.6, выполнена после удаления legacy
 // Fastify в 7.4). До cutover правила жили в двухзонном split (`src/modules/**`+`src/nest/**`), потому
@@ -141,6 +142,7 @@ const own = { domain: "{{from.domain}}" };
 
 export default [
   ...base,
+  ...permissionsLintConfig,
 
   // CommonJS tooling configs (.cjs) — declare the node/CommonJS globals so `module`/`require` are defined.
   {
@@ -174,6 +176,16 @@ export default [
             { from: { element: { type: "public" } }, allow: { to: { element: { types: { anyOf: ["domain", "application"] }, ...own } } } },
             { from: { element: { type: "domain" } }, allow: { to: { element: { type: "public", ...own } } } },
             { from: { element: { type: "module-root" } }, allow: { to: { element: { types: { anyOf: ["api", "application", "infrastructure", "public"] }, ...own } } } },
+
+            // Permissions — сквозной технический модуль авторизации. Его public API
+            // доступен контроллерам и composition roots всех доменов; собственные
+            // decorators/guards используют domain, repository — application.
+            { from: { element: { type: "api" } }, allow: { to: { element: { type: "module-root", domain: "permissions" } } } },
+            { from: { element: { type: "module-root" } }, allow: { to: { element: { type: "module-root", domain: "permissions" } } } },
+            { from: { element: { type: "application" } }, allow: { to: { element: { type: "module-root", domain: "permissions" } } } },
+            { from: { element: { type: "application", domain: "makes" } }, allow: { to: { element: { type: "application", domain: "permissions" } } } },
+            { from: { element: { type: "module-root", domain: "permissions" } }, allow: { to: { element: { types: { anyOf: ["domain", "application"] }, domain: "permissions" } } } },
+            { from: { element: { type: "infrastructure", domain: "permissions" } }, allow: { to: { element: { type: "application", domain: "permissions" } } } },
 
             // CROSS-DOMAIN: any layer may import ANOTHER domain, but ONLY its `public` barrel.
             {

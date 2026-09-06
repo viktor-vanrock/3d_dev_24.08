@@ -267,7 +267,7 @@ describe("Nest auth domain migration", () => {
     const username = `admin.${Date.now()}`;
     const password = "integration-admin-password";
     const passwordHash = await hashPassword(password);
-    const user = await database.query<{ id: string }>(`insert into users (username, is_staff) values ($1, true) returning id`, [username]);
+    const user = await database.query<{ id: string }>(`insert into users (username) values ($1) returning id`, [username]);
     try {
       await database.query(`insert into user_password_credentials (user_id, password_hash) values ($1, $2)`, [user.rows[0]!.id, passwordHash]);
 
@@ -295,18 +295,18 @@ describe("Nest auth domain migration", () => {
     const database = app.get<Pool>(DATABASE_POOL);
     const repository = app.get(AuthRepository);
     const username = `claimed.${Date.now()}`;
-    const user = await database.query<{ id: string }>(`insert into users (username, is_staff) values ($1, false) returning id`, [username]);
+    const user = await database.query<{ id: string }>(`insert into users (username) values ($1) returning id`, [username]);
     try {
       await expect(repository.upsertBootstrapAdmin(username, await hashPassword("admin-password"), false)).rejects.toThrow(
         "ADMIN_USERNAME is already owned by a non-bootstrap account",
       );
-      await expect(database.query<{ is_staff: boolean }>(`select is_staff from users where id = $1`, [user.rows[0]!.id])).resolves.toMatchObject({ rows: [{ is_staff: false }] });
+      await expect(database.query<{ id: string }>(`select id from users where id = $1`, [user.rows[0]!.id])).resolves.toMatchObject({ rows: [{ id: user.rows[0]!.id }] });
     } finally {
       await database.query(`delete from users where id = $1`, [user.rows[0]!.id]);
     }
   });
 
-  it("creates a staff bootstrap account and applies the password refresh policy", async () => {
+  it("creates a bootstrap account and applies the password refresh policy", async () => {
     const database = app.get<Pool>(DATABASE_POOL);
     const repository = app.get(AuthRepository);
     const username = `bootstrap.${Date.now()}`;
@@ -315,14 +315,13 @@ describe("Nest auth domain migration", () => {
     let userId: string | undefined;
     try {
       await repository.upsertBootstrapAdmin(username, initialHash, false);
-      const created = await database.query<{ id: string; is_staff: boolean; password_hash: string }>(
-        `select u.id, u.is_staff, credentials.password_hash
+      const created = await database.query<{ id: string; password_hash: string }>(
+        `select u.id, credentials.password_hash
          from users u join user_password_credentials credentials on credentials.user_id = u.id
          where u.username = $1`,
         [username],
       );
       userId = created.rows[0]?.id;
-      expect(created.rows[0]?.is_staff).toBe(true);
       await expect(verifyPassword("initial-admin-password", created.rows[0]!.password_hash)).resolves.toBe(true);
 
       await repository.upsertBootstrapAdmin(username, replacementHash, false);

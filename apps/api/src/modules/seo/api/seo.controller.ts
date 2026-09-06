@@ -3,8 +3,10 @@ import type { Response } from "express";
 import { SEO_PORT, type SeoPort } from "../public/index.ts";
 import { SeoMetaQueryDto } from "./seo.dto.ts";
 import { ApiSeoOperation } from "./openapi.ts";
+import { Public } from "../../permissions/public/index.ts";
 
 @Controller()
+@Public()
 export class SeoController {
   constructor(@Inject(SEO_PORT) private readonly seo: SeoPort) {}
 

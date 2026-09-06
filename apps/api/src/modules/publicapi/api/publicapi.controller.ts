@@ -19,6 +19,7 @@ import {
   UserApiKeySecretDto,
 } from "./publicapi.dto.ts";
 import { ApiPublicApiOperation } from "./openapi.ts";
+import { Internal, User } from "../../permissions/public/index.ts";
 function user(request: RequestWithSession): UserIdType {
   const value = request[SESSION_USER];
   if (value === undefined) throw new UnauthorizedException();
@@ -28,6 +29,7 @@ function context(request: RequestWithId) {
   return { request, requestId: getRequestId(request) };
 }
 @Controller()
+@User()
 export class PublicApiController {
   constructor(
     @Inject(PUBLICAPI_PORT) private readonly api: PublicApiPort,
@@ -77,13 +79,13 @@ export class PublicApiController {
   private async principal(r: RequestWithId, scope: PublicApiKeyScope) {
     return this.api.authenticate(r.headers.authorization, scope, context(r));
   }
-  @Get("v0/printers") @ApiPublicApiOperation("List printers", { bearer: true, responseType: PublicPrinterListDto }) async printers(@Req() r: RequestWithId) {
+  @Get("v0/printers") @Internal() @ApiPublicApiOperation("List printers", { bearer: true, responseType: PublicPrinterListDto }) async printers(@Req() r: RequestWithId) {
     return this.devices.listPrinters((await this.principal(r, "read")).ownerId);
   }
-  @Get("v0/printers/:id") @ApiPublicApiOperation("Read printer", { bearer: true, responseType: PublicPrinterDto }) async printer(@Req() r: RequestWithId, @Param("id") id: string) {
+  @Get("v0/printers/:id") @Internal() @ApiPublicApiOperation("Read printer", { bearer: true, responseType: PublicPrinterDto }) async printer(@Req() r: RequestWithId, @Param("id") id: string) {
     return this.devices.printer((await this.principal(r, "read")).ownerId, id);
   }
-  @Get("v0/printers/:id/telemetry") @ApiPublicApiOperation("Read printer telemetry", { bearer: true, responseType: PublicTelemetryDto }) async telemetry(
+  @Get("v0/printers/:id/telemetry") @Internal() @ApiPublicApiOperation("Read printer telemetry", { bearer: true, responseType: PublicTelemetryDto }) async telemetry(
     @Req() r: RequestWithId,
     @Param("id") id: string,
     @Query() q: { limit?: string; since?: string },
@@ -91,6 +93,7 @@ export class PublicApiController {
     return this.devices.telemetry((await this.principal(r, "read")).ownerId, id, q);
   }
   @Post("v0/printers/:id/test-job/commands")
+  @Internal()
   @ApiPublicApiOperation("Run safe printer test command", {
     bearer: true,
     status: 202,
@@ -110,7 +113,7 @@ export class PublicApiController {
     res.status(out.status);
     return out.body;
   }
-  @Post("v0/printers/:id/commands") @ApiPublicApiOperation("Queue printer command", { bearer: true, status: 202, responseType: PublicQueuedCommandDto }) async command(
+  @Post("v0/printers/:id/commands") @Internal() @ApiPublicApiOperation("Queue printer command", { bearer: true, status: 202, responseType: PublicQueuedCommandDto }) async command(
     @Req() r: RequestWithId,
     @Res({ passthrough: true }) res: Response,
     @Param("id") id: string,
@@ -122,7 +125,7 @@ export class PublicApiController {
     res.status(out.status);
     return out.body;
   }
-  @Get("v0/printers/:id/commands/:commandId") @ApiPublicApiOperation("Read printer command", { bearer: true, responseType: PublicCommandStatusDto }) async commandStatus(
+  @Get("v0/printers/:id/commands/:commandId") @Internal() @ApiPublicApiOperation("Read printer command", { bearer: true, responseType: PublicCommandStatusDto }) async commandStatus(
     @Req() r: RequestWithId,
     @Param("id") id: string,
     @Param("commandId") commandId: string,

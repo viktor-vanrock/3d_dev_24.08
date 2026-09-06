@@ -14,6 +14,7 @@ import { RequestContext } from "../../../nest/observability/request-context.ts";
 import { RuntimeLogger } from "../../../nest/observability/runtime-logger.ts";
 import { createApiValidationPipe } from "../../../nest/validation/api-validation.pipe.ts";
 import { CATALOG_PORT, type CatalogPort } from "../public/index.ts";
+import { PROFILE_AUTH_PORT } from "../../profile/public/index.ts";
 import { CatalogController } from "./catalog.controller.ts";
 
 const fakeCatalog: CatalogPort = {
@@ -37,7 +38,10 @@ const fakeCatalog: CatalogPort = {
 };
 
 @Global()
-@Module({ providers: [SessionVerifier, { provide: CATALOG_PORT, useValue: fakeCatalog }], exports: [SessionVerifier, CATALOG_PORT] })
+@Module({
+  providers: [RuntimeLogger, SessionVerifier, { provide: PROFILE_AUTH_PORT, useValue: { loadOwnerAuthState: () => Promise.resolve(null) } }, { provide: CATALOG_PORT, useValue: fakeCatalog }],
+  exports: [RuntimeLogger, SessionVerifier, PROFILE_AUTH_PORT, CATALOG_PORT],
+})
 class CatalogTestPortsModule {}
 
 @Module({

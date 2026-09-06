@@ -16,6 +16,7 @@ import { RequestContext } from "../../../nest/observability/request-context.ts";
 import { RuntimeLogger } from "../../../nest/observability/runtime-logger.ts";
 import { createApiValidationPipe } from "../../../nest/validation/api-validation.pipe.ts";
 import { GENERATIONS_PORT, type GenerationResponse, type GenerationsPort } from "../public/index.ts";
+import { PROFILE_AUTH_PORT } from "../../profile/public/index.ts";
 import { GenerationsController } from "./generations.controller.ts";
 
 const asset = { key: "preview.png", contentType: "image/png", cacheControl: "public", object: { body: Readable.from(Buffer.from("png")), contentLength: 3 } };
@@ -78,7 +79,10 @@ const fakeGenerations: GenerationsPort = {
 };
 
 @Global()
-@Module({ providers: [SessionVerifier, { provide: GENERATIONS_PORT, useValue: fakeGenerations }], exports: [SessionVerifier, GENERATIONS_PORT] })
+@Module({
+  providers: [RuntimeLogger, SessionVerifier, { provide: PROFILE_AUTH_PORT, useValue: { loadOwnerAuthState: () => Promise.resolve(null) } }, { provide: GENERATIONS_PORT, useValue: fakeGenerations }],
+  exports: [RuntimeLogger, SessionVerifier, PROFILE_AUTH_PORT, GENERATIONS_PORT],
+})
 class GenerationsTestPortsModule {}
 @Module({
   imports: [ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true }), GenerationsTestPortsModule],

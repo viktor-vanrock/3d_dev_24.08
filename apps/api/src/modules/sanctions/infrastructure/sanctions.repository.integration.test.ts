@@ -57,7 +57,7 @@ describe("SanctionsRepository", () => {
   });
 
   it("has the migration-created system actor with no password credential", async () => {
-    await expect(pool.query<{ username: string; status: string; is_staff: boolean }>(`select username, status, is_staff from users where id = $1`, [SYSTEM_USER_ID])).resolves.toMatchObject({ rows: [{ username: "__system__", status: "active", is_staff: false }] });
+    await expect(pool.query<{ username: string; status: string }>(`select username, status from users where id = $1`, [SYSTEM_USER_ID])).resolves.toMatchObject({ rows: [{ username: "__system__", status: "active" }] });
     await expect(pool.query(`select 1 from user_password_credentials where user_id = $1`, [SYSTEM_USER_ID])).resolves.toMatchObject({ rowCount: 0 });
   });
 });

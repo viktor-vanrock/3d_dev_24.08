@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Inject, Module, NotFoundException, Post, Req } from "@nestjs/common";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { NestExpressApplication } from "@nestjs/platform-express";
 import { IsUUID } from "class-validator";
 import { SignJWT } from "jose";
@@ -13,6 +13,11 @@ import { createApiValidationPipe } from "./validation/api-validation.pipe.ts";
 import { SESSION_USER, type RequestWithSession } from "./auth/session-verifier.ts";
 import { ApiSessionProtected } from "./openapi/api-session-protected.ts";
 import { API_ERROR_CODES } from "@portal/contracts/http/error-envelope";
+import { Public } from "../modules/permissions/decorators/public.decorator.ts";
+import { User } from "../modules/permissions/decorators/user.decorator.ts";
+import { PermissionGrantsPgRepository } from "../modules/permissions/infrastructure/permission-grants.repository.ts";
+import { ProfileRepository } from "../modules/profile/infrastructure/profile.repository.ts";
+import { SanctionsRepository } from "../modules/sanctions/infrastructure/sanctions.repository.ts";
 
 class TestBodyDto {
   @IsUUID()
@@ -20,6 +25,7 @@ class TestBodyDto {
 }
 
 @Controller("auth/_test")
+@Public()
 class TestController {
   constructor(@Inject(RequestContext) private readonly requestContext: RequestContext) {}
 
@@ -42,6 +48,7 @@ class TestController {
 @Controller("_test-private")
 class PrivateTestController {
   @Get()
+  @User()
   @ApiSessionProtected()
   privateRoute(@Req() request: RequestWithSession): { id: string | undefined } {
     return { id: request[SESSION_USER]?.id };
@@ -229,6 +236,11 @@ describe("Nest dual-runtime bootstrap", () => {
 
   it("returns a versioned 401 for deny and accepts a valid backend session", async () => {
     const originalSecret = process.env.JWT_SECRET;
+    // В этом тесте проверяются guard'ы, поэтому активного пользователя фиксируем
+    // тестовым портом репозитория без обращения к живой БД.
+    const activeUser = vi.spyOn(PermissionGrantsPgRepository.prototype, "isUserActive").mockResolvedValue(true);
+    const authState = vi.spyOn(ProfileRepository.prototype, "loadOwnerAuthState").mockResolvedValue({ status: "active", sessionVersion: 1 });
+    const activeSanction = vi.spyOn(SanctionsRepository.prototype, "findActiveForUser").mockResolvedValue(null);
     process.env.JWT_SECRET = "nest-auth-test-secret";
     try {
       app = await createNestApp(TestAppModule);
@@ -258,6 +270,9 @@ describe("Nest dual-runtime bootstrap", () => {
       });
       expect(cookieWins.status).toBe(401);
     } finally {
+      activeSanction.mockRestore();
+      authState.mockRestore();
+      activeUser.mockRestore();
       if (originalSecret === undefined) delete process.env.JWT_SECRET;
       else process.env.JWT_SECRET = originalSecret;
     }

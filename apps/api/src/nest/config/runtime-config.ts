@@ -45,12 +45,16 @@ export function resolveAdminBootstrapConfig(environment: Record<string, unknown>
   const password = typeof passwordValue === "string" ? passwordValue : "";
   const updatePasswordOnStartup = parseBoolean("ADMIN_PASSWORD_UPDATE_ON_STARTUP", environment.ADMIN_PASSWORD_UPDATE_ON_STARTUP, false);
 
+  // Чтение конфигурации bootstrap-владельца, не проверка доступа
+  // eslint-disable-next-line no-restricted-syntax
   if (username === "" && password === "") {
     if (updatePasswordOnStartup) {
       throw new Error("ADMIN_PASSWORD_UPDATE_ON_STARTUP requires ADMIN_USERNAME and ADMIN_PASSWORD");
     }
     return null;
   }
+  // Чтение конфигурации bootstrap-владельца, не проверка доступа
+  // eslint-disable-next-line no-restricted-syntax
   if (username === "" || password === "") {
     throw new Error("ADMIN_USERNAME and ADMIN_PASSWORD must be configured together");
   }

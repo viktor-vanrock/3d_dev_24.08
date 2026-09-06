@@ -195,8 +195,22 @@ export class ProfileRepository implements ProfileReadPort, ProfileAdminPort, Pro
   }
 
   async loadSanctionActor(tx: PoolClient, input: { readonly actorId: UserIdType }): Promise<{ readonly isStaff: boolean } | null> {
-    const row = (await tx.query<{ is_staff: boolean }>(`select is_staff from users where id = $1`, [input.actorId])).rows[0];
-    return row === undefined ? null : { isStaff: row.is_staff };
+    const row = (await tx.query<{ id: string }>(`select id from users where id = $1 and status = 'active'`, [input.actorId])).rows[0];
+    return row === undefined ? null : { isStaff: false };
+  }
+
+  async isStaff(userId: UserIdType): Promise<boolean> {
+    const result = await this.pool.query<{ granted: boolean }>(
+      `select exists(
+         select 1 from permission_grants
+         where user_id = $1
+           and permission in ('moderation.delete_content', 'moderation.manage_sanctions')
+           and revoked_at is null
+           and (expires_at is null or expires_at > now())
+       ) as granted`,
+      [userId],
+    );
+    return result.rows[0]?.granted === true;
   }
 
   async loadSanctionTargetForUpdate(
@@ -266,11 +280,6 @@ export class ProfileRepository implements ProfileReadPort, ProfileAdminPort, Pro
     );
     const row = result.rows[0];
     return row === undefined || row.status !== "active" ? null : mapSession(row);
-  }
-
-  async isStaff(userId: UserIdType): Promise<boolean> {
-    const result = await this.pool.query<{ is_staff: boolean }>(`select is_staff from users where id = $1`, [userId]);
-    return result.rows[0]?.is_staff === true;
   }
 
   async role(userId: UserIdType): Promise<"user" | "researcher" | null> {

@@ -11,7 +11,7 @@ import { COMMUNITY_SOCIAL_OWNER_PORT, type CommunitySocialOwnerPort } from "../.
 import { ModelsModule } from "../../modules/models/models.module.ts";
 import { MODEL_MAKES_PORT, type ModelMakesPort } from "../../modules/models/public/index.ts";
 import { ProfileModule } from "../../modules/profile/profile.module.ts";
-import { PROFILE_ADMIN_PORT, PROFILE_CONTENT_PORT, type ProfileAdminPort, type ProfileContentPort } from "../../modules/profile/public/index.ts";
+import { PROFILE_CONTENT_PORT, type ProfileContentPort } from "../../modules/profile/public/index.ts";
 import {
   MAKE_COMMENTS_PORT,
   MAKE_FEED_SIGNAL_PORT,
@@ -76,7 +76,6 @@ export class MakeTagsAdapter implements MakeTagsPort {
 export class MakeProfileAdapter implements MakeProfilePort {
   constructor(
     @Inject(PROFILE_CONTENT_PORT) private readonly profiles: ProfileContentPort,
-    @Inject(PROFILE_ADMIN_PORT) private readonly admin: ProfileAdminPort,
   ) {}
   async authors(userIds: readonly UserIdType[]): Promise<ReadonlyMap<UserIdType, MakeAuthor>> {
     const profiles = await this.profiles.findAuthors(userIds);
@@ -90,7 +89,6 @@ export class MakeProfileAdapter implements MakeProfilePort {
         avatar_url: profile.avatarUrl,
         avatar_config: avatars.get(id)?.avatar_config ?? null,
         avatar_snapshots: avatars.get(id)?.avatar_snapshots ?? null,
-        is_staff: await this.admin.isStaff(id),
       });
     }
     return result;

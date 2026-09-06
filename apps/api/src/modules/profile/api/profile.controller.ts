@@ -8,6 +8,7 @@ import { ProfileService, MAX_AVATAR_PHOTO_BYTES } from "../application/profile.s
 import { AVATAR_SNAPSHOT_SIDES, type AvatarSnapshotSide, IMAGE_FORMATS } from "../domain/profile.ts";
 import { ApiAvatarPhotoUpload, ApiProfileOperation } from "./openapi.ts";
 import { AvatarResponseDto, PatchAvatarDto, PatchProfileDto, PublicProfileResponseDto, UpdatedProfileResponseDto } from "./profile.dto.ts";
+import { Public, User } from "../../permissions/public/index.ts";
 
 interface UploadedAvatarFile {
   readonly buffer: Buffer;
@@ -33,6 +34,7 @@ function side(value: string): AvatarSnapshotSide {
 }
 
 @Controller()
+@User()
 export class ProfileController {
   constructor(@Inject(ProfileService) private readonly profile: ProfileService) {}
 
@@ -68,6 +70,7 @@ export class ProfileController {
   }
 
   @Get("avatars/:userId")
+  @Public()
   @ApiProfileOperation("Read an active user's profile photo", { notFound: true, contentType: "image/*", pathParams: ["userId"] })
   async avatarPhoto(@Param("userId") rawUserId: string, @Res() response: Response): Promise<void> {
     const asset = await this.profile.avatarAsset(userId(rawUserId));
@@ -86,6 +89,7 @@ export class ProfileController {
   }
 
   @Get("avatars/:userId/snapshots/:side")
+  @Public()
   @ApiProfileOperation("Redirect a legacy mascot snapshot URL to its immutable revision", {
     session: false,
     notFound: true,
@@ -98,6 +102,7 @@ export class ProfileController {
   }
 
   @Get("avatars/:userId/snapshots/:revision/:side/:sha256.png")
+  @Public()
   @ApiProfileOperation("Read an immutable mascot snapshot", {
     session: false,
     notFound: true,

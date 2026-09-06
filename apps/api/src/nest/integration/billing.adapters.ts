@@ -2,20 +2,21 @@ import { Global, Inject, Injectable, Module } from "@nestjs/common";
 import { BillingNotConfiguredError, createPayment, fetchPayment, isBillingConfigured } from "../../modules/billing/public/index.ts";
 import { AnalyticsModule } from "../../modules/analytics/analytics.module.ts";
 import { ANALYTICS_PORT, type AnalyticsPort } from "../../modules/analytics/public/index.ts";
+import { PermissionsService } from "../../modules/permissions/application/permissions.service.ts";
+import { Permissions } from "../../modules/permissions/domain/permissions.catalog.ts";
+import { PermissionsModule } from "../../modules/permissions/permissions.module.ts";
 import { ModelsModule } from "../../modules/models/models.module.ts";
 import { MODEL_READ_PORT, type ModelReadPort } from "../../modules/models/public/index.ts";
-import { ProfileModule } from "../../modules/profile/profile.module.ts";
-import { PROFILE_ADMIN_PORT, type ProfileAdminPort } from "../../modules/profile/public/index.ts";
 import {
   BILLING_ANALYTICS_PORT,
   BILLING_MODEL_READ_PORT,
-  BILLING_PROVIDER_PORT,
   BILLING_STAFF_PORT,
+  BILLING_PROVIDER_PORT,
   BillingProviderNotConfiguredError,
   type BillingAnalyticsPort,
   type BillingModelReadPort,
-  type BillingProviderPort,
   type BillingStaffPort,
+  type BillingProviderPort,
 } from "../../modules/billing/public/index.ts";
 
 @Injectable()
@@ -27,9 +28,9 @@ export class BillingModelReadAdapter implements BillingModelReadPort {
 }
 @Injectable()
 export class BillingStaffAdapter implements BillingStaffPort {
-  constructor(@Inject(PROFILE_ADMIN_PORT) private readonly profiles: ProfileAdminPort) {}
+  constructor(private readonly permissions: PermissionsService) {}
   isStaff(id: Parameters<BillingStaffPort["isStaff"]>[0]) {
-    return this.profiles.isStaff(id);
+    return this.permissions.hasPermission(id, Permissions.BILLING_MANAGE_PAYOUTS);
   }
 }
 @Injectable()
@@ -76,7 +77,7 @@ export class BillingProviderAdapter implements BillingProviderPort {
 }
 @Global()
 @Module({
-  imports: [ModelsModule, ProfileModule, AnalyticsModule],
+  imports: [ModelsModule, AnalyticsModule, PermissionsModule],
   providers: [
     BillingModelReadAdapter,
     BillingStaffAdapter,

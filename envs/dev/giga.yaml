@@ -8,7 +8,7 @@ image:
   command: ["/bin/sh"]
   args:
     - "-c"
-    - ". /vault/secrets/config && exec uvicorn giga.main:app --host 0.0.0.0 --port 3102"
+    - ". /vault/secrets/config && uvicorn giga.main:app --host 0.0.0.0 --port 3102 & exec giga-worker"
 
 imagePullSecrets:
   - name: gitlab-registry-secret
@@ -33,8 +33,14 @@ configMap:
     S3_REGION: ru-central-1
     S3_BUCKET_GENERATIONS: p-rndml-aiportal
     S3_BUCKET_DIAGNOSTICS: p-rndml-aiportal
-    GIGA_LIFECYCLE_ENABLED: "0"
+    GIGA_LIFECYCLE_ENABLED: "1"
     ASSISTANT_LIFECYCLE_ENABLED: "0"
+    RUDALLE_API_URL: "https://rudalle-coordinator.dev.sberdevices.ru/api/"
+    RUDALLE_TIMEOUT_SECONDS: "300"
+    RUDALLE_MAX_RETRIES: "2"
+    RUDALLE_RETRY_BACKOFF_SECONDS: "5.0"
+    RUDALLE_POLL_INTERVAL_SECONDS: "10"
+    RUDALLE_NUM_TARGET_FACES: "50000"
 
 securityContext: {}
 podSecurityContext: {}

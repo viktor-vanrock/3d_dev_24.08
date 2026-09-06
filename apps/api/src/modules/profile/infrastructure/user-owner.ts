@@ -13,8 +13,8 @@ export interface ClaimedBootstrapAdminUser {
 
 export async function claimBootstrapAdminUser(client: PoolClient, username: string): Promise<ClaimedBootstrapAdminUser> {
   const inserted = await client.query<{ id: string }>(
-    `insert into users (username, display_name, status, handle_confirmed, is_staff)
-     values ($1, $1, 'active', true, true)
+    `insert into users (username, display_name, status, handle_confirmed)
+     values ($1, $1, 'active', true)
      on conflict (username) do nothing
      returning id`,
     [username],
@@ -32,7 +32,6 @@ export async function activateBootstrapAdminUser(client: PoolClient, userId: str
   await client.query(
     `update users
      set handle_confirmed = true,
-         is_staff = true,
          status = case when $2 then status else 'active' end,
          session_version = case when $2 then session_version else session_version + 1 end,
          updated_at = now()
@@ -87,10 +86,6 @@ export async function incrementOwnedReputation(client: PoolClient, userId: strin
 
 export async function setOwnedTrustLevel(userId: string, level: number): Promise<void> {
   await pool.query(`update users set trust_level = $2 where id = $1`, [userId, level]);
-}
-
-export async function isOwnedStaff(userId: string): Promise<boolean> {
-  return (await pool.query<{ is_staff: boolean }>(`select is_staff from users where id = $1`, [userId])).rows[0]?.is_staff === true;
 }
 
 export interface OwnedContentAuthor {

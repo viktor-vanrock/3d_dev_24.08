@@ -165,7 +165,7 @@ export class AuthService {
   async loginPassword(usernameValue: unknown, passwordValue: unknown): Promise<AuthenticatedUser> {
     const username = typeof usernameValue === "string" ? usernameValue.trim().toLowerCase() : "";
     const password = typeof passwordValue === "string" && passwordValue.length <= 1024 ? passwordValue : "";
-    const credential = username === "" ? null : await this.repository.findPasswordCredential(username);
+    const credential = username ? await this.repository.findPasswordCredential(username) : null;
     const passwordMatches = await verifyPassword(password, credential?.passwordHash ?? DUMMY_PASSWORD_HASH);
     if (credential === null || !passwordMatches) {
       this.audit("password", "failure", "invalid_credentials");

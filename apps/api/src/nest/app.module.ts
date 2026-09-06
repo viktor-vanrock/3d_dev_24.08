@@ -2,6 +2,8 @@ import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from "@nestjs/core";
 import { AuthGuard } from "./auth/auth.guard.ts";
+import { PermissionGuard } from "../modules/permissions/guards/permission.guard.ts";
+import { PermissionsModule } from "../modules/permissions/permissions.module.ts";
 import { SessionVerifierModule } from "./auth/session-verifier.module.ts";
 import { DatabaseModule } from "./database/database.module.ts";
 import { HealthController } from "./health/health.controller.ts";
@@ -75,6 +77,7 @@ import { createApiValidationPipe } from "./validation/api-validation.pipe.ts";
       validate: validateRuntimeEnvironment,
     }),
     SessionVerifierModule,
+    PermissionsModule,
     MetricsModule,
     DatabaseModule,
     QueueModule,
@@ -135,6 +138,7 @@ import { createApiValidationPipe } from "./validation/api-validation.pipe.ts";
     RequestContext,
     RuntimeLogger,
     { provide: APP_GUARD, useClass: AuthGuard },
+    { provide: APP_GUARD, useClass: PermissionGuard },
     { provide: APP_INTERCEPTOR, useClass: CorrelationInterceptor },
     { provide: APP_INTERCEPTOR, useClass: LoggingInterceptor },
     { provide: APP_FILTER, useClass: ApiExceptionFilter },

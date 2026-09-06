@@ -7,8 +7,8 @@ const users: string[] = [];
 
 async function createUser(status: "active" | "restricted"): Promise<string> {
   const result = await pool.query<{ id: string }>(
-    `insert into users(username, status, is_staff, handle_confirmed, session_version)
-     values ($1, $2, false, false, 7) returning id`,
+    `insert into users(username, status, handle_confirmed, session_version)
+     values ($1, $2, false, 7) returning id`,
     [`bootstrap-owner-${randomUUID()}`, status],
   );
   const id = result.rows[0]!.id;
@@ -29,8 +29,8 @@ describe("activateBootstrapAdminUser", () => {
     } finally {
       client.release();
     }
-    await expect(pool.query(`select status, is_staff, handle_confirmed, session_version from users where id = $1`, [id])).resolves.toMatchObject({
-      rows: [{ status: "restricted", is_staff: true, handle_confirmed: true, session_version: 7 }],
+    await expect(pool.query(`select status, handle_confirmed, session_version from users where id = $1`, [id])).resolves.toMatchObject({
+      rows: [{ status: "restricted", handle_confirmed: true, session_version: 7 }],
     });
   });
 
@@ -42,8 +42,8 @@ describe("activateBootstrapAdminUser", () => {
     } finally {
       client.release();
     }
-    await expect(pool.query(`select status, is_staff, handle_confirmed, session_version from users where id = $1`, [id])).resolves.toMatchObject({
-      rows: [{ status: "active", is_staff: true, handle_confirmed: true, session_version: 8 }],
+    await expect(pool.query(`select status, handle_confirmed, session_version from users where id = $1`, [id])).resolves.toMatchObject({
+      rows: [{ status: "active", handle_confirmed: true, session_version: 8 }],
     });
   });
 });

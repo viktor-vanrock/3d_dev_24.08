@@ -13,6 +13,7 @@ import {
   VapidPublicKeyResponseDto,
 } from "./push.dto.ts";
 import { UserId, type UserId as UserIdType } from "../../_kernel/brandedIds.ts";
+import { Public, User } from "../../permissions/public/index.ts";
 
 function userId(request: RequestWithSession): UserIdType {
   const session = request[SESSION_USER];
@@ -21,10 +22,12 @@ function userId(request: RequestWithSession): UserIdType {
 }
 
 @Controller("push")
+@User()
 export class PushController {
   constructor(@Inject(PUSH_PORT) private readonly push: PushPort) {}
 
   @Get("vapid-public-key")
+  @Public()
   @ApiPushOperation("Read the configured public VAPID key", VapidPublicKeyResponseDto)
   publicKey(): { public_key: string | null } {
     return { public_key: this.push.publicKey() };

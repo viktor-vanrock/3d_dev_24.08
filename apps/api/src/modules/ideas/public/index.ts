@@ -4,13 +4,14 @@ import type { Idea, IdeaCategory, IdeaComment, IdeaOrigin, IdeaStatus, IdeaType 
 export const IDEAS_PORT = Symbol("IDEAS_PORT");
 export const IDEAS_STAFF_PORT = Symbol("IDEAS_STAFF_PORT");
 export const IDEAS_VERIFIED_IDENTITY_PORT = Symbol("IDEAS_VERIFIED_IDENTITY_PORT");
-export const IDEAS_PUSH_PORT = Symbol("IDEAS_PUSH_PORT");
-export const IDEAS_ENRICHMENT_PORT = Symbol("IDEAS_ENRICHMENT_PORT");
-export const IDEAS_RATE_LIMIT_PORT = Symbol("IDEAS_RATE_LIMIT_PORT");
 
+/** @deprecated Административные проверки выполняются через PermissionsService. */
 export interface IdeasStaffPort {
   isStaff(userId: UserId): Promise<boolean>;
 }
+export const IDEAS_PUSH_PORT = Symbol("IDEAS_PUSH_PORT");
+export const IDEAS_ENRICHMENT_PORT = Symbol("IDEAS_ENRICHMENT_PORT");
+export const IDEAS_RATE_LIMIT_PORT = Symbol("IDEAS_RATE_LIMIT_PORT");
 
 export interface IdeasVerifiedIdentityPort {
   hasVerifiedIdentity(userId: UserId): Promise<boolean>;

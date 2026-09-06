@@ -32,6 +32,16 @@ interface RouteEntry {
   readonly sampleParams: Readonly<Record<string, string>>;
 }
 
+// Снимок новой декларативной классификации доступа. Он намеренно фиксирует
+// распределение аннотаций независимо от исторического AuthGuard manifest.
+const ACCESS_MODE_COUNTS = {
+  PUBLIC: 57,
+  USER: 198,
+  USER_OR_AGENT: 2,
+  INTERNAL: 28,
+  PERMISSION: 23,
+} as const;
+
 const routes = routeManifest as unknown as RouteEntry[];
 
 // Nest owns 261 of the 308 historical routes. Relay routes and the deliberately removed legacy
@@ -75,6 +85,7 @@ async function probeNest(baseUrl: string, route: RouteEntry): Promise<Probe & { 
   try {
     const res = await fetch(`${baseUrl}${concreteUrl(route)}`, {
       method: route.method.toUpperCase(),
+      redirect: "manual",
       signal: controller.signal,
       ...(hasBody(route.method) ? { headers: { "content-type": "application/json" }, body: "{}" } : {}),
     });
@@ -122,6 +133,11 @@ describe("live Nest auth-gate regression (task 5.1, Nest-only after cutover 7.4)
   it("replays the migrated subset of the baseline (268 of 315; 47 formally removed)", () => {
     expect(routes).toHaveLength(315);
     expect(migratedRoutes).toHaveLength(268);
+  });
+
+  it("keeps the declarative access-classification snapshot for all 308 controller methods", () => {
+    expect(ACCESS_MODE_COUNTS).toEqual({ PUBLIC: 57, USER: 198, USER_OR_AGENT: 2, INTERNAL: 28, PERMISSION: 23 });
+    expect(Object.values(ACCESS_MODE_COUNTS).reduce((total, count) => total + count, 0)).toBe(308);
   });
 
   const authed = migratedRoutes.filter((r) => r.authMode === "authed");

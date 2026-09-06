@@ -4,6 +4,7 @@ import { UserId, type UserId as UserIdType } from "../../_kernel/brandedIds.ts";
 import { MAKERS_PORT, type MakersPort } from "../public/index.ts";
 import { ApiMakersOperation } from "./openapi.ts";
 import { MakerFeedResponseDto, MakerProfileInputDto, MakerProfileResponseDto, MakersFeedQueryDto, MakersNearbyQueryDto, NearbyMakersResponseDto } from "./makers.dto.ts";
+import { Public, User } from "../../permissions/public/index.ts";
 
 function user(request: RequestWithSession): UserIdType {
   const session = request[SESSION_USER];
@@ -12,6 +13,7 @@ function user(request: RequestWithSession): UserIdType {
 }
 
 @Controller()
+@User()
 export class MakersController {
   constructor(@Inject(MAKERS_PORT) private readonly makers: MakersPort) {}
 
@@ -48,6 +50,7 @@ export class MakersController {
   }
 
   @Get("makers/nearby")
+  @Public()
   @ApiMakersOperation("Find active makers near a point", { public: true, responseType: NearbyMakersResponseDto })
   nearby(@Query() query: MakersNearbyQueryDto) {
     return this.makers.nearby(query);

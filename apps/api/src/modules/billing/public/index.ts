@@ -7,6 +7,11 @@ export const BILLING_MODEL_READ_PORT = Symbol("BILLING_MODEL_READ_PORT");
 export const BILLING_STAFF_PORT = Symbol("BILLING_STAFF_PORT");
 export const BILLING_ANALYTICS_PORT = Symbol("BILLING_ANALYTICS_PORT");
 
+/** @deprecated Административные проверки выполняются через PermissionsService. */
+export interface BillingStaffPort {
+  isStaff(userId: UserId): Promise<boolean>;
+}
+
 export class BillingProviderNotConfiguredError extends Error {}
 
 export interface BillingModel {
@@ -35,9 +40,6 @@ export interface BillingProviderPort {
   fetch(paymentId: string): Promise<{ readonly status: string }>;
 }
 
-export interface BillingStaffPort {
-  isStaff(userId: UserId): Promise<boolean>;
-}
 export interface BillingAnalyticsPort {
   purchased(input: { readonly buyerId: UserId; readonly modelId: ModelId; readonly sellerId: UserId; readonly amount: number }): Promise<void>;
 }
