@@ -52,7 +52,7 @@ export class ProjectQueryService implements ProjectReadPort {
 
   async getPublished(id: string): Promise<ProjectReadView | null> {
     try {
-      return this.readView(await this.published(ProjectId(id)));
+      return this.readView(await this.published(ProjectId(id)), null);
     } catch (error) {
       if (error instanceof ProjectError && error.status === HttpStatus.NOT_FOUND) return null;
       throw error;
@@ -67,14 +67,22 @@ export class ProjectQueryService implements ProjectReadPort {
 
   async getDraft(id: string, userId: string): Promise<ProjectReadView | null> {
     try {
-      return this.readView(await this.draft(UserId(userId), ProjectId(id)));
+      const actorId = UserId(userId);
+      const projectId = ProjectId(id);
+      const project = await this.draft(actorId, projectId);
+      const primary = project.primary_model;
+      const previewUrl =
+        primary === undefined || primary === null
+          ? null
+          : (await this.revision(actorId, projectId, primary.id, primary.latest_revision_id)).preview_url;
+      return this.readView(project, previewUrl);
     } catch (error) {
       if (error instanceof ProjectError && error.status === HttpStatus.NOT_FOUND) return null;
       throw error;
     }
   }
 
-  private readView(project: ProjectView): ProjectReadView {
+  private readView(project: ProjectView, previewUrl: string | null): ProjectReadView {
     return {
       id: project.id,
       title: project.title,
@@ -84,6 +92,7 @@ export class ProjectQueryService implements ProjectReadPort {
       publication_state: project.published_revision_id === null ? "draft" : "published",
       primary_model_id: project.primary_model_id,
       repo_url: project.repo_url ?? null,
+      preview_url: previewUrl,
       version: project.version,
       created_at: project.created_at.toISOString(),
       updated_at: project.updated_at.toISOString(),

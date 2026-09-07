@@ -65,7 +65,7 @@ export class ModelsController {
           avg_surface_quality_rating: null,
         },
         top_combos: [],
-        preview_url: null,
+        preview_url: project.preview_url,
         preview_mobile_url: null,
         download_url: null,
         files: [],

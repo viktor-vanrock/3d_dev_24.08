@@ -19,6 +19,7 @@ export interface ProjectReadView {
   readonly publication_state: "draft" | "published";
   readonly primary_model_id: string | null;
   readonly repo_url: string | null;
+  readonly preview_url: string | null;
   readonly version: number;
   readonly created_at: string;
   readonly updated_at: string;
