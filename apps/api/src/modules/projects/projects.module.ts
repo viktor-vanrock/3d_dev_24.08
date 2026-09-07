@@ -23,6 +23,6 @@ import { OUTBOX_PORT, PROJECT_COMMAND_SERVICE, PROJECT_PROCESSING_SERVICE, PROJE
     { provide: PROJECT_PROCESSING_SERVICE, useExisting: ProjectProcessingService },
     { provide: OUTBOX_PORT, useExisting: ProjectsOutboxRepository },
   ],
-  exports: [ProjectQueryService, PROJECT_COMMAND_SERVICE, PROJECT_QUERY_SERVICE, PROJECT_PROCESSING_SERVICE, OUTBOX_PORT],
+  exports: [PROJECT_COMMAND_SERVICE, PROJECT_QUERY_SERVICE, PROJECT_PROCESSING_SERVICE, OUTBOX_PORT],
 })
 export class ProjectsModule {}

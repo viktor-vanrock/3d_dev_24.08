@@ -1,6 +1,5 @@
 import { Global, Module } from "@nestjs/common";
 import { DatabaseModule } from "../../nest/database/database.module.ts";
-import { ProjectsModule } from "../projects/projects.module.ts";
 import { ModelsController } from "./api/models.controller.ts";
 import { ModelReadRepository } from "./infrastructure/model-read.repository.ts";
 import { ModelMakesRepository } from "./infrastructure/model-makes.repository.ts";
@@ -9,7 +8,7 @@ import { MODEL_MAKES_PORT, MODEL_OWNER_PORT, MODEL_READ_PORT } from "./public/in
 
 @Global()
 @Module({
-  imports: [DatabaseModule, ProjectsModule],
+  imports: [DatabaseModule],
   controllers: [ModelsController],
   providers: [
     ModelReadRepository,

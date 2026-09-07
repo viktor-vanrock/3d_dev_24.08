@@ -1,20 +1,16 @@
-import { Controller, Get, Inject, NotFoundException, Param, Req, UseGuards } from "@nestjs/common";
+import { Controller, Get, Inject, NotFoundException, Param, Req } from "@nestjs/common";
 import type { Request } from "express";
 import { ProjectId, UserId } from "../../_kernel/brandedIds.ts";
-import { ProjectQueryService } from "../../projects/application/project-query.service.ts";
-import { ProjectError } from "../../projects/domain/project.errors.ts";
-import type { ProjectView } from "../../projects/domain/project.repository.ts";
+import { PROJECT_QUERY_SERVICE, type ProjectReadPort } from "../../projects/public/index.ts";
 import { Internal } from "../../permissions/public/index.ts";
-import { PermissionGuard } from "../../permissions/guards/permission.guard.ts";
 import { SessionVerifier } from "../../../nest/auth/session-verifier.ts";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 @Controller("models")
-@UseGuards(PermissionGuard)
 export class ModelsController {
   constructor(
-    @Inject(ProjectQueryService) private readonly projects: ProjectQueryService,
+    @Inject(PROJECT_QUERY_SERVICE) private readonly projects: ProjectReadPort,
     @Inject(SessionVerifier) private readonly sessions: SessionVerifier,
   ) {}
 
@@ -27,22 +23,12 @@ export class ModelsController {
     const projectId = ProjectId(rawId);
     const session = await this.sessions.readSession(request);
 
-    let project: ProjectView | null = null;
+    let project = null;
     if (session !== null) {
-      try {
-        project = await this.projects.draft(UserId(session.id), projectId);
-      } catch (error) {
-        if (!(error instanceof ProjectError) || error.status !== 404) throw error;
-      }
+      project = await this.projects.getDraft(projectId, UserId(session.id));
     }
-    if (project === null) {
-      try {
-        project = await this.projects.published(projectId);
-      } catch (error) {
-        if (error instanceof ProjectError && error.status === 404) throw new NotFoundException();
-        throw error;
-      }
-    }
+    if (project === null) project = await this.projects.getPublished(projectId);
+    if (project === null) throw new NotFoundException();
 
     return {
       model: {
@@ -66,7 +52,7 @@ export class ModelsController {
         votes_up: 0,
         votes_down: 0,
         downloads_count: 0,
-        publish_status: project.published_revision_id === null ? "draft" : "published",
+        publish_status: project.publication_state,
         bbox: null,
         size_bytes: null,
         my_vote: 0,
