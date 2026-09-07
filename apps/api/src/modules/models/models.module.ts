@@ -1,5 +1,7 @@
 import { Global, Module } from "@nestjs/common";
 import { DatabaseModule } from "../../nest/database/database.module.ts";
+import { ProjectsModule } from "../projects/projects.module.ts";
+import { ModelsController } from "./api/models.controller.ts";
 import { ModelReadRepository } from "./infrastructure/model-read.repository.ts";
 import { ModelMakesRepository } from "./infrastructure/model-makes.repository.ts";
 import { ModelOwnerRepository } from "./infrastructure/model-owner.repository.ts";
@@ -7,10 +9,8 @@ import { MODEL_MAKES_PORT, MODEL_OWNER_PORT, MODEL_READ_PORT } from "./public/in
 
 @Global()
 @Module({
-  imports: [DatabaseModule],
-  // This module now exposes only internal cross-domain ports. The legacy /models HTTP service and
-  // its adapter are deliberately not part of the application graph.
-  controllers: [],
+  imports: [DatabaseModule, ProjectsModule],
+  controllers: [ModelsController],
   providers: [
     ModelReadRepository,
     ModelMakesRepository,
