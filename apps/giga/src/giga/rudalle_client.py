@@ -169,12 +169,55 @@ def _poll_for_result(config: RudalleConfig, query_id: str) -> bytes:
         time.sleep(min(config.poll_interval_seconds, max(deadline - time.monotonic(), 0)))
 
 
+def _validate_model_params(override: dict[str, object], default_faces: int) -> dict[str, object]:
+    """Возвращает только поддерживаемые параметры модели с безопасными дефолтами."""
+    faces = override.get("num_target_faces")
+    num_target_faces = (
+        int(faces)
+        if isinstance(faces, (int, float))
+        and not isinstance(faces, bool)
+        and 1_000 <= int(faces) <= 500_000
+        else default_faces
+    )
+    no_texture = override.get("no_texture")
+    do_quadrification = override.get("do_quadrification")
+    create_lod = override.get("create_lod")
+    lod = (
+        int(create_lod)
+        if isinstance(create_lod, (int, float))
+        and not isinstance(create_lod, bool)
+        and int(create_lod) in (0, 1, 2)
+        else 0
+    )
+    return {
+        "num_target_faces": num_target_faces,
+        "no_texture": bool(no_texture) if no_texture is not None else False,
+        "do_quadrification": (bool(do_quadrification) if do_quadrification is not None else False),
+        "create_lod": lod,
+    }
+
+
+def extract_model_params(params: dict[str, object]) -> dict[str, object]:
+    """Берёт разрешённые параметры модели из job.params."""
+    result: dict[str, object] = {}
+    for key in (
+        "num_target_faces",
+        "no_texture",
+        "do_quadrification",
+        "create_lod",
+    ):
+        if key in params:
+            result[key] = params[key]
+    return result
+
+
 def generate_3d_from_image(
     config: RudalleConfig,
     image_base64: str,
     image_ext: str,
     trace_id: str,
     prompt: str = "",
+    model_params_override: dict[str, object] | None = None,
 ) -> bytes:
     """Создаёт 3D-модель по изображению и возвращает GLB либо OBJ fallback."""
     ext = image_ext.strip().lower().lstrip(".")
@@ -189,16 +232,19 @@ def generate_3d_from_image(
         if not separator:
             raise ValueError("Некорректный data URL изображения")
 
+    model_params: dict[str, object] = {
+        "no_texture": False,
+        "do_quadrification": False,
+        "create_lod": 0,
+        "num_target_faces": config.num_target_faces,
+    }
+    validated = _validate_model_params(model_params_override or {}, config.num_target_faces)
+    model_params.update(validated)
     payload: dict[str, object] = {
         "trace_id": trace_id,
         "mode": "xr:image_to_3d",
         "files": [{"type": "image", "ext": ext, "content": content}],
-        "model_params": {
-            "no_texture": False,
-            "do_quadrification": False,
-            "create_lod": 0,
-            "num_target_faces": config.num_target_faces,
-        },
+        "model_params": model_params,
     }
     query = prompt.strip()
     if query:
@@ -207,8 +253,21 @@ def generate_3d_from_image(
     return _poll_for_result(config, _post_generate(config, payload))
 
 
-def generate_3d(config: RudalleConfig, prompt: str, trace_id: str) -> bytes:
+def generate_3d(
+    config: RudalleConfig,
+    prompt: str,
+    trace_id: str,
+    model_params_override: dict[str, object] | None = None,
+) -> bytes:
     """Создаёт 3D-задачу, ожидает результат и скачивает GLB либо OBJ fallback."""
+    model_params: dict[str, object] = {
+        "no_texture": False,
+        "do_quadrification": False,
+        "create_lod": 0,
+        "num_target_faces": config.num_target_faces,
+    }
+    validated = _validate_model_params(model_params_override or {}, config.num_target_faces)
+    model_params.update(validated)
     submitted = _post_json(
         config,
         "v3/client/generate",
@@ -216,12 +275,7 @@ def generate_3d(config: RudalleConfig, prompt: str, trace_id: str) -> bytes:
             "trace_id": trace_id,
             "mode": "xr:3d",
             "query": prompt,
-            "model_params": {
-                "no_texture": False,
-                "do_quadrification": False,
-                "create_lod": 0,
-                "num_target_faces": config.num_target_faces,
-            },
+            "model_params": model_params,
         },
     )
     query_id = submitted.get("query_id")

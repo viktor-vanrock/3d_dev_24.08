@@ -104,6 +104,10 @@ export function GenerateScreen({
   const [paramsOpen, setParamsOpen] = useState(false);
   const [targetSizeMm, setTargetSizeMm] = useState("");
   const [layerHeightMm, setLayerHeightMm] = useState("");
+  const [numTargetFaces, setNumTargetFaces] = useState(50_000);
+  const [noTexture, setNoTexture] = useState(false);
+  const [doQuadrification, setDoQuadrification] = useState(false);
+  const [createLod, setCreateLod] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [inlineError, setInlineError] = useState<string | null>(null);
   const [active, setActive] = useState<Generation | null>(null);
@@ -188,6 +192,10 @@ export function GenerateScreen({
     setBranch(mode === "text" ? "rudalle" : "rudalle_image");
     setInlineError(null);
     resetImage();
+    setNumTargetFaces(50_000);
+    setNoTexture(false);
+    setDoQuadrification(false);
+    setCreateLod(0);
   }
 
   async function selectImage(file: File | undefined) {
@@ -214,6 +222,14 @@ export function GenerateScreen({
   }
 
   function resolveParams(forBranch: CreatableGenerationBranch): Record<string, unknown> | undefined {
+    if (forBranch === "rudalle" || forBranch === "rudalle_image") {
+      return {
+        num_target_faces: numTargetFaces,
+        no_texture: noTexture,
+        do_quadrification: doQuadrification,
+        create_lod: createLod,
+      };
+    }
     if (forBranch === "openscad" && targetSizeMm.trim()) {
       const value = Number(targetSizeMm);
       if (Number.isFinite(value) && value > 0) return { target_size_mm: value };
@@ -241,7 +257,7 @@ export function GenerateScreen({
     const result = await createGeneration({
       branch: usedBranch,
       prompt: usedPrompt,
-      params: usedBranch === "rudalle_image" ? { s3_key: s3Key } : resolveParams(usedBranch),
+      params: usedBranch === "rudalle_image" ? { s3_key: s3Key, ...resolveParams(usedBranch) } : resolveParams(usedBranch),
     });
     setSubmitting(false);
     if ("error" in result) {
@@ -435,7 +451,7 @@ export function GenerateScreen({
 
             {inlineError && !active ? <div className="generateInlineError">{inlineError}</div> : null}
 
-            {!busy && branch !== "kzd" && branch !== "rudalle_image" ? (
+            {!busy && branch !== "kzd" ? (
               <button
                 type="button"
                 className="generateParamsToggle pressable"
@@ -449,8 +465,42 @@ export function GenerateScreen({
               </button>
             ) : null}
 
-            {paramsOpen && branch !== "kzd" && branch !== "rudalle_image" ? (
+            {paramsOpen && branch !== "kzd" ? (
               <div id="generate-extra-params" className="generateParamsPanel">
+                {branch === "rudalle" || branch === "rudalle_image" ? (
+                  <>
+                    <label className="generateParamField">
+                      Детализация модели
+                      <select value={numTargetFaces} onChange={(event) => setNumTargetFaces(Number(event.target.value))} disabled={busy}>
+                        <option value={10_000}>Низкая — 10 000 полигонов</option>
+                        <option value={50_000}>Стандарт — 50 000 полигонов</option>
+                        <option value={100_000}>Высокая — 100 000 полигонов</option>
+                        <option value={200_000}>Максимум — 200 000 полигонов</option>
+                      </select>
+                    </label>
+                    <label className="generateParamField">
+                      <span>
+                        <input type="checkbox" checked={noTexture} onChange={(event) => setNoTexture(event.target.checked)} disabled={busy} /> Без текстуры
+                      </span>
+                      <small>Генерировать модель без цветов и текстур</small>
+                    </label>
+                    <label className="generateParamField">
+                      <span>
+                        <input type="checkbox" checked={doQuadrification} onChange={(event) => setDoQuadrification(event.target.checked)} disabled={busy} /> Квадрификация
+                      </span>
+                      <small>Преобразовать треугольники в четырёхугольники</small>
+                    </label>
+                    <label className="generateParamField">
+                      LOD копии
+                      <select value={createLod} onChange={(event) => setCreateLod(Number(event.target.value))} disabled={busy}>
+                        <option value={0}>Не создавать</option>
+                        <option value={1}>1 копия</option>
+                        <option value={2}>2 копии</option>
+                      </select>
+                      <small>Упрощённые копии для разных дистанций</small>
+                    </label>
+                  </>
+                ) : null}
                 {branch === "openscad" ? (
                   <label className="generateParamField">
                     Целевой размер, мм
