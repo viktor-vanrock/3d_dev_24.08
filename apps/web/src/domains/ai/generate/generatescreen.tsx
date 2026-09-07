@@ -34,6 +34,7 @@ import "./generate.css";
 */
 
 const POLL_INTERVAL_MS = 2500;
+const HISTORY_PAGE_SIZE = 10;
 // apps/api/src/generations/contract.ts PROMPT_MAX_LENGTH — сервер источник истины, здесь только
 // для maxLength инпута и текста ошибки, если сервер не прислал limit явно.
 const PROMPT_MAX_LENGTH = 2000;
@@ -112,6 +113,7 @@ export function GenerateScreen({
   const [inlineError, setInlineError] = useState<string | null>(null);
   const [active, setActive] = useState<Generation | null>(null);
   const [history, setHistory] = useState<Generation[] | null>(null);
+  const [historyPage, setHistoryPage] = useState(0);
   const activeRef = useRef<Generation | null>(null);
   const generationOutcomeIds = useRef(new Set<string>());
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -119,7 +121,10 @@ export function GenerateScreen({
   const swipe = useSectionSwipeNav(section, onSectionChange);
 
   useEffect(() => {
-    void listGenerations().then(setHistory);
+    void listGenerations().then((generations) => {
+      setHistory(generations);
+      setHistoryPage(0);
+    });
   }, []);
 
   // Второй вход (Дом → hero-инпут, docs/design/generation.md §1): генерация уже создана,
@@ -155,7 +160,10 @@ export function GenerateScreen({
   // Новая запись в истории по завершении job'а.
   useEffect(() => {
     if (active?.status === "done" || active?.status === "error") {
-      void listGenerations().then(setHistory);
+      void listGenerations().then((generations) => {
+        setHistory(generations);
+        setHistoryPage(0);
+      });
     }
   }, [active?.status]);
 
@@ -177,6 +185,11 @@ export function GenerateScreen({
   const SelectedBranchIcon = BRANCH_META[branch].icon;
   const submitLabel = active?.status === "error" ? "Повторить" : busy ? "Генерация…" : "Сгенерировать";
   const isKandinsky = branch === "rudalle" || branch === "rudalle_image";
+  const historyPageCount = history ? Math.ceil(history.length / HISTORY_PAGE_SIZE) : 0;
+  const visibleHistory = history?.slice(
+    historyPage * HISTORY_PAGE_SIZE,
+    (historyPage + 1) * HISTORY_PAGE_SIZE,
+  );
 
   function resetImage() {
     setImageFile(null);
@@ -300,7 +313,7 @@ export function GenerateScreen({
         onPointerUp={swipe.onPointerUp}
         onPointerCancel={swipe.onPointerCancel}
       >
-        <Heading accent="по тексту">Генерация</Heading>
+        <Heading size='md' accent="по тексту и изображению">Генерация</Heading>
 
         {collapsed && active ? (
           <div className="generateCompactStrip">
@@ -461,7 +474,7 @@ export function GenerateScreen({
                 aria-expanded={paramsOpen}
                 aria-controls="generate-extra-params"
               >
-                Дополнительно <span aria-hidden="true" className="generateParamsChevron">⌄</span>
+                Дополнительно <span aria-hidden="true" className="generateParamsChevron">v</span>
               </button>
             ) : null}
 
@@ -541,7 +554,7 @@ export function GenerateScreen({
           <section className="generateHistory">
             <Eyebrow>История</Eyebrow>
             <div className="generateHistoryList stagger-reveal">
-              {history.map((row, index) => (
+              {visibleHistory?.map((row, index) => (
                 <button
                   key={row.id}
                   type="button"
@@ -558,6 +571,29 @@ export function GenerateScreen({
                 </button>
               ))}
             </div>
+            {historyPageCount > 1 ? (
+              <nav className="generateHistoryPagination" aria-label="Страницы истории генераций">
+                <button
+                  type="button"
+                  className="generateHistoryPageButton pressable"
+                  onClick={() => setHistoryPage((page) => Math.max(0, page - 1))}
+                  disabled={historyPage === 0}
+                >
+                  Назад
+                </button>
+                <span className="generateHistoryPageInfo">
+                  Страница {historyPage + 1} из {historyPageCount}
+                </span>
+                <button
+                  type="button"
+                  className="generateHistoryPageButton pressable"
+                  onClick={() => setHistoryPage((page) => Math.min(historyPageCount - 1, page + 1))}
+                  disabled={historyPage === historyPageCount - 1}
+                >
+                  Далее
+                </button>
+              </nav>
+            ) : null}
           </section>
         ) : null}
       </main>
