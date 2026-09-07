@@ -560,10 +560,8 @@ function GenerationPreview({ generation, onAgain }: { generation: Generation; on
         : generation.branch === "hueforge"
           ? "Скачать архив"
           : "Скачать PNG";
-  // kzd — чертёж, "модель" каталога сырую картинку не принимает (apps/api/src/generations/catalog-draft.ts
-  // DRAFT_SOURCE_FORMAT), кнопку не показываем вовсе, а не даём её нажать с ошибкой.
-  // TODO: показать после добавления поддержки GLB в catalog-draft
-  const canCreateCard = generation.branch !== "kzd" && generation.branch !== "rudalle";
+  // kzd — чертёж, а RuDALL-E возвращает GLB; каталог пока не принимает эти форматы.
+  const cardCreationUnsupported = generation.branch === "kzd" || generation.branch === "rudalle" || generation.branch === "rudalle_image";
 
   async function createCard() {
     if (creatingDraft) return;
@@ -614,11 +612,14 @@ function GenerationPreview({ generation, onAgain }: { generation: Generation; on
         <button type="button" className="modelGlassBtn pressable" onClick={onAgain}>
           Сгенерировать ещё
         </button>
-        {canCreateCard ? (
-          <button type="button" className="modelGlassBtn pressable" onClick={() => void createCard()} disabled={creatingDraft}>
-            <CardIcon /> {creatingDraft ? "Создаём…" : "Создать карточку"}
-          </button>
-        ) : null}
+        <button
+          type="button"
+          className="modelGlassBtn pressable"
+          onClick={() => void createCard()}
+          disabled={creatingDraft || cardCreationUnsupported}
+        >
+          <CardIcon /> {creatingDraft ? "Создаём…" : "Создать карточку"}
+        </button>
       </div>
     </div>
   );
