@@ -93,7 +93,7 @@ export function GenerateScreen({
   genId?: string;
 }) {
   const overlay = useOverlay();
-  const [branch, setBranch] = useState<CreatableGenerationBranch>("openscad");
+  const [branch, setBranch] = useState<CreatableGenerationBranch>("rudalle");
   const [prompt, setPrompt] = useState("");
   const [kandiMode, setKandiMode] = useState<"text" | "image">("text");
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -300,12 +300,13 @@ export function GenerateScreen({
               </div>
             ) : (
               <div className="generateBranchRow" aria-label="Режим генерации">
-                {GENERATION_BRANCHES.filter((b) => b !== "rudalle_image").map((b) => {
+                {GENERATION_BRANCHES.filter((b) => b !== "rudalle_image").sort((a, b) => (a === "rudalle" ? -1 : b === "rudalle" ? 1 : 0)).map((b) => {
                   const BranchIcon = BRANCH_META[b].icon;
                   return (
                     <SelectionTile
                       key={b}
                       selected={branch === b || (b === "rudalle" && branch === "rudalle_image")}
+                      disabled={b !== "rudalle"}
                       onClick={() => {
                         if (b === "rudalle") changeKandiMode("text");
                         else setBranch(b);
