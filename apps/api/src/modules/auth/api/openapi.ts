@@ -11,7 +11,7 @@ import {
   ApiUnauthorizedResponse,
 } from "@nestjs/swagger";
 import { ApiErrorEnvelopeDto } from "../../../nest/openapi/error-envelope.dto.ts";
-import { DevLoginResponseDto, OkResponseDto, PasswordLoginResponseDto, SessionResponseDto } from "./auth.dto.ts";
+import { DevAvailabilityResponseDto, DevLoginResponseDto, OkResponseDto, PasswordLoginResponseDto, SessionResponseDto } from "./auth.dto.ts";
 
 const errors = [
   ApiBadRequestResponse({ type: ApiErrorEnvelopeDto }),
@@ -98,4 +98,8 @@ export function ApiDevLoginOperation(): MethodDecorator {
     ApiNotFoundResponse({ type: ApiErrorEnvelopeDto }),
     ApiInternalServerErrorResponse({ type: ApiErrorEnvelopeDto }),
   );
+}
+
+export function ApiDevAvailabilityOperation(): MethodDecorator {
+  return applyDecorators(ApiTags("auth"), ApiOperation({ summary: "Check whether the developer login bypass is enabled" }), ApiOkResponse({ type: DevAvailabilityResponseDto }));
 }

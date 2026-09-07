@@ -120,6 +120,43 @@
   gap: 8px;
 }
 
+.devBypassSection {
+  margin-top: 24px;
+}
+
+.devBypassDivider {
+  margin-bottom: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border);
+  color: var(--text-dim);
+  font-size: 11px;
+  text-align: center;
+}
+
+.devBypassButton {
+  width: 100%;
+  padding: 8px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+}
+
+.devBypassButton:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.devBypassError {
+  margin: 4px 0 0;
+  color: var(--accent-danger);
+  font-size: 12px;
+  text-align: center;
+}
+
 .emailLoginForm {
   display: flex;
   flex-direction: column;

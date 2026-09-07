@@ -7,6 +7,7 @@ export {
   startEmailAuth,
   verifyEmailAuth,
   passwordLogin,
+  devLogin,
   updateProfile,
   uploadAvatarPhoto,
   resolveAvatarUrl,
@@ -17,6 +18,7 @@ export {
 } from "./session.ts";
 
 export { AuthGate } from "./authgate.tsx";
+export { useDevMode } from "./useDevMode.ts";
 export { isClosedDev } from "./closeddev.ts";
 export { useGuestLogin } from "./guestlogin.tsx";
 export { GuestIntentResumer } from "./guestresume.tsx";

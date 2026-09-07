@@ -75,6 +75,11 @@ export function passwordLogin(username: string, password: string) {
   return postJson("/auth/password", { username, password });
 }
 
+export async function devLogin(): Promise<void> {
+  const response = await apiFetch("/auth/dev", { method: "POST", credentials: "include" });
+  if (!response.ok) throw new Error("dev login failed");
+}
+
 // Правка профиля / подтверждение хендла (MF-355, Фаза 2; био/сайт/контакты — MF-357, Фаза 1
 // эпика MF-15): PATCH /me, apps/api/src/profile/profile.ts. Ошибки — invalid_username/
 // invalid_display_name/invalid_avatar_url/invalid_bio/invalid_website_url/invalid_contacts

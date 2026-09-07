@@ -1,10 +1,12 @@
-import { useRef, type CSSProperties } from "react";
+import { useRef, useState, type CSSProperties } from "react";
 import { useOverlay } from "@platform/overlay";
 import { EmailLogin } from "../../pages/emaillogin.tsx";
 import { MethodIcon } from "../../pages/methodicon.tsx";
 import { Button } from "@shared/ui";
 import { clearGuestIntent, saveGuestIntent, type GuestIntent } from "./guestintent.ts";
-import { plagIdStartUrl } from "./session.ts";
+import { devLogin, plagIdStartUrl } from "./session.ts";
+import { useDevMode } from "./useDevMode.ts";
+import "../../pages/login.css";
 
 // Промпт входа поверх контента (feed.md §3/§4, marketplace.full.md §5.2/5.3, model.card.v3.md §4.4,
 // home.scenario.md §3.5/§6/§8, projects.page.md §11.4) — overlay.modal(), не редирект на
@@ -29,6 +31,19 @@ export function useGuestLogin(): (intent?: GuestIntent) => void {
 }
 
 function GuestLoginPromptBody() {
+  const isDevMode = useDevMode();
+  const [devError, setDevError] = useState("");
+
+  async function handleDevLogin() {
+    setDevError("");
+    try {
+      await devLogin();
+      window.location.reload();
+    } catch {
+      setDevError("Dev вход недоступен");
+    }
+  }
+
   return (
     <div style={bodyStyle}>
       <EmailLogin />
@@ -40,6 +55,15 @@ function GuestLoginPromptBody() {
       <Button variant="secondary" href={plagIdStartUrl()} icon={<MethodIcon provider="plagid" />}>
         PlagID
       </Button>
+      {isDevMode ? (
+        <div className="devBypassSection">
+          <div className="devBypassDivider">только для разработки</div>
+          <button type="button" className="devBypassButton" onClick={() => void handleDevLogin()}>
+            Войти как разработчик
+          </button>
+          {devError ? <p className="devBypassError" role="alert">{devError}</p> : null}
+        </div>
+      ) : null}
     </div>
   );
 }

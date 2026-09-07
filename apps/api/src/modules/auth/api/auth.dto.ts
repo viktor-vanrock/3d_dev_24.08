@@ -62,6 +62,11 @@ export class DevLoginResponseDto extends OkResponseDto {
   declare readonly user: AuthUserDto;
 }
 
+export class DevAvailabilityResponseDto {
+  @ApiProperty({ type: Boolean })
+  declare readonly available: boolean;
+}
+
 export class PasswordLoginResponseDto extends DevLoginResponseDto {}
 
 export class SessionUserDto extends AuthUserDto {
