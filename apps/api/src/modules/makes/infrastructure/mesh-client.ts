@@ -22,6 +22,19 @@ export function meshBaseUrl(): string {
   return process.env.MESH_HTTP_URL ?? "http://127.0.0.1:3101";
 }
 
+export async function convertGlbToStl(glbBytes: Buffer): Promise<Buffer> {
+  const form = new FormData();
+  form.append("file", new Blob([glbBytes], { type: "model/gltf-binary" }), "model.glb");
+  const response = await fetch(`${meshBaseUrl()}/convert-glb-to-stl`, {
+    method: "POST",
+    body: form,
+  });
+  if (!response.ok) {
+    throw new Error(`Mesh GLB→STL: ${response.status} ${await response.text()}`);
+  }
+  return Buffer.from(await response.arrayBuffer());
+}
+
 interface MeshErrorDetail {
   error?: string;
   message?: string;

@@ -27,6 +27,12 @@ export interface GenerationsExternalPort {
     readonly modelId: string;
     readonly role: string;
   }): Promise<{ readonly s3Key: string; readonly sizeBytes: number; readonly checksum: Buffer } | null>;
+  downloadGenerationArtifact(generationKey: string): Promise<Buffer>;
+  uploadConvertedArtifact(
+    modelId: string,
+    bytes: Buffer,
+    ext: string,
+  ): Promise<{ readonly s3Key: string; readonly checksum: Buffer; readonly sizeBytes: number }>;
   assertDownloadRateLimit(request: Request, userId: UserId): Promise<void>;
   emitStarted(input: {
     readonly generationId: GenerationId;

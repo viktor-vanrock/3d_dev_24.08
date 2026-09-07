@@ -647,8 +647,8 @@ function GenerationPreview({ generation, onAgain }: { generation: Generation; on
         : generation.branch === "hueforge"
           ? "Скачать архив"
           : "Скачать PNG";
-  // kzd — чертёж, а RuDALL-E возвращает GLB; каталог пока не принимает эти форматы.
-  const cardCreationUnsupported = generation.branch === "kzd" || generation.branch === "rudalle" || generation.branch === "rudalle_image";
+  // kzd — чертёж: каталог не принимает PNG как исходный файл модели.
+  const cardCreationUnsupported = generation.branch === "kzd";
 
   async function createCard() {
     if (creatingDraft) return;

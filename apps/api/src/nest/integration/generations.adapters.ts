@@ -57,6 +57,22 @@ export class GenerationsExternalAdapter implements GenerationsExternalPort {
     await putModelObjectStream(s3Key, Readable.from(body), generationAssetContentType(input.generationKey));
     return { s3Key, sizeBytes: body.length, checksum: createHash("sha256").update(body).digest() };
   }
+  async downloadGenerationArtifact(generationKey: string): Promise<Buffer> {
+    const object = await getGenerationObjectStream(generationKey);
+    if (object === null) throw new Error(`generation artifact not found: ${generationKey}`);
+    const chunks: Buffer[] = [];
+    for await (const chunk of object.body as AsyncIterable<Buffer>) chunks.push(chunk);
+    return Buffer.concat(chunks);
+  }
+  async uploadConvertedArtifact(modelId: string, bytes: Buffer, ext: string) {
+    const s3Key = modelObjectKey(modelId, "source", ext);
+    await putModelObjectStream(s3Key, Readable.from(bytes), generationAssetContentType(s3Key));
+    return {
+      s3Key,
+      checksum: createHash("sha256").update(bytes).digest(),
+      sizeBytes: bytes.length,
+    };
+  }
   assertDownloadRateLimit(request: Request, userId: UserId): Promise<void> {
     return assertNestRateLimit(request, "download", userId);
   }

@@ -11,7 +11,7 @@ export const MAKE_PROFILE_PORT = Symbol("MAKE_PROFILE_PORT");
 export const MAKE_STORAGE_PORT = Symbol("MAKE_STORAGE_PORT");
 export const MAKE_RATE_LIMIT_PORT = Symbol("MAKE_RATE_LIMIT_PORT");
 export const MAKE_FEED_SIGNAL_PORT = Symbol("MAKE_FEED_SIGNAL_PORT");
-export { meshBaseUrl } from "../infrastructure/mesh-client.ts";
+export { convertGlbToStl, meshBaseUrl } from "../infrastructure/mesh-client.ts";
 export { getMachineMakeStats, getMaterialMakeStats, getModelMakeStats, listMakesByMachine, listMakesByMaterial, topCombosForModel } from "../infrastructure/make-stats.ts";
 
 export interface MakesReadPort {
