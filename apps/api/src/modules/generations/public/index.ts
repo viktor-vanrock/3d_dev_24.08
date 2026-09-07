@@ -101,6 +101,7 @@ export interface GenerationHealthResponse {
 }
 export interface GenerationsPort {
   health(): Promise<GenerationHealthResponse>;
+  uploadRudalleImage(userId: UserId, file: { readonly buffer: Buffer; readonly mimetype: string; readonly originalname: string; readonly truncated?: boolean }): Promise<{ readonly s3_key: string }>;
   createScan(userId: UserId): { readonly id: string };
   uploadScanPhoto(userId: UserId, scanId: string, file: { readonly buffer: Buffer; readonly truncated?: boolean }): Promise<{ readonly photos: number }>;
   uploadScanManifest(userId: UserId, scanId: string, body: Record<string, unknown>): Promise<{ readonly photos: number }>;

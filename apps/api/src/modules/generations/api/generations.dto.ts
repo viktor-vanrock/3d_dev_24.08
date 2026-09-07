@@ -60,6 +60,9 @@ export class ScanCreatedResponseDto {
 export class ScanPhotosResponseDto {
   @ApiProperty({ type: Number, minimum: 0 }) declare photos: number;
 }
+export class RudalleImageUploadResponseDto {
+  @ApiProperty({ type: String }) declare s3_key: string;
+}
 
 export class GenerationPreviewShotDto {
   @ApiProperty({ type: String, enum: CONCEPT_ANGLES }) declare angle: ConceptAngle;

@@ -1373,6 +1373,16 @@
   },
   {
     "method": "POST",
+    "path": "/generations/upload-image",
+    "domain": "generations",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "modules/generations/api/generations.controller.ts:uploadRudalleImage",
+    "sampleParams": {}
+  },
+  {
+    "method": "POST",
     "path": "/scans",
     "domain": "generations",
     "authMode": "authed",

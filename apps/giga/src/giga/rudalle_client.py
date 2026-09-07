@@ -123,8 +123,7 @@ def _download(url: str) -> bytes:
             continue
         if response.status_code in RETRY_STATUS_CODES:
             last_error = GenerationError(
-                f"RuDALL-E model download: {response.status_code} "
-                f"{response.text[:300]}"
+                f"RuDALL-E model download: {response.status_code} {response.text[:300]}"
             )
             continue
         try:
@@ -139,6 +138,73 @@ def _download(url: str) -> bytes:
     raise GenerationError(
         f"RuDALL-E: не удалось скачать 3D-файл за {RUDALLE_MAX_RETRIES + 1} попыток: {last_error}"
     )
+
+
+def _post_generate(config: RudalleConfig, payload: dict[str, object]) -> str:
+    """Создаёт задачу RuDALL-E и возвращает её идентификатор."""
+    submitted = _post_json(config, "v3/client/generate", payload)
+    query_id = submitted.get("query_id")
+    if not isinstance(query_id, str) or not query_id:
+        raise GenerationError("RuDALL-E: generate не вернул query_id")
+    return query_id
+
+
+def _poll_for_result(config: RudalleConfig, query_id: str) -> bytes:
+    """Ждёт готовности задачи и скачивает GLB либо OBJ fallback из ``results``."""
+    deadline = time.monotonic() + config.timeout_seconds
+    while True:
+        if time.monotonic() >= deadline:
+            raise GenerationError(f"RuDALL-E: генерация {query_id} не уложилась в timeout")
+        result = _post_json(config, "v3/client/get_result", {"query_id": query_id})
+        status = result.get("status")
+        if status == "ready":
+            return _download(_result_url(result))
+        if status == "cancelled":
+            reason = result.get("cancel_reason")
+            raise GenerationError(
+                f"RuDALL-E отменил генерацию {query_id}: {reason or 'без причины'}"
+            )
+        if status != "pending":
+            raise GenerationError(f"RuDALL-E вернул неизвестный статус для {query_id}: {status!r}")
+        time.sleep(min(config.poll_interval_seconds, max(deadline - time.monotonic(), 0)))
+
+
+def generate_3d_from_image(
+    config: RudalleConfig,
+    image_base64: str,
+    image_ext: str,
+    trace_id: str,
+    prompt: str = "",
+) -> bytes:
+    """Создаёт 3D-модель по изображению и возвращает GLB либо OBJ fallback."""
+    ext = image_ext.strip().lower().lstrip(".")
+    if ext == "jpeg":
+        ext = "jpg"
+    if ext not in {"jpg", "png", "webp"}:
+        raise ValueError("RuDALL-E image_to_3d поддерживает только jpg, png или webp")
+
+    content = image_base64
+    if content.startswith("data:"):
+        _prefix, separator, content = content.partition(",")
+        if not separator:
+            raise ValueError("Некорректный data URL изображения")
+
+    payload: dict[str, object] = {
+        "trace_id": trace_id,
+        "mode": "xr:image_to_3d",
+        "files": [{"type": "image", "ext": ext, "content": content}],
+        "model_params": {
+            "no_texture": False,
+            "do_quadrification": False,
+            "create_lod": 0,
+            "num_target_faces": config.num_target_faces,
+        },
+    }
+    query = prompt.strip()
+    if query:
+        payload["query"] = query
+
+    return _poll_for_result(config, _post_generate(config, payload))
 
 
 def generate_3d(config: RudalleConfig, prompt: str, trace_id: str) -> bytes:

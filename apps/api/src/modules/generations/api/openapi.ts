@@ -12,6 +12,7 @@ import {
   GenerationsResponseDto,
   ScanCreatedResponseDto,
   ScanPhotosResponseDto,
+  RudalleImageUploadResponseDto,
 } from "./generations.dto.ts";
 
 const JSON_ERROR_CONTENT = { "application/json": { schema: { $ref: getSchemaPath(ApiErrorEnvelopeDto) } } };
@@ -26,7 +27,7 @@ export function ApiGenerationsOperation(
     readonly binary?: boolean;
     readonly replay?: boolean;
     readonly accepted?: boolean;
-    readonly response?: "health" | "scan" | "photos" | "generation" | "generations" | "concepts" | "concept-generation" | "catalog-draft";
+    readonly response?: "health" | "scan" | "photos" | "upload-image" | "generation" | "generations" | "concepts" | "concept-generation" | "catalog-draft";
   } = {},
 ): MethodDecorator {
   const responseType =
@@ -36,6 +37,8 @@ export function ApiGenerationsOperation(
         ? ScanCreatedResponseDto
         : options.response === "photos"
           ? ScanPhotosResponseDto
+          : options.response === "upload-image"
+            ? RudalleImageUploadResponseDto
           : options.response === "generations"
             ? GenerationsResponseDto
             : options.response === "concepts"
