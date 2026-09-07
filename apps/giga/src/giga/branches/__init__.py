@@ -17,6 +17,7 @@ from .hueforge import run_hueforge
 from .kzd import run_kzd
 from .openscad import run_openscad
 from .rudalle import run_rudalle
+from .rudalle_image import run_rudalle_image
 from .scan import run_scan
 from .trellis import run_trellis
 
@@ -30,6 +31,7 @@ BRANCHES: dict[str, Callable[[GenerationJob, ProgressReporter], GenerationResult
     # настоящего предмета по десяткам его фотографий (MF-2075).
     "scan": run_scan,
     "rudalle": run_rudalle,
+    "rudalle_image": run_rudalle_image,
 }
 
 

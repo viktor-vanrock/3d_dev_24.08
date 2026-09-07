@@ -10,7 +10,7 @@ import { apiFetch, API_URL } from "@shared/api";
 // `generation.branch` с сервера может прийти как "trellis"; в рантайме generatescreen.tsx падал
 // на `BRANCH_META[generation.branch].icon` для истории с trellis-генерацией (TypeError: Cannot
 // read properties of undefined) — не гипотетически, воспроизведено вживую на dev.3mf.tech.
-export const GENERATION_BRANCHES = ["openscad", "kzd", "hueforge", "trellis", "rudalle"] as const;
+export const GENERATION_BRANCHES = ["openscad", "kzd", "hueforge", "trellis", "rudalle", "rudalle_image"] as const;
 export type CreatableGenerationBranch = (typeof GENERATION_BRANCHES)[number];
 export type GenerationBranch = CreatableGenerationBranch | "concepts";
 
@@ -83,6 +83,27 @@ export interface CreateGenerationError {
 }
 
 export type CreateGenerationResult = { generation: Generation } | { error: CreateGenerationError };
+
+export async function uploadRudalleImage(file: File): Promise<{ s3_key: string } | { error: string }> {
+  const form = new FormData();
+  form.append("file", file);
+  try {
+    const response = await apiFetch(`/generations/upload-image`, {
+      method: "POST",
+      credentials: "include",
+      body: form,
+    });
+    if (!response.ok) {
+      const body = (await response.json().catch(() => null)) as { error?: { message?: string } } | null;
+      return { error: body?.error?.message ?? "Не удалось загрузить изображение" };
+    }
+    const body = (await response.json()) as { s3_key?: unknown };
+    if (typeof body.s3_key !== "string" || !body.s3_key) return { error: "Сервер не вернул ключ изображения" };
+    return { s3_key: body.s3_key };
+  } catch {
+    return { error: "Не удалось загрузить изображение. Проверьте связь и попробуйте снова." };
+  }
+}
 
 export async function createGeneration(input: {
   branch: CreatableGenerationBranch;

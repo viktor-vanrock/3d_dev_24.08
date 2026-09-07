@@ -13,6 +13,12 @@ interface UploadedScanFile {
   readonly buffer: Buffer;
   readonly truncated?: boolean;
 }
+interface UploadedRudalleImage {
+  readonly buffer: Buffer;
+  readonly mimetype: string;
+  readonly originalname: string;
+  readonly truncated?: boolean;
+}
 function user(request: RequestWithSession): UserIdType {
   const session = request[SESSION_USER];
   if (session === undefined) throw new Error("authenticated session missing");
@@ -33,6 +39,14 @@ export class GenerationsController {
 
   @Get("generations/health") @Public() @ApiGenerationsOperation("Generation branch availability", { response: "health" }) health() {
     return this.generations.health();
+  }
+  @Post("generations/upload-image")
+  @HttpCode(200)
+  @UseInterceptors(FileInterceptor("file", { limits: { files: 1 } }))
+  @ApiGenerationsOperation("Upload Image to 3D source", { multipart: true, response: "upload-image" })
+  uploadRudalleImage(@Req() request: RequestWithSession, @UploadedFile() file: UploadedRudalleImage | undefined) {
+    if (file === undefined) return this.missingFile();
+    return this.generations.uploadRudalleImage(user(request), file);
   }
   @Post("scans") @ApiGenerationsOperation("Create scan", { status: 201, response: "scan" }) createScan(@Req() request: RequestWithSession) {
     return this.generations.createScan(user(request));

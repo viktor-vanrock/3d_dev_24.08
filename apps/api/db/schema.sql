@@ -1347,7 +1347,7 @@ CREATE TABLE public.generations (
     attempts integer DEFAULT 0 NOT NULL,
     lease_expires_at timestamp with time zone,
     CONSTRAINT generations_attempts_check CHECK ((attempts >= 0)),
-    CONSTRAINT generations_branch_check CHECK ((branch = ANY (ARRAY['openscad'::text, 'kzd'::text, 'hueforge'::text, 'trellis'::text, 'concepts'::text, 'scan'::text, 'rudalle'::text]))),
+    CONSTRAINT generations_branch_check CHECK ((branch = ANY (ARRAY['openscad'::text, 'kzd'::text, 'hueforge'::text, 'trellis'::text, 'concepts'::text, 'scan'::text, 'rudalle'::text, 'rudalle_image'::text]))),
     CONSTRAINT generations_eta_seconds_check CHECK (((eta_seconds IS NULL) OR (eta_seconds >= 0))),
     CONSTRAINT generations_lease_generation_check CHECK ((lease_generation >= 0)),
     CONSTRAINT generations_phase_check CHECK (((phase IS NULL) OR (phase = ANY (ARRAY['queued'::text, 'loading'::text, 'draft'::text, 'geometry'::text, 'validation'::text, 'export'::text])))),

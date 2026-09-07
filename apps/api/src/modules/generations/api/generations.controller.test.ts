@@ -42,6 +42,7 @@ const generation: GenerationResponse = {
 };
 const fakeGenerations: GenerationsPort = {
   health: () => Promise.resolve({ window_hours: 24, branches: [] }),
+  uploadRudalleImage: () => Promise.resolve({ s3_key: "uploads/images/test.jpg" }),
   createScan: () => ({ id: "scan" }),
   uploadScanPhoto: () => Promise.resolve({ photos: 1 }),
   uploadScanManifest: () => Promise.resolve({ photos: 1 }),
@@ -130,12 +131,12 @@ describe("Nest generations route migration", () => {
     delete process.env.JWT_SECRET;
   });
 
-  it("implements exactly the 15 authoritative generation routes", () => {
+  it("implements exactly the 16 authoritative generation routes", () => {
     const expected = routeManifest
       .filter((route) => route.domain === "generations")
       .map((route) => `${route.method} ${route.path}`)
       .sort();
-    expect(expected).toHaveLength(15);
+    expect(expected).toHaveLength(16);
     expect(routes()).toEqual(expected);
   });
   it("keeps concept reads open even without a session", async () => {

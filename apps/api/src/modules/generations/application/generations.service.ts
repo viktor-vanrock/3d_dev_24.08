@@ -22,6 +22,7 @@ import {
   isUuid,
   MAX_SCAN_PHOTO_BYTES,
   MAX_SCAN_PHOTOS,
+  MAX_RUDALLE_IMAGE_BYTES,
   MIN_SCAN_PHOTOS,
   normalizeConceptQuery,
   normalizeIdempotencyKey,
@@ -89,6 +90,27 @@ export class GenerationsService implements GenerationsPort {
   async health(): Promise<GenerationHealthResponse> {
     const rows = await this.repository.healthRows();
     return { window_hours: HEALTH_WINDOW_HOURS, branches: ["openscad", "trellis", "concepts", "kzd", "hueforge", "scan"].map((branch) => branchHealth(branch, rows)) };
+  }
+
+  async uploadRudalleImage(
+    _userId: UserId,
+    file: { readonly buffer: Buffer; readonly mimetype: string; readonly originalname: string; readonly truncated?: boolean },
+  ): Promise<{ readonly s3_key: string }> {
+    const extensions = {
+      "image/jpeg": "jpg",
+      "image/png": "png",
+      "image/webp": "webp",
+    } as const;
+    const ext = extensions[file.mimetype as keyof typeof extensions];
+    if (ext === undefined) throw new HttpException("Поддерживаются только JPG, PNG, WebP", 400);
+    if (file.truncated === true || file.buffer.length > MAX_RUDALLE_IMAGE_BYTES) {
+      throw new HttpException("Файл слишком большой. Максимум 10 МБ", 400);
+    }
+    if (!this.external.storageConfigured()) fail(503);
+    const s3_key = `uploads/images/${randomUUID()}.${ext}`;
+    const stored = await this.external.putObject(s3_key, file.buffer, file.mimetype);
+    if (!stored) fail(503);
+    return { s3_key };
   }
 
   createScan(_userId: UserId) {
@@ -360,8 +382,9 @@ export class GenerationsService implements GenerationsPort {
   }): Promise<CreateOutcome> {
     if (!isGenerationBranch(input.branch)) fail(422);
     if (input.assistantOfferId !== null && !isUuid(input.assistantOfferId)) fail(422);
-    if (typeof input.prompt !== "string" || input.prompt.trim().length === 0) fail(422);
-    const prompt = input.prompt.trim();
+    const rawPrompt = input.branch === "rudalle_image" && input.prompt === undefined ? "" : input.prompt;
+    if (typeof rawPrompt !== "string" || (input.branch !== "rudalle_image" && rawPrompt.trim().length === 0)) fail(422);
+    const prompt = rawPrompt.trim();
     if (prompt.length > PROMPT_MAX_LENGTH) fail(413);
     if (isPromptBlocked(prompt)) fail(422);
     let params: GenerationParameters = {};

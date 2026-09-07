@@ -1,4 +1,5 @@
-import { plagIdStartUrl } from "@domains/access";
+import { devLogin, plagIdStartUrl, useDevMode } from "@domains/access";
+import { useState } from "react";
 import { ThemeToggle } from "@platform/theme";
 import { AuroraBackground, Button } from "@shared/ui";
 import { EmailLogin } from "./emaillogin.tsx";
@@ -16,6 +17,18 @@ const ERROR_MESSAGES: Record<string, string> = {
 export function LoginPage() {
   const error = new URLSearchParams(window.location.search).get("error");
   const errorMessage = error ? (ERROR_MESSAGES[error] ?? ERROR_MESSAGES.missing_token) : null;
+  const isDevMode = useDevMode();
+  const [devError, setDevError] = useState("");
+
+  async function handleDevLogin() {
+    setDevError("");
+    try {
+      await devLogin();
+      window.location.reload();
+    } catch {
+      setDevError("Dev вход недоступен");
+    }
+  }
 
   return (
     <main className="loginPage">
@@ -58,6 +71,16 @@ export function LoginPage() {
               PlagID
             </Button>
           </div>
+
+          {isDevMode ? (
+            <div className="devBypassSection">
+              <div className="devBypassDivider">только для разработки</div>
+              <button type="button" className="devBypassButton" onClick={() => void handleDevLogin()}>
+                Войти как разработчик
+              </button>
+              {devError ? <p className="devBypassError" role="alert">{devError}</p> : null}
+            </div>
+          ) : null}
 
         </section>
       </div>

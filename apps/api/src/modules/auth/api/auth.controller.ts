@@ -14,6 +14,7 @@ import { AuthService } from "../application/auth.service.ts";
 import { AuthSessionService } from "../application/session.service.ts";
 import { EmailStartDto, EmailVerifyDto, PasswordLoginDto, PlagIdCallbackQueryDto, PlagIdStartQueryDto } from "./auth.dto.ts";
 import {
+  ApiDevAvailabilityOperation,
   ApiDevLoginOperation,
   ApiEmailStartOperation,
   ApiEmailVerifyOperation,
@@ -31,6 +32,7 @@ const APP_CALLBACK_SCHEME = "ultradevice";
 const APP_INTENT_TTL_MS = 600 * 1000;
 const ANON_COOKIE_NAME = "portal_anon";
 const ANON_COOKIE_TTL_MS = 730 * 24 * 60 * 60 * 1000;
+const DEV_COOKIE_TTL_MS = 365 * 24 * 60 * 60 * 1000;
 const SBER_NOT_READY = "SberID пока недоступен: ждём Client ID/Secret от партнёрской регистрации на портале Сбер ID " + "(docs/epics/auth.triple.md § «Метод 3»)";
 
 function devBypassEnabled(config: ConfigService): boolean {
@@ -207,6 +209,16 @@ export class AuthController {
     return { ok: true, user: { id: user.id, username: user.username } };
   }
 
+  @Get("dev/available")
+  @Internal()
+  @HttpCode(200)
+  @ApiDevAvailabilityOperation()
+  devAvailable(@Res({ passthrough: true }) response: Response): { readonly available: boolean } {
+    const available = devBypassEnabled(this.config);
+    if (available) this.issueDevCookie(response);
+    return { available };
+  }
+
   private issueAnonCookie(response: Response, anonId: string): void {
     response.cookie(ANON_COOKIE_NAME, anonId, {
       domain: this.config.get<string>("COOKIE_DOMAIN") ?? ".3mf.tech",
@@ -215,6 +227,16 @@ export class AuthController {
       secure: this.config.get<string>("NODE_ENV") === "production",
       sameSite: "lax",
       maxAge: ANON_COOKIE_TTL_MS,
+    });
+  }
+
+  private issueDevCookie(response: Response): void {
+    response.cookie("is_dev", "true", {
+      path: "/",
+      httpOnly: false,
+      secure: false,
+      sameSite: "lax",
+      maxAge: DEV_COOKIE_TTL_MS,
     });
   }
 

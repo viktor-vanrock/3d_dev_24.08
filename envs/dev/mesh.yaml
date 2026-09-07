@@ -30,8 +30,8 @@ podAnnotations:
 configMap:
   enabled: true
   config:
-    S3_REGION: ru-central-1
-    S3_BUCKET_MODELS: p-rndml-aiportal
+    S3_REGION: ru-moscow-1
+    S3_BUCKET_MODELS: d-rndml-aiportal
     SLICER_BINARY_PATH: /usr/bin/prusa-slicer
     MESH_REVISION_WORKER_ENABLED: "0"
     MESH_SLICE_LIFECYCLE_ENABLED: "0"

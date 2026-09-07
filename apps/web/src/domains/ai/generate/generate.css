@@ -116,6 +116,7 @@
 .generatePromptRow {
   width: 100%;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 16px;
@@ -128,6 +129,113 @@
 
 .generatePromptInput:disabled {
   opacity: 0.55;
+}
+
+.generateBranchTile:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.generateKandiTabs {
+  display: inline-flex;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+}
+
+.generateKandiTab {
+  min-height: 40px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+.generateKandiTab[aria-selected="true"] {
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.generateImageMode {
+  width: 100%;
+  display: grid;
+  gap: 12px;
+}
+
+.generateImageDropzone,
+.generateImageLoading {
+  min-height: 180px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 8px;
+  border: 1px dashed color-mix(in srgb, var(--accent) 55%, var(--border));
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--surface) 74%, transparent);
+  color: var(--text);
+  cursor: pointer;
+  text-align: center;
+}
+
+.generateImageDropzone svg {
+  font-size: 30px;
+  color: var(--accent);
+}
+
+.generateImageDropzone span,
+.generateImagePreview span {
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.generateImagePreview {
+  display: grid;
+  grid-template-columns: 112px 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--surface) 74%, transparent);
+}
+
+.generateImagePreview img {
+  width: 112px;
+  height: 84px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+.generateImagePreview div {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.generateImagePreview strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.generateImageRemove {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text);
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.generateHintInput {
+  width: 100%;
+  resize: vertical;
+  font: inherit;
 }
 
 /* Кольцо-прогресс: send-кнопка морфит на месте, без скачка макета (§3) — тот же .homeSendButton,

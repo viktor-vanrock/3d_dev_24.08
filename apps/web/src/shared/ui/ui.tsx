@@ -702,6 +702,7 @@ export function CardFooterActions({ actions }: { actions: CardFooterAction[] }) 
 // className — вариант раскладки конкретного экрана (homePersonaTile/avedOption/…), поведение общее.
 export function SelectionTile({
   selected = false,
+  disabled = false,
   onClick,
   onPress,
   onPressEnd,
@@ -709,6 +710,7 @@ export function SelectionTile({
   children,
 }: {
   selected?: boolean;
+  disabled?: boolean;
   onClick?: () => void;
   onPress?: () => void;
   onPressEnd?: () => void;
@@ -719,6 +721,7 @@ export function SelectionTile({
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
       className={`uiSelectionTile pressable${className ? ` ${className}` : ""}`}
       data-selected={selected || undefined}
       onPointerDown={onPress}

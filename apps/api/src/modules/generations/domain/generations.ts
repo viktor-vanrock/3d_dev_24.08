@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import type { RunProgressSnapshot } from "@portal/contracts/http/assistant";
 
-export const GENERATION_BRANCHES = ["openscad", "kzd", "hueforge", "trellis", "concepts", "scan", "rudalle"] as const;
+export const GENERATION_BRANCHES = ["openscad", "kzd", "hueforge", "trellis", "concepts", "scan", "rudalle", "rudalle_image"] as const;
 export type GenerationBranch = (typeof GENERATION_BRANCHES)[number];
 export const CONCEPT_ANGLES = ["front", "three_quarter", "back"] as const;
 export type ConceptAngle = (typeof CONCEPT_ANGLES)[number];
@@ -19,6 +19,7 @@ export const CONCEPT_RENDER_PROFILE = "white-plastic-v1";
 export const MIN_SCAN_PHOTOS = 10;
 export const MAX_SCAN_PHOTOS = 400;
 export const MAX_SCAN_PHOTO_BYTES = 5 * 1_024 * 1_024;
+export const MAX_RUDALLE_IMAGE_BYTES = 10 * 1_024 * 1_024;
 
 export type GenerationParameterValue = string | number | boolean | null | readonly GenerationParameterValue[] | GenerationParameters;
 export interface GenerationParameters {

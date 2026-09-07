@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type DragEvent } from "react";
 import type { SessionUser } from "@shared/types";
 import { HomeHeader, type Section, useSectionSwipeNav } from "@platform/nav";
 // eslint-disable-next-line boundaries/element-types, boundaries/entry-point -- легатное ребро (Этап 4.5): CSS side-effect, не index.ts; home.css остаётся общим "рабочим хромом" для доменных экранов, развязка отложена до pages/DI (Этап 10). См. MIGRATION.md.
@@ -18,6 +18,7 @@ import {
   getGeneration,
   GENERATION_BRANCHES,
   listGenerations,
+  uploadRudalleImage,
   type CreateGenerationError,
   type CreatableGenerationBranch,
   type Generation,
@@ -43,6 +44,7 @@ const BRANCH_META: Record<CreatableGenerationBranch, { label: string; placeholde
   hueforge: { label: "HueForge (много цветов)", placeholder: "Какую многоцветную сцену собрать?", icon: LayersIcon },
   trellis: { label: "3D по референсам", placeholder: "Что смоделировать по референс-изображениям?", icon: ScanIcon },
   rudalle: { label: "3D из текста (Kandinsky)", placeholder: "Опишите что нужно смоделировать...", icon: CubeIcon },
+  rudalle_image: { label: "3D по картинке (Kandinsky)", placeholder: "Загрузите изображение для 3D-модели", icon: ImageIcon },
 };
 
 function branchMeta(branch: GenerationBranch) {
@@ -91,8 +93,14 @@ export function GenerateScreen({
   genId?: string;
 }) {
   const overlay = useOverlay();
-  const [branch, setBranch] = useState<CreatableGenerationBranch>("openscad");
+  const [branch, setBranch] = useState<CreatableGenerationBranch>("rudalle");
   const [prompt, setPrompt] = useState("");
+  const [kandiMode, setKandiMode] = useState<"text" | "image">("text");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [s3Key, setS3Key] = useState("");
+  const [imageError, setImageError] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [hint, setHint] = useState("");
   const [paramsOpen, setParamsOpen] = useState(false);
   const [targetSizeMm, setTargetSizeMm] = useState("");
   const [layerHeightMm, setLayerHeightMm] = useState("");
@@ -102,6 +110,7 @@ export function GenerateScreen({
   const [history, setHistory] = useState<Generation[] | null>(null);
   const activeRef = useRef<Generation | null>(null);
   const generationOutcomeIds = useRef(new Set<string>());
+  const fileInputRef = useRef<HTMLInputElement>(null);
   activeRef.current = active;
   const swipe = useSectionSwipeNav(section, onSectionChange);
 
@@ -118,6 +127,8 @@ export function GenerateScreen({
       if (cancelled || !result) return;
       setActive(result);
       if (result.branch !== "concepts") setBranch(result.branch);
+      if (result.branch === "rudalle_image") setKandiMode("image");
+      if (result.branch === "rudalle") setKandiMode("text");
       setPrompt(result.prompt);
     });
     return () => {
@@ -161,6 +172,46 @@ export function GenerateScreen({
   const collapsed = active?.status === "done";
   const SelectedBranchIcon = BRANCH_META[branch].icon;
   const submitLabel = active?.status === "error" ? "Повторить" : busy ? "Генерация…" : "Сгенерировать";
+  const isKandinsky = branch === "rudalle" || branch === "rudalle_image";
+
+  function resetImage() {
+    setImageFile(null);
+    setS3Key("");
+    setHint("");
+    setImageError("");
+    setUploading(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  function changeKandiMode(mode: "text" | "image") {
+    setKandiMode(mode);
+    setBranch(mode === "text" ? "rudalle" : "rudalle_image");
+    setInlineError(null);
+    resetImage();
+  }
+
+  async function selectImage(file: File | undefined) {
+    if (!file || uploading) return;
+    const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
+    if (!allowedTypes.has(file.type)) {
+      setImageError("Поддерживаются только JPG, PNG, WebP");
+      return;
+    }
+    if (file.size > 10 * 1_024 * 1_024) {
+      setImageError("Файл слишком большой. Максимум 10 МБ");
+      return;
+    }
+    setImageError("");
+    setUploading(true);
+    const result = await uploadRudalleImage(file);
+    setUploading(false);
+    if ("error" in result) {
+      setImageError(result.error);
+      return;
+    }
+    setS3Key(result.s3_key);
+    setImageFile(file);
+  }
 
   function resolveParams(forBranch: CreatableGenerationBranch): Record<string, unknown> | undefined {
     if (forBranch === "openscad" && targetSizeMm.trim()) {
@@ -176,14 +227,22 @@ export function GenerateScreen({
 
   async function submit(overrideBranch?: CreatableGenerationBranch, overridePrompt?: string) {
     const usedBranch = overrideBranch ?? branch;
-    const usedPrompt = (overridePrompt ?? prompt).trim();
-    if (!usedPrompt) {
+    const usedPrompt = (overridePrompt ?? (usedBranch === "rudalle_image" ? hint : prompt)).trim();
+    if (usedBranch === "rudalle_image" && !s3Key) {
+      setImageError("Сначала загрузите изображение");
+      return;
+    }
+    if (usedBranch !== "rudalle_image" && !usedPrompt) {
       setInlineError("Опишите, что сгенерировать");
       return;
     }
     setInlineError(null);
     setSubmitting(true);
-    const result = await createGeneration({ branch: usedBranch, prompt: usedPrompt, params: resolveParams(usedBranch) });
+    const result = await createGeneration({
+      branch: usedBranch,
+      prompt: usedPrompt,
+      params: usedBranch === "rudalle_image" ? { s3_key: s3Key } : resolveParams(usedBranch),
+    });
     setSubmitting(false);
     if ("error" in result) {
       if (result.error.code === "NETWORK") {
@@ -205,6 +264,8 @@ export function GenerateScreen({
   function openHistoryRow(generation: Generation) {
     setActive(generation);
     if (generation.branch !== "concepts") setBranch(generation.branch);
+    if (generation.branch === "rudalle_image") setKandiMode("image");
+    if (generation.branch === "rudalle") setKandiMode("text");
     setPrompt(generation.prompt);
     setInlineError(null);
   }
@@ -239,10 +300,19 @@ export function GenerateScreen({
               </div>
             ) : (
               <div className="generateBranchRow" aria-label="Режим генерации">
-                {GENERATION_BRANCHES.map((b) => {
+                {GENERATION_BRANCHES.filter((b) => b !== "rudalle_image").sort((a, b) => (a === "rudalle" ? -1 : b === "rudalle" ? 1 : 0)).map((b) => {
                   const BranchIcon = BRANCH_META[b].icon;
                   return (
-                    <SelectionTile key={b} selected={branch === b} onClick={() => setBranch(b)} className="generateBranchTile">
+                    <SelectionTile
+                      key={b}
+                      selected={branch === b || (b === "rudalle" && branch === "rudalle_image")}
+                      disabled={b !== "rudalle"}
+                      onClick={() => {
+                        if (b === "rudalle") changeKandiMode("text");
+                        else setBranch(b);
+                      }}
+                      className="generateBranchTile"
+                    >
                       <span className="generateBranchIcon">
                         <BranchIcon />
                       </span>
@@ -253,22 +323,93 @@ export function GenerateScreen({
               </div>
             )}
 
+            {isKandinsky ? (
+              <div className="generateKandiTabs" role="tablist" aria-label="Режим Кандинского">
+                <button type="button" className="generateKandiTab pressable" role="tab" aria-selected={kandiMode === "text"} onClick={() => changeKandiMode("text")} disabled={busy}>
+                  По тексту
+                </button>
+                <button type="button" className="generateKandiTab pressable" role="tab" aria-selected={kandiMode === "image"} onClick={() => changeKandiMode("image")} disabled={busy}>
+                  По картинке
+                </button>
+              </div>
+            ) : null}
+
+            {branch === "rudalle_image" ? (
+              <div className="generateImageMode">
+                {uploading ? (
+                  <div className="generateImageLoading" role="status">Загружаем изображение…</div>
+                ) : imageFile ? (
+                  <div className="generateImagePreview">
+                    <img src={URL.createObjectURL(imageFile)} alt="Выбранное изображение" />
+                    <div>
+                      <strong>{imageFile.name}</strong>
+                      <span>{(imageFile.size / (1_024 * 1_024)).toFixed(1)} МБ</span>
+                    </div>
+                    <button type="button" className="generateImageRemove pressable" aria-label="Удалить изображение" onClick={resetImage} disabled={busy}>×</button>
+                  </div>
+                ) : (
+                  <div
+                    className="generateImageDropzone"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => fileInputRef.current?.click()}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") fileInputRef.current?.click();
+                    }}
+                    onDragOver={(event: DragEvent) => event.preventDefault()}
+                    onDrop={(event: DragEvent) => {
+                      event.preventDefault();
+                      void selectImage(event.dataTransfer.files[0]);
+                    }}
+                  >
+                    <ImageIcon />
+                    <strong>Перетащите картинку или нажмите для выбора</strong>
+                    <span>JPG, PNG, WebP — до 10 МБ</span>
+                  </div>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  hidden
+                  onChange={(event) => {
+                    void selectImage(event.target.files?.[0]);
+                    event.target.value = "";
+                  }}
+                />
+                {imageError ? <div className="generateInlineError">{imageError}</div> : null}
+                {imageFile ? (
+                  <textarea
+                    className="homeGhostInput generateHintInput"
+                    value={hint}
+                    onChange={(event) => setHint(event.target.value)}
+                    placeholder="Необязательно: «сделай красным», «добавь крылья»..."
+                    rows={2}
+                    maxLength={PROMPT_MAX_LENGTH}
+                    disabled={busy}
+                  />
+                ) : null}
+              </div>
+            ) : null}
+
             <div className="generatePromptRow">
-              <input
-                className="homeGhostInput generatePromptInput"
-                value={prompt}
-                onChange={(event) => setPrompt(event.target.value)}
-                placeholder={BRANCH_META[branch].placeholder}
-                aria-label={BRANCH_META[branch].placeholder}
-                readOnly={busy}
-                maxLength={PROMPT_MAX_LENGTH}
-              />
+              {branch !== "rudalle_image" ? (
+                <input
+                  className="homeGhostInput generatePromptInput"
+                  value={prompt}
+                  onChange={(event) => setPrompt(event.target.value)}
+                  placeholder={BRANCH_META[branch].placeholder}
+                  aria-label={BRANCH_META[branch].placeholder}
+                  readOnly={busy}
+                  maxLength={PROMPT_MAX_LENGTH}
+                />
+              ) : null}
               <button
                 key={active?.id ?? "idle"}
                 type="button"
                 className="pressable homeSendButton generateSendButton"
                 aria-label={submitLabel}
-                data-armed={prompt.trim().length > 0 || undefined}
+                data-armed={(branch === "rudalle_image" ? Boolean(s3Key) : prompt.trim().length > 0) || undefined}
                 data-status={active?.status ?? (submitting ? "queued" : undefined)}
                 disabled={busy}
                 onClick={() => void submit()}
@@ -294,7 +435,7 @@ export function GenerateScreen({
 
             {inlineError && !active ? <div className="generateInlineError">{inlineError}</div> : null}
 
-            {!busy && branch !== "kzd" ? (
+            {!busy && branch !== "kzd" && branch !== "rudalle_image" ? (
               <button
                 type="button"
                 className="generateParamsToggle pressable"
@@ -308,7 +449,7 @@ export function GenerateScreen({
               </button>
             ) : null}
 
-            {paramsOpen && branch !== "kzd" ? (
+            {paramsOpen && branch !== "kzd" && branch !== "rudalle_image" ? (
               <div id="generate-extra-params" className="generateParamsPanel">
                 {branch === "openscad" ? (
                   <label className="generateParamField">
@@ -415,15 +556,13 @@ function GenerationPreview({ generation, onAgain }: { generation: Generation; on
   const downloadLabel =
     generation.branch === "openscad"
       ? "Скачать STL"
-      : generation.branch === "trellis" || generation.branch === "rudalle"
+      : generation.branch === "trellis" || generation.branch === "rudalle" || generation.branch === "rudalle_image"
         ? "Скачать 3D-модель"
         : generation.branch === "hueforge"
           ? "Скачать архив"
           : "Скачать PNG";
-  // kzd — чертёж, "модель" каталога сырую картинку не принимает (apps/api/src/generations/catalog-draft.ts
-  // DRAFT_SOURCE_FORMAT), кнопку не показываем вовсе, а не даём её нажать с ошибкой.
-  // TODO: показать после добавления поддержки GLB в catalog-draft
-  const canCreateCard = generation.branch !== "kzd" && generation.branch !== "rudalle";
+  // kzd — чертёж, а RuDALL-E возвращает GLB; каталог пока не принимает эти форматы.
+  const cardCreationUnsupported = generation.branch === "kzd" || generation.branch === "rudalle" || generation.branch === "rudalle_image";
 
   async function createCard() {
     if (creatingDraft) return;
@@ -451,7 +590,7 @@ function GenerationPreview({ generation, onAgain }: { generation: Generation; on
 
       {generation.branch === "openscad" ? (
         <ModelViewer modelId={generation.id} title={generation.prompt} previewUrl={generation.artifact_url} thumbUrl={null} format="stl" />
-      ) : generation.branch === "trellis" || generation.branch === "rudalle" ? (
+      ) : generation.branch === "trellis" || generation.branch === "rudalle" || generation.branch === "rudalle_image" ? (
         <ModelViewer
           modelId={generation.id}
           title={generation.prompt}
@@ -474,11 +613,14 @@ function GenerationPreview({ generation, onAgain }: { generation: Generation; on
         <button type="button" className="modelGlassBtn pressable" onClick={onAgain}>
           Сгенерировать ещё
         </button>
-        {canCreateCard ? (
-          <button type="button" className="modelGlassBtn pressable" onClick={() => void createCard()} disabled={creatingDraft}>
-            <CardIcon /> {creatingDraft ? "Создаём…" : "Создать карточку"}
-          </button>
-        ) : null}
+        <button
+          type="button"
+          className="modelGlassBtn pressable"
+          onClick={() => void createCard()}
+          disabled={creatingDraft || cardCreationUnsupported}
+        >
+          <CardIcon /> {creatingDraft ? "Создаём…" : "Создать карточку"}
+        </button>
       </div>
     </div>
   );
@@ -552,6 +694,16 @@ function ScanIcon() {
     <svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <rect x="3" y="7" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.6" />
       <path d="M8 7V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function ImageIcon() {
+  return (
+    <svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="8.5" cy="9" r="1.5" stroke="currentColor" strokeWidth="1.6" />
+      <path d="m4 18 5.5-5 3.5 3 2.5-2 4.5 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
