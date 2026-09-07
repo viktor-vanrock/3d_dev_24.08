@@ -23,7 +23,6 @@ Whitelist форматов, magic-байты и матрица «что пере
 from __future__ import annotations
 
 import io
-import resource
 import sys
 import time
 import uuid
@@ -37,6 +36,13 @@ import manifold3d
 import numpy as np
 import trimesh
 from PIL import Image
+
+try:
+    import resource
+
+    HAS_RESOURCE = True
+except ImportError:
+    HAS_RESOURCE = False
 
 from . import preview
 from .diagnostics import MeshDiagnostics, diagnose
@@ -108,6 +114,8 @@ def _memory_peak_bytes() -> int:
     но это всё равно полезная верхняя граница для отчёта и не требует новой
     runtime-зависимости вроде psutil.
     """
+    if not HAS_RESOURCE:
+        return 0
     try:
         multiplier = 1 if sys.platform == "darwin" else 1024
         own = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
