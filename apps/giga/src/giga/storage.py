@@ -12,6 +12,7 @@
 from __future__ import annotations
 
 import boto3
+from botocore.config import Config as BotocoreConfig
 
 from .config import S3Config
 
@@ -27,6 +28,10 @@ class ObjectStore:
             region_name=config.region,
             aws_access_key_id=config.access_key,
             aws_secret_access_key=config.secret_key,
+            config=BotocoreConfig(
+                request_checksum_calculation="when_required",
+                response_checksum_validation="when_required",
+            ),
         )
 
     def upload_bytes(self, key: str, body: bytes, content_type: str) -> None:
@@ -56,7 +61,7 @@ class ObjectStore:
         сотню снимков предмета после того, как модель готова, незачем."""
         keys = self.list_keys(prefix)
         for start in range(0, len(keys), 1000):
-            chunk = keys[start:start + 1000]
+            chunk = keys[start : start + 1000]
             if chunk:
                 self._client.delete_objects(
                     Bucket=self._bucket, Delete={"Objects": [{"Key": k} for k in chunk]}
