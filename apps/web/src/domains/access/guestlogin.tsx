@@ -1,6 +1,7 @@
 import { useRef, useState, type CSSProperties } from "react";
 import { useOverlay } from "@platform/overlay";
 import { EmailLogin } from "../../pages/emaillogin.tsx";
+import { PasswordLogin } from "../../pages/passwordlogin.tsx";
 import { MethodIcon } from "../../pages/methodicon.tsx";
 import { Button } from "@shared/ui";
 import { clearGuestIntent, saveGuestIntent, type GuestIntent } from "./guestintent.ts";
@@ -48,6 +49,12 @@ function GuestLoginPromptBody({ intent }: { intent?: GuestIntent }) {
   return (
     <div style={bodyStyle}>
       <EmailLogin />
+      <div style={dividerRowStyle}>
+        <div style={dividerLineStyle} />
+        <span style={dividerLabelStyle}>или</span>
+        <div style={dividerLineStyle} />
+      </div>
+      <PasswordLogin />
       <div style={dividerRowStyle}>
         <div style={dividerLineStyle} />
         <span style={dividerLabelStyle}>Войти через</span>

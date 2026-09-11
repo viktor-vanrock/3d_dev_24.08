@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ThemeToggle } from "@platform/theme";
 import { AuroraBackground, Button } from "@shared/ui";
 import { EmailLogin } from "./emaillogin.tsx";
+import { PasswordLogin } from "./passwordlogin.tsx";
 import { MethodIcon } from "./methodicon.tsx";
 import "./login.css";
 
@@ -65,6 +66,17 @@ export function LoginPage({ returnUrl }: { returnUrl?: string }) {
           <div className="loginCardGrain" aria-hidden="true" />
           {errorMessage ? <div className="loginErrorBanner" role="alert">{errorMessage}</div> : null}
           <EmailLogin onSuccess={() => {
+            navigate(returnTarget, "back");
+            window.location.reload();
+          }} />
+
+          <div className="loginDivider">
+            <div className="loginDividerLine" />
+            <span>или</span>
+            <div className="loginDividerLine" />
+          </div>
+
+          <PasswordLogin onSuccess={() => {
             navigate(returnTarget, "back");
             window.location.reload();
           }} />
