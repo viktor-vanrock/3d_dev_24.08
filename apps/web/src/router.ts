@@ -37,6 +37,7 @@ export type LegalSlug = "license" | "privacy" | "terms";
 export const LEGAL_SLUGS: readonly LegalSlug[] = ["license", "privacy", "terms"];
 
 export type Route =
+  | { screen: "login"; returnUrl?: string }
   | { screen: "home" }
   | { screen: "market"; tag?: string; q?: string; sort?: ModelSort }
   | { screen: "model"; id: string; tab?: ModelTab }
@@ -89,10 +90,34 @@ export type Route =
 
 // pushState не поднимает `popstate` — навигация внутри приложения шлёт это событие сама.
 const LOCATION_EVENT = "locationchange";
+const AUTH_RETURN_URL_KEY = "portal.auth.returnUrl";
+
+function isSafeLocalPath(value: string): boolean {
+  return value.startsWith("/") && !value.startsWith("//");
+}
+
+export function saveAuthReturnUrl(path: string): void {
+  if (typeof sessionStorage !== "undefined" && isSafeLocalPath(path) && path !== "/login") sessionStorage.setItem(AUTH_RETURN_URL_KEY, path);
+}
+
+export function authReturnUrl(): string | null {
+  if (typeof sessionStorage === "undefined") return null;
+  const path = sessionStorage.getItem(AUTH_RETURN_URL_KEY);
+  return path !== null && isSafeLocalPath(path) ? path : null;
+}
+
+export function clearAuthReturnUrl(): void {
+  if (typeof sessionStorage !== "undefined") sessionStorage.removeItem(AUTH_RETURN_URL_KEY);
+}
 
 // Экспортируется для юнит-тестов (router.test.tsx) — чистая функция без побочных эффектов.
 export function parseLocation(pathname: string, search: string): Route {
   const parts = pathname.split("/").filter(Boolean);
+
+  if (parts[0] === "login" && !parts[1]) {
+    const returnUrl = new URLSearchParams(search).get("returnUrl");
+    return { screen: "login", returnUrl: returnUrl ?? undefined };
+  }
 
   if (parts[0] === "purchases" && parts[1]) {
     return { screen: "purchase-return", id: decodeURIComponent(parts[1]) };
@@ -447,6 +472,11 @@ export function navigate(path: string, direction: "fwd" | "back" = "fwd"): void 
       window.dispatchEvent(new Event(LOCATION_EVENT));
     });
   });
+}
+
+export function loginPath(returnUrl?: string): string {
+  if (!returnUrl || returnUrl === "/login") return "/login";
+  return `/login?returnUrl=${encodeURIComponent(returnUrl)}`;
 }
 
 // Переход между разделами Дом⇄Проекты (motion.md §2) — тот же механизм, что navigate(), только

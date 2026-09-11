@@ -204,7 +204,7 @@ export function FeedPostScreen({
   onSectionChange,
   id,
 }: {
-  user: SessionUser;
+  user: SessionUser | null;
   section: Section;
   onSectionChange: (section: Section) => void;
   id: string;
@@ -337,7 +337,7 @@ export function FeedPostScreen({
     }
   }
 
-  const mine = post ? post.author_id === user.id : false;
+  const mine = post ? post.author_id === user?.id : false;
   const canEditTitle = post ? Date.now() - new Date(post.created_at).getTime() < TITLE_EDIT_WINDOW_MS : false;
 
   return (
@@ -447,7 +447,7 @@ export function FeedPostScreen({
                     id="feed-post-body"
                     value={bodyDraft}
                     onChange={setBodyDraft}
-                    user={user}
+                    user={user ?? undefined}
                     overlay={overlay}
                     uploadImage={(file) => uploadFeedPostImage(post.id, file)}
                   />
@@ -513,13 +513,21 @@ export function FeedPostScreen({
                 </div>
                 <span className="feedCommentsSort">Сначала лучшие</span>
               </div>
-              <CommentComposer user={user} onSubmit={(body) => handleReply(undefined, body)} />
+              {user ? (
+                <CommentComposer user={user} onSubmit={(body) => handleReply(undefined, body)} />
+              ) : (
+                <div className="feedCommentsSort">Войдите, чтобы оставить комментарий</div>
+              )}
               {comments === null ? (
                 <div style={{ color: "var(--text-dim)" }}>Загрузка обсуждения…</div>
               ) : comments.length === 0 ? (
                 <EmptyState icon={<CubeIcon />} title="Пока нет комментариев" sub="Будьте первым" />
               ) : (
-                <CommentTree comments={comments} user={user} onReply={(parentId, body) => handleReply(parentId, body)} onDeleted={handleCommentDeleted} />
+                user ? <CommentTree comments={comments} user={user} onReply={(parentId, body) => handleReply(parentId, body)} onDeleted={handleCommentDeleted} /> : (
+                  <div className="feedCommentTree">
+                    {comments.map((comment) => <div key={comment.id} className="feedCommentBody">{comment.body}</div>)}
+                  </div>
+                )
               )}
             </section>
             </article>

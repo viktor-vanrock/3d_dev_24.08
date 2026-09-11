@@ -1,4 +1,5 @@
 import { devLogin, plagIdStartUrl, useDevMode } from "@domains/access";
+import { navigate } from "../router.ts";
 import { useState } from "react";
 import { ThemeToggle } from "@platform/theme";
 import { AuroraBackground, Button } from "@shared/ui";
@@ -14,16 +15,25 @@ const ERROR_MESSAGES: Record<string, string> = {
 // Email — основной способ (домен-гейт Сбера), сверху. SberID/PlagID — компактные
 // карточки-кнопки под разделителем «Войти через» (референс — экран входа cloud.ru).
 // Порядок слева направо — SberID, PlagID (docs/epics/auth.triple.md § Метод 3, требование 2026-07-06).
-export function LoginPage() {
+function safeReturnUrl(value: string | undefined): string {
+  return value?.startsWith("/") && !value.startsWith("//") ? value : "/";
+}
+
+export function LoginPage({ returnUrl }: { returnUrl?: string }) {
   const error = new URLSearchParams(window.location.search).get("error");
   const errorMessage = error ? (ERROR_MESSAGES[error] ?? ERROR_MESSAGES.missing_token) : null;
   const isDevMode = useDevMode();
   const [devError, setDevError] = useState("");
+  const returnTarget = safeReturnUrl(returnUrl);
+  const plagIdUrl = returnTarget === "/"
+    ? plagIdStartUrl()
+    : `${plagIdStartUrl()}${plagIdStartUrl().includes("?") ? "&" : "?"}returnUrl=${encodeURIComponent(returnTarget)}`;
 
   async function handleDevLogin() {
     setDevError("");
     try {
       await devLogin();
+      navigate(returnTarget, "back");
       window.location.reload();
     } catch {
       setDevError("Dev вход недоступен");
@@ -50,7 +60,10 @@ export function LoginPage() {
         <section className="loginCard" aria-label="Вход в портал">
           <div className="loginCardGrain" aria-hidden="true" />
           {errorMessage ? <div className="loginErrorBanner" role="alert">{errorMessage}</div> : null}
-          <EmailLogin />
+          <EmailLogin onSuccess={() => {
+            navigate(returnTarget, "back");
+            window.location.reload();
+          }} />
 
           <div className="loginDivider">
             <div className="loginDividerLine" />
@@ -67,7 +80,7 @@ export function LoginPage() {
             >
               SberID
             </Button>
-            <Button variant="secondary" href={plagIdStartUrl()} icon={<MethodIcon provider="plagid" />}>
+            <Button variant="secondary" href={plagIdUrl} icon={<MethodIcon provider="plagid" />}>
               PlagID
             </Button>
           </div>

@@ -34,6 +34,7 @@ import type { ModerationTargetType } from "./moderation.ts";
 import { useFlipReorder } from "@platform/theme";
 // eslint-disable-next-line boundaries/element-types -- легатное межданное ребро (Этап 8): social→printing (превью карточки принтера в треде-обсуждении принтера). Разрядка отложена до pages/DI. Cм. MIGRATION.md.
 import { printerCommunityPreviewById } from "@domains/printing";
+import { useGuestLogin } from "@domains/access";
 
 // Страница треда `/thread/:id` (docs/design/community.md §3). «Отметить принятым» — тройное
 // условие рендера (§3.5), не dim-заглушка: автор вопроса + kind='answer' + type='question'.
@@ -52,12 +53,13 @@ export function ThreadScreen({
   onSectionChange,
   id,
 }: {
-  user: SessionUser;
+  user: SessionUser | null;
   section: Section;
   onSectionChange: (section: Section) => void;
   id: string;
 }) {
   const overlay = useOverlay();
+  const promptGuestLogin = useGuestLogin();
   const printerPreview = printerCommunityPreviewById(id);
   const [loadState, setLoadState] = useState<LoadState>("loading");
   const [thread, setThread] = useState<Thread | null>(null);
@@ -228,7 +230,7 @@ export function ThreadScreen({
             <div className="cmtyPostsSection">
               <Eyebrow>{formatPostCount(posts.length)}</Eyebrow>
 
-              {thread.status === "open" ? (
+              {thread.status === "open" && user ? (
                 <PostComposer
                   threadType={thread.type}
                   threadId={thread.id}
@@ -236,6 +238,10 @@ export function ThreadScreen({
                   onCancelReply={() => setReplyTarget(null)}
                   onCreated={handlePostCreated}
                 />
+              ) : thread.status === "open" ? (
+                <Button variant="secondary" type="button" onClick={() => promptGuestLogin()}>
+                  Войдите, чтобы написать
+                </Button>
               ) : (
                 <div className="cmtyThreadClosed">Тред закрыт для новых ответов</div>
               )}
@@ -420,14 +426,14 @@ function PostCard({
 }: {
   post: Post;
   thread: Thread;
-  user: SessionUser;
+  user: SessionUser | null;
   flipRef: (node: HTMLElement | null) => void;
   onVoted: (postId: string, result: VoteResult) => void;
   onAccept: () => void;
   onReply: () => void;
   onFlag: () => void;
 }) {
-  const canAccept = user.id === thread.author_id && post.kind === "answer" && thread.type === "question";
+  const canAccept = user?.id === thread.author_id && post.kind === "answer" && thread.type === "question";
   const acceptLabel = thread.accepted_post_id && thread.accepted_post_id !== post.id ? "Сделать принятым вместо текущего" : "Отметить принятым";
 
   return (

@@ -6,6 +6,7 @@ import "@pages/home/home.css";
 import { useOverlay } from "@platform/overlay";
 import { communityPath, headerModeFor, navigate } from "../../../router.ts";
 import { useInteractionSound } from "@platform/sound";
+import { useGuestLogin } from "@domains/access";
 import { AuroraBackground, Button, Chip, EmptyState, Input, SelectionTile } from "@shared/ui";
 import {
   COMMUNITY_DESCRIPTION_MAX_LENGTH,
@@ -49,12 +50,13 @@ export function CommunitiesScreen({
   // Как и вся community/* зона: API этой фазы 401-ит без сессии на каждой ручке (нет
   // гостевого read-пути, в отличие от market/printers) — экран не в GUEST_ALLOWED_SCREENS
   // (app.tsx), user гарантированно не null к этому моменту.
-  user: SessionUser;
+  user: SessionUser | null;
   section: Section;
   onSectionChange: (section: Section) => void;
 }) {
   const overlay = useOverlay();
   const sound = useInteractionSound();
+  const promptGuestLogin = useGuestLogin();
   const [items, setItems] = useState<Community[]>([]);
   const [loadState, setLoadState] = useState<LoadState>("loading");
   const [kind, setKind] = useState<CommunityKind | null>(null);
@@ -96,6 +98,10 @@ export function CommunitiesScreen({
   }
 
   function openCreate() {
+    if (!user) {
+      promptGuestLogin();
+      return;
+    }
     sound.tick();
     const handle = overlay.modal({
       title: "Создать сообщество",

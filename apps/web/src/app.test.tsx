@@ -37,12 +37,21 @@ describe("app", () => {
     expect(screen.queryByText("PlagID")).toBeNull();
   });
 
-  // `/generate` не в списке публичных роутов (только `/`, `/project`, `/project/:id`, `/feed`) —
-  // гость там по-прежнему видит экран входа, не контент.
-  it("гость на закрытом роуте (/generate) видит экран входа", async () => {
+  it("гость на закрытом роуте получает /login с returnUrl", async () => {
     window.history.pushState(null, "", "/generate");
     render(<App />);
     expect(await screen.findByText("PlagID")).toBeTruthy();
+    expect(window.location.pathname).toBe("/login");
+    expect(new URLSearchParams(window.location.search).get("returnUrl")).toBe("/generate");
+    window.history.pushState(null, "", "/");
+  });
+
+  it("гость читает форум без входа", async () => {
+    window.history.pushState(null, "", "/thread/thread-1");
+    mockFetch({ "/threads/thread-1": { thread: { id: "thread-1", community_id: "community-1", author_id: "u2", type: "discussion", title: "Тема", content: "Текст", tags: [], status: "open", accepted_post_id: null, votes_up: 0, votes_down: 0, created_at: new Date().toISOString() }, posts: [] } });
+    render(<App />);
+    expect(await screen.findByRole("heading", { name: "Тема" })).toBeTruthy();
+    expect(screen.queryByText("PlagID")).toBeNull();
     window.history.pushState(null, "", "/");
   });
 
