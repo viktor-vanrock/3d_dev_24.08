@@ -43,6 +43,7 @@ def run_rudalle_image(
             image_ext=ext,
             trace_id=str(uuid.uuid4()),
             prompt=job.prompt or "",
+            model_params_override=rudalle_client.extract_model_params(job.params or {}),
         )
     except TimeoutError as exc:
         raise GenerationError(f"rudalle_image: превышен timeout: {exc}") from exc

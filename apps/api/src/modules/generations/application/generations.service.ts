@@ -3,6 +3,7 @@ import { HttpException, Inject, Injectable, NotFoundException } from "@nestjs/co
 import type { Request } from "express";
 import { GenerationId, type UserId } from "../../_kernel/brandedIds.ts";
 import { MODEL_OWNER_PORT, type ModelOwnerPort } from "../../models/public/index.ts";
+import { convertGlbToStl } from "../../makes/public/index.ts";
 import {
   branchHealth,
   CONCEPT_LABEL_MAX_LENGTH,
@@ -310,6 +311,8 @@ export class GenerationsService implements GenerationsPort {
       if (generation === null) throw new NotFoundException();
       const existing = await this.models.findGenerationDraft(generation.id, client);
       if (existing !== null) return { kind: "replay" as const, model: existing };
+      const isKandinsky =
+        generation.branch === "rudalle" || generation.branch === "rudalle_image";
       const sourceFormat =
         generation.branch === "trellis"
           ? generation.artifact_url && generationAssetExtension(generation.artifact_url) === "stl"
@@ -319,16 +322,20 @@ export class GenerationsService implements GenerationsPort {
             ? "stl"
             : generation.branch === "hueforge"
               ? "zip"
-              : null;
+              : isKandinsky
+                ? "stl"
+                : null;
       if (sourceFormat === null || generation.artifact_url === null) fail(422);
       if (!this.external.modelsStorageConfigured()) fail(503);
       const modelId = await this.models.createGenerationDraft(client, { ownerId: userId, title: draftTitle(generation.prompt), sourceFormat, sourceGenerationId: generation.id });
-      return { kind: "created" as const, modelId, sourceFormat, generation };
+      return { kind: "created" as const, modelId, sourceFormat, generation, isKandinsky };
     });
     if (prepared.kind === "replay") return { status: 200, body: { model: prepared.model } };
-    const { modelId, sourceFormat, generation } = prepared;
+    const { modelId, sourceFormat, generation, isKandinsky } = prepared;
     try {
-      const source = await this.external.copyToModel({ generationKey: generation.artifact_url as string, modelId, role: "source" });
+      const source = isKandinsky
+        ? await this.convertKandinskyArtifact(generation.artifact_url as string, modelId)
+        : await this.external.copyToModel({ generationKey: generation.artifact_url as string, modelId, role: "source" });
       if (source === null) {
         await this.models.deleteModel(modelId);
         throw new NotFoundException();
@@ -344,6 +351,12 @@ export class GenerationsService implements GenerationsPort {
       if (error instanceof NotFoundException) throw error;
       fail(500);
     }
+  }
+
+  private async convertKandinskyArtifact(generationKey: string, modelId: string) {
+    const glbBytes = await this.external.downloadGenerationArtifact(generationKey);
+    const stlBytes = await convertGlbToStl(glbBytes);
+    return this.external.uploadConvertedArtifact(modelId, stlBytes, "stl");
   }
 
   create(userId: UserId, body: Record<string, unknown>, rawKey: unknown) {

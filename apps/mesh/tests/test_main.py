@@ -22,6 +22,25 @@ def test_health():
     assert response.json() == {"status": "ok", "service": "mesh"}
 
 
+def test_convert_glb_to_stl_returns_valid_stl(tmp_path: Path):
+    source = tmp_path / "cube.glb"
+    trimesh.creation.box(extents=[10, 10, 10]).export(source)
+
+    response = client.post(
+        "/convert-glb-to-stl",
+        files={"file": (source.name, source.read_bytes(), "model/gltf-binary")},
+    )
+
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "model/stl"
+    assert response.headers["content-disposition"] == "attachment; filename=model.stl"
+    output = tmp_path / "model.stl"
+    output.write_bytes(response.content)
+    converted = trimesh.load(output, file_type="stl", force="mesh")
+    assert not converted.is_empty
+    assert len(converted.faces) == 12
+
+
 def test_convert_returns_3mf_and_structured_report(tmp_path: Path):
     source = tmp_path / "cube.stl"
     trimesh.creation.box(extents=[10, 10, 10]).export(source)

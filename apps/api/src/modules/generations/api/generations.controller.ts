@@ -4,7 +4,7 @@ import type { Response } from "express";
 import { SESSION_USER, type RequestWithSession } from "../../../nest/auth/session-verifier.ts";
 import { UserId, type UserId as UserIdType } from "../../_kernel/brandedIds.ts";
 import { MAX_SCAN_PHOTO_BYTES } from "../domain/generations.ts";
-import { GENERATIONS_PORT, type AssetResult, type GenerationsPort } from "../public/index.ts";
+import { generationAssetExtension, GENERATIONS_PORT, type AssetResult, type GenerationsPort } from "../public/index.ts";
 import { GenerationLooseBodyDto } from "./generations.dto.ts";
 import { ApiGenerationsOperation } from "./openapi.ts";
 import { Public, User } from "../../permissions/public/index.ts";
@@ -118,7 +118,7 @@ export class GenerationsController {
     @Param("id") id: string,
     @Res() response: Response,
   ) {
-    return this.generationAsset(request, response, id, "artifact");
+    return this.artifactAsset(request, response, id);
   }
   @Get("generations/:id/preview/:angle") @ApiGenerationsOperation("Stream concept angle preview", { binary: true }) angle(
     @Req() request: RequestWithSession,
@@ -140,6 +140,12 @@ export class GenerationsController {
 
   private async generationAsset(request: RequestWithSession, response: Response, id: string, kind: "preview" | "artifact" | "preview_shot", angle?: string): Promise<void> {
     stream(response, await this.generations.generationAsset(user(request), id, kind, angle, request));
+  }
+  private async artifactAsset(request: RequestWithSession, response: Response, id: string): Promise<void> {
+    const asset = await this.generations.generationAsset(user(request), id, "artifact", undefined, request);
+    const filename = `model-${id}.${generationAssetExtension(asset.key)}`;
+    response.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    stream(response, asset);
   }
   private missingFile(): never {
     throw new HttpException({}, 422);

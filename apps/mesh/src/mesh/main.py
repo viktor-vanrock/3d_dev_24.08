@@ -1,3 +1,4 @@
+import io
 import json
 import os
 import shutil
@@ -5,8 +6,9 @@ import tempfile
 from pathlib import Path
 
 import psycopg
+import trimesh
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from pydantic import BaseModel
 from starlette.background import BackgroundTask
 
@@ -168,6 +170,29 @@ async def _save_upload(upload: UploadFile, destination: Path, limits: Limits) ->
                     f"входной файл превышает лимит {limits.max_file_bytes} байт"
                 )
             output.write(chunk)
+
+
+@app.post("/convert-glb-to-stl")
+async def convert_glb_to_stl(file: UploadFile = _CONVERT_FILE) -> Response:
+    """Конвертирует GLB в единый STL для печатного конвейера."""
+    try:
+        mesh_data = trimesh.load(io.BytesIO(await file.read()), file_type="glb")
+        if isinstance(mesh_data, trimesh.Scene):
+            mesh_data = trimesh.util.concatenate(list(mesh_data.geometry.values()))
+        if not isinstance(mesh_data, trimesh.Trimesh) or mesh_data.is_empty:
+            raise ValueError("модель пустая")
+        stl_bytes = mesh_data.export(file_type="stl")
+        if not isinstance(stl_bytes, bytes) or not stl_bytes:
+            raise ValueError("не удалось экспортировать STL")
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=f"Модель пустая: {exc}") from exc
+    except Exception as exc:
+        raise HTTPException(status_code=422, detail=f"Не удалось прочитать GLB: {exc}") from exc
+    return Response(
+        content=stl_bytes,
+        media_type="model/stl",
+        headers={"Content-Disposition": "attachment; filename=model.stl"},
+    )
 
 
 # Внутренний endpoint: api вызывает его внутри приватной сети.  Результат —

@@ -34,6 +34,7 @@ import "./generate.css";
 */
 
 const POLL_INTERVAL_MS = 2500;
+const HISTORY_PAGE_SIZE = 10;
 // apps/api/src/generations/contract.ts PROMPT_MAX_LENGTH — сервер источник истины, здесь только
 // для maxLength инпута и текста ошибки, если сервер не прислал limit явно.
 const PROMPT_MAX_LENGTH = 2000;
@@ -104,10 +105,15 @@ export function GenerateScreen({
   const [paramsOpen, setParamsOpen] = useState(false);
   const [targetSizeMm, setTargetSizeMm] = useState("");
   const [layerHeightMm, setLayerHeightMm] = useState("");
+  const [numTargetFaces, setNumTargetFaces] = useState(50_000);
+  const [noTexture, setNoTexture] = useState(false);
+  const [doQuadrification, setDoQuadrification] = useState(false);
+  const [createLod, setCreateLod] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [inlineError, setInlineError] = useState<string | null>(null);
   const [active, setActive] = useState<Generation | null>(null);
   const [history, setHistory] = useState<Generation[] | null>(null);
+  const [historyPage, setHistoryPage] = useState(0);
   const activeRef = useRef<Generation | null>(null);
   const generationOutcomeIds = useRef(new Set<string>());
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -115,7 +121,10 @@ export function GenerateScreen({
   const swipe = useSectionSwipeNav(section, onSectionChange);
 
   useEffect(() => {
-    void listGenerations().then(setHistory);
+    void listGenerations().then((generations) => {
+      setHistory(generations);
+      setHistoryPage(0);
+    });
   }, []);
 
   // Второй вход (Дом → hero-инпут, docs/design/generation.md §1): генерация уже создана,
@@ -151,7 +160,10 @@ export function GenerateScreen({
   // Новая запись в истории по завершении job'а.
   useEffect(() => {
     if (active?.status === "done" || active?.status === "error") {
-      void listGenerations().then(setHistory);
+      void listGenerations().then((generations) => {
+        setHistory(generations);
+        setHistoryPage(0);
+      });
     }
   }, [active?.status]);
 
@@ -173,6 +185,11 @@ export function GenerateScreen({
   const SelectedBranchIcon = BRANCH_META[branch].icon;
   const submitLabel = active?.status === "error" ? "Повторить" : busy ? "Генерация…" : "Сгенерировать";
   const isKandinsky = branch === "rudalle" || branch === "rudalle_image";
+  const historyPageCount = history ? Math.ceil(history.length / HISTORY_PAGE_SIZE) : 0;
+  const visibleHistory = history?.slice(
+    historyPage * HISTORY_PAGE_SIZE,
+    (historyPage + 1) * HISTORY_PAGE_SIZE,
+  );
 
   function resetImage() {
     setImageFile(null);
@@ -188,6 +205,10 @@ export function GenerateScreen({
     setBranch(mode === "text" ? "rudalle" : "rudalle_image");
     setInlineError(null);
     resetImage();
+    setNumTargetFaces(50_000);
+    setNoTexture(false);
+    setDoQuadrification(false);
+    setCreateLod(0);
   }
 
   async function selectImage(file: File | undefined) {
@@ -214,6 +235,14 @@ export function GenerateScreen({
   }
 
   function resolveParams(forBranch: CreatableGenerationBranch): Record<string, unknown> | undefined {
+    if (forBranch === "rudalle" || forBranch === "rudalle_image") {
+      return {
+        num_target_faces: numTargetFaces,
+        no_texture: noTexture,
+        do_quadrification: doQuadrification,
+        create_lod: createLod,
+      };
+    }
     if (forBranch === "openscad" && targetSizeMm.trim()) {
       const value = Number(targetSizeMm);
       if (Number.isFinite(value) && value > 0) return { target_size_mm: value };
@@ -241,7 +270,7 @@ export function GenerateScreen({
     const result = await createGeneration({
       branch: usedBranch,
       prompt: usedPrompt,
-      params: usedBranch === "rudalle_image" ? { s3_key: s3Key } : resolveParams(usedBranch),
+      params: usedBranch === "rudalle_image" ? { s3_key: s3Key, ...resolveParams(usedBranch) } : resolveParams(usedBranch),
     });
     setSubmitting(false);
     if ("error" in result) {
@@ -284,7 +313,7 @@ export function GenerateScreen({
         onPointerUp={swipe.onPointerUp}
         onPointerCancel={swipe.onPointerCancel}
       >
-        <Heading accent="по тексту">Генерация</Heading>
+        <Heading size='md' accent="по тексту и изображению">Генерация</Heading>
 
         {collapsed && active ? (
           <div className="generateCompactStrip">
@@ -435,7 +464,7 @@ export function GenerateScreen({
 
             {inlineError && !active ? <div className="generateInlineError">{inlineError}</div> : null}
 
-            {!busy && branch !== "kzd" && branch !== "rudalle_image" ? (
+            {!busy && branch !== "kzd" ? (
               <button
                 type="button"
                 className="generateParamsToggle pressable"
@@ -445,12 +474,46 @@ export function GenerateScreen({
                 aria-expanded={paramsOpen}
                 aria-controls="generate-extra-params"
               >
-                Дополнительно <span aria-hidden="true" className="generateParamsChevron">⌄</span>
+                Дополнительно <span aria-hidden="true" className="generateParamsChevron">v</span>
               </button>
             ) : null}
 
-            {paramsOpen && branch !== "kzd" && branch !== "rudalle_image" ? (
+            {paramsOpen && branch !== "kzd" ? (
               <div id="generate-extra-params" className="generateParamsPanel">
+                {branch === "rudalle" || branch === "rudalle_image" ? (
+                  <>
+                    <label className="generateParamField">
+                      Детализация модели
+                      <select value={numTargetFaces} onChange={(event) => setNumTargetFaces(Number(event.target.value))} disabled={busy}>
+                        <option value={10_000}>Низкая — 10 000 полигонов</option>
+                        <option value={50_000}>Стандарт — 50 000 полигонов</option>
+                        <option value={100_000}>Высокая — 100 000 полигонов</option>
+                        <option value={200_000}>Максимум — 200 000 полигонов</option>
+                      </select>
+                    </label>
+                    <label className="generateParamField">
+                      <span>
+                        <input type="checkbox" checked={noTexture} onChange={(event) => setNoTexture(event.target.checked)} disabled={busy} /> Без текстуры
+                      </span>
+                      <small>Генерировать модель без цветов и текстур</small>
+                    </label>
+                    <label className="generateParamField">
+                      <span>
+                        <input type="checkbox" checked={doQuadrification} onChange={(event) => setDoQuadrification(event.target.checked)} disabled={busy} /> Квадрификация
+                      </span>
+                      <small>Преобразовать треугольники в четырёхугольники</small>
+                    </label>
+                    <label className="generateParamField">
+                      LOD копии
+                      <select value={createLod} onChange={(event) => setCreateLod(Number(event.target.value))} disabled={busy}>
+                        <option value={0}>Не создавать</option>
+                        <option value={1}>1 копия</option>
+                        <option value={2}>2 копии</option>
+                      </select>
+                      <small>Упрощённые копии для разных дистанций</small>
+                    </label>
+                  </>
+                ) : null}
                 {branch === "openscad" ? (
                   <label className="generateParamField">
                     Целевой размер, мм
@@ -491,7 +554,7 @@ export function GenerateScreen({
           <section className="generateHistory">
             <Eyebrow>История</Eyebrow>
             <div className="generateHistoryList stagger-reveal">
-              {history.map((row, index) => (
+              {visibleHistory?.map((row, index) => (
                 <button
                   key={row.id}
                   type="button"
@@ -508,6 +571,29 @@ export function GenerateScreen({
                 </button>
               ))}
             </div>
+            {historyPageCount > 1 ? (
+              <nav className="generateHistoryPagination" aria-label="Страницы истории генераций">
+                <button
+                  type="button"
+                  className="generateHistoryPageButton pressable"
+                  onClick={() => setHistoryPage((page) => Math.max(0, page - 1))}
+                  disabled={historyPage === 0}
+                >
+                  Назад
+                </button>
+                <span className="generateHistoryPageInfo">
+                  Страница {historyPage + 1} из {historyPageCount}
+                </span>
+                <button
+                  type="button"
+                  className="generateHistoryPageButton pressable"
+                  onClick={() => setHistoryPage((page) => Math.min(historyPageCount - 1, page + 1))}
+                  disabled={historyPage === historyPageCount - 1}
+                >
+                  Далее
+                </button>
+              </nav>
+            ) : null}
           </section>
         ) : null}
       </main>
@@ -561,8 +647,8 @@ function GenerationPreview({ generation, onAgain }: { generation: Generation; on
         : generation.branch === "hueforge"
           ? "Скачать архив"
           : "Скачать PNG";
-  // kzd — чертёж, а RuDALL-E возвращает GLB; каталог пока не принимает эти форматы.
-  const cardCreationUnsupported = generation.branch === "kzd" || generation.branch === "rudalle" || generation.branch === "rudalle_image";
+  // kzd — чертёж: каталог не принимает PNG как исходный файл модели.
+  const cardCreationUnsupported = generation.branch === "kzd";
 
   async function createCard() {
     if (creatingDraft) return;

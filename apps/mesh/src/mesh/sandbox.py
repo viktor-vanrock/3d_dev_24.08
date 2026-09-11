@@ -11,9 +11,15 @@ from __future__ import annotations
 
 import multiprocessing as mp
 import queue as queue_module
-import resource
 from collections.abc import Callable
 from typing import Any
+
+try:
+    import resource
+
+    HAS_RESOURCE = True
+except ImportError:
+    HAS_RESOURCE = False
 
 from .errors import RejectCode, RejectionError
 from .limits import Limits
@@ -27,10 +33,11 @@ _STATUS_ERROR = "error"
 def _child_entrypoint(
     func: Callable[..., Any], args: tuple, memory_bytes: int, result_queue: mp.Queue
 ) -> None:
-    try:
-        resource.setrlimit(resource.RLIMIT_AS, (memory_bytes, memory_bytes))
-    except (ValueError, OSError):
-        pass  # среда может не дать поднять cap — wall-таймаут в родителе всё равно страхует
+    if HAS_RESOURCE:
+        try:
+            resource.setrlimit(resource.RLIMIT_AS, (memory_bytes, memory_bytes))
+        except (ValueError, OSError):
+            pass  # среда может не дать поднять cap — wall-таймаут в родителе всё равно страхует
 
     try:
         result = func(*args)
