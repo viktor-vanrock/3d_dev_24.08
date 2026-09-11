@@ -607,8 +607,8 @@
     "method": "GET",
     "path": "/communities",
     "domain": "community",
-    "authMode": "authed",
-    "closedDevAuthed": false,
+    "authMode": "public-GET",
+    "closedDevAuthed": true,
     "ownGate": null,
     "source": "community/communities.ts:189",
     "sampleParams": {}
@@ -617,8 +617,8 @@
     "method": "GET",
     "path": "/communities/:id",
     "domain": "community",
-    "authMode": "authed",
-    "closedDevAuthed": false,
+    "authMode": "public-GET",
+    "closedDevAuthed": true,
     "ownGate": null,
     "source": "community/communities.ts:275",
     "sampleParams": {

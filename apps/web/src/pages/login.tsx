@@ -1,5 +1,5 @@
 import { devLogin, plagIdStartUrl, useDevMode } from "@domains/access";
-import { navigate } from "../router.ts";
+import { navigate, saveAuthReturnUrl } from "../router.ts";
 import { useState } from "react";
 import { ThemeToggle } from "@platform/theme";
 import { AuroraBackground, Button } from "@shared/ui";
@@ -28,6 +28,10 @@ export function LoginPage({ returnUrl }: { returnUrl?: string }) {
   const plagIdUrl = returnTarget === "/"
     ? plagIdStartUrl()
     : `${plagIdStartUrl()}${plagIdStartUrl().includes("?") ? "&" : "?"}returnUrl=${encodeURIComponent(returnTarget)}`;
+
+  function handlePlagIdLogin() {
+    if (returnTarget !== "/") saveAuthReturnUrl(returnTarget);
+  }
 
   async function handleDevLogin() {
     setDevError("");
@@ -80,7 +84,7 @@ export function LoginPage({ returnUrl }: { returnUrl?: string }) {
             >
               SberID
             </Button>
-            <Button variant="secondary" href={plagIdUrl} icon={<MethodIcon provider="plagid" />}>
+            <Button variant="secondary" href={plagIdUrl} icon={<MethodIcon provider="plagid" />} onClick={handlePlagIdLogin}>
               PlagID
             </Button>
           </div>

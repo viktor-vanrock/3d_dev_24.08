@@ -17,7 +17,7 @@ import {
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import type { Response } from "express";
-import { SESSION_USER, type RequestWithSession } from "../../../nest/auth/session-verifier.ts";
+import { SESSION_USER, SessionVerifier, type RequestWithSession } from "../../../nest/auth/session-verifier.ts";
 import { UserId, type UserId as UserIdType } from "../../_kernel/brandedIds.ts";
 import { COMMUNITY_PORT, type CommunityPort } from "../public/index.ts";
 import { isUuid, SUBSCRIBE_SOURCES, type SubscribeSource } from "../domain/community.ts";
@@ -41,6 +41,7 @@ export class CommunityController {
   constructor(
     @Inject(COMMUNITY_PORT) private readonly community: CommunityPort,
     @Inject(COMMUNITY_STORAGE_PORT) private readonly storage: CommunityStoragePort,
+    @Inject(SessionVerifier) private readonly sessions: SessionVerifier,
   ) {}
   @Post("communities") @HttpCode(201) @ApiCommunityOperation("Create community", 201) create(@Req() r: RequestWithSession, @Body() b: CreateCommunityDto) {
     return this.community.create({
@@ -52,14 +53,16 @@ export class CommunityController {
       userId: uid(r),
     });
   }
-  @Get("communities") @ApiCommunityOperation("List communities") list(
+  @Get("communities") @Public() @ApiCommunityOperation("List communities") async list(
     @Req() r: RequestWithSession,
     @Query() q: { kind?: string; q?: string; member?: string; cursor?: string; limit?: string },
   ) {
-    return this.community.list({ ...q, limit: n(q.limit, 24, 60), userId: uid(r) });
+    const session = await this.sessions.readSession(r);
+    return this.community.list({ ...q, limit: n(q.limit, 24, 60), userId: session === null ? null : UserId(session.id) });
   }
-  @Get("communities/:id") @ApiCommunityOperation("Community detail") detail(@Req() r: RequestWithSession, @Param("id") x: string) {
-    return this.community.detail(x, uid(r));
+  @Get("communities/:id") @Public() @ApiCommunityOperation("Community detail") async detail(@Req() r: RequestWithSession, @Param("id") x: string) {
+    const session = await this.sessions.readSession(r);
+    return this.community.detail(x, session === null ? null : UserId(session.id));
   }
   @Post("communities/:id/join") @ApiCommunityOperation("Join community") join(@Req() r: RequestWithSession, @Param("id") x: string) {
     return this.community.join(id(x), uid(r));

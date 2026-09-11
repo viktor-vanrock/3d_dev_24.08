@@ -65,7 +65,7 @@ interface CommunityListInput {
   member?: string;
   cursor?: string;
   limit: number;
-  userId: UserId;
+  userId: UserId | null;
 }
 interface ThreadListInput {
   communityId: string;
@@ -121,8 +121,11 @@ export class CommunityRepository implements CommunityFeedReadPort {
       w.push(`lower(c.name) like $${p.length}`);
     }
     if (input.member === "me") {
-      p.push(input.userId);
-      w.push(`exists(select 1 from community_members cm where cm.community_id=c.id and cm.user_id=$${p.length})`);
+      if (input.userId === null) w.push("false");
+      else {
+        p.push(input.userId);
+        w.push(`exists(select 1 from community_members cm where cm.community_id=c.id and cm.user_id=$${p.length})`);
+      }
     }
     if (input.cursor) {
       p.push(input.cursor);
@@ -131,8 +134,13 @@ export class CommunityRepository implements CommunityFeedReadPort {
     return (await this.pool.query<CommunityRecord>(`select ${this.fields()} from communities c where ${w.join(" and ")} order by c.created_at desc limit ${input.limit + 1}`, p))
       .rows;
   }
-  async community(id: string): Promise<CommunityRecord | null> {
-    return (await this.pool.query<CommunityRecord>(`select ${this.fields()} from communities c where ${/^[0-9a-f-]{36}$/i.test(id) ? "c.id" : "c.slug"}=$1`, [id])).rows[0] ?? null;
+  async community(id: string, activeOnly = false): Promise<CommunityRecord | null> {
+    return (
+      await this.pool.query<CommunityRecord>(
+        `select ${this.fields()} from communities c where ${/^[0-9a-f-]{36}$/i.test(id) ? "c.id" : "c.slug"}=$1${activeOnly ? " and c.status='active'" : ""}`,
+        [id],
+      )
+    ).rows[0] ?? null;
   }
   async role(id: string, userId: UserId): Promise<CommunityRole | null> {
     return (await this.pool.query<{ role: CommunityRole }>(`select role from community_members where community_id=$1 and user_id=$2`, [id, userId])).rows[0]?.role ?? null;

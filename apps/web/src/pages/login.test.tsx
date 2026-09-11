@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { OverlayProvider } from "@platform/overlay";
 import { ThemeProvider } from "@platform/theme";
@@ -6,6 +6,7 @@ import { LoginPage } from "./login.tsx";
 
 afterEach(() => {
   cleanup();
+  sessionStorage.clear();
   window.history.pushState(null, "", "/");
 });
 
@@ -23,5 +24,18 @@ describe("LoginPage", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Печатайте идеи — от модели до готовой детали" })).toBeTruthy();
     expect(screen.getByText("Находите 3D-модели, готовьте их к печати и управляйте принтерами в одном месте.")).toBeTruthy();
     expect(screen.getByRole("textbox", { name: "Рабочая почта" })).toBeTruthy();
+  });
+
+  it("stores the return URL before leaving for PlagID", () => {
+    render(
+      <ThemeProvider>
+        <OverlayProvider>
+          <LoginPage returnUrl="/park/add?code=ABC123&model=bambu-x1" />
+        </OverlayProvider>
+      </ThemeProvider>,
+    );
+
+    fireEvent.click(screen.getByRole("link", { name: "PlagID" }));
+    expect(sessionStorage.getItem("portal.auth.returnUrl")).toBe("/park/add?code=ABC123&model=bambu-x1");
   });
 });

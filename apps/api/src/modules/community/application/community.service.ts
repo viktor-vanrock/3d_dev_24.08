@@ -115,9 +115,9 @@ export class CommunityService implements CommunityPort, CommunitySocialOwnerPort
       items = has ? rows.slice(0, i.limit) : rows;
     return { items: items.map((x) => communityView(x)), next_cursor: has ? items.at(-1)!.created_at.toISOString() : null };
   }
-  async detail(id: string, userId: UserId) {
-    const row = found(await this.repo.community(id));
-    const [role, related, enriched] = await Promise.all([this.repo.role(row.id, userId), this.catalog.related(row.id), this.catalog.enrich([row])]);
+  async detail(id: string, userId: UserId | null) {
+    const row = found(await this.repo.community(id, userId === null));
+    const [role, related, enriched] = await Promise.all([userId === null ? null : this.repo.role(row.id, userId), this.catalog.related(row.id), this.catalog.enrich([row])]);
     return { ...communityView(enriched[0] ?? row, role), related_communities: related };
   }
   async join(id: string, u: UserId) {

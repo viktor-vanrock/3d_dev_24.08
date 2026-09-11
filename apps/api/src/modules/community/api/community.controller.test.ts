@@ -1,5 +1,7 @@
 import { METHOD_METADATA, PATH_METADATA } from "@nestjs/common/constants";
 import { describe, expect, it } from "vitest";
+import { AccessMode } from "../../permissions/domain/access-mode.ts";
+import { ACCESS_MODE_KEY } from "../../permissions/guards/permission.guard.ts";
 import { CommunityController } from "./community.controller.ts";
 const expected = [
   "POST /communities",
@@ -33,5 +35,11 @@ describe("CommunityController route inventory", () => {
       return [`${["GET", "POST", "PUT", "DELETE", "PATCH"][method]} /${path}`];
     });
     expect(routes.sort()).toEqual(expected.sort());
+  });
+  it("opens only the requested community reads at method level", () => {
+    expect(Reflect.getMetadata(ACCESS_MODE_KEY, CommunityController.prototype.list)).toBe(AccessMode.PUBLIC);
+    expect(Reflect.getMetadata(ACCESS_MODE_KEY, CommunityController.prototype.detail)).toBe(AccessMode.PUBLIC);
+    expect(Reflect.getMetadata(ACCESS_MODE_KEY, CommunityController.prototype.join)).toBeUndefined();
+    expect(Reflect.getMetadata(ACCESS_MODE_KEY, CommunityController)).toBe(AccessMode.USER);
   });
 });

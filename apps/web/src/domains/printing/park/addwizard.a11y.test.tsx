@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 // eslint-disable-next-line boundaries/element-types -- легатное междоменное ребро (Этап 4.2): printing-тест→onboarding PrinterPicker, развязка отложена до pages/DI. См. MIGRATION.md.
 import { PrinterPicker } from "@domains/onboarding";
 import { ParkAddScreen } from "./addwizard.tsx";
 import { LevelTiles } from "./leveltiles.tsx";
 
-const { activationState, overlayApi, interactionSound } = vi.hoisted(() => ({
+const { activationState, overlayApi, interactionSound, useActivationMock } = vi.hoisted(() => ({
   activationState: {
     loading: false,
     activation: null,
@@ -19,6 +19,7 @@ const { activationState, overlayApi, interactionSound } = vi.hoisted(() => ({
     removePrinter: vi.fn(),
     removeFilament: vi.fn(),
   },
+  useActivationMock: vi.fn(),
   overlayApi: {
     toast: vi.fn(),
     confirm: vi.fn(async () => false),
@@ -30,7 +31,10 @@ const { activationState, overlayApi, interactionSound } = vi.hoisted(() => ({
   interactionSound: { tick: vi.fn(), cta: vi.fn(), toggle: vi.fn(), nav: vi.fn(), confirm: vi.fn(), success: vi.fn(), error: vi.fn(), offline: vi.fn() },
 }));
 
-vi.mock("@shared/lib/activation.ts", () => ({ useActivation: () => activationState }));
+vi.mock("@shared/lib/activation.ts", () => ({ useActivation: (enabled?: boolean) => {
+  useActivationMock(enabled);
+  return activationState;
+} }));
 vi.mock("@platform/nav/homeheader.tsx", () => ({ HomeHeader: () => <header data-testid="site-header" /> }));
 vi.mock("@platform/overlay", () => ({ useOverlay: () => overlayApi }));
 vi.mock("@platform/sound", () => ({ useInteractionSound: () => interactionSound }));
@@ -48,11 +52,21 @@ afterEach(() => {
 });
 
 beforeEach(() => {
+  sessionStorage.clear();
   vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ machines: [] }), { status: 200 })));
   window.history.replaceState(null, "", "/park/add");
 });
 
 describe("MF-1530: семантика мастера добавления принтера", () => {
+  it("сохраняет все параметры deep-link и не читает защищённый activation API для гостя", async () => {
+    window.history.replaceState(null, "", "/park/add?code=ABC123&model=bambu-x1&campaign=qr");
+    render(<ParkAddScreen user={null} section="printers" onSectionChange={() => {}} />);
+
+    await waitFor(() => expect(sessionStorage.getItem("portal.parkAdd.resume")).toContain('"code":"ABC123"'));
+    expect(useActivationMock).toHaveBeenCalledWith(false);
+    expect(screen.queryByText("ABC123")).toBeNull();
+  });
+
   it("сохраняет общий хедер и отдельные визуальные роли поиска и прогресса", () => {
     render(<ParkAddScreen user={null} section="printers" onSectionChange={() => {}} />);
 
@@ -119,5 +133,26 @@ describe("MF-1530: семантика мастера добавления при
     fireEvent.click(screen.getByRole("radio", { name: /Управлять из любой точки, через наш агент/ }));
     fireEvent.click(screen.getByRole("button", { name: "Установить агент" }));
     expect(screen.getByText("Создаём код подключения…").getAttribute("role")).toBe("status");
+  });
+
+  it("не создаёт и не показывает enroll-код гостю", () => {
+    render(
+      <LevelTiles
+        brand="Creality"
+        model="Ender-3"
+        canon={{ connectorType: "moonraker" }}
+        canonLoading={false}
+        overlay={overlayApi}
+        user={null}
+        onDiy={vi.fn()}
+        onCommunityFirmware={vi.fn()}
+        onDone={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("radio", { name: /Управлять из любой точки, через наш агент/ }));
+    expect(overlayApi.modal).toHaveBeenCalledOnce();
+    expect(screen.queryByRole("button", { name: "Установить агент" })).toBeNull();
+    expect(screen.queryByText(/MF[A-Z0-9-]+/)).toBeNull();
   });
 });

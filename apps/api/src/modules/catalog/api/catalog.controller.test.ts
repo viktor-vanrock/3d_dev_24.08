@@ -133,10 +133,10 @@ describe("Nest catalog read migration", () => {
     expect(typeof payload.error?.requestId).toBe("string");
   });
 
-  it("closes normal public reads in CLOSED_DEV but keeps printer catalog always open", async () => {
+  it("keeps declaratively public reads open in CLOSED_DEV", async () => {
     process.env.CLOSED_DEV = "1";
     try {
-      expect((await fetch(`${baseUrl}/materials`)).status).toBe(401);
+      expect((await fetch(`${baseUrl}/materials`)).status).toBe(200);
       expect((await fetch(`${baseUrl}/printers`)).status).toBe(200);
     } finally {
       delete process.env.CLOSED_DEV;

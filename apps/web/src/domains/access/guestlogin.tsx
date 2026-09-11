@@ -5,6 +5,7 @@ import { MethodIcon } from "../../pages/methodicon.tsx";
 import { Button } from "@shared/ui";
 import { clearGuestIntent, saveGuestIntent, type GuestIntent } from "./guestintent.ts";
 import { devLogin, plagIdStartUrl } from "./session.ts";
+import { saveAuthReturnUrl } from "../../router.ts";
 import { useDevMode } from "./useDevMode.ts";
 import "../../pages/login.css";
 
@@ -21,7 +22,7 @@ export function useGuestLogin(): (intent?: GuestIntent) => void {
     if (intent) saveGuestIntent(intent);
     overlay.modal({
       title: "Войдите, чтобы продолжить",
-      content: <GuestLoginPromptBody />,
+      content: <GuestLoginPromptBody intent={intent} />,
       onClose: () => {
         activeModal.current = false;
         clearGuestIntent();
@@ -30,7 +31,7 @@ export function useGuestLogin(): (intent?: GuestIntent) => void {
   };
 }
 
-function GuestLoginPromptBody() {
+function GuestLoginPromptBody({ intent }: { intent?: GuestIntent }) {
   const isDevMode = useDevMode();
   const [devError, setDevError] = useState("");
 
@@ -52,7 +53,14 @@ function GuestLoginPromptBody() {
         <span style={dividerLabelStyle}>Войти через</span>
         <div style={dividerLineStyle} />
       </div>
-      <Button variant="secondary" href={plagIdStartUrl()} icon={<MethodIcon provider="plagid" />}>
+      <Button
+        variant="secondary"
+        href={plagIdStartUrl()}
+        icon={<MethodIcon provider="plagid" />}
+        onClick={() => {
+          if (intent?.returnTo) saveAuthReturnUrl(intent.returnTo);
+        }}
+      >
         PlagID
       </Button>
       {isDevMode ? (

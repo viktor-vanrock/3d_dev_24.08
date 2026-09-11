@@ -18,4 +18,4 @@ export type GuestIntent =
   | { kind: "fork"; modelId: string; returnTo: string }
   | { kind: "comment_model"; modelId: string; parentId?: string; body: string; returnTo: string }
   | { kind: "generate"; prompt: string; returnTo: string }
-  | { kind: "printer_connect"; printerId: string; level: "managed-local" | "managed-bridge" | "custom"; ip?: string; returnTo: string };
+  | { kind: "printer_connect"; printerId: string; level: "list" | "managed-local" | "managed-bridge" | "custom"; ip?: string; returnTo: string };
