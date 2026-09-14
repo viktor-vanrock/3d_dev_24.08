@@ -8,7 +8,7 @@ import "./login.css";
 // приходит в лог сервера, см. apps/api/src/auth/email.ts.
 // Кнопка/поля — из библиотеки apps/web/src/ui/ui.tsx (эпик MF-40/MF-426): бывший локальный
 // PrimaryButton и инлайн-стили полей удалены, 0 дублей.
-export function EmailLogin() {
+export function EmailLogin({ onSuccess }: { onSuccess?: () => void } = {}) {
   const emailId = useId();
   const codeId = useId();
   const statusId = useId();
@@ -37,7 +37,8 @@ export function EmailLogin() {
     const result = await verifyEmailAuth(localPart, domain, code);
     setBusy(false);
     if (!result.ok) return setError(result.error ?? "Неверный код");
-    window.location.reload();
+    if (onSuccess) onSuccess();
+    else window.location.reload();
   }
 
   if (step === "code") {

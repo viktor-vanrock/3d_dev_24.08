@@ -92,7 +92,7 @@ export function CommunityScreen({
   onSectionChange,
   slug,
 }: {
-  user: SessionUser;
+  user: SessionUser | null;
   section: Section;
   onSectionChange: (section: Section) => void;
   slug: string;
@@ -430,7 +430,7 @@ function ThreadRow({
 }: {
   thread: Thread;
   index: number;
-  user: SessionUser;
+  user: SessionUser | null;
   onVoted: (threadId: string, result: VoteResult) => void;
 }) {
   const sound = useInteractionSound();

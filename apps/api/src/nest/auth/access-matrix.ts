@@ -2,6 +2,8 @@ const UUID_PATH_SEGMENT = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a
 
 const PUBLIC_GET_PATH_PATTERNS = [
   /^\/projects(\?.*)?$/,
+  /^\/communities(\?.*)?$/,
+  /^\/communities\/[^/?]+(\?.*)?$/,
   new RegExp(`^/projects/${UUID_PATH_SEGMENT}(\\?.*)?$`, "i"),
   new RegExp(`^/models/${UUID_PATH_SEGMENT}(\\?.*)?$`, "i"),
   new RegExp(`^/projects/${UUID_PATH_SEGMENT}/models/${UUID_PATH_SEGMENT}/revisions/${UUID_PATH_SEGMENT}/preview\\.glb(\\?.*)?$`, "i"),

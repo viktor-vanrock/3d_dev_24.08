@@ -176,6 +176,16 @@
   font-weight: 600;
 }
 
+.passwordLoginError {
+  padding: 8px 12px;
+  border: 1px solid color-mix(in srgb, var(--accent-danger) 40%, var(--border));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent-danger) 12%, transparent);
+  color: var(--accent-danger);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 .emailLoginLabel {
   display: block;
   color: var(--text-dim);

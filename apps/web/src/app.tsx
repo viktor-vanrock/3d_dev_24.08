@@ -1,5 +1,5 @@
-import { lazy, Suspense, type ReactNode } from "react";
-import { AuthGate, GuestIntentResumer, useSession, type SessionUser, LegalScreen, isClosedDev } from "@domains/access";
+import { lazy, Suspense, useEffect, type ReactNode } from "react";
+import { AuthGate, GuestIntentResumer, useSession, type SessionUser, LegalScreen } from "@domains/access";
 import { Footer } from "./footer/footer.tsx";
 import { CommunitiesScreen, CommunityScreen, ModerationScreen, ThreadScreen, FeedEditorScreen, FeedScreen, FeedPostScreen, IdeaScreen, IssueFeedScreen, isWideProjectsEnabled, ProjectsPage } from "@domains/social";
 import { ConsentBanner } from "@platform/consent";
@@ -17,7 +17,7 @@ import { MaterialCandidatesPage } from "./pages/materialcandidates.tsx";
 import { MaterialDetailScreen, MaterialsScreen, ParkAddScreen, CommunityFirmwareScreen, DiyScreen, ParkScreen, SlicePrintScreen, PlateScreen, PrinterLiveScreen, PrinterDeviceMissingScreen, PrinterFaceScreen, PrinterCompareScreen, PrinterDetailScreen, PrintersScreen, PrinterReleasesScreen } from "@domains/printing";
 import { ProductHealthPage } from "./pages/producthealth.tsx";
 import { InstallBanner, PwaRuntime } from "@platform/pwa";
-import { feedPath, filamentsPath, headerModeFor, issuesPath, marketPath, navigateWithTransition, printersPath, useRoute } from "./router.ts";
+import { authReturnUrl, clearAuthReturnUrl, feedPath, filamentsPath, headerModeFor, issuesPath, loginPath, marketPath, navigate, navigateWithTransition, printersPath, saveAuthReturnUrl, useRoute } from "./router.ts";
 import { ThemeProvider } from "@platform/theme";
 import { AuroraBackground } from "@shared/ui";
 
@@ -51,11 +51,16 @@ const AvatarEditorPage = lazy(() =>
 // рендер/soft-gate 401). "issue-new" (MF-947) не в списке — форма подачи требует логина целиком
 // (тот же приём, что park-add/printer-diy), гость видит LoginPage.
 const GUEST_ALLOWED_SCREENS = new Set([
+  "login",
   "home",
   "market",
   "model",
   "profile",
   "feed",
+  "feed-post",
+  "communities",
+  "community",
+  "thread",
   "printers",
   "printer",
   "printer-compare",
@@ -72,6 +77,7 @@ export function App() {
   const route = useRoute();
   const session = useSession();
   const user = session.status === "authenticated" ? session.user : null;
+
   const wideProjectsEnabled = isWideProjectsEnabled();
   const keepsSectionChrome =
     route.screen === "home" ||
@@ -83,6 +89,20 @@ export function App() {
   // Смена Дом → Новости → Проекты → Принтеры → Материалы больше не уничтожает пользовательский chrome
   // (включая WebGL-персонажа) вместе с payload конкретной страницы.
   const shellActivation = useActivation(keepsSectionChrome);
+  const storedReturnUrl = user ? authReturnUrl() : null;
+  const authenticatedRedirect = user
+    ? route.screen === "login"
+      ? route.returnUrl ?? storedReturnUrl ?? "/"
+      : storedReturnUrl && storedReturnUrl !== `${window.location.pathname}${window.location.search}`
+        ? storedReturnUrl
+        : null
+    : null;
+  useEffect(() => {
+    if (!authenticatedRedirect) return;
+    clearAuthReturnUrl();
+    navigate(authenticatedRedirect, "back");
+  }, [authenticatedRedirect]);
+  if (authenticatedRedirect) return null;
   // Раздел для подсветки нав-ряда (NAV_ITEMS — единый реестр, header-capsule.md): экраны без
   // своего пункта меню подсвечивают ближайший смысловой раздел — /generate подсвечивает "home"
   // (вход в генератор — строка поиска Дома), страницы поста/редактора ленты — "feed". Форум
@@ -168,9 +188,13 @@ export function App() {
             // Даже при CLOSED_DEV гость должен попасть в этот маршрут: иначе вместо login-overlay
             // получает полноэкранную LoginPage и теряет printer_id/return_to из deep-link.
             const canOpenGuestParkAdd = route.screen === "park-add";
-            if (user === null && !canOpenGuestParkAdd && (isClosedDev() || !GUEST_ALLOWED_SCREENS.has(route.screen))) {
-              return <LoginPage />;
+            if (user === null && !canOpenGuestParkAdd && !GUEST_ALLOWED_SCREENS.has(route.screen)) {
+              const returnUrl = `${window.location.pathname}${window.location.search}`;
+              saveAuthReturnUrl(returnUrl);
+              return <RouteRedirect to={loginPath(returnUrl)} direction="fwd" />;
             }
+
+            if (route.screen === "login") return <LoginPage returnUrl={route.returnUrl} />;
 
             if (route.screen === "catalog-metrics") {
               return <CatalogMetricsPage />;
@@ -264,7 +288,7 @@ export function App() {
             } else if (route.screen === "feed") {
               screen = <FeedScreen user={user} section={section} onSectionChange={onSectionChange} scope={route.scope} community={route.community} renderHeader={false} />;
             } else if (route.screen === "feed-post") {
-              screen = <FeedPostScreen user={protectedUser} section={section} onSectionChange={onSectionChange} id={route.id} />;
+              screen = <FeedPostScreen user={user} section={section} onSectionChange={onSectionChange} id={route.id} />;
             } else if (route.screen === "feed-new") {
               screen = <FeedEditorScreen user={protectedUser} section={section} onSectionChange={onSectionChange} modelId={route.model} />;
             } else if (route.screen === "printers") {
@@ -294,11 +318,11 @@ export function App() {
             } else if (route.screen === "research-form") {
               screen = <ResearchFormScreen user={protectedUser} section={section} onSectionChange={onSectionChange} slug={route.slug} draft={route.draft} />;
             } else if (route.screen === "communities") {
-              screen = <CommunitiesScreen user={protectedUser} section={section} onSectionChange={onSectionChange} />;
+              screen = <CommunitiesScreen user={user} section={section} onSectionChange={onSectionChange} />;
             } else if (route.screen === "community") {
-              screen = <CommunityScreen user={protectedUser} section={section} onSectionChange={onSectionChange} slug={route.slug} />;
+              screen = <CommunityScreen user={user} section={section} onSectionChange={onSectionChange} slug={route.slug} />;
             } else if (route.screen === "thread") {
-              screen = <ThreadScreen user={protectedUser} section={section} onSectionChange={onSectionChange} id={route.id} />;
+              screen = <ThreadScreen user={user} section={section} onSectionChange={onSectionChange} id={route.id} />;
             } else if (route.screen === "moderation") {
               screen = <ModerationScreen user={protectedUser} section={section} onSectionChange={onSectionChange} />;
             } else if (route.screen === "idea") {
@@ -352,6 +376,11 @@ export function App() {
         </AuthGate>
     </PageFrame>
   );
+}
+
+function RouteRedirect({ to, direction }: { to: string; direction: "fwd" | "back" }) {
+  useEffect(() => navigate(to, direction), [to, direction]);
+  return null;
 }
 
 function PageFrame({ children }: { children: ReactNode }) {

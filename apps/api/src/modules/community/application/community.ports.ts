@@ -122,7 +122,7 @@ export interface CommunityListInput {
   member?: string;
   cursor?: string;
   limit: number;
-  userId: UserId;
+  userId: UserId | null;
 }
 export interface ThreadListInput {
   communityId: string;
@@ -164,7 +164,7 @@ export interface ThreadPage {
 export interface CommunityPort {
   create(input: CreateCommunityInput): Promise<CommunityView>;
   list(input: CommunityListInput): Promise<CommunityPage>;
-  detail(id: string, userId: UserId): Promise<CommunityView & { readonly related_communities: readonly { id: string; slug: string; name: string; kind: string }[] }>;
+  detail(id: string, userId: UserId | null): Promise<CommunityView & { readonly related_communities: readonly { id: string; slug: string; name: string; kind: string }[] }>;
   join(id: string, userId: UserId): Promise<{ readonly role: CommunityRole }>;
   leave(id: string, userId: UserId): Promise<{ readonly left: true }>;
   subscribe(id: string, userId: UserId, source: SubscribeSource | null): Promise<{ readonly role: CommunityRole }>;

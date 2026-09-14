@@ -7,13 +7,14 @@ import { HomeHeader, type Section } from "@platform/nav";
 // eslint-disable-next-line boundaries/element-types -- легатное междоменное ребро (Этап 4.2): printing→onboarding PrinterPicker (мастер добавления принтера переиспользует пикер онбординга), развязка отложена до pages/DI. См. MIGRATION.md.
 import { PrinterPicker } from "@domains/onboarding";
 import { useOverlay } from "@platform/overlay";
-import { navigate, parkPath, parseParkAddPrefill, printerCommunityFirmwarePath, printerDiyPath, printerPath } from "../../../router.ts";
+import { navigate, parkPath, parseParkAddPrefill, printerCommunityFirmwarePath, printerDiyPath, printerPath, saveAuthReturnUrl } from "../../../router.ts";
 import { useInteractionSound } from "@platform/sound";
 import { AuroraBackground, Card, Eyebrow, Heading, StatusPill } from "@shared/ui";
 import { apiFetch } from "@shared/api";
 import type { LevelId } from "./gating.ts";
 import { LevelTiles } from "./leveltiles.tsx";
 import { findPrinterCanon, type PrinterCanonMatch } from "./printercanon.ts";
+import { parkAddResumePath, saveParkAddResume, takeParkAddResume } from "./addresume.ts";
 import "./park.css";
 
 // Мастер «добавить принтер» (MF-903, docs/design/printer.wizard.md). Роут `/park/add`, не оверлей
@@ -48,7 +49,7 @@ export function ParkAddScreen({
   section: Section;
   onSectionChange: (section: Section) => void;
 }) {
-  const activation = useActivation();
+  const activation = useActivation(user !== null);
   const overlay = useOverlay();
   const sound = useInteractionSound();
   // Префилл с карточки модели (§2, «У меня такой», MF-892 — ещё не собрана, но контракт URL уже
@@ -68,6 +69,20 @@ export function ParkAddScreen({
   const [done, setDone] = useState<LevelId | null>(null);
   const [createdPrinterId, setCreatedPrinterId] = useState<string | null>(null);
   const [resume] = useState(() => takePrinterResume());
+
+  useEffect(() => {
+    if (user === null) {
+      const returnTo = `${window.location.pathname}${window.location.search}`;
+      saveParkAddResume(window.location.search);
+      saveAuthReturnUrl(returnTo);
+      return;
+    }
+    const saved = takeParkAddResume();
+    if (saved === null) return;
+    const restoredPath = parkAddResumePath(saved);
+    const currentPath = `${window.location.pathname}${window.location.search}`;
+    if (currentPath !== restoredPath) navigate(restoredPath, "back");
+  }, [user]);
 
   // Re-check opaque catalog ids after a deep-link/refresh. Deleted ids must fall back to
   // ordinary model selection instead of silently binding a stale prefill.
@@ -113,6 +128,7 @@ export function ParkAddScreen({
   // сам их не отдаёт наружу, только вызывает addPrinter(...) и затем onLinked() без аргументов.
   const handlePrinterAdded: ActivationState["addPrinter"] = async (printer) => {
     setMachine({ brand: printer.brand, model: printer.model });
+    if (user === null) return null;
     return activation.addPrinter(printer);
   };
 

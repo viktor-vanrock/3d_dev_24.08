@@ -122,7 +122,7 @@ export function LevelTiles({ brand, model, canon, canonLoading, overlay, user, i
 
   function selectLevel(level: LevelId) {
     if (!gating[level].enabled) return;
-    if (!user && level !== "list") {
+    if (!user) {
       if (level === "managed-cloud") return;
       promptGuestLogin({ kind: "printer_connect", printerId: `${brand}-${model}`, level, ip: level === "managed-local" ? ip.trim() || undefined : undefined, returnTo: window.location.pathname + window.location.search });
       return;
