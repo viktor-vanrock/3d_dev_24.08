@@ -121,3 +121,10 @@ export class SetPrimaryModelDto {
   @IsUUID()
   model_id!: string;
 }
+
+export class PublishProjectDto {
+  @ApiProperty({ type: Boolean, enum: [true] })
+  @IsBoolean()
+  @IsIn([true])
+  confirmed!: true;
+}

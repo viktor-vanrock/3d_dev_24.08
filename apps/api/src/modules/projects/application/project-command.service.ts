@@ -73,14 +73,6 @@ export class ProjectCommandService {
     return this.repository.clearPrimary(actorId, projectId, version);
   }
 
-  publish(actorId: UserId, projectId: ProjectId, version: number) {
-    return this.repository.publish(actorId, projectId, version);
-  }
-
-  unpublish(actorId: UserId, projectId: ProjectId, version: number) {
-    return this.repository.unpublish(actorId, projectId, version);
-  }
-
   private async acceptSource(actorId: UserId, file: ProjectUpload | undefined): Promise<UploadedSource> {
     if (file === undefined) throw new ProjectError(400, "request.validation.v1", "Требуется файл");
     if (file.size > PROJECT_UPLOAD_MAX_BYTES || file.buffer.length > PROJECT_UPLOAD_MAX_BYTES) {

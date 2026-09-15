@@ -19,7 +19,8 @@ export type ProjectErrorCode =
   | "project.primary_model_published.v1"
   | "project.model_published.v1"
   | "project.ready_primary_required.v1"
-  | "project.publication_conflict.v1";
+  | "project.publication_conflict.v1"
+  | "project.invalid_transition.v1";
 
 export class ProjectError extends Error {
   constructor(

@@ -35,6 +35,7 @@ export const API_ERROR_CODES = [
   "project.model_published.v1",
   "project.ready_primary_required.v1",
   "project.publication_conflict.v1",
+  "project.invalid_transition.v1",
 ] as const;
 
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number];

@@ -2,6 +2,7 @@ import { base, tseslint } from "@portal/config/eslint.base.mjs";
 import boundaries from "eslint-plugin-boundaries";
 import ts from "typescript";
 import { permissionsLintConfig } from "./.eslintrc.permissions.js";
+import noDirectLifecycleChange from "../../tools/eslint-rules/no-direct-lifecycle-change.cjs";
 
 // Строгие type-aware правила раскатаны на ВЕСЬ пакет (задача 7.6, выполнена после удаления legacy
 // Fastify в 7.4). До cutover правила жили в двухзонном split (`src/modules/**`+`src/nest/**`), потому
@@ -143,6 +144,16 @@ const own = { domain: "{{from.domain}}" };
 export default [
   ...base,
   ...permissionsLintConfig,
+  {
+    files: ["src/modules/projects/**/*.ts"],
+    plugins: { local: { rules: { "no-direct-lifecycle-change": noDirectLifecycleChange } } },
+    rules: {
+      "local/no-direct-lifecycle-change": ["error", {
+        allowedFiles: ["project-lifecycle.service.ts", "postgres-project.repository.ts"],
+        protectedProps: ["status", "published_revision_id", "publishedAt", "published_at", "archivedAt", "archived_at"],
+      }],
+    },
+  },
 
   // CommonJS tooling configs (.cjs) — declare the node/CommonJS globals so `module`/`require` are defined.
   {

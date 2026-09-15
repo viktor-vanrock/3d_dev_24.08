@@ -4,10 +4,11 @@ import type { Response } from "express";
 import { SESSION_USER, SessionVerifier, type RequestWithSession } from "../../../nest/auth/session-verifier.ts";
 import { ModelId, ModelRevisionId, ProjectId, UserId, type UserId as UserIdType } from "../../_kernel/brandedIds.ts";
 import { ProjectCommandService } from "../application/project-command.service.ts";
+import { ProjectLifecycleService } from "../application/project-lifecycle.service.ts";
 import { ProjectQueryService } from "../application/project-query.service.ts";
 import { PROJECT_CONTRACT_VERSION, PROJECT_UPLOAD_MAX_BYTES, type ProjectUpload } from "../domain/project.ts";
 import { parseIdempotencyKey, parseIfMatch, projectEtag, ProjectError } from "../domain/project.errors.ts";
-import { CreateModelDto, CreateProjectDto, ProjectPageQueryDto, SetPrimaryModelDto, UpdateProjectDto } from "./projects.dto.ts";
+import { CreateModelDto, CreateProjectDto, ProjectPageQueryDto, PublishProjectDto, SetPrimaryModelDto, UpdateProjectDto } from "./projects.dto.ts";
 import { ApiProjectOperation } from "./projects.openapi.ts";
 import {
   ModelListResponseDto,
@@ -53,6 +54,7 @@ export class ProjectsController {
   constructor(
     @Inject(ProjectCommandService) private readonly commands: ProjectCommandService,
     @Inject(ProjectQueryService) private readonly queries: ProjectQueryService,
+    @Inject(ProjectLifecycleService) private readonly lifecycle: ProjectLifecycleService,
     @Inject(SessionVerifier) private readonly sessions: SessionVerifier,
   ) {}
 
@@ -452,9 +454,11 @@ export class ProjectsController {
     @Req() request: RequestWithSession,
     @Param("projectId") rawProjectId: string,
     @Headers("if-match") match: string | string[] | undefined,
+    @Body() body: PublishProjectDto,
     @Res() response: Response,
   ) {
-    const result = await this.commands.publish(requiredUser(request), ProjectId(id(rawProjectId)), parseIfMatch(match));
+    if (body.confirmed !== true) throw new ProjectError(400, "request.validation.v1", "Подтвердите публикацию");
+    const result = await this.lifecycle.publish(requiredUser(request), ProjectId(id(rawProjectId)), parseIfMatch(match), body);
     response.set("ETag", projectEtag(result.version)).status(200).json({ contract_version: PROJECT_CONTRACT_VERSION, publication: result.value });
   }
 
@@ -475,7 +479,29 @@ export class ProjectsController {
     @Headers("if-match") match: string | string[] | undefined,
     @Res() response: Response,
   ) {
-    const version = await this.commands.unpublish(requiredUser(request), ProjectId(id(rawProjectId)), parseIfMatch(match));
+    const version = await this.lifecycle.unpublish(requiredUser(request), ProjectId(id(rawProjectId)), parseIfMatch(match));
     response.set("ETag", projectEtag(version)).status(204).end();
+  }
+
+  @Post(":projectId/archive")
+  async archive(
+    @Req() request: RequestWithSession,
+    @Param("projectId") rawProjectId: string,
+    @Headers("if-match") match: string | string[] | undefined,
+    @Res() response: Response,
+  ) {
+    const result = await this.lifecycle.archive(requiredUser(request), ProjectId(id(rawProjectId)), parseIfMatch(match));
+    response.set("ETag", projectEtag(result.version)).status(200).json({ contract_version: PROJECT_CONTRACT_VERSION });
+  }
+
+  @Post(":projectId/restore")
+  async restore(
+    @Req() request: RequestWithSession,
+    @Param("projectId") rawProjectId: string,
+    @Headers("if-match") match: string | string[] | undefined,
+    @Res() response: Response,
+  ) {
+    const result = await this.lifecycle.restore(requiredUser(request), ProjectId(id(rawProjectId)), parseIfMatch(match));
+    response.set("ETag", projectEtag(result.version)).status(200).json({ contract_version: PROJECT_CONTRACT_VERSION });
   }
 }

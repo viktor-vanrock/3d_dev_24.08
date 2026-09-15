@@ -3,8 +3,9 @@ import type { Pool, PoolClient, QueryResultRow } from "pg";
 import { DATABASE_POOL } from "../../../nest/database/database.constants.ts";
 import { ModelId, ModelRevisionId, ProjectId, ProjectRevisionId, type UserId } from "../../_kernel/brandedIds.ts";
 import { ensureOwnedTags } from "../../community/public/index.ts";
-import { normalizeTags, sha256Canonical, type ModelCreateInput, type ProjectMetadataInput, type ProjectPatchInput } from "../domain/project.ts";
+import { normalizeTags, parseProjectStatus, sha256Canonical, type ModelCreateInput, type ProjectMetadataInput, type ProjectPatchInput } from "../domain/project.ts";
 import { modelNotFound, ProjectError, projectNotFound, revisionNotFound, versionConflict } from "../domain/project.errors.ts";
+import type { ProjectStatus } from "../domain/project-lifecycle.types.ts";
 import type { ModelRevisionView, ModelView, MutationResult, ProjectRepository, ProjectView, PublishedProjectView, UploadedSource } from "../domain/project.repository.ts";
 
 interface ProjectRow extends QueryResultRow {
@@ -14,6 +15,9 @@ interface ProjectRow extends QueryResultRow {
   repo_url: string | null;
   primary_model_id: string | null;
   published_revision_id: string | null;
+  status: string;
+  published_at: Date | null;
+  archived_at: Date | null;
   version: string;
   created_at: Date;
   updated_at: Date;
@@ -63,9 +67,10 @@ interface LockedProject extends QueryResultRow {
   version: string;
   primary_model_id: string | null;
   published_revision_id: string | null;
+  status: string;
 }
 
-const PROJECT_COLUMNS = `p.id, p.title, p.description, p.repo_url, p.primary_model_id, p.published_revision_id,
+const PROJECT_COLUMNS = `p.id, p.title, p.description, p.repo_url, p.primary_model_id, p.published_revision_id, p.status, p.published_at, p.archived_at,
          p.version, p.created_at, p.updated_at, p.owner_id,
          u.username, u.display_name, u.avatar_url,
          coalesce((select array_agg(t.name order by t.name) from model_tags mt join tags t on t.id = mt.tag_id where mt.model_id = p.id), '{}') as tags,
@@ -95,6 +100,9 @@ function projectView(row: ProjectRow, primaryModel?: ModelView | null): ProjectV
     owner: { id: row.owner_id, username: row.username, display_name: row.display_name, avatar_url: row.avatar_url },
     primary_model_id: row.primary_model_id === null ? null : ModelId(row.primary_model_id),
     published_revision_id: row.published_revision_id === null ? null : ProjectRevisionId(row.published_revision_id),
+    status: parseProjectStatus(row.status),
+    published_at: row.published_at,
+    archived_at: row.archived_at,
     models_count: Number(row.models_count),
     version: Number(row.version),
     created_at: row.created_at,
@@ -164,7 +172,7 @@ export class PostgresProjectRepository implements ProjectRepository {
 
   private async lockProject(client: PoolClient, actorId: UserId, projectId: ProjectId, version?: number): Promise<LockedProject> {
     const result = await client.query<LockedProject>(
-      `select id, owner_id, version, primary_model_id, published_revision_id
+      `select id, owner_id, version, primary_model_id, published_revision_id, status
          from projects where id = $1 and owner_id = $2 and deleted_at is null for update`,
       [projectId, actorId],
     );
@@ -324,6 +332,32 @@ export class PostgresProjectRepository implements ProjectRepository {
 
   getDraft(actorId: UserId, projectId: ProjectId): Promise<ProjectView | null> {
     return this.loadDraft(this.pool, actorId, projectId);
+  }
+
+  async updateLifecycleStatus(
+    projectId: ProjectId,
+    actorId: UserId,
+    params: { readonly status: ProjectStatus; readonly publishedAt?: Date | null; readonly archivedAt?: Date | null },
+    version: number,
+  ): Promise<{ readonly version: number }> {
+    return this.transaction(async (client) => {
+      await this.lockProject(client, actorId, projectId, version);
+      const sets = ["status = $2", "version = version + 1", "updated_at = now()"];
+      const values: unknown[] = [projectId, params.status];
+      let index = 3;
+      if (params.publishedAt !== undefined) {
+        sets.push(`published_at = $${index}`);
+        values.push(params.publishedAt);
+        index += 1;
+      }
+      if (params.archivedAt !== undefined) {
+        sets.push(`archived_at = $${index}`);
+        values.push(params.archivedAt);
+      }
+      if (params.status === "archived") sets.push("published_revision_id = null");
+      const result = await client.query<{ version: string }>(`update projects set ${sets.join(", ")} where id = $1 returning version`, values);
+      return { version: Number(result.rows[0]!.version) };
+    });
   }
 
   async updateProject(actorId: UserId, projectId: ProjectId, version: number, patch: ProjectPatchInput): Promise<MutationResult<ProjectView>> {
@@ -567,6 +601,7 @@ export class PostgresProjectRepository implements ProjectRepository {
     actorId: UserId,
     projectId: ProjectId,
     version: number,
+    lifecycle: { readonly status: ProjectStatus; readonly publishedAt: Date },
   ): Promise<MutationResult<{ project_revision_id: ProjectRevisionId; project_id: ProjectId; version: number; published_at: Date }>> {
     return this.transaction(async (client) => {
       const project = await this.lockProject(client, actorId, projectId, version);
@@ -628,7 +663,10 @@ export class PostgresProjectRepository implements ProjectRepository {
       }
       const changed = project.published_revision_id !== publication.id;
       if (changed) {
-        await client.query("update projects set published_revision_id = $2, version = version + 1, updated_at = now() where id = $1", [projectId, publication.id]);
+        await client.query(
+          "update projects set published_revision_id = $2, status = $3, published_at = $4, version = version + 1, updated_at = now() where id = $1",
+          [projectId, publication.id, lifecycle.status, lifecycle.publishedAt],
+        );
       }
       const resultingVersion = changed ? version + 1 : version;
       return {
@@ -638,11 +676,11 @@ export class PostgresProjectRepository implements ProjectRepository {
     });
   }
 
-  async unpublish(actorId: UserId, projectId: ProjectId, version: number): Promise<number> {
+  async unpublish(actorId: UserId, projectId: ProjectId, version: number, lifecycle: { readonly status: ProjectStatus }): Promise<number> {
     return this.transaction(async (client) => {
       const project = await this.lockProject(client, actorId, projectId, version);
       if (project.published_revision_id === null) return version;
-      await client.query("update projects set published_revision_id = null, version = version + 1, updated_at = now() where id = $1", [projectId]);
+      await client.query("update projects set published_revision_id = null, status = $2, version = version + 1, updated_at = now() where id = $1", [projectId, lifecycle.status]);
       return version + 1;
     });
   }
@@ -670,7 +708,10 @@ export class PostgresProjectRepository implements ProjectRepository {
       if ((changed.rowCount ?? 0) === 0) return false;
       if (to === "ready") {
         await client.query("update models set active_revision_id = $2, version = version + 1, updated_at = now() where id = $1", [row.model_id, revisionId]);
-        await client.query("update projects set version = version + 1, updated_at = now() where id = $1", [row.project_id]);
+        await client.query(
+          "update projects set status = case when status in ('draft', 'uploading', 'reviewing') then 'ready'::project_status else status end, version = version + 1, updated_at = now() where id = $1",
+          [row.project_id],
+        );
       } else if (to === "failed") {
         await client.query("update models set version = version + 1, updated_at = now() where id = $1", [row.model_id]);
         await client.query("update projects set version = version + 1, updated_at = now() where id = $1", [row.project_id]);

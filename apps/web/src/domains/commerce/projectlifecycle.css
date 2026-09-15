@@ -1,0 +1,14 @@
+.projectLifecycleStatus { display: inline-flex; flex-direction: column; gap: 4px; }
+.projectLifecycleStatusBadge { border-radius: 999px; padding: 4px 9px; font-size: 12px; font-weight: 700; }
+.projectLifecycleStatus[data-color="gray"] .projectLifecycleStatusBadge { background: #e6e8eb; color: #40474f; }
+.projectLifecycleStatus[data-color="blue"] .projectLifecycleStatusBadge { background: #dcecff; color: #1559a6; }
+.projectLifecycleStatus[data-color="yellow"] .projectLifecycleStatusBadge { background: #fff3c4; color: #7c5a00; }
+.projectLifecycleStatus[data-color="green"] .projectLifecycleStatusBadge { background: #d9f4e4; color: #17663b; }
+.projectLifecycleStatus[data-color="orange"] .projectLifecycleStatusBadge { background: #ffe4cc; color: #9a4510; }
+.projectLifecycleStatus[data-color="slate"] .projectLifecycleStatusBadge { background: #dce1e8; color: #44505f; }
+.projectLifecycleStatusHint, .projectLifecycleHint { color: var(--text-muted, #68717c); font-size: 13px; margin: 0; }
+.projectLifecycleActions { display: flex; gap: 8px; flex-wrap: wrap; }
+.projectLifecycleBackdrop { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 20px; background: rgb(0 0 0 / 55%); }
+.projectLifecycleDialog { width: min(100%, 460px); border-radius: 20px; padding: 24px; color: #17212d; background: #fff; box-shadow: 0 24px 70px rgb(0 0 0 / 32%); }
+.projectLifecycleDialog h2 { margin-top: 0; }
+.projectLifecycleDialog ul { margin: 0 0 24px; padding-left: 20px; }
