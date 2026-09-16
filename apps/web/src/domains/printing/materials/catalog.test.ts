@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { emptyMaterialFilters, materialFiltersToSearch, parseMaterialFilters } from "./catalog.ts";
+import { describe, expect, it, vi } from "vitest";
+import { emptyMaterialFilters, fetchMaterialVendors, materialFiltersToSearch, parseMaterialFilters } from "./catalog.ts";
 
 describe("состояние каталога материалов в URL (MF-1476)", () => {
   it("восстанавливает фильтры и offset из прямой ссылки", () => {
@@ -27,5 +27,13 @@ describe("состояние каталога материалов в URL (MF-14
     expect(materialFiltersToSearch({ ...emptyMaterialFilters(), q: "Чёрный", color: "Чёрный" })).toBe(
       "?q=%D0%A7%D1%91%D1%80%D0%BD%D1%8B%D0%B9&color=black",
     );
+  });
+
+  it("загружает полный справочник производителей", async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ vendors: [{ id: "v1", slug: "bambu-lab", name: "Bambu Lab", verified: false }] }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(fetchMaterialVendors()).resolves.toEqual([{ id: "v1", slug: "bambu-lab", name: "Bambu Lab", verified: false }]);
+    expect(fetchMock).toHaveBeenCalledWith("/vendors", { credentials: "include", signal: undefined });
+    vi.unstubAllGlobals();
   });
 });

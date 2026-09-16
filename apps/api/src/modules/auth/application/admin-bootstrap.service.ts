@@ -4,12 +4,14 @@ import { resolveAdminBootstrapConfig } from "../../../nest/config/runtime-config
 import { RuntimeLogger } from "../../../nest/observability/runtime-logger.ts";
 import { AuthRepository } from "../infrastructure/auth.repository.ts";
 import { hashPassword } from "../infrastructure/password-hash.ts";
+import { PermissionsService } from "../../permissions/public/index.ts";
 
 @Injectable()
 export class AdminBootstrapService implements OnApplicationBootstrap {
   constructor(
     @Inject(ConfigService) private readonly config: ConfigService,
     @Inject(AuthRepository) private readonly repository: AuthRepository,
+    @Inject(PermissionsService) private readonly permissions: PermissionsService,
     @Inject(RuntimeLogger) private readonly logger: RuntimeLogger,
   ) {}
 
@@ -23,9 +25,10 @@ export class AdminBootstrapService implements OnApplicationBootstrap {
     if (admin === null) return;
 
     const passwordHash = await hashPassword(admin.password);
-    await this.repository.upsertBootstrapAdmin(admin.username, passwordHash, admin.updatePasswordOnStartup);
+    const userId = await this.repository.upsertBootstrapAdmin(admin.username, passwordHash, admin.updatePasswordOnStartup);
+    const grants = await this.permissions.ensureBootstrapDataPermissions(userId);
     this.logger.info(
-      { event: "auth.admin_bootstrap", outcome: "success", reason: admin.updatePasswordOnStartup ? "password_refreshed" : "password_preserved" },
+      { event: "auth.admin_bootstrap", outcome: "success", reason: `${admin.updatePasswordOnStartup ? "password_refreshed" : "password_preserved"}; permissions created=${grants.created}, skipped=${grants.skipped}` },
       "Bootstrap admin is ready",
     );
   }

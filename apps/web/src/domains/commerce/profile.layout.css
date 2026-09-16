@@ -225,6 +225,45 @@
   gap: 16px;
 }
 
+.profileData {
+  display: grid;
+  gap: 22px;
+}
+
+.profileDataGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 16px;
+}
+
+.profileDataLink {
+  color: inherit;
+  text-decoration: none;
+}
+
+.profileDataCard {
+  display: grid;
+  gap: 8px;
+  min-height: 144px;
+  padding: 24px;
+  transition: border-color 160ms ease, transform 160ms ease;
+}
+
+.profileDataLink:hover .profileDataCard,
+.profileDataLink:focus-visible .profileDataCard {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.profileDataCard strong {
+  font-size: 20px;
+}
+
+.profileDataCard span {
+  color: var(--text-dim);
+  line-height: 1.45;
+}
+
 .profileContentSection {
   padding: clamp(18px, 2.3vw, 28px);
   border: 1px solid var(--border);

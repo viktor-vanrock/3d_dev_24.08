@@ -1,6 +1,6 @@
 import { useRef, useState, type DragEvent } from "react";
 import "./research.css";
-import { presignPrinterPhoto, printerMediaUrl, uploadPrinterPhoto } from "./api.ts";
+import { presignPrinterPhoto, printerMediaUrl, uploadPrinterPhoto, type ResearchApiMode } from "./api.ts";
 import type { PhotoItem } from "./formstate.ts";
 import { useInteractionSound } from "@platform/sound";
 
@@ -26,9 +26,10 @@ export interface PhotoSectionProps {
   heroKey: string | null;
   onPhotosChange: (update: PhotoItem[] | ((prev: PhotoItem[]) => PhotoItem[])) => void;
   onHeroChange: (update: string | null | ((prev: string | null) => string | null)) => void;
+  mode?: ResearchApiMode;
 }
 
-export function PhotoSection({ slug, photos, heroKey, onPhotosChange, onHeroChange }: PhotoSectionProps) {
+export function PhotoSection({ slug, photos, heroKey, onPhotosChange, onHeroChange, mode = "research" }: PhotoSectionProps) {
   const sound = useInteractionSound();
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
@@ -40,7 +41,7 @@ export function PhotoSection({ slug, photos, heroKey, onPhotosChange, onHeroChan
     const list = Array.from(files).slice(0, MAX_PHOTOS - photos.length);
     for (const file of list) {
       if (!ACCEPTED_TYPES[file.type]) continue;
-      const presign = await presignPrinterPhoto(slug, file.type);
+      const presign = await presignPrinterPhoto(slug, file.type, mode);
       if (!presign) {
         setStorageError(true);
         continue;

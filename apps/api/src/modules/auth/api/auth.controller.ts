@@ -26,7 +26,7 @@ import {
   ApiSberIdStubOperation,
   ApiSessionOperation,
 } from "./openapi.ts";
-import { Internal, Public, User } from "../../permissions/public/index.ts";
+import { Internal, PermissionsService, Public, User } from "../../permissions/public/index.ts";
 
 const APP_CALLBACK_SCHEME = "ultradevice";
 const APP_INTENT_TTL_MS = 600 * 1000;
@@ -50,6 +50,7 @@ export class AuthController {
     @Inject(PROFILE_AUTH_PORT) private readonly profiles: ProfileAuthPort,
     @Inject(ConfigService) private readonly config: ConfigService,
     @Inject(MetricsService) private readonly metrics: MetricsService,
+    @Inject(PermissionsService) private readonly permissions: PermissionsService,
   ) {}
 
   @Get("session")
@@ -60,6 +61,7 @@ export class AuthController {
     if (claims === null) throw new UnauthorizedException();
     const user = await this.profiles.findSessionUser(UserId(claims.id));
     if (user === null) throw new UnauthorizedException();
+    const capabilities = await this.permissions.dataCapabilities(user.id);
     return {
       user: {
         id: user.id,
@@ -68,6 +70,7 @@ export class AuthController {
         avatar_url: user.avatarUrl,
         handle_confirmed: user.handleConfirmed,
         role: user.role,
+        capabilities,
       },
     };
   }

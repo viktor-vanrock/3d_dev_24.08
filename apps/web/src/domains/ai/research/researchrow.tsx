@@ -1,7 +1,7 @@
 import { relativeDate } from "@shared/lib";
-import { navigate, researchFormPath } from "../../../router.ts";
+import { dataPrinterPath, navigate, researchFormPath } from "../../../router.ts";
 import { AgentBadge, StatusPill, type StatusTone } from "@shared/ui";
-import { QUEUE_FACET_COUNT, type ResearchConfidence, type ResearchQueueItem, type ResearchStatus } from "./api.ts";
+import { QUEUE_FACET_COUNT, type ResearchApiMode, type ResearchConfidence, type ResearchQueueItem, type ResearchStatus } from "./api.ts";
 
 // Строка очереди (§1.4). Один инстанс переиспользуется и в поисковой выдаче (researchsearch.tsx)
 // частично — та рисует только бренд/модель/статус, полную строку собирает только этот компонент.
@@ -56,9 +56,9 @@ function FlagIcon() {
   );
 }
 
-export function ResearchQueueRow({ item, onPress }: { item: ResearchQueueItem; onPress?: () => void }) {
+export function ResearchQueueRow({ item, onPress, mode = "research" }: { item: ResearchQueueItem; onPress?: () => void; mode?: ResearchApiMode }) {
   const updated = item.updated_at ? relativeDate(item.updated_at) : "—";
-  const open = () => navigate(researchFormPath(item.slug));
+  const open = () => navigate(mode === "data" ? dataPrinterPath(item.slug) : researchFormPath(item.slug));
   return (
     <div
       className="researchRow pressable"

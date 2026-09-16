@@ -23,6 +23,28 @@ describe("PrintersRepository owner port", () => {
     expect(query.mock.calls[1]?.[1]).toContain("managed-bridge");
   });
 
+  it.each([
+    { name: "gaps без bind-параметров", input: { scope: "gaps" }, sql: "cardinality(gaps) > 0", values: [] },
+    { name: "flagged без bind-параметров", input: { scope: "flagged" }, sql: "printer_reports", values: [] },
+    { name: "mine с username в $1", input: { scope: "mine", actorUsername: "reviewer" }, sql: "filled_by = $1", values: ["reviewer"] },
+    { name: "поиск в $1", input: { query: "MK4" }, sql: "alias ilike $1", values: ["%MK4%"] },
+    { name: "mine и поиск в $1/$2", input: { scope: "mine", actorUsername: "reviewer", query: "MK4" }, sql: "alias ilike $2", values: ["reviewer", "%MK4%"] },
+  ])("строит параметризованный запрос административной очереди: $name", async ({ input, sql, values }) => {
+    const query = vi.fn().mockResolvedValue({ rows: [] });
+    const repository = new PrintersRepository({ query } as never);
+    await repository.researchPrinters(input);
+    expect(String(query.mock.calls[0]?.[0])).toContain(sql);
+    expect(String(query.mock.calls[0]?.[0])).toContain("((media->>'hero') is not null)::int) as filled_count");
+    expect(query.mock.calls[0]?.[1]).toEqual(values);
+  });
+
+  it("не читает profile-owned users при фильтре mine", async () => {
+    const query = vi.fn().mockResolvedValue({ rows: [] });
+    const repository = new PrintersRepository({ query } as never);
+    await repository.researchPrinters({ scope: "mine", actorUsername: "reviewer" });
+    expect(String(query.mock.calls[0]?.[0])).not.toContain(" users ");
+  });
+
   it("keeps compare-and-set agent linking atomic", async () => {
     const query = vi.fn().mockResolvedValue({ rows: [] });
     const repository = new PrintersRepository({ query } as never);

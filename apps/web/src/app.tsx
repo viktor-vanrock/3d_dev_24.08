@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, type ReactNode } from "react";
 import { AuthGate, GuestIntentResumer, useSession, type SessionUser, LegalScreen } from "@domains/access";
 import { Footer } from "./footer/footer.tsx";
-import { CommunitiesScreen, CommunityScreen, ModerationScreen, ThreadScreen, FeedEditorScreen, FeedScreen, FeedPostScreen, IdeaScreen, IssueFeedScreen, isWideProjectsEnabled, ProjectsPage } from "@domains/social";
+import { CommunitiesScreen, CommunityScreen, ModerationScreen, ThreadScreen, FeedEditorScreen, FeedScreen, FeedPostScreen, IdeaScreen, IssueFeedScreen, isWideProjectsEnabled, NewsAdminEditor, NewsAdminScreen, ProjectsPage } from "@domains/social";
 import { ConsentBanner } from "@platform/consent";
 import { GenerateScreen, ResearchFormScreen, ResearchScreen, AssistantChatCenter, AssistantChatsScreen, AssistantWorkshopScreen } from "@domains/ai";
 import { HomeScreen } from "./pages/home/home.tsx";
@@ -20,6 +20,8 @@ import { InstallBanner, PwaRuntime } from "@platform/pwa";
 import { authReturnUrl, clearAuthReturnUrl, feedPath, filamentsPath, headerModeFor, issuesPath, loginPath, marketPath, navigate, navigateWithTransition, printersPath, saveAuthReturnUrl, useRoute } from "./router.ts";
 import { ThemeProvider } from "@platform/theme";
 import { AuroraBackground } from "@shared/ui";
+import { DataMaterialEditor } from "./domains/printing/materials/admin/materialeditor.tsx";
+import { DataMaterialsScreen } from "./domains/printing/materials/admin/materiallist.tsx";
 
 // Мастерская персонажа — отдельный route-chunk. Каталог/SVG появляются после маленького
 // чанка страницы, сам three.js подгружается уже после первого paint внутри экрана.
@@ -299,6 +301,18 @@ export function App() {
               screen = <MaterialsScreen user={user} section={section} onSectionChange={onSectionChange} />;
             } else if (route.screen === "material") {
               screen = <MaterialDetailScreen user={user} section={section} onSectionChange={onSectionChange} id={route.id} />;
+            } else if (route.screen === "data-materials") {
+              screen = <DataMaterialsScreen user={protectedUser} section={section} onSectionChange={onSectionChange} />;
+            } else if (route.screen === "data-material") {
+              screen = <DataMaterialEditor user={protectedUser} section={section} onSectionChange={onSectionChange} id={route.id} />;
+            } else if (route.screen === "data-printers") {
+              screen = <ResearchScreen user={protectedUser} section={section} onSectionChange={onSectionChange} scope={route.scope} mode="data" />;
+            } else if (route.screen === "data-printer") {
+              screen = <ResearchFormScreen user={protectedUser} section={section} onSectionChange={onSectionChange} slug={route.slug} draft={route.draft} mode="data" />;
+            } else if (route.screen === "data-news") {
+              screen = <NewsAdminScreen user={protectedUser} section={section} onSectionChange={onSectionChange} />;
+            } else if (route.screen === "data-news-editor") {
+              screen = <NewsAdminEditor user={protectedUser} section={section} onSectionChange={onSectionChange} id={route.id} />;
             } else if (route.screen === "printer-device") {
               screen = <PrinterLiveScreen user={protectedUser} section={section} onSectionChange={onSectionChange} id={route.id} />;
             } else if (route.screen === "printer-device-missing") {

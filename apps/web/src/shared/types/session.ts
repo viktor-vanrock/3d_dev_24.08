@@ -4,6 +4,11 @@
 // Рантайм-логика сессии (useSession, startEmailAuth, …) остаётся в
 // domains/access/session.ts, которая реэкспортирует эти типы отсюда.
 
+export type DataCapability =
+  | "data.materials.manage"
+  | "data.printers.manage"
+  | "data.news.manage";
+
 export interface SessionUser {
   id: string;
   username: string;
@@ -12,6 +17,7 @@ export interface SessionUser {
   handle_confirmed: boolean;
   // RBAC (MF-878) — сегодня единственная не-"user" роль: researcher (гейт /research, MF-917).
   role: "user" | "researcher";
+  capabilities?: readonly DataCapability[];
 }
 
 export type SessionState =

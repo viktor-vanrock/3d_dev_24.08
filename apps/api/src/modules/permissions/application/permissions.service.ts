@@ -1,7 +1,13 @@
 import { BadRequestException, ForbiddenException, Inject, Injectable } from "@nestjs/common";
 import type { UserId } from "../../_kernel/brandedIds.ts";
 import type { PermissionGrant, PermissionScope } from "../domain/permission-grant.ts";
-import type { Permissions } from "../domain/permissions.catalog.ts";
+import {
+  DATA_CAPABILITIES,
+  DATA_CAPABILITY_PERMISSIONS,
+  BOOTSTRAP_DATA_PERMISSIONS,
+  type DataCapability,
+  type Permissions,
+} from "../domain/permissions.catalog.ts";
 
 export const PERMISSION_GRANTS_REPOSITORY = Symbol("PERMISSION_GRANTS_REPOSITORY");
 
@@ -10,6 +16,12 @@ export const PERMISSION_GRANTS_REPOSITORY = Symbol("PERMISSION_GRANTS_REPOSITORY
 export interface PermissionGrantsRepository {
   isUserActive(userId: UserId): Promise<boolean>;
   findActiveGrants(input: { readonly userId: UserId; readonly permission: Permissions; readonly now: Date }): Promise<readonly PermissionGrant[]>;
+  findActivePermissions(input: {
+    readonly userId: UserId;
+    readonly permissions: readonly Permissions[];
+    readonly now: Date;
+  }): Promise<readonly Permissions[]>;
+  ensureBootstrapPermissions(input: { readonly userId: UserId; readonly permissions: readonly Permissions[]; readonly reason: string }): Promise<{ readonly created: number; readonly skipped: number }>;
   createWithAudit(input: {
     readonly userId: UserId;
     readonly permission: Permissions;
@@ -74,6 +86,25 @@ export class PermissionsService {
     } catch {
       return false;
     }
+  }
+
+  async dataCapabilities(userId: UserId): Promise<readonly DataCapability[]> {
+    try {
+      if (!(await this.isActiveUser(userId))) return [];
+      const requested = DATA_CAPABILITIES.map((capability) => DATA_CAPABILITY_PERMISSIONS[capability]);
+      const active = new Set(await this.grants.findActivePermissions({ userId, permissions: requested, now: new Date() }));
+      return DATA_CAPABILITIES.filter((capability) => active.has(DATA_CAPABILITY_PERMISSIONS[capability]));
+    } catch {
+      return [];
+    }
+  }
+
+  ensureBootstrapDataPermissions(userId: UserId): Promise<{ readonly created: number; readonly skipped: number }> {
+    return this.grants.ensureBootstrapPermissions({
+      userId,
+      permissions: BOOTSTRAP_DATA_PERMISSIONS,
+      reason: "automatic bootstrap data workspace access",
+    });
   }
 
   async grant(input: GrantPermissionInput): Promise<PermissionGrant> {

@@ -7,6 +7,8 @@ import type { PermissionGrantsRepository } from "../application/permissions.serv
 import type { PermissionGrant, PermissionScope } from "../domain/permission-grant.ts";
 import type { Permissions } from "../domain/permissions.catalog.ts";
 
+const BOOTSTRAP_PERMISSION_LOCK_NAMESPACE = "permissions.bootstrap";
+
 interface PermissionGrantRow {
   id: string;
   user_id: string;
@@ -56,6 +58,64 @@ export class PermissionGrantsPgRepository implements PermissionGrantsRepository 
     return result.rows.map(permissionGrant);
   }
 
+  async findActivePermissions(input: { readonly userId: UserId; readonly permissions: readonly Permissions[]; readonly now: Date }): Promise<readonly Permissions[]> {
+    const result = await this.pool.query<{ permission: Permissions }>(
+      `select distinct permission
+       from permission_grants
+       where user_id=$1 and permission=any($2::text[]) and scope='{}'::jsonb
+         and revoked_at is null and (expires_at is null or expires_at>$3)`,
+      [input.userId, input.permissions, input.now],
+    );
+    return result.rows.map((row) => row.permission);
+  }
+
+  async ensureBootstrapPermissions(input: {
+    readonly userId: UserId;
+    readonly permissions: readonly Permissions[];
+    readonly reason: string;
+  }): Promise<{ readonly created: number; readonly skipped: number }> {
+    const client = await this.pool.connect();
+    try {
+      await client.query("begin");
+      await client.query(`select pg_advisory_xact_lock(hashtextextended($1,0))`, [`${BOOTSTRAP_PERMISSION_LOCK_NAMESPACE}:${input.userId}`]);
+      const activeUser = await client.query(`select 1 from identity_read_v1 where user_id=$1`, [input.userId]);
+      if ((activeUser.rowCount ?? 0) === 0) throw new Error("Bootstrap permissions require an active user");
+      let created = 0;
+      let skipped = 0;
+      for (const permission of input.permissions) {
+        const existing = await client.query(
+          `select 1 from permission_grants where user_id=$1 and permission=$2 and scope='{}'::jsonb
+             and revoked_at is null and (expires_at is null or expires_at>now())`,
+          [input.userId, permission],
+        );
+        if ((existing.rowCount ?? 0) > 0) {
+          skipped += 1;
+          continue;
+        }
+        const grant = await client.query<{ id: string }>(
+          `insert into permission_grants(user_id,permission,scope,granted_by,reason,expires_at)
+           values($1,$2,'{}'::jsonb,$1,$3,null) returning id`,
+          [input.userId, permission, input.reason],
+        );
+        const grantId = grant.rows[0]?.id;
+        if (grantId === undefined) throw new Error("Не удалось создать bootstrap grant");
+        await client.query(
+          `insert into audit_log(id,actor_user_id,action,target_type,target_id,details,created_at)
+           values($1,$2,'permission.granted','permission_grant',$3,$4,now())`,
+          [randomUUID(), input.userId, grantId, JSON.stringify({ user_id: input.userId, permission, reason: input.reason })],
+        );
+        created += 1;
+      }
+      await client.query("commit");
+      return { created, skipped };
+    } catch (error) {
+      await client.query("rollback");
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
   async createWithAudit(input: {
     readonly userId: UserId;
     readonly permission: Permissions;
@@ -78,7 +138,14 @@ export class PermissionGrantsPgRepository implements PermissionGrantsRepository 
       await client.query(
         `insert into audit_log(id,actor_user_id,action,target_type,target_id,details,created_at)
          values($1,$2,$3,$4,$5,$6,now())`,
-        [randomUUID(), input.grantedBy, "permission.granted", "permission_grant", row.id, JSON.stringify({ user_id: input.userId, permission: input.permission, reason: input.reason })],
+        [
+          randomUUID(),
+          input.grantedBy,
+          "permission.granted",
+          "permission_grant",
+          row.id,
+          JSON.stringify({ user_id: input.userId, permission: input.permission, reason: input.reason }),
+        ],
       );
       await client.query("commit");
       return permissionGrant(row);
@@ -107,7 +174,14 @@ export class PermissionGrantsPgRepository implements PermissionGrantsRepository 
       await client.query(
         `insert into audit_log(id,actor_user_id,action,target_type,target_id,details,created_at)
          values($1,$2,$3,$4,$5,$6,now())`,
-        [randomUUID(), input.revokedBy, "permission.revoked", "permission_grant", row.id, JSON.stringify({ user_id: row.user_id, permission: row.permission, reason: input.reason })],
+        [
+          randomUUID(),
+          input.revokedBy,
+          "permission.revoked",
+          "permission_grant",
+          row.id,
+          JSON.stringify({ user_id: row.user_id, permission: row.permission, reason: input.reason }),
+        ],
       );
       await client.query("commit");
       return true;

@@ -106,6 +106,81 @@ export class FeedRepository implements FeedRankingReadPort {
     return result.rows[0] === undefined ? null : post(result.rows[0]);
   }
 
+  async createAdmin(actorId: UserIdType, input: { readonly communityId: string | null; readonly title: string; readonly body: string | null }): Promise<FeedPostRecord> {
+    const client = await this.pool.connect();
+    try {
+      await client.query("begin");
+      const created = await client.query<PostRow>(
+        `insert into feed_posts(author_id,community_id,type,title,body,status) values($1,$2,'text',$3,$4,'draft') returning ${POST_FIELDS}`,
+        [actorId, input.communityId, input.title, input.body],
+      );
+      const row = created.rows[0];
+      if (row === undefined) throw new Error("feed admin create returned no row");
+      await client.query(`insert into audit_log(actor_user_id,action,target_type,target_id,details) values($1,'news.created','feed_post',$2,$3)`, [actorId, row.id, JSON.stringify({ status: "draft" })]);
+      await client.query("commit");
+      return post(row);
+    } catch (error) {
+      await client.query("rollback");
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async listAdmin(input: { readonly status?: string; readonly source?: string }): Promise<readonly FeedPostRecord[]> {
+    const values: unknown[] = [];
+    const conditions = ["status in ('draft', 'visible', 'hidden')"];
+    if (input.status !== undefined && input.status !== "all") {
+      values.push(input.status === "published" ? "visible" : input.status);
+      conditions.push(`status = $${values.length}`);
+    }
+    if (input.source === "manual") conditions.push("source_fingerprint is null");
+    if (input.source === "scout") conditions.push("source_fingerprint is not null");
+    const result = await this.pool.query<PostRow>(`select ${POST_FIELDS} from feed_posts where ${conditions.join(" and ")} order by updated_at desc, id desc limit 200`, values);
+    return result.rows.map(post);
+  }
+
+  async updateAdmin(actorId: UserIdType, postId: FeedPostId, input: { readonly title?: string; readonly body?: string; readonly communityId?: string | null }): Promise<FeedPostRecord | null> {
+    const client = await this.pool.connect();
+    try {
+      await client.query("begin");
+      const result = await client.query<PostRow>(
+        `update feed_posts set title=coalesce($2,title), body=coalesce($3,body), community_id=case when $4 then $5::uuid else community_id end,
+         is_edited=true, edited_at=now(), updated_at=now() where id=$1 and status in ('draft','visible','hidden') returning ${POST_FIELDS}`,
+        [postId, input.title ?? null, input.body ?? null, input.communityId !== undefined, input.communityId ?? null],
+      );
+      const row = result.rows[0];
+      if (row === undefined) { await client.query("rollback"); return null; }
+      await client.query(`insert into audit_log(actor_user_id,action,target_type,target_id,details) values($1,'news.updated','feed_post',$2,$3)`, [actorId, row.id, JSON.stringify({ fields: Object.keys(input) })]);
+      await client.query("commit");
+      return post(row);
+    } catch (error) {
+      await client.query("rollback");
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async transitionAdminStatus(actorId: UserIdType, postId: FeedPostId, status: "visible" | "hidden", allowed: readonly string[]): Promise<FeedPostRecord | null> {
+    const client = await this.pool.connect();
+    try {
+      await client.query("begin");
+      const result = await client.query<PostRow>(`update feed_posts set status=$2,updated_at=now() where id=$1 and status=any($3::text[]) returning ${POST_FIELDS}`, [postId, status, allowed]);
+      const row = result.rows[0];
+      if (row === undefined) { await client.query("rollback"); return null; }
+      const action = status === "visible" ? "news.published" : "news.hidden";
+      await client.query(`insert into audit_log(actor_user_id,action,target_type,target_id,details) values($1,$2,'feed_post',$3,$4)`, [actorId, action, row.id, JSON.stringify({ status })]);
+      await client.query("commit");
+      return post(row);
+    } catch (error) {
+      await client.query("rollback");
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
   async create(input: {
     readonly actorId: UserIdType;
     readonly coAuthorAgentId: string | null;

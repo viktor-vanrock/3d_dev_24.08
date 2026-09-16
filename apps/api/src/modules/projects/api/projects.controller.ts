@@ -17,6 +17,7 @@ import {
   ModelRevisionResponseDto,
   ProjectDraftResponseDto,
   ProjectListResponseDto,
+  ProjectLifecycleResponseDto,
   PublicationResponseDto,
   PublishedProjectResponseDto,
 } from "./projects.response.dto.ts";
@@ -484,6 +485,17 @@ export class ProjectsController {
   }
 
   @Post(":projectId/archive")
+  @ApiProjectOperation({
+    operationId: "projectArchive",
+    summary: "Archive a Project",
+    success: 200,
+    response: ProjectLifecycleResponseDto,
+    security: "protected",
+    projectParam: true,
+    ifMatch: true,
+    etag: true,
+    errors: { 400: ["request.validation.v1", "project.invalid_transition.v1"], 404: ["project.not_found.v1"], 409: ["project.version_conflict.v1"] },
+  })
   async archive(
     @Req() request: RequestWithSession,
     @Param("projectId") rawProjectId: string,
@@ -495,6 +507,17 @@ export class ProjectsController {
   }
 
   @Post(":projectId/restore")
+  @ApiProjectOperation({
+    operationId: "projectRestore",
+    summary: "Restore an archived Project",
+    success: 200,
+    response: ProjectLifecycleResponseDto,
+    security: "protected",
+    projectParam: true,
+    ifMatch: true,
+    etag: true,
+    errors: { 400: ["request.validation.v1", "project.invalid_transition.v1"], 404: ["project.not_found.v1"], 409: ["project.version_conflict.v1"] },
+  })
   async restore(
     @Req() request: RequestWithSession,
     @Param("projectId") rawProjectId: string,

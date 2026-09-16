@@ -117,7 +117,7 @@ export class CatalogReadRepository implements CatalogReadPort {
       `select m.id, mt.slug as material_class, m.specs
          from materials m
          join material_types mt on mt.id = m.material_type_id
-        where m.id = $1 and m.kind = 'filament'`,
+        where m.id = $1 and m.kind = 'filament' and m.status = 'published'`,
       [id],
     );
     const row = result.rows[0];
@@ -141,11 +141,11 @@ export class CatalogReadRepository implements CatalogReadPort {
   }
 
   async filamentExists(id: string): Promise<boolean> {
-    return (await this.pool.query(`select 1 from materials where id = $1 and kind = 'filament'`, [id])).rowCount !== 0;
+    return (await this.pool.query(`select 1 from materials where id = $1 and kind = 'filament' and status = 'published'`, [id])).rowCount !== 0;
   }
 
   async materialExists(id: string): Promise<boolean> {
-    return (await this.pool.query(`select 1 from materials where id = $1`, [id])).rowCount !== 0;
+    return (await this.pool.query(`select 1 from materials where id = $1 and status = 'published'`, [id])).rowCount !== 0;
   }
 
   async publicMaterial(id: string): Promise<CatalogPublicMaterial | null> {
@@ -159,7 +159,7 @@ export class CatalogReadRepository implements CatalogReadPort {
         vendor_name: string;
       }>(
         `select m.id, m.slug, m.name, v.id as vendor_id, v.slug as vendor_slug, v.name as vendor_name
-         from materials m join vendors v on v.id = m.vendor_id where m.id = $1`,
+         from materials m join vendors v on v.id = m.vendor_id where m.id = $1 and m.status = 'published'`,
         [id],
       )
     ).rows[0];
@@ -175,7 +175,7 @@ export class CatalogReadRepository implements CatalogReadPort {
 
   async materialsExist(ids: readonly string[]): Promise<boolean> {
     if (ids.length === 0) return true;
-    const result = await this.pool.query<{ count: string }>(`select count(distinct id) as count from materials where id = any($1::uuid[])`, [ids]);
+    const result = await this.pool.query<{ count: string }>(`select count(distinct id) as count from materials where id = any($1::uuid[]) and status = 'published'`, [ids]);
     return Number(result.rows[0]?.count ?? 0) === new Set(ids).size;
   }
 
@@ -191,7 +191,7 @@ export class CatalogReadRepository implements CatalogReadPort {
        join vendors v on v.id = mat.vendor_id
        join material_types mt on mt.id = mat.material_type_id
        left join material_variants mv on mv.id = $2 and mv.material_id = mat.id
-       where mat.id = $1`,
+       where mat.id = $1 and mat.status = 'published'`,
       [materialId, variantId],
     );
     return result.rows[0] ?? null;
@@ -210,7 +210,7 @@ export class CatalogReadRepository implements CatalogReadPort {
               mt.requires_chamber, mt.requires_drying, mt.requires_direct_drive
          from materials mat
          join material_types mt on mt.id = mat.material_type_id
-        where mat.id = $1`,
+        where mat.id = $1 and mat.status = 'published'`,
       [materialId],
     );
     const row = result.rows[0];
@@ -247,7 +247,7 @@ export class CatalogReadRepository implements CatalogReadPort {
     readonly cursor: readonly [string, string] | null;
     readonly limit: number;
   }): Promise<readonly CatalogReleaseRow[]> {
-    const conditions: string[] = [];
+    const conditions: string[] = ["m.status = 'published'"];
     const params: unknown[] = [];
     if (input.statuses.length > 0) {
       params.push(input.statuses);
@@ -289,7 +289,7 @@ export class CatalogReadRepository implements CatalogReadPort {
     readonly limit: number;
     readonly offset: number;
   }): Promise<{ readonly rows: readonly CatalogMaterialRow[]; readonly total: number }> {
-    const conditions: string[] = [];
+    const conditions: string[] = ["m.status = 'published'"];
     const params: unknown[] = [];
     if (input.vendor) {
       params.push(input.vendor);
@@ -329,7 +329,7 @@ export class CatalogReadRepository implements CatalogReadPort {
   }
 
   async material(id: string): Promise<CatalogMaterialRow | null> {
-    return (await this.pool.query<CatalogMaterialRow>(`${MATERIAL_SELECT} where m.id = $1`, [id])).rows[0] ?? null;
+    return (await this.pool.query<CatalogMaterialRow>(`${MATERIAL_SELECT} where m.id = $1 and m.status = 'published'`, [id])).rows[0] ?? null;
   }
 
   async materialVariants(id: string): Promise<readonly CatalogMaterialVariantRow[]> {

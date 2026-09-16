@@ -2,6 +2,8 @@
 // Экраны и то, что импортируется извне домена.
 export { FeedScreen } from "./feed/feedscreen.tsx";
 export { FeedEditorScreen } from "./feed/editor.tsx";
+export { NewsAdminScreen } from "./feed/admin/newsadmin.tsx";
+export { NewsAdminEditor } from "./feed/admin/newseditor.tsx";
 export { FeedPostScreen } from "./feed/post.tsx";
 export { FeedPostCard, FeedPostCardSkeleton } from "./feed/postcard.tsx";
 export { VoteArrows } from "./feed/vote.tsx";

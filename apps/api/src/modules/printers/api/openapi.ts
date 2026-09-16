@@ -14,6 +14,7 @@ import {
   PrinterReportEnvelopeDto,
   PrinterReportsResponseDto,
   PrinterResearchResponseDto,
+  PrinterResearchListResponseDto,
   PrinterResearchUploadResponseDto,
   PrinterResearchUpsertResponseDto,
 } from "./printers.dto.ts";
@@ -30,6 +31,7 @@ const responseType = (summary: string): Type | undefined =>
     "Read Prusa connection": PrinterPrusaStatusDto,
     "Disconnect Prusa account": PrinterOkDto,
     "Upsert researched printer": PrinterResearchUpsertResponseDto,
+    "List researched printers": PrinterResearchListResponseDto,
     "Read researched printer": PrinterResearchResponseDto,
     "Create printer media upload": PrinterResearchUploadResponseDto,
     "Report inaccurate printer data": PrinterReportEnvelopeDto,

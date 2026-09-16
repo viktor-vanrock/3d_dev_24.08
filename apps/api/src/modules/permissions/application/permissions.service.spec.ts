@@ -25,14 +25,24 @@ function grant(overrides: Partial<PermissionGrant> = {}): PermissionGrant {
   };
 }
 
-function repository(input: { active?: boolean; grants?: readonly PermissionGrant[] } = {}): PermissionGrantsRepository & { readonly findActiveGrantsMock: ReturnType<typeof vi.fn> } {
+function repository(input: { active?: boolean; grants?: readonly PermissionGrant[] } = {}): PermissionGrantsRepository & {
+  readonly findActiveGrantsMock: ReturnType<typeof vi.fn>;
+  readonly findActivePermissionsMock: ReturnType<typeof vi.fn>;
+  readonly ensureBootstrapPermissionsMock: ReturnType<typeof vi.fn>;
+} {
   const findActiveGrantsMock = vi.fn().mockResolvedValue(input.grants ?? []);
+  const findActivePermissionsMock = vi.fn().mockResolvedValue((input.grants ?? []).map((item) => item.permission));
+  const ensureBootstrapPermissionsMock = vi.fn().mockResolvedValue({ created: 0, skipped: 3 });
   return {
     isUserActive: vi.fn().mockResolvedValue(input.active ?? true),
     findActiveGrants: findActiveGrantsMock,
+    findActivePermissions: findActivePermissionsMock,
+    ensureBootstrapPermissions: ensureBootstrapPermissionsMock,
     createWithAudit: vi.fn(),
     revokeWithAudit: vi.fn(),
     findActiveGrantsMock,
+    findActivePermissionsMock,
+    ensureBootstrapPermissionsMock,
   };
 }
 
@@ -78,5 +88,39 @@ describe("PermissionsService", () => {
     await expect(
       service.grant({ actorId: userId, userId, permission: Permissions.CATALOG_EDIT_ANY, reason: "Самовыдача" }),
     ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it("проецирует только разрешения рабочего пространства данных в стабильные capabilities", async () => {
+    const grants = repository({ grants: [grant()] });
+    const service = new PermissionsService(grants);
+
+    await expect(service.dataCapabilities(userId)).resolves.toEqual(["data.materials.manage"]);
+  });
+
+  it("не объявляет глобальную capability для ограниченного scope", async () => {
+    const grants = repository({ grants: [grant({ scope: { catalog_id: "catalog-1" } })] });
+    grants.findActivePermissionsMock.mockResolvedValue([]);
+    const service = new PermissionsService(grants);
+
+    await expect(service.dataCapabilities(userId)).resolves.toEqual([]);
+  });
+
+  it("возвращает пустой список capabilities при ошибке чтения grants", async () => {
+    const grants = repository();
+    grants.findActivePermissionsMock.mockRejectedValue(new Error("database unavailable"));
+    const service = new PermissionsService(grants);
+
+    await expect(service.dataCapabilities(userId)).resolves.toEqual([]);
+  });
+
+  it("выдаёт bootstrap-владельцу только permissions рабочего пространства данных", async () => {
+    const grants = repository();
+    const service = new PermissionsService(grants);
+    await expect(service.ensureBootstrapDataPermissions(userId)).resolves.toEqual({ created: 0, skipped: 3 });
+    expect(grants.ensureBootstrapPermissionsMock).toHaveBeenCalledWith({
+      userId,
+      permissions: [Permissions.CATALOG_EDIT_ANY, Permissions.RESEARCH_MANAGE_PRINTERS, Permissions.FEED_MANAGE_NEWS],
+      reason: "automatic bootstrap data workspace access",
+    });
   });
 });

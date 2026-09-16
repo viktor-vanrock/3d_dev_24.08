@@ -24,6 +24,16 @@ export type SaveOutcome =
   | { kind: "validation-error"; count: number }
   | { kind: "network-error" };
 
+function conflictValueLabel(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "не указано";
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") return String(value);
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return "не удалось отобразить";
+  }
+}
+
 export function SaveCallout({ outcome, onOpenSources, onRetry }: { outcome: SaveOutcome; onOpenSources: () => void; onRetry: () => void }) {
   // Триггер появления — setTimeout, не rAF (motion.md: rAF на паузе в фоне → элемент застрянет
   // opacity:0), тот же приём, что overlay/toaster.tsx ToastCard.
@@ -87,8 +97,8 @@ export function ConflictSection({
         <div key={c.field} className="rsConflictRow">
           <span className="rsConflictField">{c.field}</span>
           <div className="rsConflictValues">
-            <span>моё: {String(c.theirs)}</span>
-            <span>их: {String(c.ours)}</span>
+            <span>моё: {conflictValueLabel(c.theirs)}</span>
+            <span>их: {conflictValueLabel(c.ours)}</span>
           </div>
           <div className="rsTileRow">
             <button

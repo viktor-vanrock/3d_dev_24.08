@@ -20,6 +20,26 @@ function stubFetch() {
 }
 
 describe("ResearchFormScreen (MF-917)", () => {
+  it("admin-mode остаётся в Данных и загружает карточку через browser API", async () => {
+    const fetchSpy = vi.fn(async () => new Response(null, { status: 404 }));
+    vi.stubGlobal("fetch", fetchSpy);
+    render(
+      <ThemeProvider>
+        <OverlayProvider>
+          <ResearchFormScreen
+            user={{ ...plainUser, capabilities: ["data.printers.manage"] }}
+            slug="nope.nothing"
+            section="printers"
+            onSectionChange={() => {}}
+            mode="data"
+          />
+        </OverlayProvider>
+      </ThemeProvider>,
+    );
+    expect(await screen.findByRole("navigation", { name: "Разделы данных" })).toBeTruthy();
+    await waitFor(() => expect(fetchSpy).toHaveBeenCalledWith(expect.stringContaining("/data/printers/nope.nothing"), expect.anything()));
+  });
+
   it("без роли researcher — вербующий гейт вместо формы", async () => {
     stubFetch();
     render(

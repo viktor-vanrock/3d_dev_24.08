@@ -263,6 +263,20 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
+-- Name: project_status; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.project_status AS ENUM (
+    'draft',
+    'uploading',
+    'reviewing',
+    'ready',
+    'published',
+    'unpublished',
+    'archived'
+);
+
+--
 -- Name: achievements; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2025,6 +2039,9 @@ CREATE TABLE public.projects (
     version bigint DEFAULT 1 NOT NULL,
     deleted_at timestamp with time zone,
     deleted_by uuid,
+    status public.project_status DEFAULT 'draft'::public.project_status NOT NULL,
+    published_at timestamp with time zone,
+    archived_at timestamp with time zone,
     CONSTRAINT models_price_minor_check CHECK ((price_minor >= 0)),
     CONSTRAINT projects_title_check CHECK (((char_length(title) >= 1) AND (char_length(title) <= 200))),
     CONSTRAINT projects_version_check CHECK ((version > 0))
@@ -2430,9 +2447,15 @@ CREATE TABLE public.materials (
     source text DEFAULT 'manual'::text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    status text DEFAULT 'published'::text NOT NULL,
+    version integer DEFAULT 1 NOT NULL,
+    archived_at timestamp with time zone,
+    CONSTRAINT materials_archived_at_check CHECK (((status = 'archived'::text) = (archived_at IS NOT NULL))),
     CONSTRAINT materials_kind_check CHECK ((kind = ANY (ARRAY['filament'::text, 'resin'::text, 'plywood'::text, 'aluminum'::text]))),
     CONSTRAINT materials_slug_check CHECK (((slug = lower(slug)) AND (length(slug) > 0))),
-    CONSTRAINT materials_source_check CHECK ((source = ANY (ARRAY['manual'::text, 'import'::text])))
+    CONSTRAINT materials_source_check CHECK ((source = ANY (ARRAY['manual'::text, 'import'::text]))),
+    CONSTRAINT materials_status_check CHECK ((status = ANY (ARRAY['draft'::text, 'published'::text, 'archived'::text]))),
+    CONSTRAINT materials_version_check CHECK ((version > 0))
 );
 
 
@@ -6722,6 +6745,13 @@ CREATE INDEX materials_kind_idx ON public.materials USING btree (kind);
 
 
 --
+-- Name: materials_admin_updated_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX materials_admin_updated_idx ON public.materials USING btree (status, updated_at DESC, id);
+
+
+--
 -- Name: materials_material_type_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -7188,6 +7218,20 @@ CREATE INDEX projects_owner_updated_idx ON public.projects USING btree (owner_id
 --
 
 CREATE INDEX projects_published_idx ON public.projects USING btree (published_revision_id, id) WHERE ((published_revision_id IS NOT NULL) AND (deleted_at IS NULL));
+
+
+--
+-- Name: idx_projects_owner_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_projects_owner_status ON public.projects USING btree (owner_id, status);
+
+
+--
+-- Name: idx_projects_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_projects_status ON public.projects USING btree (status);
 
 
 --
@@ -10122,7 +10166,7 @@ CREATE TABLE public.permission_grants (
     revoked_by uuid REFERENCES public.users(id),
     revoke_reason text,
     CONSTRAINT permission_grants_pkey PRIMARY KEY (id),
-    CONSTRAINT permission_grants_permission_check CHECK ((permission = ANY (ARRAY['user.view_any'::text, 'user.edit_any'::text, 'user.deactivate'::text, 'user.grant_permission'::text, 'user.revoke_permission'::text, 'moderation.delete_content'::text, 'moderation.ban_user'::text, 'moderation.view_reports'::text, 'moderation.resolve_report'::text, 'moderation.manage_sanctions'::text, 'moderation.resolve_appeal'::text, 'moderation.manage_community_members'::text, 'analytics.view_platform'::text, 'analytics.export'::text, 'analytics.view_health'::text, 'audit.view_log'::text, 'catalog.publish_any'::text, 'catalog.unpublish_any'::text, 'catalog.edit_any'::text, 'catalog.feature'::text, 'catalog.review_candidates'::text, 'catalog.review_vendor_claims'::text, 'catalog.review_printer_reports'::text, 'research.access'::text, 'research.manage'::text, 'research.manage_printers'::text, 'support.view_tickets'::text, 'support.manage_devices'::text, 'support.view_device_incidents'::text, 'support.resolve_device_incidents'::text]))),
+    CONSTRAINT permission_grants_permission_check CHECK ((permission = ANY (ARRAY['user.view_any'::text, 'user.edit_any'::text, 'user.deactivate'::text, 'user.grant_permission'::text, 'user.revoke_permission'::text, 'moderation.delete_content'::text, 'moderation.ban_user'::text, 'moderation.view_reports'::text, 'moderation.resolve_report'::text, 'moderation.manage_sanctions'::text, 'moderation.resolve_appeal'::text, 'moderation.manage_community_members'::text, 'analytics.view_platform'::text, 'analytics.export'::text, 'analytics.view_health'::text, 'billing.manage_payouts'::text, 'audit.view_log'::text, 'catalog.publish_any'::text, 'catalog.unpublish_any'::text, 'catalog.edit_any'::text, 'catalog.feature'::text, 'catalog.review_candidates'::text, 'catalog.review_vendor_claims'::text, 'catalog.review_printer_reports'::text, 'feed.manage_news'::text, 'research.access'::text, 'research.manage'::text, 'research.manage_printers'::text, 'support.view_tickets'::text, 'support.manage_devices'::text, 'support.view_device_incidents'::text, 'support.resolve_device_incidents'::text]))),
     CONSTRAINT permission_grants_scope_object_check CHECK ((jsonb_typeof(scope) = 'object'::text)),
     CONSTRAINT permission_grants_reason_nonempty_check CHECK ((btrim(reason) <> ''::text)),
     CONSTRAINT permission_grants_expiry_after_grant_check CHECK (((expires_at IS NULL) OR (expires_at > granted_at))),
@@ -10181,5 +10225,11 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260812150000'),
     ('20260812160000'),
     ('20260812170000'),
+    ('20260902000000'),
     ('20260902090000'),
-    ('20260902091000');
+    ('20260902090500'),
+    ('20260902091000'),
+    ('20260903000000'),
+    ('20260914180000'),
+    ('20260914190000'),
+    ('20260915120000');

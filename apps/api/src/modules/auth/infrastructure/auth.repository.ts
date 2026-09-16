@@ -81,7 +81,7 @@ export class AuthRepository implements AuthIdentityReadPort {
         };
   }
 
-  async upsertBootstrapAdmin(username: string, passwordHash: string, updatePassword: boolean): Promise<void> {
+  async upsertBootstrapAdmin(username: string, passwordHash: string, updatePassword: boolean): Promise<UserIdType> {
     const client = await this.pool.connect();
     try {
       await client.query("begin");
@@ -105,6 +105,7 @@ export class AuthRepository implements AuthIdentityReadPort {
         [claimed.id, passwordHash, updatePassword],
       );
       await client.query("commit");
+      return UserId(claimed.id);
     } catch (error) {
       await client.query("rollback");
       throw error;

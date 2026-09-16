@@ -26,6 +26,7 @@ import {
   parseLocation,
   parseParkAddPrefill,
   platePath,
+  profilePath,
   printerCommunityFirmwarePath,
   printerComparePath,
   printerDiyPath,
@@ -151,6 +152,35 @@ describe("parseLocation", () => {
 
   it("/u/:username → профиль", () => {
     expect(parseLocation("/u/plag", "")).toEqual({ screen: "profile", username: "plag" });
+  });
+
+  it("строит адресуемую вкладку данных профиля", () => {
+    expect(profilePath("plag", "data")).toBe("/u/plag?tab=data");
+  });
+
+  it("разбирает рабочее пространство материалов", () => {
+    expect(parseLocation("/data/materials", "")).toEqual({ screen: "data-materials" });
+    expect(parseLocation("/data/materials/new", "")).toEqual({ screen: "data-material", id: undefined });
+    expect(parseLocation("/data/materials/material-1", "")).toEqual({ screen: "data-material", id: "material-1" });
+  });
+
+  it("разбирает рабочее пространство принтеров", () => {
+    expect(parseLocation("/data/printers", "")).toEqual({ screen: "data-printers", scope: undefined });
+    expect(parseLocation("/data/printers", "?scope=flagged")).toEqual({ screen: "data-printers", scope: "flagged" });
+    expect(parseLocation("/data/printers/new", "?draft=K1%20Max")).toEqual({
+      screen: "data-printer",
+      draft: "K1 Max",
+    });
+    expect(parseLocation("/data/printers/creality.k1-max", "")).toEqual({
+      screen: "data-printer",
+      slug: "creality.k1-max",
+    });
+  });
+
+  it("разбирает рабочее пространство новостей", () => {
+    expect(parseLocation("/data/news", "")).toEqual({ screen: "data-news" });
+    expect(parseLocation("/data/news/new", "")).toEqual({ screen: "data-news-editor", id: undefined });
+    expect(parseLocation("/data/news/00000000-0000-0000-0000-000000000001", "")).toEqual({ screen: "data-news-editor", id: "00000000-0000-0000-0000-000000000001" });
   });
 
   it("/kitchen-sink → стенд ui", () => {

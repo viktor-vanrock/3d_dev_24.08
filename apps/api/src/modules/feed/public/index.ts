@@ -18,6 +18,34 @@ export const FEED_STORAGE_PORT = Symbol("FEED_STORAGE_PORT");
 export const FEED_GITVERSE_PORT = Symbol("FEED_GITVERSE_PORT");
 export const FEED_RATE_LIMIT_PORT = Symbol("FEED_RATE_LIMIT_PORT");
 export const FEED_RANKING_READ_PORT = Symbol("FEED_RANKING_READ_PORT");
+export const FEED_ADMIN_PORT = Symbol("FEED_ADMIN_PORT");
+
+export type FeedAdminStatus = "draft" | "published" | "hidden";
+export type FeedAdminSource = "manual" | "scout";
+export interface FeedAdminItem {
+  readonly id: FeedPostId;
+  readonly title: string;
+  readonly body: string | null;
+  readonly status: FeedAdminStatus;
+  readonly source: FeedAdminSource;
+  readonly source_url: string | null;
+  readonly source_fingerprint: string | null;
+  readonly ingest_provider: string | null;
+  readonly ingest_model: string | null;
+  readonly ingest_prompt_version: string | null;
+  readonly community_id: string | null;
+  readonly updated_at: string;
+}
+export interface FeedAdminListResponse { readonly items: readonly FeedAdminItem[]; }
+export interface FeedAdminEnvelope { readonly item: FeedAdminItem; }
+export interface FeedAdminPort {
+  list(query: { readonly status?: FeedAdminStatus | "all"; readonly source?: FeedAdminSource | "all" }): Promise<FeedAdminListResponse>;
+  detail(postId: FeedPostId): Promise<FeedAdminEnvelope>;
+  create(actorId: UserId, input: { readonly title?: string; readonly body?: string; readonly community_id?: string | null }): Promise<FeedAdminEnvelope>;
+  update(actorId: UserId, postId: FeedPostId, input: { readonly title?: string; readonly body?: string; readonly community_id?: string | null }): Promise<FeedAdminEnvelope>;
+  publish(actorId: UserId, postId: FeedPostId): Promise<FeedAdminEnvelope>;
+  hide(actorId: UserId, postId: FeedPostId): Promise<FeedAdminEnvelope>;
+}
 
 export interface FeedRankingReadPort {
   topScores(postIds: readonly FeedPostId[], window: string): Promise<ReadonlyMap<FeedPostId, number>>;

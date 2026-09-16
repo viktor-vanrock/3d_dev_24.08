@@ -7,6 +7,7 @@ export type MaterialKind = (typeof MATERIAL_KINDS)[number];
 // Типы ответа API — алиасы на сгенерированные схемы
 export type MaterialRecord = components["schemas"]["CatalogMaterialDto"];
 export type MaterialPage = components["schemas"]["CatalogMaterialsDto"];
+export type MaterialVendor = components["schemas"]["CatalogVendorDto"];
 
 export interface MaterialFilters {
   q: string;
@@ -100,4 +101,11 @@ export function hasMaterialFilters(filters: MaterialFilters): boolean {
 
 export function kindLabel(kind: MaterialKind): string {
   return { filament: "Филамент", resin: "Смола", plywood: "Фанера", aluminum: "Алюминий" }[kind];
+}
+
+export async function fetchMaterialVendors(signal?: AbortSignal): Promise<readonly MaterialVendor[]> {
+  const response = await apiFetch("/vendors", { credentials: "include", signal });
+  if (!response.ok) throw new Error(`vendors request failed: ${response.status}`);
+  const body = (await response.json()) as components["schemas"]["CatalogVendorsDto"];
+  return body.vendors ?? [];
 }

@@ -9,6 +9,7 @@ import { AuroraBackground, Button, Chip, EmptyState, Eyebrow, Heading, IconButto
 import {
   emptyMaterialFilters,
   fetchMaterialPage,
+  fetchMaterialVendors,
   hasMaterialFilters,
   kindLabel,
   MATERIAL_KINDS,
@@ -17,6 +18,7 @@ import {
   type MaterialFilters,
   type MaterialKind,
   type MaterialRecord,
+  type MaterialVendor,
 } from "./catalog.ts";
 import "./materials.css";
 
@@ -33,6 +35,7 @@ export function MaterialsScreen({ user, section, onSectionChange }: { user: Sess
   const [offset, setOffset] = useState(() => parseMaterialFilters(window.location.search).offset);
   const [qInput, setQInput] = useState(() => parseMaterialFilters(window.location.search).q);
   const [items, setItems] = useState<MaterialRecord[] | null>(null);
+  const [vendors, setVendors] = useState<readonly MaterialVendor[]>([]);
   const [hasMore, setHasMore] = useState(false);
   const [nextOffset, setNextOffset] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -85,6 +88,12 @@ export function MaterialsScreen({ user, section, onSectionChange }: { user: Sess
 
   useEffect(() => {
     const controller = new AbortController();
+    fetchMaterialVendors(controller.signal).then(setVendors).catch(() => undefined);
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
     if (offset === 0) setItems(null);
     setLoading(true);
     setError(false);
@@ -127,6 +136,7 @@ export function MaterialsScreen({ user, section, onSectionChange }: { user: Sess
       onQueryChange={setQInput}
       onChange={updateFilter}
       materials={items ?? []}
+      vendors={vendors}
     />
   );
 
@@ -242,15 +252,19 @@ function MaterialFilterControls({
   onQueryChange,
   onChange,
   materials,
+  vendors,
 }: {
   filters: MaterialFilters;
   qInput: string;
   onQueryChange: (value: string) => void;
   onChange: <K extends keyof MaterialFilters>(key: K, value: MaterialFilters[K]) => void;
   materials: MaterialRecord[];
+  vendors: readonly MaterialVendor[];
 }) {
   const controlId = useId();
-  const vendors = [...new Set(materials.map((material) => material.vendor.name))];
+  const vendorOptions = vendors.length > 0
+    ? vendors
+    : [...new Map(materials.map((material) => [material.vendor.slug, material.vendor])).values()];
   const types = [...new Set(materials.map((material) => material.material_type.name))];
   function inputHandler(key: "vendor" | "type" | "color") {
     return (event: ChangeEvent<HTMLInputElement>) => onChange(key, event.target.value);
@@ -270,7 +284,7 @@ function MaterialFilterControls({
           <Input value={filters.vendor} onChange={inputHandler("vendor")} placeholder="Введите бренд" list={`${controlId}-vendors`} />
           {filters.vendor ? <IconButton label="Очистить бренд" onClick={() => onChange("vendor", "")}><CloseIcon /></IconButton> : null}
         </span>
-        <datalist id={`${controlId}-vendors`}>{vendors.map((vendor) => <option key={vendor} value={vendor} />)}</datalist>
+        <datalist id={`${controlId}-vendors`}>{vendorOptions.map((vendor) => <option key={vendor.id} value={vendor.slug} label={vendor.name} />)}</datalist>
       </label>
       <label className="materialsField">
         <Eyebrow>ТИП</Eyebrow>

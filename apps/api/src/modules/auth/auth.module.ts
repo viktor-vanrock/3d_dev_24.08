@@ -9,9 +9,10 @@ import { AuthRepository } from "./infrastructure/auth.repository.ts";
 import { OtpEmailAdapter } from "./infrastructure/email.adapter.ts";
 import { IdentityStorageAdapter } from "./infrastructure/identity-storage.adapter.ts";
 import { AUTH_IDENTITY_READ_PORT } from "./public/index.ts";
+import { PermissionsModule } from "../permissions/public/index.ts";
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, PermissionsModule],
   controllers: [AuthController],
   providers: [
     RuntimeLogger,
