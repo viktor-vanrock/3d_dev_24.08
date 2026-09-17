@@ -21,6 +21,7 @@ import { SESSION_USER, SessionVerifier, type RequestWithSession } from "../../..
 import { UserId, type UserId as UserIdType } from "../../_kernel/brandedIds.ts";
 import { COMMUNITY_PORT, type CommunityPort } from "../public/index.ts";
 import { isUuid, SUBSCRIBE_SOURCES, type SubscribeSource } from "../domain/community.ts";
+import { UPLOAD_LIMITS } from "../../projects/public/index.ts";
 import { AcceptDto, BootstrapOwnerDto, CreateCommunityDto, CreatePostDto, CreateThreadDto, RoleDto, SubscriptionDto, VoteDto } from "./community.dto.ts";
 import { ApiCommunityOperation } from "./openapi.ts";
 import { COMMUNITY_STORAGE_PORT, type CommunityStoragePort } from "../application/community.ports.ts";
@@ -127,7 +128,11 @@ export class CommunityController {
   @Post("posts/:id/vote") @ApiCommunityOperation("Vote post") votePost(@Req() r: RequestWithSession, @Param("id") x: string, @Body() b: VoteDto) {
     return this.community.votePost(id(x), uid(r), b.value);
   }
-  @Post("posts/:id/attachments") @HttpCode(201) @UseInterceptors(FileInterceptor("file")) @ApiCommunityOperation("Upload attachment", 201) upload(
+  @Post("posts/:id/attachments")
+  @HttpCode(201)
+  @UseInterceptors(FileInterceptor("file", { limits: { fileSize: Math.max(UPLOAD_LIMITS.photo, UPLOAD_LIMITS.source), files: 1 } }))
+  @ApiCommunityOperation("Upload attachment", 201)
+  upload(
     @Req() r: RequestWithSession,
     @Param("id") x: string,
     @UploadedFile() f: { buffer: Buffer; originalname: string } | undefined,
