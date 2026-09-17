@@ -1,8 +1,10 @@
 import { DeleteObjectCommand, GetObjectCommand, ListObjectsV2Command, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { createHash } from "node:crypto";
 import type { Logger } from "../logger.ts";
-import type { Readable } from "node:stream";
+import { Transform, type Readable } from "node:stream";
+import { pipeline } from "node:stream/promises";
 
 let client: S3Client | null = null;
 
@@ -119,6 +121,44 @@ export async function putModelObjectStream(key: string, body: Readable, contentT
     params: { Bucket: modelsBucket(), Key: key, Body: body, ContentType: contentType, CacheControl: cacheControl },
   });
   await upload.done();
+}
+
+/** Streams an upload directly to object storage while enforcing its byte limit. */
+export async function putStreamingObject(
+  key: string,
+  input: NodeJS.ReadableStream,
+  contentType: string,
+  maxBytes: number,
+): Promise<{ readonly checksum: Buffer; readonly sizeBytes: number }> {
+  const s3 = getClient();
+  if (!s3) throw new Error("S3 не сконфигурирован (S3_ENDPOINT/S3_ACCESS_KEY/S3_SECRET_KEY)");
+
+  const checksum = createHash("sha256");
+  let sizeBytes = 0;
+  const counter = new Transform({
+    transform(chunk: Buffer | string, _encoding: BufferEncoding, callback: (error?: Error | null, data?: Buffer) => void) {
+      const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+      sizeBytes += buffer.length;
+      if (sizeBytes > maxBytes) {
+        callback(new Error(`TOO_LARGE:${maxBytes}`));
+        return;
+      }
+      checksum.update(buffer);
+      callback(null, buffer);
+    },
+  });
+  const upload = new Upload({
+    client: s3,
+    params: { Bucket: modelsBucket(), Key: key, Body: counter, ContentType: contentType },
+  });
+  const streamed = pipeline(input, counter);
+  try {
+    await Promise.all([streamed, upload.done()]);
+  } catch (error) {
+    (input as NodeJS.ReadableStream & { destroy(error?: Error): void }).destroy(error instanceof Error ? error : new Error(String(error)));
+    throw error;
+  }
+  return { checksum: checksum.digest(), sizeBytes };
 }
 
 export function deviceTransferObjectKey(ownerId: string, transferId: string, fileName: string): string {

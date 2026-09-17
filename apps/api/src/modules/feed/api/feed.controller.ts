@@ -14,10 +14,8 @@ import {
   Req,
   Res,
   UnauthorizedException,
-  UploadedFile,
-  UseInterceptors,
 } from "@nestjs/common";
-import { FileInterceptor } from "@nestjs/platform-express";
+import Busboy from "busboy";
 import type { Request, Response } from "express";
 import { SessionVerifier, SESSION_USER, type RequestWithSession } from "../../../nest/auth/session-verifier.ts";
 import { CommentId, FeedPostId, UserId } from "../../_kernel/brandedIds.ts";
@@ -53,14 +51,10 @@ import {
 } from "./feed.dto.ts";
 import { ApiFeedOperation, ApiFeedUpload } from "./openapi.ts";
 import { Internal, Public, User, UserOrAgent } from "../../permissions/public/index.ts";
+import { MAX_FEED_IMAGE_BYTES, MAX_FEED_VIDEO_BYTES } from "../domain/feed.ts";
+import { UPLOAD_CONCURRENCY_PORT, type UploadConcurrencyPort } from "../../projects/public/index.ts";
 
-const MAX_FEED_VIDEO_BYTES = 200 * 1024 * 1024;
-const MAX_FEED_IMAGE_BYTES = 15 * 1024 * 1024;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-interface UploadedFeedFile {
-  readonly buffer: Buffer;
-}
 
 function bearer(header: string | undefined): string | null {
   return header === undefined ? null : (/^Bearer (\S+)$/.exec(header)?.[1] ?? null);
@@ -83,6 +77,7 @@ export class FeedController {
     @Inject(SessionVerifier) private readonly sessions: SessionVerifier,
     @Inject(FEED_AGENT_AUTH_PORT) private readonly agentAuth: FeedAgentAuthPort,
     @Inject(FEED_INGEST_AUTH_PORT) private readonly ingestAuth: FeedIngestAuthPort,
+    @Inject(UPLOAD_CONCURRENCY_PORT) private readonly concurrency: UploadConcurrencyPort,
   ) {}
 
   @Get()
@@ -220,18 +215,53 @@ export class FeedController {
 
   @Post("media")
   @UserOrAgent()
-  @UseInterceptors(FileInterceptor("file", { limits: { fileSize: MAX_FEED_VIDEO_BYTES, files: 1 } }))
   @ApiFeedUpload("Upload feed media", FeedMediaUploadResponseDto)
-  uploadMedia(@Req() request: RequestWithSession, @Headers("authorization") authorization: string | undefined, @UploadedFile() file: UploadedFeedFile | undefined) {
-    return this.sessionOrAgent(request, authorization).then((actor) => this.feed.uploadMedia(file, actor, request));
+  async uploadMedia(@Req() request: RequestWithSession & Request, @Headers("authorization") authorization: string | undefined) {
+    const multipart = this.parseMediaStream(request, MAX_FEED_VIDEO_BYTES);
+    const file = await multipart.file;
+    const actor = await this.sessionOrAgent(request, authorization);
+    this.concurrency.acquire();
+    let result;
+    try { result = await this.feed.uploadMediaStream({ stream: file.stream, mimeType: file.mime, filename: file.filename }, actor, request); } finally { this.concurrency.release(); }
+    await multipart.completed;
+    return result;
   }
 
   @Post("posts/:id/images")
   @User()
-  @UseInterceptors(FileInterceptor("file", { limits: { fileSize: MAX_FEED_IMAGE_BYTES, files: 1 } }))
   @ApiFeedUpload("Upload an inline feed image", FeedImageUploadResponseDto)
-  uploadImage(@Req() request: RequestWithSession, @Param("id") id: string, @UploadedFile() file: UploadedFeedFile | undefined) {
-    return this.feed.uploadImage(postId(id), file, this.guardedActor(request));
+  async uploadImage(@Req() request: RequestWithSession & Request, @Param("id") id: string) {
+    const multipart = this.parseMediaStream(request, MAX_FEED_IMAGE_BYTES);
+    const file = await multipart.file;
+    this.concurrency.acquire();
+    let result;
+    try { result = await this.feed.uploadImageStream(postId(id), { stream: file.stream, mimeType: file.mime, filename: file.filename }, this.guardedActor(request)); } finally { this.concurrency.release(); }
+    await multipart.completed;
+    return result;
+  }
+
+  private parseMediaStream(request: Request, maxBytes: number): { file: Promise<{ stream: NodeJS.ReadableStream; filename: string; mime: string }>; completed: Promise<void> } {
+    let resolveFile!: (value: { stream: NodeJS.ReadableStream; filename: string; mime: string }) => void;
+    let rejectFile!: (error: Error) => void;
+    const file = new Promise<{ stream: NodeJS.ReadableStream; filename: string; mime: string }>((resolve, reject) => { resolveFile = resolve; rejectFile = reject; });
+    let resolveCompleted!: () => void;
+    let rejectCompleted!: (error: Error) => void;
+    const completed = new Promise<void>((resolve, reject) => { resolveCompleted = resolve; rejectCompleted = reject; });
+    const fail = (error: Error) => { rejectFile(error); rejectCompleted(error); };
+    const parser = Busboy({ headers: request.headers, limits: { fileSize: maxBytes, files: 1, fields: 0 } });
+    let seen = false;
+    parser.on("file", (field, stream, info) => {
+      if (field !== "file" || seen) { stream.resume(); fail(new NotFoundException("Допустим только один файл в поле file")); return; }
+      seen = true;
+      stream.once("limit", () => stream.destroy(new Error(`TOO_LARGE:${maxBytes}`)));
+      resolveFile({ stream, filename: info.filename || "file", mime: info.mimeType || "application/octet-stream" });
+    });
+    parser.once("filesLimit", () => fail(new NotFoundException("Допустим только один файл")));
+    parser.once("fieldsLimit", () => fail(new NotFoundException("Поля multipart не поддерживаются")));
+    parser.once("error", fail);
+    parser.once("finish", () => { if (!seen) fail(new NotFoundException("Требуется файл")); else resolveCompleted(); });
+    request.pipe(parser);
+    return { file, completed };
   }
 
   @Get("posts/:id/images/:fileId")

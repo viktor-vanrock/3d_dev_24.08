@@ -8,6 +8,7 @@ import { PROJECT_UPLOAD_MAX_BYTES, sha256Canonical, type ModelCreateInput, type 
 import { ProjectError } from "../domain/project.errors.ts";
 import type { ProjectRepository, UploadedSource } from "../domain/project.repository.ts";
 import { PostgresProjectRepository } from "../infrastructure/postgres-project.repository.ts";
+import { UPLOAD_CONCURRENCY_PORT, type UploadConcurrencyPort } from "../public/index.ts";
 
 const ACCEPTED_MIME = new Set([
   "application/octet-stream",
@@ -33,7 +34,7 @@ function sourceBlobKey(ownerId: string, checksum: Buffer): string {
 export class ProjectCommandService {
   private readonly repository: ProjectRepository;
 
-  constructor(@Inject(PostgresProjectRepository) repository: PostgresProjectRepository) {
+  constructor(@Inject(PostgresProjectRepository) repository: PostgresProjectRepository, @Inject(UPLOAD_CONCURRENCY_PORT) private readonly concurrency: UploadConcurrencyPort) {
     this.repository = repository;
   }
 
@@ -50,13 +51,17 @@ export class ProjectCommandService {
   }
 
   async createModel(actorId: UserId, projectId: ProjectId, version: number, input: ModelCreateInput, file: ProjectUpload, key: string) {
-    const source = await this.acceptSource(actorId, file);
+    this.concurrency.acquire();
+    let source: UploadedSource;
+    try { source = await this.acceptSource(actorId, file); } finally { this.concurrency.release(); }
     const fingerprint = sha256Canonical({ input, checksum: source.checksum.toString("hex"), size: source.sizeBytes, format: source.sourceFormat });
     return this.repository.createModel(actorId, projectId, version, input, source, key, fingerprint);
   }
 
   async createRevision(actorId: UserId, projectId: ProjectId, modelId: ModelId, version: number, file: ProjectUpload, key: string) {
-    const source = await this.acceptSource(actorId, file);
+    this.concurrency.acquire();
+    let source: UploadedSource;
+    try { source = await this.acceptSource(actorId, file); } finally { this.concurrency.release(); }
     const fingerprint = sha256Canonical({ checksum: source.checksum.toString("hex"), size: source.sizeBytes, format: source.sourceFormat });
     return this.repository.createRevision(actorId, projectId, modelId, version, source, key, fingerprint);
   }

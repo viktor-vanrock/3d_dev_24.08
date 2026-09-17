@@ -12,11 +12,9 @@ import {
   Req,
   Res,
   UnprocessableEntityException,
-  UploadedFile,
-  UseInterceptors,
 } from "@nestjs/common";
-import { FileInterceptor } from "@nestjs/platform-express";
-import type { Response } from "express";
+import Busboy from "busboy";
+import type { Request, Response } from "express";
 import { SESSION_USER, SessionVerifier, type RequestWithSession } from "../../../nest/auth/session-verifier.ts";
 import { UserId, type UserId as UserIdType } from "../../_kernel/brandedIds.ts";
 import { COMMUNITY_PORT, type CommunityPort } from "../public/index.ts";
@@ -25,6 +23,8 @@ import { AcceptDto, BootstrapOwnerDto, CreateCommunityDto, CreatePostDto, Create
 import { ApiCommunityOperation } from "./openapi.ts";
 import { COMMUNITY_STORAGE_PORT, type CommunityStoragePort } from "../application/community.ports.ts";
 import { Permission, Permissions, Public, User } from "../../permissions/public/index.ts";
+import { MAX_MODEL_ATTACHMENT_BYTES, MAX_PHOTO_ATTACHMENT_BYTES } from "../domain/community.ts";
+import { UPLOAD_CONCURRENCY_PORT, type UploadConcurrencyPort } from "../../projects/public/index.ts";
 const uid = (r: RequestWithSession): UserIdType => UserId(r[SESSION_USER]!.id);
 const id = (v: string) => {
   if (!isUuid(v)) throw new NotFoundException();
@@ -42,6 +42,7 @@ export class CommunityController {
     @Inject(COMMUNITY_PORT) private readonly community: CommunityPort,
     @Inject(COMMUNITY_STORAGE_PORT) private readonly storage: CommunityStoragePort,
     @Inject(SessionVerifier) private readonly sessions: SessionVerifier,
+    @Inject(UPLOAD_CONCURRENCY_PORT) private readonly concurrency: UploadConcurrencyPort,
   ) {}
   @Post("communities") @HttpCode(201) @ApiCommunityOperation("Create community", 201) create(@Req() r: RequestWithSession, @Body() b: CreateCommunityDto) {
     return this.community.create({
@@ -127,13 +128,40 @@ export class CommunityController {
   @Post("posts/:id/vote") @ApiCommunityOperation("Vote post") votePost(@Req() r: RequestWithSession, @Param("id") x: string, @Body() b: VoteDto) {
     return this.community.votePost(id(x), uid(r), b.value);
   }
-  @Post("posts/:id/attachments") @HttpCode(201) @UseInterceptors(FileInterceptor("file")) @ApiCommunityOperation("Upload attachment", 201) upload(
-    @Req() r: RequestWithSession,
+  @Post("posts/:id/attachments") @HttpCode(201) @ApiCommunityOperation("Upload attachment", 201) async upload(
+    @Req() r: RequestWithSession & Request,
     @Param("id") x: string,
-    @UploadedFile() f: { buffer: Buffer; originalname: string } | undefined,
   ) {
-    if (!f) throw new NotFoundException();
-    return this.community.uploadAttachment(id(x), uid(r), f);
+    const multipart = this.parseAttachmentStream(r, Math.max(MAX_MODEL_ATTACHMENT_BYTES, MAX_PHOTO_ATTACHMENT_BYTES));
+    const file = await multipart.file;
+    this.concurrency.acquire();
+    let result;
+    try { result = await this.community.uploadAttachmentStream(id(x), uid(r), { stream: file.stream, originalname: file.filename, mimeType: file.mime }); } finally { this.concurrency.release(); }
+    await multipart.completed;
+    return result;
+  }
+  private parseAttachmentStream(request: Request, maxBytes: number): { file: Promise<{ stream: NodeJS.ReadableStream; filename: string; mime: string }>; completed: Promise<void> } {
+    let resolveFile!: (value: { stream: NodeJS.ReadableStream; filename: string; mime: string }) => void;
+    let rejectFile!: (error: Error) => void;
+    const file = new Promise<{ stream: NodeJS.ReadableStream; filename: string; mime: string }>((resolve, reject) => { resolveFile = resolve; rejectFile = reject; });
+    let resolveCompleted!: () => void;
+    let rejectCompleted!: (error: Error) => void;
+    const completed = new Promise<void>((resolve, reject) => { resolveCompleted = resolve; rejectCompleted = reject; });
+    const fail = (error: Error) => { rejectFile(error); rejectCompleted(error); };
+    const parser = Busboy({ headers: request.headers, limits: { fileSize: maxBytes, files: 1, fields: 0 } });
+    let seen = false;
+    parser.on("file", (field, stream, info) => {
+      if (field !== "file" || seen) { stream.resume(); fail(new UnprocessableEntityException("Допустим только один файл в поле file")); return; }
+      seen = true;
+      stream.once("limit", () => stream.destroy(new Error(`TOO_LARGE:${maxBytes}`)));
+      resolveFile({ stream, filename: info.filename || "file", mime: info.mimeType || "application/octet-stream" });
+    });
+    parser.once("filesLimit", () => fail(new UnprocessableEntityException("Допустим только один файл")));
+    parser.once("fieldsLimit", () => fail(new UnprocessableEntityException("Поля multipart не поддерживаются")));
+    parser.once("error", fail);
+    parser.once("finish", () => { if (!seen) fail(new UnprocessableEntityException("Требуется файл")); else resolveCompleted(); });
+    request.pipe(parser);
+    return { file, completed };
   }
   @Get("posts/:id/attachments/:attachmentId") @Public() @ApiCommunityOperation("Download attachment") async attachment(
     @Param("id") p: string,

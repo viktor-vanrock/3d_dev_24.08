@@ -1,7 +1,7 @@
 import type { Request } from "express";
 import type { PoolClient } from "pg";
 import type { CommentId, FeedPostId, ModelId, UserId } from "../../_kernel/brandedIds.ts";
-import type { FeedActor, FeedAsset, FeedCommentRecord, FeedEventType, FeedGitverseRef, FeedPostRecord, FeedUpload, FeedVoteValue } from "../domain/feed.ts";
+import type { FeedActor, FeedAsset, FeedCommentRecord, FeedEventType, FeedGitverseRef, FeedPostRecord, FeedStreamUpload, FeedUpload, FeedVoteValue } from "../domain/feed.ts";
 
 export const FEED_PORT = Symbol("FEED_PORT");
 export const FEED_SOCIAL_OWNER_PORT = Symbol("FEED_SOCIAL_OWNER_PORT");
@@ -127,6 +127,8 @@ export interface FeedAnalyticsPort {
 export interface FeedStoragePort {
   uploadMedia(ownerId: UserId, upload: FeedUpload): Promise<{ readonly key: string; readonly url: string | null; readonly kind: "image" | "video" }>;
   uploadPostImage(postId: FeedPostId, upload: FeedUpload): Promise<{ readonly id: string; readonly key: string }>;
+  uploadMediaStream(ownerId: UserId, file: FeedStreamUpload): Promise<{ readonly key: string; readonly url: string | null; readonly kind: "image" | "video" }>;
+  uploadPostImageStream(postId: FeedPostId, file: FeedStreamUpload): Promise<{ readonly id: string; readonly key: string }>;
   asset(key: string): Promise<FeedAsset>;
   mediaKeyOwner(key: string): UserId | null;
   mediaKind(key: string): "image" | "video" | null;
@@ -159,6 +161,8 @@ export interface FeedPort {
   parseGitverse(url: string | undefined, actor: FeedActor, request: Request): Promise<FeedGitverseRef | null>;
   uploadMedia(upload: FeedUpload | undefined, actor: FeedActor, request: Request): Promise<FeedMediaUploadResponse>;
   uploadImage(postId: FeedPostId, upload: FeedUpload | undefined, actor: FeedActor): Promise<{ readonly url: string }>;
+  uploadMediaStream(file: FeedStreamUpload, actor: FeedActor, request: Request): Promise<FeedMediaUploadResponse>;
+  uploadImageStream(postId: FeedPostId, file: FeedStreamUpload, actor: FeedActor): Promise<{ readonly url: string }>;
   image(postId: FeedPostId, fileId: string): Promise<FeedAsset>;
 }
 

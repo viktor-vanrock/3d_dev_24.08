@@ -10,6 +10,8 @@ import {
   UnprocessableEntityException,
 } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
+import { Readable } from "node:stream";
+import { putStreamingObject } from "../../../storage/s3.ts";
 import type { UserId } from "../../_kernel/brandedIds.ts";
 import { CommunityRepository } from "../infrastructure/community.repository.ts";
 import {
@@ -227,6 +229,32 @@ export class CommunityService implements CommunityPort, CommunitySocialOwnerPort
       key = `public/posts/${id}/${randomUUID()}.${ext}`;
     await this.storage.put(key, file.buffer, mime);
     const a = await this.repo.addAttachment(id, u, kind, key, file.buffer.length, file.originalname, mime);
+    return { attachment: { id: a.id, kind: a.kind, url: `/posts/${id}/attachments/${a.id}`, size_bytes: a.size_bytes, created_at: a.created_at } };
+  }
+  async uploadAttachmentStream(id: string, u: UserId, file: { stream: NodeJS.ReadableStream; originalname: string; mimeType: string }): Promise<{ readonly attachment: AttachmentView }> {
+    if (!this.storage.configured()) throw new ServiceUnavailableException();
+    const p = found(await this.repo.post(id));
+    if (p.author_id !== u) fail(403);
+    if (p.status !== "visible") fail(409);
+    if ((await this.repo.attachmentCount(id)) >= MAX_POST_ATTACHMENTS) fail(400);
+
+    const iterator = file.stream[Symbol.asyncIterator]();
+    const first = await iterator.next();
+    const header = first.done ? Buffer.alloc(0) : Buffer.from(first.value as Buffer);
+    const is3mf = header.subarray(0, 2).equals(Buffer.from("PK"));
+    const kind = is3mf ? "model_3mf" : "photo";
+    const limit = is3mf ? MAX_MODEL_ATTACHMENT_BYTES : MAX_PHOTO_ATTACHMENT_BYTES;
+    const ext = is3mf ? "3mf" : "bin";
+    const mime = is3mf ? "model/3mf" : "application/octet-stream";
+    const key = `public/posts/${id}/${randomUUID()}.${ext}`;
+    const body = Readable.from(
+      (async function* () {
+        if (!first.done) yield header;
+        for await (const chunk of { [Symbol.asyncIterator]: () => iterator }) yield chunk;
+      })(),
+    );
+    const uploaded = await putStreamingObject(key, body, mime, limit);
+    const a = await this.repo.addAttachment(id, u, kind, key, uploaded.sizeBytes, file.originalname, mime);
     return { attachment: { id: a.id, kind: a.kind, url: `/posts/${id}/attachments/${a.id}`, size_bytes: a.size_bytes, created_at: a.created_at } };
   }
   async attachment(postId: string, id: string): Promise<{ kind: "photo" | "model_3mf"; key: string }> {

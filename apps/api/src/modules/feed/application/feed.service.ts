@@ -24,6 +24,7 @@ import {
   type FeedEventType,
   type FeedPostType,
   type FeedUpload,
+  type FeedStreamUpload,
   type FeedVoteValue,
 } from "../domain/feed.ts";
 import { FeedRepository } from "../infrastructure/feed.repository.ts";
@@ -367,12 +368,34 @@ export class FeedService implements FeedPort, FeedSocialOwnerPort {
     }
   }
 
+  async uploadMediaStream(file: FeedStreamUpload, actor: FeedActor, request: Request): Promise<FeedMediaUploadResponse> {
+    await this.rateLimits.assertAllowed("feed_media_upload", actor.userId, request);
+    try {
+      const result = await this.storage.uploadMediaStream(actor.userId, file);
+      return { s3_key: result.key, url: result.url, kind: result.kind };
+    } catch (error) {
+      this.mapStorageError(error);
+    }
+  }
+
   async uploadImage(postId: FeedPostIdType, upload: FeedUpload | undefined, actor: FeedActor): Promise<{ readonly url: string }> {
     if (upload === undefined) throw new BadRequestException();
     const existing = await this.owned(postId, actor.userId);
     if (existing.status !== "visible") throw new ConflictException();
     try {
       const stored = await this.storage.uploadPostImage(postId, upload);
+      await this.repository.addImage(postId, stored.id, stored.key);
+      return { url: `/feed/posts/${postId}/images/${stored.id}` };
+    } catch (error) {
+      this.mapStorageError(error);
+    }
+  }
+
+  async uploadImageStream(postId: FeedPostIdType, file: FeedStreamUpload, actor: FeedActor): Promise<{ readonly url: string }> {
+    const existing = await this.owned(postId, actor.userId);
+    if (existing.status !== "visible") throw new ConflictException();
+    try {
+      const stored = await this.storage.uploadPostImageStream(postId, file);
       await this.repository.addImage(postId, stored.id, stored.key);
       return { url: `/feed/posts/${postId}/images/${stored.id}` };
     } catch (error) {

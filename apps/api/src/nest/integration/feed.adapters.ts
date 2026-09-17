@@ -5,7 +5,7 @@ import { Readable } from "node:stream";
 import { createAgentContentApiKeyVerifier } from "../../modules/publicapi/public/legacy.ts";
 import { createFeedIngestApiKeyVerifier } from "../../modules/publicapi/public/legacy.ts";
 import { assertNestRateLimit } from "./rate-limit.ts";
-import { feedMediaObjectKey, feedPostImageObjectKey, getModelObjectStream, isModelsStorageConfigured, modelPublicUrl, putModelObjectStream } from "../../storage/s3.ts";
+import { feedMediaObjectKey, feedPostImageObjectKey, getModelObjectStream, isModelsStorageConfigured, modelPublicUrl, putModelObjectStream, putStreamingObject } from "../../storage/s3.ts";
 import { AnalyticsModule } from "../../modules/analytics/analytics.module.ts";
 import { ANALYTICS_PORT, type AnalyticsPort, type EventName } from "../../modules/analytics/public/index.ts";
 import { ModelsModule } from "../../modules/models/models.module.ts";
@@ -58,6 +58,7 @@ import {
   type FeedUpload,
   type FeedVoteValue,
 } from "../../modules/feed/public/index.ts";
+import { MAX_FEED_IMAGE_BYTES, MAX_FEED_VIDEO_BYTES, type FeedStreamUpload } from "../../modules/feed/domain/feed.ts";
 import { UserId, type FeedPostId as FeedPostIdType, type ModelId, type UserId as UserIdType } from "../../modules/_kernel/brandedIds.ts";
 import { MetricsService } from "../observability/metrics.service.ts";
 
@@ -223,6 +224,18 @@ function mediaType(buffer: Buffer): { ext: string; contentType: string; kind: "i
   return { ext: "bin", contentType: "application/octet-stream", kind: "image" };
 }
 
+function streamMediaType(mimeType: string): { ext: string; contentType: string; kind: "image" | "video" } {
+  if (mimeType === "video/mp4") return { ext: "mp4", contentType: mimeType, kind: "video" };
+  if (mimeType === "image/png") return { ext: "png", contentType: mimeType, kind: "image" };
+  if (mimeType === "image/jpeg") return { ext: "jpg", contentType: mimeType, kind: "image" };
+  return { ext: "bin", contentType: "application/octet-stream", kind: "image" };
+}
+
+function streamImageType(mimeType: string): { ext: string; contentType: string } {
+  if (mimeType === "image/png") return { ext: "png", contentType: mimeType };
+  return { ext: "jpg", contentType: "image/jpeg" };
+}
+
 @Injectable()
 export class FeedStorageAdapter implements FeedStoragePort {
   async uploadMedia(ownerId: UserIdType, upload: FeedUpload) {
@@ -238,6 +251,21 @@ export class FeedStorageAdapter implements FeedStoragePort {
     const id = randomUUID();
     const key = feedPostImageObjectKey(postId, id, type.ext);
     await putModelObjectStream(key, Readable.from(upload.buffer), type.contentType);
+    return { id, key };
+  }
+  async uploadMediaStream(ownerId: UserIdType, file: FeedStreamUpload) {
+    if (!isModelsStorageConfigured()) throw new ServiceUnavailableException();
+    const type = streamMediaType(file.mimeType);
+    const key = feedMediaObjectKey(ownerId, randomUUID(), type.ext);
+    await putStreamingObject(key, file.stream, type.contentType, MAX_FEED_VIDEO_BYTES);
+    return { key, url: modelPublicUrl(key), kind: type.kind };
+  }
+  async uploadPostImageStream(postId: FeedPostIdType, file: FeedStreamUpload) {
+    if (!isModelsStorageConfigured()) throw new ServiceUnavailableException();
+    const type = streamImageType(file.mimeType);
+    const id = randomUUID();
+    const key = feedPostImageObjectKey(postId, id, type.ext);
+    await putStreamingObject(key, file.stream, type.contentType, MAX_FEED_IMAGE_BYTES);
     return { id, key };
   }
   async asset(key: string): Promise<FeedAsset> {

@@ -12,6 +12,7 @@ import { PROFILE_AUTH_PORT } from "../../profile/public/index.ts";
 import { COMMUNITY_STORAGE_PORT, type CommunityPort } from "../application/community.ports.ts";
 import { COMMUNITY_PORT } from "../public/index.ts";
 import { CommunityController } from "./community.controller.ts";
+import { UPLOAD_CONCURRENCY_PORT } from "../../projects/public/index.ts";
 
 const community = {
   list: vi.fn().mockResolvedValue({ items: [], next_cursor: null }),
@@ -38,7 +39,7 @@ class CommunityTestPortsModule {}
 @Module({
   imports: [ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true }), CommunityTestPortsModule],
   controllers: [CommunityController],
-  providers: [{ provide: APP_GUARD, useClass: AuthGuard }, { provide: APP_FILTER, useClass: ApiExceptionFilter }],
+  providers: [{ provide: UPLOAD_CONCURRENCY_PORT, useValue: { acquire: () => undefined, release: () => undefined, getActive: () => 0 } }, { provide: APP_GUARD, useClass: AuthGuard }, { provide: APP_FILTER, useClass: ApiExceptionFilter }],
 })
 class CommunityTestModule {}
 
