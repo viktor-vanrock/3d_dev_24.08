@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   parseRelayToGatewayFrame,
+  type FileChunkHeader,
   type GatewayToRelayFrame,
   type RelayToGatewayFrame,
 } from "@portal/contracts/device-protocol/v1";
@@ -61,6 +62,11 @@ export function removeTestCertificates(certificates: TestCertificates): void {
 
 type FrameType = RelayToGatewayFrame["type"];
 
+export interface BinaryFileChunk {
+  readonly header: FileChunkHeader;
+  readonly data: Buffer;
+}
+
 interface FrameWaiter {
   readonly type: FrameType;
   readonly resolve: (frame: RelayToGatewayFrame) => void;
@@ -71,12 +77,37 @@ interface FrameWaiter {
 export class TestGatewayClient {
   private readonly frames: RelayToGatewayFrame[] = [];
   private readonly waiters: FrameWaiter[] = [];
+  private readonly binaryChunks: BinaryFileChunk[] = [];
+  private readonly binaryWaiters: Array<{
+    readonly resolve: (chunk: BinaryFileChunk) => void;
+    readonly reject: (error: Error) => void;
+    readonly timeout: NodeJS.Timeout;
+  }> = [];
+  private pendingFileChunkHeader: FileChunkHeader | undefined;
 
   constructor(readonly socket: WebSocket) {
-    socket.on("message", (data) => {
+    socket.on("message", (data, isBinary) => {
+      if (isBinary) {
+        const header = this.pendingFileChunkHeader;
+        this.pendingFileChunkHeader = undefined;
+        if (!header) {
+          this.rejectAll(new Error("relay emitted a binary file chunk without a header"));
+          return;
+        }
+        this.handleBinaryChunk({ header, data: Buffer.from(data as Uint8Array) });
+        return;
+      }
       const parsed = parseRelayToGatewayFrame(data.toString());
       if (!parsed.ok) {
         this.rejectAll(new Error(`relay emitted a non-canonical frame: ${parsed.error}`));
+        return;
+      }
+      if (parsed.frame.type === "file_chunk_header") {
+        if (this.pendingFileChunkHeader) {
+          this.rejectAll(new Error("relay emitted a file chunk header before its binary data"));
+          return;
+        }
+        this.pendingFileChunkHeader = parsed.frame;
         return;
       }
       const waiterIndex = this.waiters.findIndex((waiter) => waiter.type === parsed.frame.type);
@@ -90,6 +121,20 @@ export class TestGatewayClient {
       waiter.resolve(parsed.frame);
     });
     socket.on("error", (error) => this.rejectAll(error));
+  }
+
+  async nextBinaryChunk(timeoutMs = 2_000): Promise<BinaryFileChunk> {
+    const queued = this.binaryChunks.shift();
+    if (queued) return queued;
+    return await new Promise((resolve, reject) => {
+      const resolveChunk = (chunk: BinaryFileChunk): void => resolve(chunk);
+      const timeout = setTimeout(() => {
+        const index = this.binaryWaiters.findIndex((waiter) => waiter.resolve === resolveChunk);
+        if (index >= 0) this.binaryWaiters.splice(index, 1);
+        reject(new Error("timed out waiting for binary file chunk"));
+      }, timeoutMs);
+      this.binaryWaiters.push({ resolve: resolveChunk, reject, timeout });
+    });
   }
 
   send(frame: GatewayToRelayFrame): void {
@@ -145,6 +190,20 @@ export class TestGatewayClient {
       clearTimeout(waiter.timeout);
       waiter.reject(error);
     }
+    for (const waiter of this.binaryWaiters.splice(0)) {
+      clearTimeout(waiter.timeout);
+      waiter.reject(error);
+    }
+  }
+
+  private handleBinaryChunk(chunk: BinaryFileChunk): void {
+    const waiter = this.binaryWaiters.shift();
+    if (!waiter) {
+      this.binaryChunks.push(chunk);
+      return;
+    }
+    clearTimeout(waiter.timeout);
+    waiter.resolve(chunk);
   }
 }
 
@@ -172,7 +231,7 @@ export async function createRelayE2eHarness(options: RelayE2eHarnessOptions): Pr
     gateway: {
       host: "127.0.0.1",
       port: 0,
-      maxFrameBytes: 131_072,
+      maxFrameBytes: 1_048_576,
       maxSessions: 20,
       maxInflightFrames: 100,
       maxInflightFramesPerSession: 10,

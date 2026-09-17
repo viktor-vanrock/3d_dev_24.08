@@ -396,7 +396,7 @@ export interface components {
         };
         readonly RelayTransferResultRequestDto: {
             /** @enum {string} */
-            readonly error_code?: "device_not_owned" | "device_revoked" | "invalid_transfer" | "invalid_file" | "transfer_conflict" | "invalid_sequence" | "checksum_mismatch" | "size_mismatch" | "source_changed" | "upload_failed" | "start_failed" | "timeout" | "disconnected" | "internal_error";
+            readonly error_code?: "device_not_owned" | "device_revoked" | "invalid_transfer" | "invalid_file" | "transfer_conflict" | "invalid_sequence" | "checksum_mismatch" | "size_mismatch" | "source_changed" | "upload_failed" | "start_failed" | "timeout" | "disconnected" | "internal_error" | "disk_full" | "quota_exceeded" | "write_error" | "transfer_expired" | "cancelled";
             readonly next_offset: number;
             readonly next_sequence: number;
             readonly object_version: string;

@@ -4,7 +4,7 @@ import type { AuthorizedDevice } from "@portal/contracts/device-protocol/v1";
 export interface SessionSocket {
   readonly readyState: number;
   readonly bufferedAmount: number;
-  send(data: string, callback?: (error?: Error) => void): void;
+  send(data: string | Buffer, options?: { binary?: boolean }, callback?: (error?: Error) => void): void;
   close(code?: number, reason?: string): void;
   terminate(): void;
 }
@@ -147,10 +147,18 @@ export class SessionRegistry {
     this.globalInflightFrames = Math.max(0, this.globalInflightFrames - 1);
   }
 
-  send(fence: SessionFence, payload: string): boolean {
+  send(fence: SessionFence, payload: string | Buffer, binary = false): boolean {
+    return this.sendBatch(fence, [{ payload, binary }]);
+  }
+
+  /**
+   * Admits related transport frames together. This keeps a file-chunk header
+   * from reaching an agent unless its following binary payload fits as well.
+   */
+  sendBatch(fence: SessionFence, frames: readonly { readonly payload: string | Buffer; readonly binary: boolean }[]): boolean {
     const session = this.current(fence);
     if (!session || session.closing || session.socket.readyState !== 1) return false;
-    const payloadBytes = Buffer.byteLength(payload);
+    const payloadBytes = frames.reduce((total, frame) => total + (Buffer.isBuffer(frame.payload) ? frame.payload.byteLength : Buffer.byteLength(frame.payload)), 0);
     const globalBuffered = this.list().reduce((total, candidate) => total + candidate.socket.bufferedAmount, 0);
     if (
       session.socket.bufferedAmount + payloadBytes > this.limits.maxBufferedBytesPerSession
@@ -158,7 +166,7 @@ export class SessionRegistry {
     ) {
       return false;
     }
-    session.socket.send(payload);
+    for (const frame of frames) session.socket.send(frame.payload, { binary: frame.binary });
     return true;
   }
 

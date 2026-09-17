@@ -114,6 +114,12 @@ export class DevicesController {
     return this.devices.getTransfer(actor(req), id, transferId);
   }
 
+  @Post("me/devices/:deviceId/transfers/:transferId/cancel")
+  @ApiDevicesOperation("Cancel an active device transfer", { responseType: DeviceOkDto })
+  cancelTransfer(@Req() req: RequestWithSession, @Param("deviceId") id: string, @Param("transferId") transferId: string) {
+    return this.devices.cancelTransfer(actor(req), id, transferId);
+  }
+
   @Get("me/devices/:deviceId/incidents")
   @ApiDevicesOperation("List device incidents", { responseType: DeviceIncidentListDto })
   incidents(@Req() req: RequestWithSession, @Param("deviceId") id: string) {

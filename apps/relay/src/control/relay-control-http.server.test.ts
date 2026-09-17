@@ -31,7 +31,10 @@ afterEach(async () => { await server?.onApplicationShutdown(); server = undefine
 
 describe("RelayControlHttpServer", () => {
   it("closes a valid batch and rejects invalid credentials and payloads", async () => {
-    const gateway = { closeSessions: vi.fn().mockResolvedValue({ closed: ["11111111-1111-4111-8111-111111111111"], notConnected: [] }) };
+    const gateway = {
+      closeSessions: vi.fn().mockResolvedValue({ closed: ["11111111-1111-4111-8111-111111111111"], notConnected: [] }),
+      cancelTransfers: vi.fn().mockReturnValue({ cancelled: ["11111111-1111-4111-8111-111111111111"], notActive: [] }),
+    };
     const logger = { info: vi.fn(), warn: vi.fn() };
     server = new RelayControlHttpServer(config(), gateway as never, logger as never, { recordControlClose: vi.fn() } as never);
     await server.onModuleInit();
@@ -51,6 +54,15 @@ describe("RelayControlHttpServer", () => {
       body: JSON.stringify({ agentIds: ["11111111-1111-4111-8111-111111111111"], reason: "owner_sanctioned" }),
     });
     expect(sanctioned.status).toBe(200);
+
+    const cancelled = await fetch(`${baseUrl}/internal/relay/v1/transfers/cancel`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-relay-service-token": SERVICE_TOKEN },
+      body: JSON.stringify({ transferIds: ["11111111-1111-4111-8111-111111111111"] }),
+    });
+    expect(cancelled.status).toBe(200);
+    await expect(cancelled.json()).resolves.toEqual({ cancelled: ["11111111-1111-4111-8111-111111111111"], notActive: [] });
+    expect(gateway.cancelTransfers).toHaveBeenCalledWith(["11111111-1111-4111-8111-111111111111"]);
 
     const unauthorized = await fetch(`${baseUrl}/internal/relay/v1/sessions/close`, { method: "POST", body: "{}" });
     expect(unauthorized.status).toBe(401);

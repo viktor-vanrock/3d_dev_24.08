@@ -96,12 +96,33 @@ describe("DevicesService queueCommand receipt", () => {
 describe("DevicesService relay revoke push", () => {
   it("pushes the revoked device-agent after its database revoke commits", async () => {
     const repository = { revokeDevice: vi.fn().mockResolvedValue({ kind: "ok", agentId: "agent-1" }) };
-    const relayControl = { closeAgentSessions: vi.fn().mockResolvedValue(undefined) };
+    const relayControl = { closeAgentSessions: vi.fn().mockResolvedValue(undefined), cancelTransfers: vi.fn().mockResolvedValue({ cancelled: [], notActive: [] }) };
     const metrics = { incCredentialRevocation: vi.fn() };
     const service = new DevicesService(repository as never, {} as never, {} as never, relayControl, metrics as never);
 
     await expect(service.revokeDevice(USER_ID as never, PRINTER_ID, "manual", "request-1")).resolves.toEqual({ ok: true });
     expect(relayControl.closeAgentSessions).toHaveBeenCalledWith(["agent-1"], "agent_revoked");
     expect(metrics.incCredentialRevocation).toHaveBeenCalledWith("device_agent", "user_action");
+  });
+});
+
+describe("DevicesService transfer cancellation", () => {
+  it("marks an active owned transfer cancelled and asks relay to stop it", async () => {
+    const repository = { cancelTransfer: vi.fn().mockResolvedValue(true) };
+    const relayControl = { closeAgentSessions: vi.fn(), cancelTransfers: vi.fn().mockResolvedValue({ cancelled: [COMMAND_ID], notActive: [] }) };
+    const service = new DevicesService(repository as never, {} as never, {} as never, relayControl);
+
+    await expect(service.cancelTransfer(USER_ID as never, PRINTER_ID, COMMAND_ID)).resolves.toEqual({ ok: true });
+    expect(repository.cancelTransfer).toHaveBeenCalledWith(COMMAND_ID, PRINTER_ID, USER_ID);
+    expect(relayControl.cancelTransfers).toHaveBeenCalledWith([COMMAND_ID]);
+  });
+
+  it("does not notify relay when the transfer is terminal or does not belong to the actor", async () => {
+    const repository = { cancelTransfer: vi.fn().mockResolvedValue(false) };
+    const relayControl = { closeAgentSessions: vi.fn(), cancelTransfers: vi.fn() };
+    const service = new DevicesService(repository as never, {} as never, {} as never, relayControl);
+
+    await expect(service.cancelTransfer(USER_ID as never, PRINTER_ID, COMMAND_ID)).rejects.toMatchObject({ status: 404 });
+    expect(relayControl.cancelTransfers).not.toHaveBeenCalled();
   });
 });

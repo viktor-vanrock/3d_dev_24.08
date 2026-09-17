@@ -137,7 +137,7 @@ export function loadRelayConfig(environment: Environment = process.env): RelayCo
     gateway: {
       host: gatewayHost,
       port: gatewayPort,
-      maxFrameBytes: boundedInteger(environment, "RELAY_MAX_FRAME_BYTES", 131_072, 1_024, 131_072),
+      maxFrameBytes: boundedInteger(environment, "RELAY_MAX_FRAME_BYTES", 1_048_576, 1_024, 1_048_576),
       maxSessions: boundedInteger(environment, "RELAY_MAX_SESSIONS", 10_000, 1, 100_000),
       maxInflightFrames: boundedInteger(environment, "RELAY_MAX_INFLIGHT_FRAMES", 1_024, 1, 100_000),
       maxInflightFramesPerSession: boundedInteger(environment, "RELAY_MAX_INFLIGHT_FRAMES_PER_SESSION", 4, 1, 64),

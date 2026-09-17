@@ -6,8 +6,8 @@ import { SessionTransferPortAdapter } from "./session-transfer-port.adapter.ts";
 class FakeSocket implements SessionSocket {
   readyState = 1;
   bufferedAmount = 0;
-  readonly sent: string[] = [];
-  send(data: string): void { this.sent.push(data); }
+  readonly sent: Array<{ readonly data: string | Buffer; readonly binary: boolean }> = [];
+  send(data: string | Buffer, options?: { binary?: boolean }): void { this.sent.push({ data, binary: options?.binary ?? false }); }
   close(): void { this.readyState = 3; }
   terminate(): void { this.readyState = 3; }
 }
@@ -31,5 +31,23 @@ describe("SessionTransferPortAdapter", () => {
     socket.bufferedAmount = 1_024;
     expect(adapter.sendFileStart(session, frame)).toBe("backpressure");
     expect(adapter.sendFileStart(session, { ...frame, device_id: "foreign" })).toBe("unavailable");
+  });
+
+  it("admits a file header and its binary payload atomically", () => {
+    const registry = new SessionRegistry();
+    registry.configure({ maxSessions: 1, maxInflightFrames: 1, maxInflightFramesPerSession: 1, maxFramesPerSecond: 10, maxBufferedBytes: 2_048, maxBufferedBytesPerSession: 8 });
+    const socket = new FakeSocket();
+    const session: GatewaySession = {
+      gatewayId: "gateway-1", gatewayIdentity: "gateway-1", certificateFingerprintSha256: "a".repeat(64),
+      sessionId: "session-1", sessionGeneration: 1, connectionId: "connection-1", socket,
+      authorizationRevision: 1, authorizedDevices: new Map([["device-1", { device_id: "device-1" }]]),
+      lastHeartbeatAt: 1, lastRevalidatedAt: 1, heartbeatTimeoutMs: 5_000, inflightFrames: 0,
+      rateWindowStartedAt: 1, rateWindowCount: 0, closing: false,
+    };
+    registry.install(session);
+    const adapter = new SessionTransferPortAdapter(registry);
+    const header = { type: "file_chunk_header", device_id: "device-1", transfer_id: "transfer-1", seq: 0, offset_bytes: 0, size_bytes: 4, last: true } as const;
+    expect(adapter.sendFileChunk(session, header, Buffer.from("data"))).toBe("backpressure");
+    expect(socket.sent).toEqual([]);
   });
 });

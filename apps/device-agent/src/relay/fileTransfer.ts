@@ -4,7 +4,7 @@ import { basename } from "node:path";
 import { DeviceId, GatewayId, TransferId } from "@portal/contracts/device-agent-runtime/v1";
 import type { PrinterDriver, UploadResult } from "../driver/printerDriver.ts";
 import { KeyedExecutor } from "./keyedExecutor.ts";
-import type { FileChunkFrame, FileChunkAckFrame, FileResultFrame, FileStartAckFrame, FileStartFrame, FileTransferKind } from "./protocol.ts";
+import type { FileChunkAckFrame, FileChunkHeaderFrame, FileResultFrame, FileStartAckFrame, FileStartFrame, FileTransferKind } from "./protocol.ts";
 import {
   digestBytes,
   metadataHash,
@@ -15,6 +15,7 @@ import {
 } from "./transferSpoolRepository.ts";
 
 type FileResponse = FileChunkAckFrame | FileResultFrame;
+type ChunkDescriptor = Pick<FileChunkHeaderFrame, "device_id" | "transfer_id" | "seq" | "offset_bytes" | "last">;
 type AuthorizationCheck = (input: { gatewayId: string; deviceId: string; transferId: string; operation: "start" | "chunk" | "terminal" }) => boolean | Promise<boolean>;
 type UploadReconciliation = { status: "present"; storedAs: string; sizeBytes: number; sha256: string } | { status: "absent" } | { status: "unknown" };
 
@@ -62,8 +63,8 @@ export class FileTransferHandler {
     return this.executor.run(frame.transfer_id, () => this.budgetExecutor.run("spool", () => this.startSerialized(frame)));
   }
 
-  chunk(frame: FileChunkFrame): Promise<FileResponse> {
-    return this.executor.run(frame.transfer_id, () => this.chunkSerialized(frame));
+  chunkBinary(header: FileChunkHeaderFrame, data: Buffer): Promise<FileResponse> {
+    return this.executor.run(header.transfer_id, () => this.chunkBinarySerialized(header, data));
   }
 
   garbageCollectTerminal(retentionMs: number): Promise<number> {
@@ -109,7 +110,12 @@ export class FileTransferHandler {
     }
   }
 
-  private async chunkSerialized(frame: FileChunkFrame): Promise<FileResponse> {
+  private async chunkBinarySerialized(header: FileChunkHeaderFrame, data: Buffer): Promise<FileResponse> {
+    if (data.byteLength !== header.size_bytes) return this.error(header.transfer_id, "invalid_data");
+    return this.commitChunk(header, data);
+  }
+
+  private async commitChunk(frame: ChunkDescriptor, data: Buffer): Promise<FileResponse> {
     if (!await this.authorized(frame.device_id, frame.transfer_id, "chunk")) return this.error(frame.transfer_id, "device_not_authorized");
     if (!isSafeTransferId(frame.transfer_id)) return this.error(frame.transfer_id, "invalid_transfer");
     const loaded = await this.repository.load(frame.transfer_id);
@@ -117,31 +123,29 @@ export class FileTransferHandler {
     if (loaded.kind === "quarantined") return this.error(frame.transfer_id, "transfer_conflict", undefined, undefined, loaded.reason);
     let state = loaded.state;
     if (!await this.metadataStillAuthorized(state, frame)) return this.error(frame.transfer_id, "source_changed", state.nextSequence, state.committedOffset);
-
     if (state.terminalResult) {
-      const duplicateData = decodeBase64(frame.data_base64);
-      if (duplicateData && frame.seq < state.nextSequence) return this.replayCommittedFrame(frame, duplicateData, state);
+      if (frame.seq < state.nextSequence) return this.replayCommittedFrame(frame, data, state);
       return this.error(frame.transfer_id, "transfer_conflict", state.nextSequence, state.committedOffset, "conflicting_terminal_frame");
     }
     if (state.phase !== "receiving") return this.reconcileInterrupted(state);
     if (frame.seq > state.nextSequence || (frame.seq === state.nextSequence && frame.offset_bytes !== state.committedOffset)) return this.error(frame.transfer_id, "invalid_sequence", state.nextSequence, state.committedOffset);
-    const data = decodeBase64(frame.data_base64);
-    if (!data || data.byteLength > state.metadata.chunkSizeBytes) return this.error(frame.transfer_id, "invalid_data", state.nextSequence, state.committedOffset);
+    if (data.byteLength > state.metadata.chunkSizeBytes) return this.error(frame.transfer_id, "invalid_data", state.nextSequence, state.committedOffset);
     if (frame.seq < state.nextSequence) return this.replayCommittedFrame(frame, data, state);
     if (state.committedOffset + data.byteLength > state.metadata.sizeBytes) return this.error(frame.transfer_id, "file_size_mismatch", state.nextSequence, state.committedOffset);
-
-    state = await this.repository.commitChunk(state, data, {
-      seq: frame.seq,
-      offsetBytes: frame.offset_bytes,
-      lengthBytes: data.byteLength,
-      digestSha256: digestBytes(data),
-      last: frame.last,
-    });
+    try {
+      state = await this.repository.commitChunk(state, data, { seq: frame.seq, offsetBytes: frame.offset_bytes, lengthBytes: data.byteLength, digestSha256: digestBytes(data), last: frame.last });
+    } catch (error) {
+      if (!isWriteError(error)) throw error;
+      return this.persistTerminalFailure(state, isDiskFull(error) ? "disk_full" : "write_error", isDiskFull(error) ? "Недостаточно места на диске" : "Ошибка записи файла");
+    }
+    if (await this.repository.spoolBytes() > this.maxSpoolBytes) {
+      return this.persistTerminalFailure(state, "quota_exceeded", "Превышена квота spool области");
+    }
     if (!frame.last) return this.chunkAck(frame, state);
     return this.finish(state);
   }
 
-  private async replayCommittedFrame(frame: FileChunkFrame, data: Buffer, state: TransferSpoolState): Promise<FileResponse> {
+  private async replayCommittedFrame(frame: ChunkDescriptor, data: Buffer, state: TransferSpoolState): Promise<FileResponse> {
     const committed = state.frames[frame.seq];
     if (!committed || committed.offsetBytes !== frame.offset_bytes || committed.lengthBytes !== data.byteLength || committed.digestSha256 !== digestBytes(data) || committed.last !== frame.last) {
       return this.error(frame.transfer_id, "transfer_conflict", state.nextSequence, state.committedOffset, "conflicting_duplicate_frame");
@@ -251,7 +255,7 @@ export class FileTransferHandler {
     return deviceId === this.deviceId && await this.authorize({ gatewayId: this.gatewayId, deviceId, transferId, operation });
   }
 
-  private async metadataStillAuthorized(state: TransferSpoolState, frame: FileChunkFrame): Promise<boolean> {
+  private async metadataStillAuthorized(state: TransferSpoolState, frame: ChunkDescriptor): Promise<boolean> {
     return frame.device_id === state.metadata.deviceId && state.metadata.gatewayId === this.gatewayId && state.metadata.deviceId === this.deviceId
       && state.metadataHashSha256 === metadataHash(state.metadata) && await this.authorized(frame.device_id, frame.transfer_id, "chunk");
   }
@@ -264,7 +268,7 @@ export class FileTransferHandler {
     return { type: "file_start_ack", device_id: this.deviceId, transfer_id: state.metadata.transferId, next_seq: state.nextSequence, next_offset_bytes: state.committedOffset };
   }
 
-  private chunkAck(frame: FileChunkFrame, state: TransferSpoolState): FileChunkAckFrame {
+  private chunkAck(frame: ChunkDescriptor, state: TransferSpoolState): FileChunkAckFrame {
     return { type: "file_chunk_ack", device_id: this.deviceId, transfer_id: frame.transfer_id, seq: frame.seq, next_seq: state.nextSequence, next_offset_bytes: state.committedOffset };
   }
 
@@ -304,5 +308,12 @@ function deterministicRemoteFileName(metadata: TransferMetadata): string {
 function rootFor(metadata: TransferMetadata): "gcodes" | "config" { return metadata.kind === "printer_profile" ? "config" : "gcodes"; }
 function safeFileName(value: string, kind: FileTransferKind): string | null { const name = basename(value); const pattern = kind === "printer_profile" ? /^[a-zA-Z0-9._-]+\.ini$/i : /^[a-zA-Z0-9._-]+\.gcode$/i; return name === value && pattern.test(name) ? name : null; }
 function isSafeTransferId(value: string): boolean { return /^[a-zA-Z0-9._:-]{1,128}$/.test(value); }
-function decodeBase64(value: string): Buffer | null { if (!/^[A-Za-z0-9+/]*={0,2}$/.test(value) || value.length % 4 === 1) return null; const data = Buffer.from(value, "base64"); return data.toString("base64").replace(/=+$/, "") === value.replace(/=+$/, "") ? data : null; }
+function isDiskFull(error: unknown): boolean {
+  return (error instanceof Error && error.message.includes("ENOSPC"))
+    || (typeof error === "object" && error !== null && "code" in error && (error as NodeJS.ErrnoException).code === "ENOSPC");
+}
+function isWriteError(error: unknown): boolean {
+  return isDiskFull(error)
+    || (typeof error === "object" && error !== null && "code" in error && typeof (error as NodeJS.ErrnoException).code === "string");
+}
 async function sha256(path: string): Promise<string> { const hash = createHash("sha256"); for await (const value of createReadStream(path) as AsyncIterable<Buffer>) hash.update(value); return hash.digest("hex"); }

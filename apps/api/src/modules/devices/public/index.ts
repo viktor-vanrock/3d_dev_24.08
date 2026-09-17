@@ -1,4 +1,5 @@
 import type { Request } from "express";
+import type { CancelTransfersResponse } from "@portal/contracts/http/relay-control.v1";
 import type { PoolClient, QueryResult, QueryResultRow } from "pg";
 import type { CommandVerificationKeySet } from "@portal/contracts/device-agent-runtime/v1";
 import type { PrinterQueryExecutor } from "../../printers/public/index.ts";
@@ -34,6 +35,7 @@ export interface DeviceSanctionsPort {
 
 export interface DeviceRelayPushPort {
   closeAgentSessions(agentIds: readonly string[], reason: RelayControlCloseReason): Promise<{ readonly closed: readonly string[]; readonly notConnected: readonly string[] }>;
+  cancelTransfers(transferIds: readonly string[]): Promise<CancelTransfersResponse>;
 }
 
 export interface GatewayCertificate {
@@ -479,6 +481,7 @@ export interface DevicesPort {
     };
   }>;
   getTransfer(actorId: UserId, deviceId: string, transferId: string): Promise<DeviceTransferResponse>;
+  cancelTransfer(actorId: UserId, deviceId: string, transferId: string): Promise<{ readonly ok: true }>;
   listIncidents(actorId: UserId, deviceId: string): Promise<{ readonly items: readonly DeviceIncidentResponse[] }>;
   acknowledgeIncident(actorId: UserId, deviceId: string, incidentId: string): Promise<{ readonly incident: DeviceIncidentResponse }>;
   resolveIncident(actorId: UserId, deviceId: string, incidentId: string): Promise<{ readonly incident: DeviceIncidentResponse }>;

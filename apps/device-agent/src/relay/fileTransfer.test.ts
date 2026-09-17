@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import type { PrinterDriver, UploadResult } from "../driver/printerDriver.ts";
 import { FileTransferHandler } from "./fileTransfer.ts";
-import type { FileChunkFrame, FileStartFrame } from "./protocol.ts";
+import type { FileChunkHeaderFrame, FileStartFrame } from "./protocol.ts";
 import type { PersistenceBoundary } from "./transferSpoolRepository.ts";
 
 class StreamingDriver {
@@ -52,17 +52,14 @@ function start(overrides: Partial<FileStartFrame> = {}): FileStartFrame {
   };
 }
 
-function chunk(seq: number, dataBase64: string, last = false, offsetBytes = seq === 0 ? 0 : 3): FileChunkFrame {
+function chunk(seq: number, data: string, last = false, offsetBytes = seq === 0 ? 0 : 3): { readonly header: FileChunkHeaderFrame; readonly data: Buffer } {
   return {
-    type: "file_chunk",
-    device_id: "device-1",
-    transfer_id: "transfer-1",
-    seq,
-    offset_bytes: offsetBytes,
-    last,
-    data_base64: dataBase64,
+    header: { type: "file_chunk_header", device_id: "device-1", transfer_id: "transfer-1", seq, offset_bytes: offsetBytes, size_bytes: Buffer.byteLength(data), last },
+    data: Buffer.from(data),
   };
 }
+
+function send(handler: FileTransferHandler, value: ReturnType<typeof chunk>) { return handler.chunkBinary(value.header, value.data); }
 
 describe("FileTransferHandler", () => {
   let directory: string | undefined;
@@ -84,7 +81,7 @@ describe("FileTransferHandler", () => {
       next_seq: 0,
       next_offset_bytes: 0,
     });
-    expect(await handler.chunk(chunk(0, "aGVs"))).toEqual({
+    expect(await send(handler, chunk(0, "hel"))).toEqual({
       type: "file_chunk_ack",
       device_id: "device-1",
       transfer_id: "transfer-1",
@@ -92,7 +89,7 @@ describe("FileTransferHandler", () => {
       next_seq: 1,
       next_offset_bytes: 3,
     });
-    expect(await handler.chunk(chunk(0, "aGVs"))).toEqual({
+    expect(await send(handler, chunk(0, "hel"))).toEqual({
       type: "file_chunk_ack",
       device_id: "device-1",
       transfer_id: "transfer-1",
@@ -100,7 +97,7 @@ describe("FileTransferHandler", () => {
       next_seq: 1,
       next_offset_bytes: 3,
     });
-    expect(await handler.chunk(chunk(1, "bG8=", true))).toEqual({
+    expect(await send(handler, chunk(1, "lo", true))).toEqual({
       type: "file_result",
       device_id: "device-1",
       transfer_id: "transfer-1",
@@ -117,7 +114,7 @@ describe("FileTransferHandler", () => {
     const handler = new FileTransferHandler(new StreamingDriver() as unknown as PrinterDriver, "device-1", directory);
 
     await handler.start(start({ start_print: false }));
-    await expect(handler.chunk(chunk(1, "aG", true))).resolves.toEqual({
+    await expect(send(handler, chunk(1, "h", true))).resolves.toEqual({
       type: "file_result",
       device_id: "device-1",
       transfer_id: "transfer-1",
@@ -140,7 +137,7 @@ describe("FileTransferHandler", () => {
       next_seq: 0,
       next_offset_bytes: 0,
     });
-    await expect(firstHandler.chunk(chunk(0, "aGVs"))).resolves.toEqual({
+    await expect(send(firstHandler, chunk(0, "hel"))).resolves.toEqual({
       type: "file_chunk_ack",
       device_id: "device-1",
       transfer_id: "transfer-1",
@@ -159,7 +156,7 @@ describe("FileTransferHandler", () => {
       next_seq: 1,
       next_offset_bytes: 3,
     });
-    await expect(resumedHandler.chunk(chunk(1, "bG8=", true))).resolves.toEqual({
+    await expect(send(resumedHandler, chunk(1, "lo", true))).resolves.toEqual({
       type: "file_result",
       device_id: "device-1",
       transfer_id: "transfer-1",
@@ -189,7 +186,7 @@ describe("FileTransferHandler", () => {
       next_seq: 0,
       next_offset_bytes: 0,
     });
-    await expect(handler.chunk(chunk(0, "aGVs"))).resolves.toEqual({
+    await expect(send(handler, chunk(0, "hel"))).resolves.toEqual({
       type: "file_chunk_ack",
       device_id: "device-1",
       transfer_id: "transfer-1",
@@ -197,7 +194,7 @@ describe("FileTransferHandler", () => {
       next_seq: 1,
       next_offset_bytes: 3,
     });
-    await expect(handler.chunk(chunk(1, "bG8=", true))).resolves.toEqual({
+    await expect(send(handler, chunk(1, "lo", true))).resolves.toEqual({
       type: "file_result",
       device_id: "device-1",
       transfer_id: "transfer-1",
@@ -233,7 +230,7 @@ describe("FileTransferHandler", () => {
     directory = await mkdtemp(join(tmpdir(), "portal-file-transfer-"));
     const handler = new FileTransferHandler(new StreamingDriver() as unknown as PrinterDriver, "device-1", directory);
     await handler.start(start());
-    await handler.chunk(chunk(0, "aGVs"));
+    await send(handler, chunk(0, "hel"));
 
     await expect(handler.start(start({ object_version: "version-2" }))).resolves.toMatchObject({
       type: "file_result",
@@ -273,13 +270,13 @@ describe("FileTransferHandler", () => {
     const handler = new FileTransferHandler(driver as unknown as PrinterDriver, "device-1", directory);
 
     await handler.start(start({ sha256: "0".repeat(64) }));
-    const failed = await handler.chunk(chunk(0, "aGVsbG8=", true, 0));
+    const failed = await send(handler, chunk(0, "hello", true, 0));
     expect(failed).toMatchObject({ outcome: "failed", error_code: "checksum_mismatch" });
     expect(driver.uploadCalls).toBe(0);
     expect(driver.started).toEqual([]);
 
     const restarted = new FileTransferHandler(driver as unknown as PrinterDriver, "device-1", directory);
-    await expect(restarted.chunk(chunk(0, "aGVsbG8=", true, 0))).resolves.toEqual(failed);
+    await expect(send(restarted, chunk(0, "hello", true, 0))).resolves.toEqual(failed);
     expect(driver.uploadCalls).toBe(0);
   });
 
@@ -289,8 +286,8 @@ describe("FileTransferHandler", () => {
     const handler = new FileTransferHandler(driver as unknown as PrinterDriver, "device-1", directory);
     await handler.start(start());
 
-    const first = handler.chunk(chunk(0, "aGVs"));
-    const second = handler.chunk(chunk(1, "bG8=", true));
+    const first = send(handler, chunk(0, "hel"));
+    const second = send(handler, chunk(1, "lo", true));
     await expect(Promise.all([first, second])).resolves.toEqual([
       expect.objectContaining({ type: "file_chunk_ack", next_offset_bytes: 3 }),
       expect.objectContaining({ type: "file_result", outcome: "stored" }),
@@ -304,10 +301,10 @@ describe("FileTransferHandler", () => {
     const driver = new StreamingDriver();
     const handler = new FileTransferHandler(driver as unknown as PrinterDriver, "device-1", directory);
     await handler.start(start());
-    await handler.chunk(chunk(0, "aGVs"));
-    await expect(handler.chunk(chunk(0, "YmFk"))).resolves.toMatchObject({ outcome: "failed", error_code: "transfer_conflict" });
-    await handler.chunk(chunk(1, "bG8=", true));
-    await expect(handler.chunk(chunk(1, "eHg=", true))).resolves.toMatchObject({ outcome: "failed", error_code: "transfer_conflict" });
+    await send(handler, chunk(0, "hel"));
+    await expect(send(handler, chunk(0, "bad"))).resolves.toMatchObject({ outcome: "failed", error_code: "transfer_conflict" });
+    await send(handler, chunk(1, "lo", true));
+    await expect(send(handler, chunk(1, "xx", true))).resolves.toMatchObject({ outcome: "failed", error_code: "transfer_conflict" });
     expect(driver.uploadCalls).toBe(1);
     expect(driver.started).toHaveLength(1);
   });
@@ -322,7 +319,7 @@ describe("FileTransferHandler", () => {
       });
       await crashing.start(start({ start_print: false }));
       armed = true;
-      await expect(crashing.chunk(chunk(0, "aGVs"))).rejects.toThrow(`crash:${boundary}`);
+      await expect(send(crashing, chunk(0, "hel"))).rejects.toThrow(`crash:${boundary}`);
 
       const restarted = new FileTransferHandler(new StreamingDriver() as unknown as PrinterDriver, "device-1", directory);
       const resume = await restarted.start(start({ start_print: false }));
@@ -358,7 +355,7 @@ describe("FileTransferHandler", () => {
     const driver = new StreamingDriver();
     const handler = new FileTransferHandler(driver as unknown as PrinterDriver, "device-1", directory);
     await handler.start(start({ start_print: false }));
-    const terminal = await handler.chunk(chunk(0, "aGVsbG8=", true, 0));
+    const terminal = await send(handler, chunk(0, "hello", true, 0));
     await expect(handler.start(start({ start_print: false }))).resolves.toEqual(terminal);
     expect(driver.uploadCalls).toBe(1);
     await new Promise((resolve) => setTimeout(resolve, 2));
@@ -373,7 +370,7 @@ describe("FileTransferHandler", () => {
     const handler = new FileTransferHandler(driver as unknown as PrinterDriver, "device-1", directory, { authorize: ({ operation }) => operation !== "terminal" || authorized });
     await handler.start(start());
     authorized = false;
-    await expect(handler.chunk(chunk(0, "aGVsbG8=", true, 0))).resolves.toMatchObject({ outcome: "failed", error_code: "device_not_authorized" });
+    await expect(send(handler, chunk(0, "hello", true, 0))).resolves.toMatchObject({ outcome: "failed", error_code: "device_not_authorized" });
     expect(driver.uploadCalls).toBe(0);
     expect(driver.started).toEqual([]);
   });
@@ -388,7 +385,7 @@ describe("FileTransferHandler", () => {
     };
     const crashing = new FileTransferHandler(crashingDriver as unknown as PrinterDriver, "device-1", directory);
     await crashing.start(start({ start_print: false }));
-    await expect(crashing.chunk(chunk(0, "aGVsbG8=", true, 0))).rejects.toThrow("crash after remote upload");
+    await expect(send(crashing, chunk(0, "hello", true, 0))).rejects.toThrow("crash after remote upload");
 
     const resumedDriver = new StreamingDriver();
     const resumed = new FileTransferHandler(resumedDriver as unknown as PrinterDriver, "device-1", directory, {
@@ -409,7 +406,7 @@ describe("FileTransferHandler", () => {
     };
     const crashing = new FileTransferHandler(crashingDriver as unknown as PrinterDriver, "device-1", directory);
     await crashing.start(start());
-    await expect(crashing.chunk(chunk(0, "aGVsbG8=", true, 0))).rejects.toThrow("crash after start accepted");
+    await expect(send(crashing, chunk(0, "hello", true, 0))).rejects.toThrow("crash after start accepted");
 
     const resumedDriver = new StreamingDriver();
     resumedDriver.statusFileName = crashingDriver.statusFileName;

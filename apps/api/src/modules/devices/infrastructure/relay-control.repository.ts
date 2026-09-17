@@ -574,7 +574,8 @@ export class RelayControlRepository {
          from device_transfers dt
          join relay_gateway_sessions s on s.id::text=$2
          join agents a on a.id=s.gateway_id
-        where dt.id::text=$1 and s.id::text=$2 and s.generation=$3 and s.state='active' and a.revoked_at is null${lock ? " for update of dt" : ""}`,
+        where dt.id::text=$1 and s.id::text=$2 and s.generation=$3 and s.state='active' and a.revoked_at is null
+          and (dt.expires_at is null or dt.expires_at > now())${lock ? " for update of dt" : ""}`,
       [input.transferId, input.sessionId, input.sessionGeneration],
     );
     const transfer = result.rows[0];

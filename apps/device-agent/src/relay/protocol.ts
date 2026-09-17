@@ -1,5 +1,5 @@
 import type { DeviceIdentityV1 } from "../identity.ts";
-import type { Capability, Command, CommandResult, DeviceStatus, FileChunk, FileChunkAck, FileResult, FileStart, FileStartAck } from "./protocol-v1.ts";
+import type { Capability, Command, CommandResult, DeviceStatus, FileChunk, FileChunkAck, FileChunkHeader, FileResult, FileStart, FileStartAck } from "./protocol-v1.ts";
 
 /** Local device snapshot. RelayClient maps it to the canonical v1 wire shape. */
 export interface HeartbeatDeviceUpdate {
@@ -16,6 +16,7 @@ export type CommandFrame = Command;
 export type CommandTerminalFrame = CommandResult;
 export type FileStartFrame = FileStart;
 export type FileChunkFrame = FileChunk;
+export type FileChunkHeaderFrame = FileChunkHeader;
 export type FileStartAckFrame = FileStartAck;
 export type FileChunkAckFrame = FileChunkAck;
 export type FileResultFrame = FileResult;
