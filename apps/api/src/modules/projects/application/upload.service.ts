@@ -21,6 +21,7 @@ export class UploadService {
   async acceptStream(params: { readonly ownerId: string; readonly role: FileRole; readonly inputStream: NodeJS.ReadableStream; readonly mimeType: string; readonly originalName: string }): Promise<{ readonly uploadId: string; readonly finalKey: string; readonly checksum: Buffer; readonly sizeBytes: number; readonly source: UploadedSource }> {
     const mimeType = params.mimeType.toLowerCase();
     if (!ALLOWED_MIME[params.role].has(mimeType)) throw UploadErrors.unsupportedMime(params.mimeType);
+    this.logger.log("MIME ok, creating session");
 
     const uploadId = randomUUID();
     const tempKey = tempObjectKey(uploadId);
@@ -31,11 +32,13 @@ export class UploadService {
       objectKey: tempKey,
       expiresAt: new Date(Date.now() + UploadService.TTL_MS),
     });
+    this.logger.log(`Session created: ${uploadId}`);
 
     let checksum: Buffer;
     let sizeBytes: number;
     try {
       ({ checksum, sizeBytes } = await putStreamingObject(tempKey, params.inputStream, mimeType, UPLOAD_LIMITS[params.role]));
+      this.logger.log(`Stream written, size=${sizeBytes}`);
       await this.sessions.markValidating(uploadId, params.ownerId);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -53,6 +56,7 @@ export class UploadService {
     try {
       if (params.role === FILE_ROLE.SOURCE) detection = await this.validateSourceInS3(tempKey, params.originalName);
       else await this.validateImageSignature(tempKey, params.role);
+      this.logger.log("Validation passed");
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       await this.sessions.markFailed({ id: uploadId, ownerId: params.ownerId, errorCode: error instanceof UploadError ? error.code : "upload.format_mismatch.v1", errorMessage: message });
@@ -65,6 +69,7 @@ export class UploadService {
     const finalKey = `protected/blobs/${params.ownerId}/${checksum.toString("hex")}`;
     try {
       await moveObject(tempKey, finalKey);
+      this.logger.log("Moved to final key");
       const updated = await this.sessions.markReady({
         id: uploadId,
         ownerId: params.ownerId,
