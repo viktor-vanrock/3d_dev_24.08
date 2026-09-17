@@ -3,6 +3,8 @@ import { DatabaseModule } from "../../nest/database/database.module.ts";
 import { ProjectsController } from "./api/projects.controller.ts";
 import { ProjectCommandService } from "./application/project-command.service.ts";
 import { ProjectLifecycleService } from "./application/project-lifecycle.service.ts";
+import { PublicationEventsService } from "./application/publication-events.service.ts";
+import { PublicationReconciliationService } from "./application/publication-reconciliation.service.ts";
 import { ProjectProcessingService } from "./application/project-processing.service.ts";
 import { ProjectQueryService } from "./application/project-query.service.ts";
 import { UploadConcurrencyService } from "./application/upload-concurrency.service.ts";
@@ -22,6 +24,8 @@ import { OUTBOX_PORT, PROJECT_COMMAND_SERVICE, PROJECT_PROCESSING_SERVICE, PROJE
     ProjectsOutboxRepository,
     ProjectCommandService,
     ProjectLifecycleService,
+    PublicationEventsService,
+    PublicationReconciliationService,
     ProjectQueryService,
     ProjectProcessingService,
     UploadConcurrencyService,
