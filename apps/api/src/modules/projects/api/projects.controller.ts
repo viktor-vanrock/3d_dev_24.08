@@ -7,6 +7,7 @@ import { ProjectCommandService } from "../application/project-command.service.ts
 import { ProjectLifecycleService } from "../application/project-lifecycle.service.ts";
 import { ProjectQueryService } from "../application/project-query.service.ts";
 import { UploadService } from "../application/upload.service.ts";
+import { UploadConcurrencyService } from "../application/upload-concurrency.service.ts";
 import { PROJECT_CONTRACT_VERSION } from "../domain/project.ts";
 import { UPLOAD_LIMITS } from "../domain/upload.ts";
 import { parseIdempotencyKey, parseIfMatch, projectEtag, ProjectError } from "../domain/project.errors.ts";
@@ -59,6 +60,7 @@ export class ProjectsController {
     @Inject(ProjectQueryService) private readonly queries: ProjectQueryService,
     @Inject(ProjectLifecycleService) private readonly lifecycle: ProjectLifecycleService,
     @Inject(UploadService) private readonly uploads: UploadService,
+    @Inject(UploadConcurrencyService) private readonly concurrency: UploadConcurrencyService,
     @Inject(SessionVerifier) private readonly sessions: SessionVerifier,
   ) {}
 
@@ -206,12 +208,13 @@ export class ProjectsController {
   ) {
     const multipart = this.parseUploadStream(request, UPLOAD_LIMITS.source);
     const file = await multipart.file;
+    this.concurrency.acquire();
     const sourcePromise = this.uploads.acceptSource({
       ownerId: requiredUser(request),
       inputStream: file.stream,
       mimeType: file.mime,
       originalName: file.filename,
-    });
+    }).finally(() => this.concurrency.release());
     await multipart.completed;
     const body = this.createModelBody(multipart.fields);
     const source = await sourcePromise;
@@ -304,12 +307,13 @@ export class ProjectsController {
   ) {
     const multipart = this.parseUploadStream(request, UPLOAD_LIMITS.source);
     const file = await multipart.file;
+    this.concurrency.acquire();
     const sourcePromise = this.uploads.acceptSource({
       ownerId: requiredUser(request),
       inputStream: file.stream,
       mimeType: file.mime,
       originalName: file.filename,
-    });
+    }).finally(() => this.concurrency.release());
     await multipart.completed;
     const source = await sourcePromise;
     const projectId = ProjectId(id(rawProjectId));

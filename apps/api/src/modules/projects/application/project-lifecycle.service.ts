@@ -4,6 +4,7 @@ import { ProjectError } from "../domain/project.errors.ts";
 import { getAllowedEvents, getTransition, PROJECT_EVENT, type ProjectEvent, type ProjectStatus, type TransitionResult } from "../domain/project-lifecycle.types.ts";
 import type { ProjectRepository } from "../domain/project.repository.ts";
 import { PostgresProjectRepository } from "../infrastructure/postgres-project.repository.ts";
+import { PublicationEventsService } from "./publication-events.service.ts";
 
 export class InvalidTransitionError extends ProjectError {
   constructor(from: ProjectStatus, event: ProjectEvent) {
@@ -21,7 +22,7 @@ export class ProjectLifecycleService {
   private readonly logger = new Logger(ProjectLifecycleService.name);
   private readonly repository: ProjectRepository;
 
-  constructor(@Inject(PostgresProjectRepository) repository: PostgresProjectRepository) {
+  constructor(@Inject(PostgresProjectRepository) repository: PostgresProjectRepository, @Inject(PublicationEventsService) private readonly events: PublicationEventsService) {
     this.repository = repository;
   }
 
@@ -56,6 +57,9 @@ export class ProjectLifecycleService {
     const transition = getTransition(project.status, PROJECT_EVENT.PUBLISH);
     if (transition === null) throw new InvalidTransitionError(project.status, PROJECT_EVENT.PUBLISH);
     const publication = await this.repository.publish(actorId, projectId, version, { status: transition.toStatus, publishedAt: new Date() });
+    void this.dispatchPublishEvents(actorId, projectId, publication.value.project_revision_id).catch((error) =>
+      this.logger.error(`afterPublish failed projectId=${projectId}: ${String(error)}`),
+    );
     this.logger.log(`Published project=${projectId} actor=${actorId}`);
     return publication;
   }
@@ -66,6 +70,9 @@ export class ProjectLifecycleService {
     const transition = getTransition(project.status, PROJECT_EVENT.UNPUBLISH);
     if (transition === null) throw new InvalidTransitionError(project.status, PROJECT_EVENT.UNPUBLISH);
     const result = await this.repository.unpublish(actorId, projectId, version, { status: transition.toStatus });
+    void this.events.afterUnpublish({ projectId, actorId, version: result }).catch((error) =>
+      this.logger.error(`afterUnpublish failed projectId=${projectId}: ${String(error)}`),
+    );
     this.logger.log(`Unpublished project=${projectId} actor=${actorId}`);
     return result;
   }
@@ -82,6 +89,24 @@ export class ProjectLifecycleService {
 
   getAllowedEvents(status: ProjectStatus): ProjectEvent[] {
     return getAllowedEvents(status);
+  }
+
+  private async dispatchPublishEvents(actorId: UserId, projectId: ProjectId, revisionId: string): Promise<void> {
+    const published = await this.repository.getPublished(projectId);
+    if (published === null || published.project_revision_id !== revisionId) {
+      this.logger.warn(`afterPublish skipped: published snapshot changed projectId=${projectId}`);
+      return;
+    }
+    await this.events.afterPublish({
+      projectId,
+      revisionId,
+      actorId,
+      title: published.title,
+      description: published.description,
+      tags: published.tags,
+      primaryModelId: published.primary_model_id ?? published.published_models[0]?.id ?? "",
+      models: published.published_models.map((model) => ({ modelId: model.id, revisionId: model.active_revision_id ?? model.latest_revision_id })),
+    });
   }
 
   private applyTransition(

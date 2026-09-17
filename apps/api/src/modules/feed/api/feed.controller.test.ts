@@ -15,6 +15,7 @@ import { RequestContext } from "../../../nest/observability/request-context.ts";
 import { RuntimeLogger } from "../../../nest/observability/runtime-logger.ts";
 import { createApiValidationPipe } from "../../../nest/validation/api-validation.pipe.ts";
 import { FeedController } from "./feed.controller.ts";
+import { UPLOAD_CONCURRENCY_PORT } from "../../projects/public/index.ts";
 import { FEED_AGENT_AUTH_PORT, FEED_INGEST_AUTH_PORT, FEED_PORT, type FeedPort, type FeedPostResponse } from "../public/index.ts";
 import { CommentId, FeedPostId, UserId } from "../../_kernel/brandedIds.ts";
 import { PROFILE_AUTH_PORT } from "../../profile/public/index.ts";
@@ -81,6 +82,8 @@ const fakeFeed: FeedPort = {
   parseGitverse: () => Promise.resolve(null),
   uploadMedia: () => Promise.resolve({ s3_key: "key", url: null, kind: "image" }),
   uploadImage: () => Promise.resolve({ url: "/feed/posts/p/images/i" }),
+  uploadMediaStream: () => Promise.resolve({ s3_key: "key", url: null, kind: "image" }),
+  uploadImageStream: () => Promise.resolve({ url: "/feed/posts/p/images/i" }),
   image: () => Promise.reject(new Error("not used")),
 };
 
@@ -88,6 +91,7 @@ const fakeFeed: FeedPort = {
 @Module({
   providers: [
     RuntimeLogger,
+    { provide: UPLOAD_CONCURRENCY_PORT, useValue: { acquire: () => undefined, release: () => undefined, getActive: () => 0 } },
     SessionVerifier,
     { provide: FEED_PORT, useValue: fakeFeed },
     {
@@ -108,7 +112,7 @@ const fakeFeed: FeedPort = {
       },
     },
   ],
-  exports: [RuntimeLogger, SessionVerifier, FEED_PORT, FEED_AGENT_AUTH_PORT, FEED_INGEST_AUTH_PORT, PROFILE_AUTH_PORT],
+  exports: [RuntimeLogger, SessionVerifier, UPLOAD_CONCURRENCY_PORT, FEED_PORT, FEED_AGENT_AUTH_PORT, FEED_INGEST_AUTH_PORT, PROFILE_AUTH_PORT],
 })
 class FeedTestPortsModule {}
 

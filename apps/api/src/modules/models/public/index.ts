@@ -5,6 +5,7 @@ import type { ModelId, UserId } from "../../_kernel/brandedIds.ts";
 export const MODEL_READ_PORT = Symbol("MODEL_READ_PORT");
 export const MODEL_MAKES_PORT = Symbol("MODEL_MAKES_PORT");
 export const MODEL_OWNER_PORT = Symbol("MODEL_OWNER_PORT");
+export { MODEL_INDEX_PORT, type MissingPublishedModelIndex, type ModelIndexDocument, type ModelIndexPort } from "./model-index.ts";
 
 export interface ModelQueryExecutor {
   query<R extends QueryResultRow = QueryResultRow>(text: string, values?: readonly unknown[]): Promise<QueryResult<R>>;

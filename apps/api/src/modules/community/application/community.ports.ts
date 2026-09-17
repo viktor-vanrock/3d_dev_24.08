@@ -179,6 +179,7 @@ export interface CommunityPort {
   voteThread(id: string, userId: UserId, value: 1 | -1 | 0): Promise<{ readonly votes_up: number; readonly votes_down: number; readonly my_vote: 1 | -1 | 0 }>;
   votePost(id: string, userId: UserId, value: 1 | -1 | 0): Promise<{ readonly votes_up: number; readonly votes_down: number; readonly my_vote: 1 | -1 | 0 }>;
   uploadAttachment(id: string, userId: UserId, file: { buffer: Buffer; originalname: string }): Promise<{ readonly attachment: AttachmentView }>;
+  uploadAttachmentStream(id: string, userId: UserId, file: { stream: NodeJS.ReadableStream; originalname: string; mimeType: string }): Promise<{ readonly attachment: AttachmentView }>;
   attachment(postId: string, id: string): Promise<{ kind: "photo" | "model_3mf"; key: string }>;
   accept(id: string, userId: UserId, postId: string | null): Promise<{ readonly accepted_post_id: string | null }>;
 }

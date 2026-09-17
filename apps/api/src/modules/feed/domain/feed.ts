@@ -6,6 +6,8 @@ export const FEED_WINDOWS = ["hour", "day", "week", "month", "year", "all"] as c
 export const FEED_SCOPES = ["all", "subscribed", "recommended"] as const;
 export const FEED_POST_TYPES = ["model_link", "media", "text", "gitverse"] as const;
 export const FEED_EVENT_TYPES = ["view", "read_complete", "model_click", "download", "favorite", "time_on_post", "vote", "comment", "remix", "dwell", "share"] as const;
+export const MAX_FEED_VIDEO_BYTES = 200 * 1024 * 1024;
+export const MAX_FEED_IMAGE_BYTES = 15 * 1024 * 1024;
 
 export type FeedSort = (typeof FEED_SORTS)[number];
 export type FeedWindow = (typeof FEED_WINDOWS)[number];
@@ -26,6 +28,12 @@ export interface FeedGitverseRef {
 export interface FeedActor {
   readonly userId: UserId;
   readonly coAuthorAgentId: string | null;
+}
+
+export interface FeedStreamUpload {
+  readonly stream: NodeJS.ReadableStream;
+  readonly mimeType: string;
+  readonly filename: string;
 }
 
 export interface FeedPostRecord {
