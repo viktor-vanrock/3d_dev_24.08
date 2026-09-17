@@ -1,12 +1,15 @@
-import { Body, Controller, Delete, Get, Headers, HttpCode, Inject, Param, Patch, Post, Put, Query, Req, Res, UploadedFile, UseInterceptors } from "@nestjs/common";
-import { FileInterceptor } from "@nestjs/platform-express";
-import type { Response } from "express";
+import { BadRequestException, Body, Controller, Delete, Get, Headers, HttpCode, Inject, Param, Patch, Post, Put, Query, Req, Res } from "@nestjs/common";
+import Busboy from "busboy";
+import type { Request, Response } from "express";
 import { SESSION_USER, SessionVerifier, type RequestWithSession } from "../../../nest/auth/session-verifier.ts";
 import { ModelId, ModelRevisionId, ProjectId, UserId, type UserId as UserIdType } from "../../_kernel/brandedIds.ts";
 import { ProjectCommandService } from "../application/project-command.service.ts";
 import { ProjectLifecycleService } from "../application/project-lifecycle.service.ts";
 import { ProjectQueryService } from "../application/project-query.service.ts";
-import { PROJECT_CONTRACT_VERSION, PROJECT_UPLOAD_MAX_BYTES, type ProjectUpload } from "../domain/project.ts";
+import { UploadService } from "../application/upload.service.ts";
+import { UploadConcurrencyService } from "../application/upload-concurrency.service.ts";
+import { PROJECT_CONTRACT_VERSION } from "../domain/project.ts";
+import { UPLOAD_LIMITS } from "../domain/upload.ts";
 import { parseIdempotencyKey, parseIfMatch, projectEtag, ProjectError } from "../domain/project.errors.ts";
 import { CreateModelDto, CreateProjectDto, ProjectPageQueryDto, PublishProjectDto, SetPrimaryModelDto, UpdateProjectDto } from "./projects.dto.ts";
 import { ApiProjectOperation } from "./projects.openapi.ts";
@@ -56,6 +59,8 @@ export class ProjectsController {
     @Inject(ProjectCommandService) private readonly commands: ProjectCommandService,
     @Inject(ProjectQueryService) private readonly queries: ProjectQueryService,
     @Inject(ProjectLifecycleService) private readonly lifecycle: ProjectLifecycleService,
+    @Inject(UploadService) private readonly uploads: UploadService,
+    @Inject(UploadConcurrencyService) private readonly concurrency: UploadConcurrencyService,
     @Inject(SessionVerifier) private readonly sessions: SessionVerifier,
   ) {}
 
@@ -174,7 +179,6 @@ export class ProjectsController {
   }
 
   @Post(":projectId/models")
-  @UseInterceptors(FileInterceptor("file", { limits: { fileSize: PROJECT_UPLOAD_MAX_BYTES, files: 1 } }))
   @ApiProjectOperation({
     operationId: "projectModelsCreate",
     summary: "Create a Model with its seed revision",
@@ -200,12 +204,22 @@ export class ProjectsController {
     @Param("projectId") rawProjectId: string,
     @Headers("if-match") match: string | string[] | undefined,
     @Headers("idempotency-key") key: string | string[] | undefined,
-    @Body() body: CreateModelDto,
-    @UploadedFile() file: ProjectUpload | undefined,
     @Res() response: Response,
   ) {
+    const multipart = this.parseUploadStream(request, UPLOAD_LIMITS.source);
+    const file = await multipart.file;
+    this.concurrency.acquire();
+    const sourcePromise = this.uploads.acceptSource({
+      ownerId: requiredUser(request),
+      inputStream: file.stream,
+      mimeType: file.mime,
+      originalName: file.filename,
+    }).finally(() => this.concurrency.release());
+    await multipart.completed;
+    const body = this.createModelBody(multipart.fields);
+    const source = await sourcePromise;
     const projectId = ProjectId(id(rawProjectId));
-    const result = await this.commands.createModel(requiredUser(request), projectId, parseIfMatch(match), body, file!, parseIdempotencyKey(key));
+    const result = await this.commands.createModel(requiredUser(request), projectId, parseIfMatch(match), body, source, parseIdempotencyKey(key));
     response.set("Location", `/projects/${projectId}/models/${result.value.id}`).set("ETag", projectEtag(result.version)).status(201).json(modelBody(result.value));
   }
 
@@ -262,7 +276,6 @@ export class ProjectsController {
   }
 
   @Post(":projectId/models/:modelId/revisions")
-  @UseInterceptors(FileInterceptor("file", { limits: { fileSize: PROJECT_UPLOAD_MAX_BYTES, files: 1 } }))
   @ApiProjectOperation({
     operationId: "projectModelRevisionsCreate",
     summary: "Upload a new Model revision",
@@ -290,17 +303,98 @@ export class ProjectsController {
     @Param("modelId") rawModelId: string,
     @Headers("if-match") match: string | string[] | undefined,
     @Headers("idempotency-key") key: string | string[] | undefined,
-    @UploadedFile() file: ProjectUpload | undefined,
     @Res() response: Response,
   ) {
+    const multipart = this.parseUploadStream(request, UPLOAD_LIMITS.source);
+    const file = await multipart.file;
+    this.concurrency.acquire();
+    const sourcePromise = this.uploads.acceptSource({
+      ownerId: requiredUser(request),
+      inputStream: file.stream,
+      mimeType: file.mime,
+      originalName: file.filename,
+    }).finally(() => this.concurrency.release());
+    await multipart.completed;
+    const source = await sourcePromise;
     const projectId = ProjectId(id(rawProjectId));
     const modelId = ModelId(id(rawModelId));
-    const result = await this.commands.createRevision(requiredUser(request), projectId, modelId, parseIfMatch(match), file!, parseIdempotencyKey(key));
+    const result = await this.commands.createRevision(requiredUser(request), projectId, modelId, parseIfMatch(match), source, parseIdempotencyKey(key));
     response
       .set("Location", `/projects/${projectId}/models/${modelId}/revisions/${result.value.id}`)
       .set("ETag", projectEtag(result.version))
       .status(201)
       .json(revisionBody(result.value));
+  }
+
+  private parseUploadStream(request: Request, maxBytes: number): {
+    readonly file: Promise<{ readonly stream: NodeJS.ReadableStream; readonly mime: string; readonly filename: string }>;
+    readonly completed: Promise<void>;
+    readonly fields: Record<string, string>;
+  } {
+    const fields: Record<string, string> = {};
+    let resolveFile: ((file: { readonly stream: NodeJS.ReadableStream; readonly mime: string; readonly filename: string }) => void) | undefined;
+    let rejectFile: ((error: Error) => void) | undefined;
+    const file = new Promise<{ readonly stream: NodeJS.ReadableStream; readonly mime: string; readonly filename: string }>((resolve, reject) => {
+      resolveFile = resolve;
+      rejectFile = reject;
+    });
+    let resolveCompleted: (() => void) | undefined;
+    let rejectCompleted: ((error: Error) => void) | undefined;
+    const completed = new Promise<void>((resolve, reject) => {
+      resolveCompleted = resolve;
+      rejectCompleted = reject;
+    });
+    const fail = (error: Error) => {
+      rejectFile?.(error);
+      rejectCompleted?.(error);
+    };
+    const parser = Busboy({ headers: request.headers, limits: { fileSize: maxBytes, files: 1, fields: 8 } });
+    let seenFile = false;
+    parser.on("field", (name, value) => {
+      if (Object.hasOwn(fields, name)) {
+        fail(new BadRequestException(`Повторное поле ${name}`));
+        return;
+      }
+      fields[name] = value;
+    });
+    parser.on("file", (field, stream, info) => {
+      if (field !== "file" || seenFile) {
+        stream.resume();
+        fail(new BadRequestException("Допустим только один файл в поле file"));
+        return;
+      }
+      seenFile = true;
+      stream.once("limit", () => stream.destroy(new Error(`TOO_LARGE:${maxBytes}`)));
+      resolveFile?.({ stream, mime: info.mimeType || "application/octet-stream", filename: info.filename || "file" });
+    });
+    parser.once("filesLimit", () => fail(new BadRequestException("Допустим только один файл")));
+    parser.once("fieldsLimit", () => fail(new BadRequestException("Слишком много полей multipart")));
+    parser.once("error", fail);
+    parser.once("finish", () => {
+      if (!seenFile) {
+        fail(new BadRequestException("Требуется файл"));
+        return;
+      }
+      resolveCompleted?.();
+    });
+    request.pipe(parser);
+    return { file, completed, fields };
+  }
+
+  private createModelBody(fields: Record<string, string>): CreateModelDto {
+    const keys = Object.keys(fields);
+    if (keys.some((key) => !["name", "manufacturing_method", "requires_ams"].includes(key))) throw new BadRequestException("Неизвестное поле multipart");
+    const name = fields.name;
+    if (name === undefined || name.trim().length === 0 || name.length > 120) throw new BadRequestException("Некорректное name");
+    const manufacturingMethod = fields.manufacturing_method;
+    if (manufacturingMethod !== undefined && !["fdm", "sla", "cnc", "laser"].includes(manufacturingMethod)) throw new BadRequestException("Некорректное manufacturing_method");
+    const requiresAms = fields.requires_ams;
+    if (requiresAms !== undefined && requiresAms !== "true" && requiresAms !== "false") throw new BadRequestException("Некорректное requires_ams");
+    return {
+      name,
+      ...(manufacturingMethod === undefined ? {} : { manufacturing_method: manufacturingMethod as CreateModelDto["manufacturing_method"] }),
+      ...(requiresAms === undefined ? {} : { requires_ams: requiresAms === "true" }),
+    };
   }
 
   @Get(":projectId/models/:modelId/revisions")

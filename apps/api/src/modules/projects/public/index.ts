@@ -1,6 +1,7 @@
 import type { ModelId, ModelRevisionId, ProjectId, UserId } from "../../_kernel/brandedIds.ts";
 export { OUTBOX_PORT, type ClaimedOutboxEvent, type OutboxPort } from "./outbox.ts";
 export { UPLOAD_CONCURRENCY_PORT, type UploadConcurrencyPort } from "./upload-concurrency.ts";
+export { UPLOAD_LIMITS } from "../domain/upload.ts";
 
 export const PROJECT_COMMAND_SERVICE = Symbol("PROJECT_COMMAND_SERVICE");
 export const PROJECT_QUERY_SERVICE = Symbol("PROJECT_QUERY_SERVICE");

@@ -17,8 +17,6 @@ import { CommunityRepository } from "../infrastructure/community.repository.ts";
 import {
   COMMUNITY_DESCRIPTION_MAX_LENGTH,
   COMMUNITY_NAME_MAX_LENGTH,
-  MAX_MODEL_ATTACHMENT_BYTES,
-  MAX_PHOTO_ATTACHMENT_BYTES,
   MAX_POST_ATTACHMENTS,
   POST_CONTENT_MAX_LENGTH,
   roundMemberCount,
@@ -30,6 +28,7 @@ import {
   type SubscribeSource,
   type ThreadType,
 } from "../domain/community.ts";
+import { UPLOAD_LIMITS } from "../../projects/public/index.ts";
 import {
   COMMUNITY_ANALYTICS_PORT,
   COMMUNITY_CATALOG_PORT,
@@ -222,8 +221,13 @@ export class CommunityService implements CommunityPort, CommunitySocialOwnerPort
     if ((await this.repo.attachmentCount(id)) >= MAX_POST_ATTACHMENTS) fail(400);
     const is3mf = file.buffer.subarray(0, 2).equals(Buffer.from("PK")),
       kind = is3mf ? "model_3mf" : "photo",
-      limit = is3mf ? MAX_MODEL_ATTACHMENT_BYTES : MAX_PHOTO_ATTACHMENT_BYTES;
+      limit = is3mf ? UPLOAD_LIMITS.source : UPLOAD_LIMITS.photo;
     if (file.buffer.length > limit) throw new HttpException({}, 413);
+    if (kind === "photo") {
+      const head = file.buffer.subarray(0, 12);
+      const isImage = head.subarray(0, 4).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47])) || head.subarray(0, 3).equals(Buffer.from([0xff, 0xd8, 0xff])) || head.subarray(8, 12).toString("ascii") === "WEBP";
+      if (!isImage) throw new HttpException({ code: "upload.signature_failed.v1", message: "Файл не является изображением" }, 400);
+    }
     const ext = is3mf ? "3mf" : "bin",
       mime = is3mf ? "model/3mf" : "application/octet-stream",
       key = `public/posts/${id}/${randomUUID()}.${ext}`;
@@ -243,7 +247,7 @@ export class CommunityService implements CommunityPort, CommunitySocialOwnerPort
     const header = first.done ? Buffer.alloc(0) : Buffer.from(first.value as Buffer);
     const is3mf = header.subarray(0, 2).equals(Buffer.from("PK"));
     const kind = is3mf ? "model_3mf" : "photo";
-    const limit = is3mf ? MAX_MODEL_ATTACHMENT_BYTES : MAX_PHOTO_ATTACHMENT_BYTES;
+    const limit = is3mf ? UPLOAD_LIMITS.source : UPLOAD_LIMITS.photo;
     const ext = is3mf ? "3mf" : "bin";
     const mime = is3mf ? "model/3mf" : "application/octet-stream";
     const key = `public/posts/${id}/${randomUUID()}.${ext}`;

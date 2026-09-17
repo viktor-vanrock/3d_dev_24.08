@@ -3,6 +3,7 @@ import boundaries from "eslint-plugin-boundaries";
 import ts from "typescript";
 import { permissionsLintConfig } from "./.eslintrc.permissions.js";
 import noDirectLifecycleChange from "../../tools/eslint-rules/no-direct-lifecycle-change.cjs";
+import noBufferConcatInUpload from "../../tools/eslint-rules/no-buffer-concat-in-upload.cjs";
 
 // Строгие type-aware правила раскатаны на ВЕСЬ пакет (задача 7.6, выполнена после удаления legacy
 // Fastify в 7.4). До cutover правила жили в двухзонном split (`src/modules/**`+`src/nest/**`), потому
@@ -146,13 +147,19 @@ export default [
   ...permissionsLintConfig,
   {
     files: ["src/modules/projects/**/*.ts"],
-    plugins: { local: { rules: { "no-direct-lifecycle-change": noDirectLifecycleChange } } },
+    plugins: { local: { rules: { "no-direct-lifecycle-change": noDirectLifecycleChange, "no-buffer-concat-in-upload": noBufferConcatInUpload } } },
     rules: {
       "local/no-direct-lifecycle-change": ["error", {
         allowedFiles: ["project-lifecycle.service.ts", "postgres-project.repository.ts"],
         protectedProps: ["status", "published_revision_id", "publishedAt", "published_at", "archivedAt", "archived_at"],
       }],
+      "local/no-buffer-concat-in-upload": "error",
     },
+  },
+  {
+    files: ["src/modules/community/application/community.service.ts", "src/nest/integration/feed.adapters.ts"],
+    plugins: { local: { rules: { "no-buffer-concat-in-upload": noBufferConcatInUpload } } },
+    rules: { "local/no-buffer-concat-in-upload": "error" },
   },
 
   // CommonJS tooling configs (.cjs) — declare the node/CommonJS globals so `module`/`require` are defined.

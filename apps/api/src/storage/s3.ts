@@ -1,9 +1,9 @@
-import { DeleteObjectCommand, GetObjectCommand, ListObjectsV2Command, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { CopyObjectCommand, DeleteObjectCommand, GetObjectCommand, ListObjectsV2Command, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { createHash } from "node:crypto";
 import type { Logger } from "../logger.ts";
-import { Transform, type Readable } from "node:stream";
+import { PassThrough, Transform, type Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 
 let client: S3Client | null = null;
@@ -123,42 +123,66 @@ export async function putModelObjectStream(key: string, body: Readable, contentT
   await upload.done();
 }
 
-/** Streams an upload directly to object storage while enforcing its byte limit. */
+/**
+ * Writes an incoming request stream directly to the temporary models area.
+ * The transform keeps only one SDK multipart part in memory and computes the
+ * checksum while bytes pass through; it never assembles the source file.
+ */
 export async function putStreamingObject(
   key: string,
-  input: NodeJS.ReadableStream,
+  inputStream: NodeJS.ReadableStream,
   contentType: string,
   maxBytes: number,
 ): Promise<{ readonly checksum: Buffer; readonly sizeBytes: number }> {
   const s3 = getClient();
   if (!s3) throw new Error("S3 не сконфигурирован (S3_ENDPOINT/S3_ACCESS_KEY/S3_SECRET_KEY)");
 
-  const checksum = createHash("sha256");
-  let sizeBytes = 0;
+  const hasher = createHash("sha256");
+  let received = 0;
   const counter = new Transform({
-    transform(chunk: Buffer | string, _encoding: BufferEncoding, callback: (error?: Error | null, data?: Buffer) => void) {
-      const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
-      sizeBytes += buffer.length;
-      if (sizeBytes > maxBytes) {
+    transform(chunk: Buffer | string, _encoding, callback) {
+      const bytes = Buffer.from(chunk) as Buffer<ArrayBufferLike>;
+      received += bytes.length;
+      if (received > maxBytes) {
         callback(new Error(`TOO_LARGE:${maxBytes}`));
         return;
       }
-      checksum.update(buffer);
-      callback(null, buffer);
+      hasher.update(bytes);
+      callback(null, bytes);
     },
   });
+  const pass = new PassThrough();
   const upload = new Upload({
     client: s3,
-    params: { Bucket: modelsBucket(), Key: key, Body: counter, ContentType: contentType },
+    params: { Bucket: modelsBucket(), Key: key, Body: pass, ContentType: contentType },
+    queueSize: 1,
+    partSize: 8 * 1024 * 1024,
   });
-  const streamed = pipeline(input, counter);
+
   try {
-    await Promise.all([streamed, upload.done()]);
+    await Promise.all([pipeline(inputStream, counter, pass), upload.done()]);
   } catch (error) {
-    (input as NodeJS.ReadableStream & { destroy(error?: Error): void }).destroy(error instanceof Error ? error : new Error(String(error)));
+    await upload.abort().catch(() => undefined);
     throw error;
   }
-  return { checksum: checksum.digest(), sizeBytes };
+
+  return { checksum: hasher.digest(), sizeBytes: received };
+}
+
+/** Moves a validated object out of temp/ using S3's server-side copy. */
+export async function moveObject(sourceKey: string, destKey: string): Promise<void> {
+  const s3 = getClient();
+  if (!s3) throw new Error("S3 не сконфигурирован (S3_ENDPOINT/S3_ACCESS_KEY/S3_SECRET_KEY)");
+  const bucket = modelsBucket();
+  await s3.send(new CopyObjectCommand({ Bucket: bucket, CopySource: `${bucket}/${encodeURIComponent(sourceKey).replaceAll("%2F", "/")}`, Key: destKey }));
+  await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: sourceKey }));
+}
+
+/** Deletes a temporary/quarantined object from the models bucket. */
+export async function deleteObject(key: string): Promise<void> {
+  const s3 = getClient();
+  if (!s3) return;
+  await s3.send(new DeleteObjectCommand({ Bucket: modelsBucket(), Key: key }));
 }
 
 export function deviceTransferObjectKey(ownerId: string, transferId: string, fileName: string): string {
@@ -270,6 +294,21 @@ export async function getModelObjectStream(key: string): Promise<ModelObjectStre
       contentLength: result.ContentLength,
       etag: result.ETag,
     };
+  } catch (err) {
+    const name = err instanceof Error ? err.name : undefined;
+    const status = (err as { $metadata?: { httpStatusCode?: number } }).$metadata?.httpStatusCode;
+    if (name === "NoSuchKey" || name === "NotFound" || status === 404) return null;
+    throw err;
+  }
+}
+
+/** Reads a bounded byte range from a models object, for signature validation. */
+export async function getModelObjectRange(key: string, range: string): Promise<Readable | null> {
+  const s3 = getClient();
+  if (!s3) return null;
+  try {
+    const result = await s3.send(new GetObjectCommand({ Bucket: modelsBucket(), Key: key, Range: range }));
+    return result.Body === undefined ? null : result.Body as Readable;
   } catch (err) {
     const name = err instanceof Error ? err.name : undefined;
     const status = (err as { $metadata?: { httpStatusCode?: number } }).$metadata?.httpStatusCode;

@@ -23,8 +23,7 @@ import { AcceptDto, BootstrapOwnerDto, CreateCommunityDto, CreatePostDto, Create
 import { ApiCommunityOperation } from "./openapi.ts";
 import { COMMUNITY_STORAGE_PORT, type CommunityStoragePort } from "../application/community.ports.ts";
 import { Permission, Permissions, Public, User } from "../../permissions/public/index.ts";
-import { MAX_MODEL_ATTACHMENT_BYTES, MAX_PHOTO_ATTACHMENT_BYTES } from "../domain/community.ts";
-import { UPLOAD_CONCURRENCY_PORT, type UploadConcurrencyPort } from "../../projects/public/index.ts";
+import { UPLOAD_CONCURRENCY_PORT, UPLOAD_LIMITS, type UploadConcurrencyPort } from "../../projects/public/index.ts";
 const uid = (r: RequestWithSession): UserIdType => UserId(r[SESSION_USER]!.id);
 const id = (v: string) => {
   if (!isUuid(v)) throw new NotFoundException();
@@ -132,7 +131,7 @@ export class CommunityController {
     @Req() r: RequestWithSession & Request,
     @Param("id") x: string,
   ) {
-    const multipart = this.parseAttachmentStream(r, Math.max(MAX_MODEL_ATTACHMENT_BYTES, MAX_PHOTO_ATTACHMENT_BYTES));
+    const multipart = this.parseAttachmentStream(r, Math.max(UPLOAD_LIMITS.source, UPLOAD_LIMITS.photo));
     const file = await multipart.file;
     this.concurrency.acquire();
     let result;
