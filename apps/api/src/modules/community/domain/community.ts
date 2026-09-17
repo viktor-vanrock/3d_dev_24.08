@@ -12,8 +12,6 @@ export const THREAD_TITLE_MAX_LENGTH = 200;
 export const THREAD_CONTENT_MAX_LENGTH = 20_000;
 export const POST_CONTENT_MAX_LENGTH = 20_000;
 export const MAX_POST_ATTACHMENTS = 10;
-export const MAX_PHOTO_ATTACHMENT_BYTES = 10 * 1024 * 1024;
-export const MAX_MODEL_ATTACHMENT_BYTES = 100 * 1024 * 1024;
 
 export function roundMemberCount(count: number): string {
   if (count < 10) return String(count);

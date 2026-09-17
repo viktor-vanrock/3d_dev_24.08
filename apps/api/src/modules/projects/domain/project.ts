@@ -1,12 +1,13 @@
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { PROJECT_STATUS, type ProjectStatus } from "./project-lifecycle.types.ts";
+import { UPLOAD_LIMITS } from "./upload.ts";
 
 export const PROJECT_CONTRACT_VERSION = "project-api.v1" as const;
 export const PROJECT_SOURCE_FORMATS = ["stl", "obj", "3mf", "step", "dxf", "svg", "gcode", "gerber", "zip"] as const;
 export const PROJECT_CRAFTS = ["3d_printing", "cnc", "electronics", "software"] as const;
 export const PROJECT_MANUFACTURING_METHODS = ["fdm", "sla", "cnc", "laser"] as const;
 export const PROJECT_REVISION_STATUSES = ["uploaded", "pending", "processing", "ready", "failed"] as const;
-export const PROJECT_UPLOAD_MAX_BYTES = 100 * 1024 * 1024;
+export const PROJECT_UPLOAD_MAX_BYTES = UPLOAD_LIMITS.source;
 
 export type ProjectSourceFormat = (typeof PROJECT_SOURCE_FORMATS)[number];
 export type ProjectCraft = (typeof PROJECT_CRAFTS)[number];

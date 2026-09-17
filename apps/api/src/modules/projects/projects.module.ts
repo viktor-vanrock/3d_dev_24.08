@@ -5,8 +5,11 @@ import { ProjectCommandService } from "./application/project-command.service.ts"
 import { ProjectLifecycleService } from "./application/project-lifecycle.service.ts";
 import { ProjectProcessingService } from "./application/project-processing.service.ts";
 import { ProjectQueryService } from "./application/project-query.service.ts";
+import { UploadCleanupService } from "./application/upload-cleanup.service.ts";
+import { UploadService } from "./application/upload.service.ts";
 import { PostgresProjectRepository } from "./infrastructure/postgres-project.repository.ts";
 import { ProjectsOutboxRepository } from "./infrastructure/outbox.repository.ts";
+import { UploadSessionRepository } from "./infrastructure/upload-session.repository.ts";
 import { OUTBOX_PORT, PROJECT_COMMAND_SERVICE, PROJECT_PROCESSING_SERVICE, PROJECT_QUERY_SERVICE } from "./public/index.ts";
 
 @Global()
@@ -20,6 +23,9 @@ import { OUTBOX_PORT, PROJECT_COMMAND_SERVICE, PROJECT_PROCESSING_SERVICE, PROJE
     ProjectLifecycleService,
     ProjectQueryService,
     ProjectProcessingService,
+    UploadSessionRepository,
+    UploadService,
+    UploadCleanupService,
     { provide: PROJECT_COMMAND_SERVICE, useExisting: ProjectCommandService },
     { provide: PROJECT_QUERY_SERVICE, useExisting: ProjectQueryService },
     { provide: PROJECT_PROCESSING_SERVICE, useExisting: ProjectProcessingService },
