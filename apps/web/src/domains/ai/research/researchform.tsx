@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import type { SessionUser } from "@shared/types";
 import { AuroraBackground, Button } from "@shared/ui";
-import { HomeHeader, type Section as NavSection } from "@platform/nav";
+import { DataShell, HomeHeader, type Section as NavSection } from "@platform/nav";
 // eslint-disable-next-line boundaries/element-types, boundaries/entry-point -- легатное ребро (Этап 4.5): CSS side-effect, не index.ts; home.css остаётся общим "рабочим хромом" для доменных экранов, развязка отложена до pages/DI (Этап 10). См. MIGRATION.md.
 import "@pages/home/home.css";
-import { headerModeFor, navigate, researchFormPath, researchPath } from "../../../router.ts";
+import { dataPrinterPath, dataPrintersPath, headerModeFor, navigate, researchFormPath, researchPath } from "../../../router.ts";
 import { useInteractionSound } from "@platform/sound";
-import { fetchPrinterBySlug, savePrinterCard, type SaveConflict } from "./api.ts";
+import { fetchPrinterBySlug, savePrinterCard, type ResearchApiMode, type SaveConflict } from "./api.ts";
 import { clearResearchDraft, loadResearchDraft, saveResearchDraft } from "./draft.ts";
 import { currentSlug, emptyFormState, formStateFromPrinter, type FormState, type LeafField, type PhotoItem } from "./formstate.ts";
 import { IdentitySection } from "./identitysection.tsx";
@@ -50,13 +50,23 @@ export function ResearchFormScreen({
   draft,
   section,
   onSectionChange,
+  mode = "research",
 }: {
   user: SessionUser;
   slug?: string;
   draft?: string;
   section: NavSection;
   onSectionChange: (section: NavSection) => void;
+  mode?: ResearchApiMode;
 }) {
+  const content = (
+    <ResearcherRoleGate user={user}>
+      <ResearchFormInner user={user} slug={slug} draft={draft} mode={mode} />
+    </ResearcherRoleGate>
+  );
+  if (mode === "data") {
+    return <DataShell user={user} section={section} onSectionChange={onSectionChange} active="printers" trail={slug ?? "Новый принтер"}>{content}</DataShell>;
+  }
   return (
     <div className="home">
       <AuroraBackground />
@@ -72,15 +82,13 @@ export function ResearchFormScreen({
         />
       </div>
       <main className="homeContent rsBody">
-        <ResearcherRoleGate user={user}>
-          <ResearchFormInner user={user} slug={slug} draft={draft} />
-        </ResearcherRoleGate>
+        {content}
       </main>
     </div>
   );
 }
 
-function ResearchFormInner({ user, slug, draft: draftPrefill }: { user: SessionUser; slug?: string; draft?: string }) {
+function ResearchFormInner({ user, slug, draft: draftPrefill, mode }: { user: SessionUser; slug?: string; draft?: string; mode: ResearchApiMode }) {
   const sound = useInteractionSound();
   const [load, setLoad] = useState<LoadState>(slug ? { kind: "loading" } : { kind: "ready" });
   const [state, setState] = useState<FormState>(emptyFormState());
@@ -100,7 +108,7 @@ function ResearchFormInner({ user, slug, draft: draftPrefill }: { user: SessionU
     let cancelled = false;
     async function run() {
       if (slug) {
-        const result = await fetchPrinterBySlug(slug);
+        const result = await fetchPrinterBySlug(slug, mode);
         if (cancelled) return;
         if (result.kind === "ok") {
           const fromServer = formStateFromPrinter(result.printer);
@@ -136,7 +144,7 @@ function ResearchFormInner({ user, slug, draft: draftPrefill }: { user: SessionU
     return () => {
       cancelled = true;
     };
-  }, [slug, draftPrefill]);
+  }, [slug, draftPrefill, mode]);
 
   // Автосейв (§2.8) — тихий, ~2с дебаунс, тот же приём, что feed/draft.ts.
   useEffect(() => {
@@ -184,7 +192,7 @@ function ResearchFormInner({ user, slug, draft: draftPrefill }: { user: SessionU
     if (slug) return; // редактируем существующую — self-match ожидаем, не предупреждаем
     if (!state.brand.trim() || !state.model.trim()) return;
     const candidate = slugNow;
-    const result = await fetchPrinterBySlug(candidate);
+    const result = await fetchPrinterBySlug(candidate, mode);
     if (result.kind === "ok") {
       setDuplicateHint({ slug: candidate, brand: result.printer.brand, model: result.printer.model });
     } else {
@@ -271,7 +279,7 @@ function ResearchFormInner({ user, slug, draft: draftPrefill }: { user: SessionU
     setSaving(true);
     setFieldErrors({});
     const payload = buildPayload(resolveConflictPaths, baseOverride !== undefined ? baseOverride : state.baseUpdatedAt, fieldsOverride);
-    const result = await savePrinterCard(payload);
+    const result = await savePrinterCard(payload, mode);
     setSaving(false);
     if (result.kind === "ok") {
       update({ baseUpdatedAt: result.printer._meta.updated_at, slugOverride: result.printer.slug, existingGaps: result.printer._meta.gaps });
@@ -283,7 +291,7 @@ function ResearchFormInner({ user, slug, draft: draftPrefill }: { user: SessionU
         setConflicts([]);
         clearResearchDraft();
         setOutcome(result.draft ? { kind: "draft-no-source" } : { kind: "published" });
-        if (!slug) navigate(researchFormPath(result.printer.slug));
+        if (!slug) navigate(mode === "data" ? dataPrinterPath(result.printer.slug) : researchFormPath(result.printer.slug));
       }
     } else if (result.kind === "validation_error") {
       const errs: Record<string, string> = {};
@@ -324,7 +332,10 @@ function ResearchFormInner({ user, slug, draft: draftPrefill }: { user: SessionU
   const photosCount = state.photos.filter((p) => p.status === "done").length;
 
   if (load.kind === "loading") return <p className="rsStatusLine">Загрузка…</p>;
-  if (load.kind === "not-found") return <p className="rsStatusLine">Карточка не найдена. <a href={researchPath()} onClick={(e) => { e.preventDefault(); navigate(researchPath()); }}>← К очереди</a></p>;
+  if (load.kind === "not-found") {
+    const queuePath = mode === "data" ? dataPrintersPath() : researchPath();
+    return <p className="rsStatusLine">Карточка не найдена. <a href={queuePath} onClick={(event) => { event.preventDefault(); navigate(queuePath); }}>← К очереди</a></p>;
+  }
   if (load.kind === "error") return <p className="rsStatusLine">Не удалось загрузить карточку. <button type="button" className="rsRetryButton pressable" onClick={() => window.location.reload()}>Обновить</button></p>;
 
   return (
@@ -390,12 +401,13 @@ function ResearchFormInner({ user, slug, draft: draftPrefill }: { user: SessionU
             onEnclosed={(v) => update({ enclosed: v })}
             duplicateHint={duplicateHint}
             onCheckDuplicate={() => void checkDuplicate()}
-            onOpenDuplicate={(dupSlug) => navigate(researchFormPath(dupSlug))}
+            onOpenDuplicate={(dupSlug) => navigate(mode === "data" ? dataPrinterPath(dupSlug) : researchFormPath(dupSlug))}
           />
         </Section>
 
         <Section title="Фото" filledCount={photosCount} totalCount={8} defaultOpen={photosCount > 0}>
           <PhotoSection
+            mode={mode}
             slug={slugNow}
             photos={state.photos}
             heroKey={state.heroKey}

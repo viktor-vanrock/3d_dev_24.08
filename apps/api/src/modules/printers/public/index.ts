@@ -304,6 +304,26 @@ export interface PrinterCatalogMatchPort {
 export interface PrinterResearchAuthPort {
   resolveUser(identity: { readonly authorization: string | undefined; readonly cookie: string | undefined }): Promise<UserId | null>;
   isResearcher(userId: UserId): Promise<boolean>;
+  username(userId: UserId): Promise<string | null>;
+}
+
+export type PrinterResearchScope = "mine" | "brand" | "gaps" | "low_confidence" | "flagged" | "all";
+
+export interface PrinterResearchListItem {
+  readonly slug: string;
+  readonly brand: string;
+  readonly model: string;
+  readonly status: "announced" | "shipping" | "eol" | "rumored";
+  readonly filled_count: number;
+  readonly confidence: "high" | "medium" | "low" | null;
+  readonly filled_by: string | null;
+  readonly filled_by_kind: "agent" | "human" | null;
+  readonly updated_at: string | null;
+  readonly flagged: boolean;
+}
+
+export interface PrinterResearchListResponse {
+  readonly items: readonly PrinterResearchListItem[];
 }
 
 export interface PrinterStoragePort {
@@ -456,7 +476,8 @@ export interface PrintersPort {
   syncPrusa(userId: UserId): Promise<PrinterPrusaSyncResponse>;
   prusaStatus(userId: UserId): Promise<PrinterPrusaStatusResponse>;
   disconnectPrusa(userId: UserId): Promise<PrinterDisconnectResponse>;
-  researchUpsert(userId: UserId, anonId: string, body: Readonly<Record<string, unknown>>): Promise<{ readonly status: 200 | 201; readonly body: PrinterResearchUpsertResponse }>;
+  researchList(userId: UserId, query: { readonly scope?: PrinterResearchScope; readonly q?: string }): Promise<PrinterResearchListResponse>;
+  researchUpsert(userId: UserId, anonId: string, body: Readonly<Record<string, unknown>>, context?: { readonly audit: boolean }): Promise<{ readonly status: 200 | 201; readonly body: PrinterResearchUpsertResponse }>;
   researchDetail(userId: UserId, slug: string): Promise<PrinterCatalogDetailResponse>;
   researchUpload(userId: UserId, slug: unknown, contentType: unknown): Promise<PrinterResearchUploadResponse>;
   researchMedia(userId: UserId, key: string): Promise<string>;

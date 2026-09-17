@@ -85,6 +85,36 @@ describe.skipIf(!process.env.DATABASE_URL)("Nest catalog read DB integration", (
     expect(typeof machinesBody.has_more).toBe("boolean");
   });
 
+  it("returns only published materials and excludes drafts and archives from total", async () => {
+    const suffix = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const vendor = await pool.query<{ id: string }>(`insert into vendors (slug, name) values ($1, $2) returning id`, [`nest-visibility-${suffix}`, `Nest Visibility ${suffix}`]);
+    const vendorId = vendor.rows[0]?.id;
+    if (vendorId === undefined) throw new Error("test vendor was not created");
+    const materialType = await pool.query<{ id: string }>(`insert into material_types (slug, name) values ($1, $2) returning id`, [`nest-visibility-${suffix}`, `Nest Visibility ${suffix}`]);
+    const materialTypeId = materialType.rows[0]?.id;
+    if (materialTypeId === undefined) throw new Error("test material type was not created");
+    const slugs = [`nest-published-${suffix}`, `nest-draft-${suffix}`, `nest-archived-${suffix}`];
+    try {
+      await pool.query(
+        `insert into materials (kind, vendor_id, material_type_id, slug, name, status)
+         values ('filament',$1,$2,$3,'Published fixture','published'),
+                ('filament',$1,$2,$4,'Draft fixture','draft'),
+                ('filament',$1,$2,$5,'Archived fixture','archived')`,
+        [vendorId, materialTypeId, ...slugs],
+      );
+      const response = await fetch(`${baseUrl}/materials?vendor=${encodeURIComponent(vendorId)}&limit=10`);
+      expect(response.status).toBe(200);
+      const body = await jsonObject(response);
+      const materials = body.materials as Array<{ slug?: unknown }>;
+      expect(materials.map((material) => material.slug)).toEqual([slugs[0]]);
+      expect(body.total).toBe(1);
+    } finally {
+      await pool.query(`delete from materials where slug = any($1::text[])`, [slugs]);
+      await pool.query(`delete from material_types where id = $1`, [materialTypeId]);
+      await pool.query(`delete from vendors where id = $1`, [vendorId]);
+    }
+  });
+
   it("preserves printer query validation and the stable empty-page contract", async () => {
     const invalid = await fetch(`${baseUrl}/printers?currency=eur`);
     expect(invalid.status).toBe(400);

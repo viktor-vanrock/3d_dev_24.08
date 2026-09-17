@@ -109,6 +109,29 @@
         ]
       }
     },
+    "/models/{id}": {
+      "get": {
+        "operationId": "ModelsController_getModel",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Models"
+        ]
+      }
+    },
     "/projects": {
       "post": {
         "operationId": "projectsCreate",
@@ -5832,6 +5855,16 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishProjectDto"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Success",
@@ -6481,6 +6514,700 @@
           }
         ],
         "summary": "Unpublish a Project",
+        "tags": [
+          "Projects"
+        ]
+      }
+    },
+    "/projects/{projectId}/archive": {
+      "post": {
+        "operationId": "projectArchive",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^\"[1-9][0-9]*\"$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "headers": {
+              "ETag": {
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "pattern": "^\"[1-9][0-9]*\"$"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectLifecycleResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "error"
+                      ],
+                      "properties": {
+                        "error": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "code",
+                            "message",
+                            "requestId"
+                          ],
+                          "properties": {
+                            "code": {
+                              "type": "string",
+                              "enum": [
+                                "request.validation.v1",
+                                "project.invalid_transition.v1"
+                              ]
+                            },
+                            "message": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "requestId": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "error"
+                      ],
+                      "properties": {
+                        "error": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "code",
+                            "message",
+                            "requestId"
+                          ],
+                          "properties": {
+                            "code": {
+                              "type": "string",
+                              "enum": [
+                                "auth.unauthenticated.v1"
+                              ]
+                            },
+                            "message": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "requestId": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "error"
+                      ],
+                      "properties": {
+                        "error": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "code",
+                            "message",
+                            "requestId"
+                          ],
+                          "properties": {
+                            "code": {
+                              "type": "string",
+                              "enum": [
+                                "project.not_found.v1"
+                              ]
+                            },
+                            "message": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "requestId": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "error"
+                      ],
+                      "properties": {
+                        "error": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "code",
+                            "message",
+                            "requestId"
+                          ],
+                          "properties": {
+                            "code": {
+                              "type": "string",
+                              "enum": [
+                                "project.version_conflict.v1"
+                              ]
+                            },
+                            "message": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "requestId": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "error"
+                      ],
+                      "properties": {
+                        "error": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "code",
+                            "message",
+                            "requestId"
+                          ],
+                          "properties": {
+                            "code": {
+                              "type": "string",
+                              "enum": [
+                                "request.rate_limited.v1"
+                              ]
+                            },
+                            "message": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "requestId": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "error"
+                      ],
+                      "properties": {
+                        "error": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "code",
+                            "message",
+                            "requestId"
+                          ],
+                          "properties": {
+                            "code": {
+                              "type": "string",
+                              "enum": [
+                                "internal.safe_error.v1"
+                              ]
+                            },
+                            "message": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "requestId": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "portal_session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Archive a Project",
+        "tags": [
+          "Projects"
+        ]
+      }
+    },
+    "/projects/{projectId}/restore": {
+      "post": {
+        "operationId": "projectRestore",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^\"[1-9][0-9]*\"$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "headers": {
+              "ETag": {
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "pattern": "^\"[1-9][0-9]*\"$"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectLifecycleResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "error"
+                      ],
+                      "properties": {
+                        "error": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "code",
+                            "message",
+                            "requestId"
+                          ],
+                          "properties": {
+                            "code": {
+                              "type": "string",
+                              "enum": [
+                                "request.validation.v1",
+                                "project.invalid_transition.v1"
+                              ]
+                            },
+                            "message": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "requestId": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "error"
+                      ],
+                      "properties": {
+                        "error": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "code",
+                            "message",
+                            "requestId"
+                          ],
+                          "properties": {
+                            "code": {
+                              "type": "string",
+                              "enum": [
+                                "auth.unauthenticated.v1"
+                              ]
+                            },
+                            "message": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "requestId": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "error"
+                      ],
+                      "properties": {
+                        "error": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "code",
+                            "message",
+                            "requestId"
+                          ],
+                          "properties": {
+                            "code": {
+                              "type": "string",
+                              "enum": [
+                                "project.not_found.v1"
+                              ]
+                            },
+                            "message": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "requestId": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "error"
+                      ],
+                      "properties": {
+                        "error": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "code",
+                            "message",
+                            "requestId"
+                          ],
+                          "properties": {
+                            "code": {
+                              "type": "string",
+                              "enum": [
+                                "project.version_conflict.v1"
+                              ]
+                            },
+                            "message": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "requestId": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "error"
+                      ],
+                      "properties": {
+                        "error": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "code",
+                            "message",
+                            "requestId"
+                          ],
+                          "properties": {
+                            "code": {
+                              "type": "string",
+                              "enum": [
+                                "request.rate_limited.v1"
+                              ]
+                            },
+                            "message": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "requestId": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "error"
+                      ],
+                      "properties": {
+                        "error": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "code",
+                            "message",
+                            "requestId"
+                          ],
+                          "properties": {
+                            "code": {
+                              "type": "string",
+                              "enum": [
+                                "internal.safe_error.v1"
+                              ]
+                            },
+                            "message": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "requestId": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "portal_session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Restore an archived Project",
         "tags": [
           "Projects"
         ]
@@ -9576,6 +10303,386 @@
         ]
       }
     },
+    "/data/news": {
+      "get": {
+        "operationId": "FeedAdminController_list",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "all",
+                "draft",
+                "published",
+                "hidden"
+              ]
+            }
+          },
+          {
+            "name": "source",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "all",
+                "manual",
+                "scout"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedAdminListDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session is absent or invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "portal_session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List managed news",
+        "tags": [
+          "feed"
+        ]
+      },
+      "post": {
+        "operationId": "FeedAdminController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeedAdminCreateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedAdminEnvelopeDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session is absent or invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "portal_session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create managed news draft",
+        "tags": [
+          "feed"
+        ]
+      }
+    },
+    "/data/news/{id}": {
+      "get": {
+        "operationId": "FeedAdminController_detail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedAdminEnvelopeDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session is absent or invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "portal_session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Read managed news",
+        "tags": [
+          "feed"
+        ]
+      },
+      "patch": {
+        "operationId": "FeedAdminController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeedAdminUpdateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedAdminEnvelopeDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session is absent or invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "portal_session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update managed news",
+        "tags": [
+          "feed"
+        ]
+      }
+    },
+    "/data/news/{id}/publish": {
+      "post": {
+        "operationId": "FeedAdminController_publish",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedAdminEnvelopeDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session is absent or invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "portal_session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Publish managed news",
+        "tags": [
+          "feed"
+        ]
+      }
+    },
+    "/data/news/{id}/hide": {
+      "post": {
+        "operationId": "FeedAdminController_hide",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedAdminEnvelopeDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session is absent or invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "portal_session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Hide managed news",
+        "tags": [
+          "feed"
+        ]
+      }
+    },
     "/releases": {
       "get": {
         "operationId": "CatalogController_releases",
@@ -10928,6 +12035,389 @@
         "summary": "Reject a machine candidate",
         "tags": [
           "catalog"
+        ]
+      }
+    },
+    "/data/materials": {
+      "get": {
+        "operationId": "MaterialAdminController_list",
+        "parameters": [
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "kind",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "filament",
+                "resin",
+                "plywood",
+                "aluminum"
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "draft",
+                "published",
+                "archived"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialAdminListDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "portal_session": []
+          }
+        ],
+        "summary": "List managed materials",
+        "tags": [
+          "data-materials"
+        ]
+      },
+      "post": {
+        "operationId": "MaterialAdminController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaterialAdminCreateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialAdminMutationDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "portal_session": []
+          }
+        ],
+        "summary": "Create a material draft",
+        "tags": [
+          "data-materials"
+        ]
+      }
+    },
+    "/data/materials/options": {
+      "get": {
+        "operationId": "MaterialAdminController_options",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialAdminOptionsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "portal_session": []
+          }
+        ],
+        "summary": "List material form options",
+        "tags": [
+          "data-materials"
+        ]
+      }
+    },
+    "/data/materials/{id}": {
+      "get": {
+        "operationId": "MaterialAdminController_find",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialAdminItemDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "portal_session": []
+          }
+        ],
+        "summary": "Read a managed material",
+        "tags": [
+          "data-materials"
+        ]
+      },
+      "patch": {
+        "operationId": "MaterialAdminController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaterialAdminUpdateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialAdminMutationDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "portal_session": []
+          }
+        ],
+        "summary": "Update a managed material",
+        "tags": [
+          "data-materials"
+        ]
+      }
+    },
+    "/data/materials/{id}/publish": {
+      "post": {
+        "operationId": "MaterialAdminController_publish",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaterialAdminPublishDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialAdminMutationDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "portal_session": []
+          }
+        ],
+        "summary": "Publish a managed material",
+        "tags": [
+          "data-materials"
+        ]
+      }
+    },
+    "/data/materials/{id}/restore": {
+      "post": {
+        "operationId": "MaterialAdminController_restore",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaterialAdminRestoreDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialAdminMutationDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "portal_session": []
+          }
+        ],
+        "summary": "Restore an archived material as a draft",
+        "tags": [
+          "data-materials"
+        ]
+      }
+    },
+    "/data/materials/{id}/archive": {
+      "post": {
+        "operationId": "MaterialAdminController_archive",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaterialAdminArchiveDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialAdminMutationDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "portal_session": []
+          }
+        ],
+        "summary": "Archive a managed material",
+        "tags": [
+          "data-materials"
         ]
       }
     },
@@ -13312,6 +14802,100 @@
         "tags": [
           "printers"
         ]
+      },
+      "get": {
+        "operationId": "PrintersController_researchList",
+        "parameters": [
+          {
+            "name": "scope",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "mine",
+                "brand",
+                "gaps",
+                "low_confidence",
+                "flagged",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 120,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful printers-domain response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrinterResearchListResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "portal_session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List researched printers",
+        "tags": [
+          "printers"
+        ]
       }
     },
     "/research/printers/{slug}": {
@@ -13866,6 +15450,349 @@
           }
         ],
         "summary": "Approve printer report",
+        "tags": [
+          "printers"
+        ]
+      }
+    },
+    "/data/printers": {
+      "get": {
+        "operationId": "PrinterAdminController_list",
+        "parameters": [
+          {
+            "name": "scope",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "mine",
+                "brand",
+                "gaps",
+                "low_confidence",
+                "flagged",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 120,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful printers-domain response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrinterResearchListResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "portal_session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List researched printers",
+        "tags": [
+          "printers"
+        ]
+      },
+      "post": {
+        "operationId": "PrinterAdminController_upsert",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResearchPrinterDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful printers-domain response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrinterResearchUpsertResponseDto"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created researched printer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrinterResearchUpsertResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "portal_session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Upsert researched printer",
+        "tags": [
+          "printers"
+        ]
+      }
+    },
+    "/data/printers/{slug}": {
+      "get": {
+        "operationId": "PrinterAdminController_detail",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful printers-domain response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrinterResearchResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "portal_session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Read researched printer",
+        "tags": [
+          "printers"
+        ]
+      }
+    },
+    "/data/printers/media/presign": {
+      "post": {
+        "operationId": "PrinterAdminController_upload",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResearchMediaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful printers-domain response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrinterResearchUploadResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "portal_session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create printer media upload",
         "tags": [
           "printers"
         ]
@@ -17228,6 +19155,86 @@
           }
         ],
         "summary": "Generation branch availability",
+        "tags": [
+          "generations"
+        ]
+      }
+    },
+    "/generations/upload-image": {
+      "post": {
+        "operationId": "GenerationsController_uploadRudalleImage",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RudalleImageUploadResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "description": "Session is absent or invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "portal_session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Upload Image to 3D source",
         "tags": [
           "generations"
         ]
@@ -21365,6 +23372,28 @@
           }
         },
         "summary": "Issue the explicitly enabled non-production developer session",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/dev/available": {
+      "get": {
+        "operationId": "AuthController_devAvailable",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DevAvailabilityResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Check whether the developer login bypass is enabled",
         "tags": [
           "auth"
         ]
@@ -28074,7 +30103,8 @@
               "project.primary_model_published.v1",
               "project.model_published.v1",
               "project.ready_primary_required.v1",
-              "project.publication_conflict.v1"
+              "project.publication_conflict.v1",
+              "project.invalid_transition.v1"
             ],
             "description": "Stable, versioned machine-readable error code",
             "example": "auth.unauthorized.v1"
@@ -28860,6 +30890,20 @@
         ],
         "additionalProperties": false
       },
+      "PublishProjectDto": {
+        "type": "object",
+        "properties": {
+          "confirmed": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "confirmed"
+        ]
+      },
       "PublicationDto": {
         "type": "object",
         "properties": {
@@ -28906,6 +30950,20 @@
           "publication"
         ],
         "additionalProperties": false
+      },
+      "ProjectLifecycleResponseDto": {
+        "type": "object",
+        "properties": {
+          "contract_version": {
+            "type": "string",
+            "enum": [
+              "project-api.v1"
+            ]
+          }
+        },
+        "required": [
+          "contract_version"
+        ]
       },
       "AvatarConfigDto": {
         "type": "object",
@@ -30857,6 +32915,143 @@
           "url"
         ]
       },
+      "FeedAdminItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published",
+              "hidden"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "manual",
+              "scout"
+            ]
+          },
+          "source_url": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          },
+          "source_fingerprint": {
+            "type": "string",
+            "nullable": true
+          },
+          "ingest_provider": {
+            "type": "string",
+            "nullable": true
+          },
+          "ingest_model": {
+            "type": "string",
+            "nullable": true
+          },
+          "ingest_prompt_version": {
+            "type": "string",
+            "nullable": true
+          },
+          "community_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "body",
+          "status",
+          "source",
+          "source_url",
+          "source_fingerprint",
+          "ingest_provider",
+          "ingest_model",
+          "ingest_prompt_version",
+          "community_id",
+          "updated_at"
+        ]
+      },
+      "FeedAdminListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FeedAdminItemDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "FeedAdminEnvelopeDto": {
+        "type": "object",
+        "properties": {
+          "item": {
+            "$ref": "#/components/schemas/FeedAdminItemDto"
+          }
+        },
+        "required": [
+          "item"
+        ]
+      },
+      "FeedAdminCreateDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 300
+          },
+          "body": {
+            "type": "string"
+          },
+          "community_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          }
+        },
+        "required": [
+          "title"
+        ]
+      },
+      "FeedAdminUpdateDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 300
+          },
+          "body": {
+            "type": "string"
+          },
+          "community_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          }
+        }
+      },
       "CatalogReleaseDto": {
         "type": "object",
         "properties": {
@@ -32644,6 +34839,324 @@
         },
         "required": [
           "status"
+        ]
+      },
+      "MaterialAdminItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "filament",
+              "resin",
+              "plywood",
+              "aluminum"
+            ]
+          },
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "vendor_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "vendor_name": {
+            "type": "string"
+          },
+          "material_type_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "material_type_name": {
+            "type": "string"
+          },
+          "specs": {
+            "type": "object",
+            "additionalProperties": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published",
+              "archived"
+            ]
+          },
+          "version": {
+            "type": "number"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "slug",
+          "name",
+          "vendor_id",
+          "vendor_name",
+          "material_type_id",
+          "material_type_name",
+          "specs",
+          "status",
+          "version",
+          "updated_at"
+        ]
+      },
+      "MaterialAdminListDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MaterialAdminItemDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          },
+          "offset": {
+            "type": "number"
+          },
+          "has_more": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset",
+          "has_more"
+        ]
+      },
+      "MaterialAdminOptionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "MaterialAdminOptionsDto": {
+        "type": "object",
+        "properties": {
+          "vendors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MaterialAdminOptionDto"
+            }
+          },
+          "material_types": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MaterialAdminOptionDto"
+            }
+          }
+        },
+        "required": [
+          "vendors",
+          "material_types"
+        ]
+      },
+      "MaterialAdminCreateDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "filament",
+              "resin",
+              "plywood",
+              "aluminum"
+            ]
+          },
+          "slug": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160,
+            "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "vendor_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "material_type_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "specs": {
+            "type": "object",
+            "additionalProperties": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "kind",
+          "slug",
+          "name",
+          "vendor_id",
+          "material_type_id",
+          "specs"
+        ]
+      },
+      "MaterialAdminMutationDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "version"
+        ]
+      },
+      "MaterialAdminUpdateDto": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "number",
+            "minimum": 1
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "filament",
+              "resin",
+              "plywood",
+              "aluminum"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "vendor_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "material_type_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "specs": {
+            "type": "object",
+            "additionalProperties": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "version"
+        ]
+      },
+      "MaterialAdminPublishDto": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "number",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "version"
+        ]
+      },
+      "MaterialAdminRestoreDto": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "number",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "version"
+        ]
+      },
+      "MaterialAdminArchiveDto": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "number",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "version"
         ]
       },
       "CreateCommunityDto": {
@@ -35131,6 +37644,89 @@
           "draft"
         ]
       },
+      "PrinterResearchListItemDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string"
+          },
+          "brand": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "announced",
+              "shipping",
+              "eol",
+              "rumored"
+            ]
+          },
+          "filled_count": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 7
+          },
+          "confidence": {
+            "type": "string",
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ],
+            "nullable": true
+          },
+          "filled_by": {
+            "type": "string",
+            "nullable": true
+          },
+          "filled_by_kind": {
+            "type": "string",
+            "enum": [
+              "agent",
+              "human"
+            ],
+            "nullable": true
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "flagged": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "slug",
+          "brand",
+          "model",
+          "status",
+          "filled_count",
+          "confidence",
+          "filled_by",
+          "filled_by_kind",
+          "updated_at",
+          "flagged"
+        ]
+      },
+      "PrinterResearchListResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PrinterResearchListItemDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
       "PrinterResearchResponseDto": {
         "type": "object",
         "properties": {
@@ -37247,7 +39843,8 @@
               "trellis",
               "concepts",
               "scan",
-              "rudalle"
+              "rudalle",
+              "rudalle_image"
             ]
           },
           "prompt": {
@@ -37451,7 +40048,8 @@
               "trellis",
               "concepts",
               "scan",
-              "rudalle"
+              "rudalle",
+              "rudalle_image"
             ]
           },
           "state": {
@@ -37507,6 +40105,17 @@
         "required": [
           "window_hours",
           "branches"
+        ]
+      },
+      "RudalleImageUploadResponseDto": {
+        "type": "object",
+        "properties": {
+          "s3_key": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "s3_key"
         ]
       },
       "ScanCreatedResponseDto": {
@@ -39201,6 +41810,17 @@
           },
           "role": {
             "type": "string"
+          },
+          "capabilities": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "data.materials.manage",
+                "data.printers.manage",
+                "data.news.manage"
+              ]
+            }
           }
         },
         "required": [
@@ -39209,7 +41829,8 @@
           "display_name",
           "avatar_url",
           "handle_confirmed",
-          "role"
+          "role",
+          "capabilities"
         ]
       },
       "SessionResponseDto": {
@@ -39345,6 +41966,17 @@
         "required": [
           "ok",
           "user"
+        ]
+      },
+      "DevAvailabilityResponseDto": {
+        "type": "object",
+        "properties": {
+          "available": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "available"
         ]
       },
       "IdeaOriginDto": {

@@ -21,11 +21,12 @@ import {
   type ProfileTab,
 } from "./profile.public.tsx";
 import { ProfileWorkshop } from "./profile.workshop.tsx";
+import { ProfileData } from "./profile.data.tsx";
 import "./profile.css";
 
 const PROJECT_PAGE_SIZE = 24;
 const POST_PAGE_SIZE = 24;
-const PROFILE_TABS = new Set<ProfileTab>(["overview", "projects", "posts", "workshop"]);
+const PROFILE_TABS = new Set<ProfileTab>(["overview", "projects", "posts", "workshop", "data"]);
 
 function requestedProfileTab(): ProfileTab {
   const tab = new URLSearchParams(window.location.search).get("tab") as ProfileTab | null;
@@ -94,16 +95,19 @@ export function ProfileScreen({
   }, [profileId]);
 
   const own = Boolean(profile && user && profile.username === user.username);
+  const dataCapabilities = own ? (user?.capabilities ?? []) : [];
+  const mayOpenData = dataCapabilities.length > 0;
 
   useEffect(() => {
-    if (profile && activeTab === "workshop" && !own) {
+    if (profile && ((activeTab === "workshop" && !own) || (activeTab === "data" && !mayOpenData))) {
       setActiveTab("overview");
       window.history.replaceState(null, "", profilePath(username));
     }
-  }, [activeTab, own, profile, username]);
+  }, [activeTab, mayOpenData, own, profile, username]);
 
   function selectTab(tab: ProfileTab) {
     if (tab === "workshop" && !own) return;
+    if (tab === "data" && !mayOpenData) return;
     setActiveTab(tab);
     window.history.replaceState(null, "", profilePath(username, tab));
   }
@@ -226,7 +230,7 @@ export function ProfileScreen({
               onEdit={openEditProfile}
               onSelectTab={selectTab}
             />
-            <ProfileTabs value={activeTab} own={own} onChange={selectTab} />
+            <ProfileTabs value={activeTab} own={own} capabilities={dataCapabilities} onChange={selectTab} />
             <div className="profileWorkspace">
               <div className="profileMainColumn">
                 {activeTab === "overview" ? (
@@ -238,6 +242,7 @@ export function ProfileScreen({
                 {activeTab === "projects" ? <ProfileProjects {...projectProps} /> : null}
                 {activeTab === "posts" ? <ProfilePosts user={user} posts={posts} own={own} /> : null}
                 {activeTab === "workshop" && own ? <ProfileWorkshop /> : null}
+                {activeTab === "data" && mayOpenData ? <ProfileData capabilities={dataCapabilities} /> : null}
               </div>
               <ProfileSidebar profile={profile} own={own} onEdit={openEditProfile} />
             </div>

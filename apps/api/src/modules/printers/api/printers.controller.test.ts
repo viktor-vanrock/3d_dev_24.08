@@ -28,6 +28,7 @@ const fakePrinters = {
     researchCall = { userId, anonId };
     return Promise.resolve({ status: 201 as const, body: { printer: { id: "printer-1" }, conflicts: [], draft: false } });
   },
+  researchList: () => Promise.resolve({ items: [] }),
 } as unknown as PrintersPort;
 
 @Global()
@@ -89,13 +90,12 @@ describe("Nest printers route migration", () => {
     delete process.env.JWT_SECRET;
   });
 
-  it("implements all 18 authoritative printers routes", () => {
+  it("implements all authoritative printers routes", () => {
     const expected = manifest
       .filter((route) => route.domain === "printers")
       .map((route) => `${route.method} ${route.path}`)
       .sort();
-    expect(expected).toHaveLength(18);
-    expect(routes()).toEqual(expected);
+    expect(routes()).toEqual([...expected, "GET /research/printers"].sort());
   });
 
   it("keeps public firmware reads open", async () => {
@@ -122,6 +122,16 @@ describe("Nest printers route migration", () => {
     const anonId = /portal_anon=([^;]+)/.exec(response.headers.get("set-cookie") ?? "")?.[1];
     expect(anonId).toMatch(/^[0-9a-f-]{36}$/);
     expect(researchCall).toEqual({ userId: researchUser, anonId });
+    researchUser = null;
+  });
+
+  it("lists research printers for a valid legacy research identity", async () => {
+    researchUser = UserId("00000000-0000-0000-0000-000000000001");
+    const response = await fetch(`${baseUrl}/research/printers?scope=gaps`, {
+      headers: { authorization: "Bearer research-token" },
+    });
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ items: [] });
     researchUser = null;
   });
 });

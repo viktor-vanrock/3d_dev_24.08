@@ -24,6 +24,8 @@ import { AuthModule } from "../auth.module.ts";
 import { identifierHash } from "../infrastructure/auth-crypto.ts";
 import { AuthRepository } from "../infrastructure/auth.repository.ts";
 import { hashPassword, verifyPassword } from "../infrastructure/password-hash.ts";
+import { Permissions } from "../../permissions/public/index.ts";
+import { FEED_AGENT_AUTH_PORT } from "../../feed/public/index.ts";
 
 @Injectable()
 class TestProfileAuthPort implements ProfileAuthPort {
@@ -93,8 +95,9 @@ class TestProfileAuthPort implements ProfileAuthPort {
     { provide: PROFILE_AUTH_PORT, useExisting: TestProfileAuthPort },
     { provide: SANCTIONS_READ_PORT, useValue: { findActiveForUser: async (): Promise<null> => null, findActiveForUserTx: async (): Promise<null> => null } },
     { provide: ANALYTICS_PORT, useValue: { emitEvent: (): Promise<void> => Promise.resolve() } },
+    { provide: FEED_AGENT_AUTH_PORT, useValue: { verifyAgentContentToken: (): Promise<null> => Promise.resolve(null) } },
   ],
-  exports: [PROFILE_AUTH_PORT, ANALYTICS_PORT],
+  exports: [PROFILE_AUTH_PORT, ANALYTICS_PORT, FEED_AGENT_AUTH_PORT],
 })
 class AuthTestPortsModule {}
 
@@ -159,6 +162,34 @@ describe("Nest auth domain migration", () => {
     const body = (await response.json()) as { error: { code: string; requestId: string } };
     expect(body.error.code).toBe("auth.unauthorized.v1");
     expect(body.error.requestId).toBe(response.headers.get("x-request-id"));
+  });
+
+  it("returns data capabilities derived from active permission grants", async () => {
+    const database = app.get<Pool>(DATABASE_POOL);
+    const username = `capabilities.${Date.now()}`;
+    const user = await database.query<{ id: string }>(`insert into users (username) values ($1) returning id`, [username]);
+    const userId = user.rows[0]?.id;
+    if (userId === undefined) throw new Error("test user was not created");
+    await database.query(
+      `insert into permission_grants (user_id, permission, granted_by, reason) values ($1, $2, $1, $3)`,
+      [userId, Permissions.CATALOG_EDIT_ANY, "integration test"],
+    );
+    const token = await new SignJWT({ username, sv: 1 })
+      .setProtectedHeader({ alg: "HS256" })
+      .setSubject(userId)
+      .setExpirationTime("5m")
+      .sign(new TextEncoder().encode(JWT_SECRET));
+
+    try {
+      const response = await fetch(`${baseUrl}/auth/session`, { headers: { authorization: `Bearer ${token}` } });
+      expect(response.status).toBe(200);
+      await expect(response.json()).resolves.toMatchObject({
+        user: { id: userId, capabilities: ["data.materials.manage"] },
+      });
+    } finally {
+      await database.query(`delete from permission_grants where user_id = $1`, [userId]);
+      await database.query(`delete from users where id = $1`, [userId]);
+    }
   });
 
   it("preserves logout status and clears the production-shaped session cookie", async () => {

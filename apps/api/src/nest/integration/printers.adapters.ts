@@ -29,6 +29,7 @@ import {
 } from "../../modules/printers/public/index.ts";
 import { SessionVerifier } from "../auth/session-verifier.ts";
 import { MetricsService } from "../observability/metrics.service.ts";
+import { Permissions, PermissionsModule, PermissionsService } from "../../modules/permissions/public/index.ts";
 
 const API_KEY_PREFIXES = ["mf_research_", "mf_pub_", "mf_feedingest_", "mf_agent_", "mf_user_"] as const;
 
@@ -47,6 +48,7 @@ export class PrinterResearchAuthAdapter implements PrinterResearchAuthPort {
     @Inject(PROFILE_CONTENT_PORT) private readonly profiles: ProfileContentPort,
     @Inject(PROFILE_AUTH_PORT) private readonly profileAuth: ProfileAuthPort,
     @Inject(MetricsService) private readonly metrics: MetricsService,
+    @Inject(PermissionsService) private readonly permissions: PermissionsService,
   ) {}
 
   async resolveUser(identity: { readonly authorization: string | undefined; readonly cookie: string | undefined }): Promise<UserIdType | null> {
@@ -60,7 +62,11 @@ export class PrinterResearchAuthAdapter implements PrinterResearchAuthPort {
   }
 
   async isResearcher(userId: UserIdType): Promise<boolean> {
-    return (await this.profiles.role(userId)) === "researcher";
+    return (await this.profiles.role(userId)) === "researcher" || (await this.permissions.hasPermission(userId, Permissions.RESEARCH_MANAGE_PRINTERS));
+  }
+
+  async username(userId: UserIdType): Promise<string | null> {
+    return (await this.profileAuth.findSessionUser(userId))?.username ?? null;
   }
 }
 
@@ -139,7 +145,7 @@ export class PrinterActivationAdapter implements PrinterActivationPort {
 
 @Global()
 @Module({
-  imports: [AnalyticsModule],
+  imports: [AnalyticsModule, PermissionsModule],
   providers: [
     PrinterResearchAuthAdapter,
     PrinterPrusaAdapter,

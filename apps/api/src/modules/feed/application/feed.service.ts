@@ -80,7 +80,7 @@ const POST_EVENTS: Readonly<Record<string, FeedEventType>> = {
 };
 
 function oneOf<T extends string>(value: unknown, values: readonly T[]): value is T {
-  return typeof value === "string" && values.includes(value as T);
+  return typeof value === "string" && values.some((candidate) => candidate === value);
 }
 
 function numberLimit(value: unknown): number {
@@ -232,7 +232,6 @@ export class FeedService implements FeedPort, FeedSocialOwnerPort {
     const provider = requiredString(body.ingest_provider);
     const model = requiredString(body.ingest_model);
     const promptVersion = requiredString(body.ingest_prompt_version);
-    const visible = body.mode === "publish";
     const result = await this.repository.ingest({
       actorId: principal.userId,
       communityId,
@@ -245,7 +244,7 @@ export class FeedService implements FeedPort, FeedSocialOwnerPort {
       provider,
       model,
       promptVersion,
-      publish: visible,
+      publish: false,
     });
     if (result.publishedNow) await this.analytics.emit({ eventName: "feed_post", userId: principal.userId, props: { post_id: result.row.id, actor: "api_key" }, request });
     const hydrated = this.firstPost(await this.references.hydratePosts([result.row]));

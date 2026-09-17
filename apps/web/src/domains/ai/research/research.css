@@ -20,6 +20,30 @@
   margin-left: auto;
 }
 
+.researchHeaderActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  flex: 1 1 560px;
+}
+
+.researchHeaderActions .researchSearch {
+  margin-left: 0;
+}
+
+@media (max-width: 720px) {
+  .researchHeaderActions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .researchHeaderActions .researchSearch {
+    flex-basis: auto;
+    max-width: none;
+  }
+}
+
 .researchSearchBar {
   width: 100%;
 }

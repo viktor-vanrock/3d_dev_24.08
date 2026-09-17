@@ -123,3 +123,7 @@ export class PublicationResponseDto {
   @ApiProperty({ type: String, enum: ["project-api.v1"] }) contract_version!: "project-api.v1";
   @ApiProperty({ type: PublicationDto }) publication!: PublicationDto;
 }
+
+export class ProjectLifecycleResponseDto {
+  @ApiProperty({ type: String, enum: ["project-api.v1"] }) contract_version!: "project-api.v1";
+}

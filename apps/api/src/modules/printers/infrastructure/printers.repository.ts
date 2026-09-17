@@ -54,6 +54,18 @@ export interface PrusaConnectionRow {
   readonly last_error: string | null;
 }
 
+export interface PrinterResearchListRow {
+  readonly slug: string;
+  readonly brand: string;
+  readonly model: string;
+  readonly status: "announced" | "shipping" | "eol" | "rumored";
+  readonly filled_count: number;
+  readonly confidence: "high" | "medium" | "low" | null;
+  readonly filled_by: string | null;
+  readonly updated_at: Date | string | null;
+  readonly flagged: boolean;
+}
+
 const USER_PRINTER_COLUMNS = `id, user_id, printer_id, catalog_printer_id, brand, model, build_volume,
   nozzle_mm, kinematics, link_source, lan_endpoint, verified, is_primary, connection_mode,
   connection_id, external_ref, status, agent_id, firmware_class, last_seen_at, capabilities,
@@ -88,7 +100,9 @@ export class PrintersRepository implements PrinterOwnerPort, PrinterProfileReadP
 
   async countByUser(userId: UserIdType): Promise<number> {
     const result = await this.pool.query<{ count: string }>(`select count(*) as count from user_printers where user_id = $1`, [userId]);
-    return Number(result.rows[0]!.count);
+    const row = result.rows[0];
+    if (row === undefined) throw new Error("printer count query returned no row");
+    return Number(row.count);
   }
 
   async listByUser(userId: UserIdType): Promise<readonly ProfilePrinterSummary[]> {
@@ -178,7 +192,9 @@ export class PrintersRepository implements PrinterOwnerPort, PrinterProfileReadP
       ],
       tx,
     );
-    return result.rows[0]!;
+    const row = result.rows[0];
+    if (row === undefined) throw new Error("printer create returned no row");
+    return row;
   }
 
   async update(printerId: string, userId: UserIdType, values: Readonly<Record<string, unknown>>, tx?: PrinterQueryExecutor): Promise<OwnedUserPrinter | null> {
@@ -329,7 +345,7 @@ export class PrintersRepository implements PrinterOwnerPort, PrinterProfileReadP
     return this.pool.query<CommunityFirmwareRow>(
       `select id, printer_id, model, author, git_url, verified, created_at, updated_at
        from community_firmware ${where} order by created_at desc limit $${values.length - 1} offset $${values.length}`,
-      values as unknown[],
+      [...values],
     );
   }
 
@@ -337,7 +353,7 @@ export class PrintersRepository implements PrinterOwnerPort, PrinterProfileReadP
     return this.pool.query<CommunityFirmwareRow>(
       `insert into community_firmware (printer_id, model, author, git_url) values ($1,$2,$3,$4)
        on conflict (git_url) do nothing returning id, printer_id, model, author, git_url, verified, created_at, updated_at`,
-      values as unknown[],
+      [...values],
     );
   }
 
@@ -378,6 +394,38 @@ export class PrintersRepository implements PrinterOwnerPort, PrinterProfileReadP
 
   findPrinterBySlug(slug: string) {
     return this.pool.query<PrinterRow>(`select * from printers where slug = $1`, [slug]);
+  }
+
+  researchPrinters(input: { readonly actorUsername?: string; readonly scope?: string; readonly query?: string }) {
+    const query = input.query?.trim() ?? "";
+    const values: unknown[] = [];
+    const conditions: string[] = [];
+    if (input.scope === "mine") {
+      values.push(input.actorUsername ?? "");
+      conditions.push(`filled_by = $${values.length}`);
+    }
+    if (query !== "") {
+      values.push(`%${query}%`);
+      conditions.push(`(brand ilike $${values.length} or model ilike $${values.length} or slug ilike $${values.length} or exists (select 1 from unnest(aliases) alias where alias ilike $${values.length}))`);
+    }
+    if (input.scope === "gaps") conditions.push("cardinality(gaps) > 0");
+    if (input.scope === "low_confidence") conditions.push("confidence = 'low'");
+    if (input.scope === "flagged") conditions.push("exists (select 1 from printer_reports report where report.printer_id = printers.id and report.status = 'pending')");
+    const where = conditions.length > 0 ? `where ${conditions.join(" and ")}` : "";
+    return this.pool.query<PrinterResearchListRow>(
+      `select slug, brand, model, status,
+        ((build_volume_x is not null and build_volume_y is not null and build_volume_z is not null)::int
+          + (hotend_max_temp_c is not null)::int + (bed_max_temp_c is not null)::int
+          + (kinematics is not null)::int + (multimaterial_supported is not null)::int
+          + ((price_msrp_usd is not null or price_ru_rub is not null))::int
+          + ((media->>'hero') is not null)::int) as filled_count,
+        confidence, filled_by, updated_at,
+        exists (select 1 from printer_reports report where report.printer_id = printers.id and report.status = 'pending') as flagged
+       from printers ${where}
+       order by cardinality(gaps) desc, updated_at asc nulls first, brand, model
+       limit 100`,
+      values,
+    );
   }
 
   prusaConnection(userId: UserIdType) {

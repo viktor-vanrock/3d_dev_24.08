@@ -55,6 +55,7 @@ function GuestLoginPromptBody({ intent }: { intent?: GuestIntent }) {
         <div style={dividerLineStyle} />
       </div>
       <PasswordLogin />
+      {/* Временно скрыто: вход через PlagID будет возвращён позднее.
       <div style={dividerRowStyle}>
         <div style={dividerLineStyle} />
         <span style={dividerLabelStyle}>Войти через</span>
@@ -69,7 +70,7 @@ function GuestLoginPromptBody({ intent }: { intent?: GuestIntent }) {
         }}
       >
         PlagID
-      </Button>
+      </Button> */}
       {isDevMode ? (
         <div className="devBypassSection">
           <div className="devBypassDivider">только для разработки</div>

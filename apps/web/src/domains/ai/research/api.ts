@@ -47,15 +47,21 @@ async function getJson<T>(path: string, signal?: AbortSignal): Promise<T | null>
 // (воркстрим Fullstack/Back, MF-839 п.3) — пишем вызов против ожидаемой формы (printer.schema.json +
 // §1.4/§8.2) и мягко деградируем в пустой/error UI на 404/сеть, тот же приём, что src/feed/api.ts.
 // Когда бэкенд появится — меняются только тела функций ниже, не вызывающий код экрана.
-export async function listResearchQueue(scope: ResearchScope, signal?: AbortSignal): Promise<ResearchQueueItem[] | null> {
-  const data = await getJson<{ items: ResearchQueueItem[] }>(`/research/printers?scope=${scope}`, signal);
+export type ResearchApiMode = "research" | "data";
+
+function researchApiPath(mode: ResearchApiMode): string {
+  return mode === "data" ? "/data/printers" : "/research/printers";
+}
+
+export async function listResearchQueue(scope: ResearchScope, signal?: AbortSignal, mode: ResearchApiMode = "research"): Promise<ResearchQueueItem[] | null> {
+  const data = await getJson<{ items: ResearchQueueItem[] }>(`${researchApiPath(mode)}?scope=${scope}`, signal);
   return data?.items ?? null;
 }
 
 // Живая выдача поиска-создания (§1.3): brand/model/aliases/slug. Пустой запрос сюда не доходит —
 // экран не рисует панель на пустом вводе.
-export async function searchResearchPrinters(query: string, signal?: AbortSignal): Promise<ResearchSearchHit[] | null> {
-  const data = await getJson<{ items: ResearchSearchHit[] }>(`/research/printers?q=${encodeURIComponent(query)}`, signal);
+export async function searchResearchPrinters(query: string, signal?: AbortSignal, mode: ResearchApiMode = "research"): Promise<ResearchSearchHit[] | null> {
+  const data = await getJson<{ items: ResearchSearchHit[] }>(`${researchApiPath(mode)}?q=${encodeURIComponent(query)}`, signal);
   return data?.items ?? null;
 }
 
@@ -157,9 +163,9 @@ export async function listPrinters(): Promise<PrinterRecord[]> {
   return all;
 }
 
-export async function fetchPrinterBySlug(slug: string): Promise<FetchResult> {
+export async function fetchPrinterBySlug(slug: string, mode: ResearchApiMode = "research"): Promise<FetchResult> {
   try {
-    const response = await apiFetch(`/research/printers/${encodeURIComponent(slug)}`, { credentials: "include" });
+    const response = await apiFetch(`${researchApiPath(mode)}/${encodeURIComponent(slug)}`, { credentials: "include" });
     if (response.status === 401) return { kind: "unauthorized" };
     if (response.status === 403) return { kind: "forbidden" };
     if (response.status === 404) return { kind: "not_found" };
@@ -171,9 +177,9 @@ export async function fetchPrinterBySlug(slug: string): Promise<FetchResult> {
   }
 }
 
-export async function savePrinterCard(payload: Record<string, unknown>): Promise<SaveResult> {
+export async function savePrinterCard(payload: Record<string, unknown>, mode: ResearchApiMode = "research"): Promise<SaveResult> {
   try {
-    const response = await apiFetch(`/research/printers`, {
+    const response = await apiFetch(researchApiPath(mode), {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -201,9 +207,9 @@ export interface PresignResult {
 // Presigned PUT (§2.4) — фото льётся напрямую в S3, минуя наш сервер. Пока ручка/бакет ещё не
 // на всех окружениях (docs/infra/readme.md § «Бакет №5», Domain name — блокер MF-715) — вызывающий
 // код (photosection.tsx) трактует любую не-2xx ветку как «загрузка временно недоступна», не крашится.
-export async function presignPrinterPhoto(slug: string, contentType: string): Promise<PresignResult | null> {
+export async function presignPrinterPhoto(slug: string, contentType: string, mode: ResearchApiMode = "research"): Promise<PresignResult | null> {
   try {
-    const response = await apiFetch(`/research/printers/media/presign`, {
+    const response = await apiFetch(`${researchApiPath(mode)}/media/presign`, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },

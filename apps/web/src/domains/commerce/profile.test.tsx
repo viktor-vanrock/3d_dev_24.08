@@ -5,6 +5,7 @@ import { OverlayProvider } from "@platform/overlay";
 import { ThemeProvider } from "@platform/theme";
 import { ProfileScreen } from "./profile.tsx";
 import type { MarketModel, UserProfile } from "./models.ts";
+import type { SessionUser } from "@shared/types";
 
 const { getUserProfile, listModels, listAuthorFeed } = vi.hoisted(() => ({
   getUserProfile: vi.fn(),
@@ -32,13 +33,14 @@ vi.mock("./accounteditor.tsx", () => ({ AccountEditor: () => <div>Редакто
 vi.mock("./profile.catalogs.tsx", () => ({ MyCatalogsSection: () => null }));
 vi.mock("./profile.push.tsx", () => ({ PushSettingsSection: () => null }));
 
-const viewer = {
+const viewer: SessionUser = {
   id: "user-1",
   username: "maker",
   display_name: "Мастер",
   avatar_url: null,
   handle_confirmed: true,
   role: "user" as const,
+  capabilities: [],
 };
 
 const profile: UserProfile = {
@@ -153,5 +155,26 @@ describe("ProfileScreen project hierarchy", () => {
 
     expect(await screen.findByRole("tab", { name: "Мастерская", selected: true })).toBeTruthy();
     expect(screen.getByText("Только для вас")).toBeTruthy();
+  });
+
+  it("shows the data tab only to an owner with a data-management capability", async () => {
+    const admin = { ...viewer, capabilities: ["data.materials.manage" as const] };
+    renderProfile([model(1)], admin);
+
+    expect(await screen.findByRole("tab", { name: "Данные" })).toBeTruthy();
+  });
+
+  it("opens the addressable data workspace and exposes only permitted sections", async () => {
+    window.history.replaceState(null, "", `/u/${viewer.username}?tab=data`);
+    const editor = {
+      ...viewer,
+      capabilities: ["data.materials.manage" as const, "data.news.manage" as const],
+    };
+    renderProfile([model(1)], editor);
+
+    expect(await screen.findByRole("tab", { name: "Данные", selected: true })).toBeTruthy();
+    expect(screen.getByRole("link", { name: /Материалы/ })).toBeTruthy();
+    expect(screen.getByRole("link", { name: /Новости/ })).toBeTruthy();
+    expect(screen.queryByRole("link", { name: /Принтеры/ })).toBeNull();
   });
 });

@@ -16,6 +16,7 @@ import {
   PrinterReportsQueryDto,
   PrusaConnectDto,
   ResearchMediaDto,
+  PrinterResearchQueryDto,
   ResearchPrinterDto,
 } from "./printers.dto.ts";
 import { Internal, Permission, Permissions, Public, User } from "../../permissions/public/index.ts";
@@ -123,6 +124,12 @@ export class PrintersController {
     const result = await this.printers.researchUpsert(await this.researchUser(request), anonId, { ...body });
     response.status(result.status);
     return result.body;
+  }
+  @Get("research/printers")
+  @Internal()
+  @ApiPrintersOperation("List researched printers", { auth: true })
+  async researchList(@Req() request: Request, @Query() query: PrinterResearchQueryDto) {
+    return this.printers.researchList(await this.researchUser(request), query);
   }
   @Get("research/printers/:slug")
   @Internal()

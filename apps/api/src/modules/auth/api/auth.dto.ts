@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { Allow } from "class-validator";
 import { EMAIL_DOMAINS } from "../domain/auth.ts";
+import { DATA_CAPABILITIES, type DataCapability } from "../../permissions/public/index.ts";
 
 export class EmailStartDto {
   @ApiProperty({ type: String, example: "ivan.ivanov" })
@@ -81,6 +82,9 @@ export class SessionUserDto extends AuthUserDto {
 
   @ApiProperty({ type: String })
   declare readonly role: string;
+
+  @ApiProperty({ type: String, enum: DATA_CAPABILITIES, isArray: true })
+  declare readonly capabilities: readonly DataCapability[];
 }
 
 export class SessionResponseDto {

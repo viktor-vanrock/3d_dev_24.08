@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { navigate, researchFormPath, researchNewPath } from "../../../router.ts";
+import { dataPrinterPath, navigate, researchFormPath, researchNewPath } from "../../../router.ts";
 import { useInteractionSound } from "@platform/sound";
-import { searchResearchPrinters, type ResearchSearchHit } from "./api.ts";
+import { searchResearchPrinters, type ResearchApiMode, type ResearchSearchHit } from "./api.ts";
 import { StatusChip } from "./researchrow.tsx";
 
 // Поиск = кнопка создания (§1.3): голой «Создать карточку» на экране нет — последняя строка
@@ -10,7 +10,7 @@ import { StatusChip } from "./researchrow.tsx";
 // и живой поиск принтера в мастере парка (home/printerpicker.tsx).
 const SEARCH_DEBOUNCE_MS = 250;
 
-export function ResearchSearchCreate() {
+export function ResearchSearchCreate({ mode = "research" }: { mode?: ResearchApiMode }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<ResearchSearchHit[] | null>(null);
   const [open, setOpen] = useState(false);
@@ -27,13 +27,13 @@ export function ResearchSearchCreate() {
     }
     const controller = new AbortController();
     debounceRef.current = setTimeout(() => {
-      searchResearchPrinters(trimmed, controller.signal).then((hits) => setResults(hits ?? []));
+      searchResearchPrinters(trimmed, controller.signal, mode).then((hits) => setResults(hits ?? []));
     }, SEARCH_DEBOUNCE_MS);
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
       controller.abort();
     };
-  }, [query]);
+  }, [query, mode]);
 
   // Закрытие панели по клику снаружи — тот же паттерн, что Popover-триггеры капсулы шапки.
   useEffect(() => {
@@ -76,7 +76,7 @@ export function ResearchSearchCreate() {
                 onPointerDown={sound.tick}
                 onClick={() => {
                   setOpen(false);
-                  navigate(researchFormPath(hit.slug));
+                  navigate(mode === "data" ? dataPrinterPath(hit.slug) : researchFormPath(hit.slug));
                 }}
               >
                 <span className="researchSearchHitTitle">
@@ -86,18 +86,20 @@ export function ResearchSearchCreate() {
               </button>
             ))
           )}
-          <button
-            type="button"
-            className="researchSearchCreate pressable"
-            onPointerDown={sound.tick}
-            onClick={() => {
-              setOpen(false);
-              navigate(researchNewPath(trimmed));
-            }}
-          >
-            <PlusIcon />
-            <span>Создать карточку «{trimmed}»</span>
-          </button>
+          {mode === "research" ? (
+            <button
+              type="button"
+              className="researchSearchCreate pressable"
+              onPointerDown={sound.tick}
+              onClick={() => {
+                setOpen(false);
+                navigate(researchNewPath(trimmed));
+              }}
+            >
+              <PlusIcon />
+              <span>Создать карточку «{trimmed}»</span>
+            </button>
+          ) : null}
         </div>
       ) : null}
     </div>

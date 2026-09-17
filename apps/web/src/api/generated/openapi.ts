@@ -21,6 +21,23 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/appeals/{id}/resolve": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        /** Resolve a sanction appeal */
+        readonly post: operations["AppealsController_resolve"];
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/assistant/prompt-variants": {
         readonly parameters: {
             readonly query?: never;
@@ -193,6 +210,23 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/auth/dev/available": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        /** Check whether the developer login bypass is enabled */
+        readonly get: operations["AuthController_devAvailable"];
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/auth/email/start": {
         readonly parameters: {
             readonly query?: never;
@@ -238,6 +272,23 @@ export interface paths {
         readonly put?: never;
         /** Clear the browser session */
         readonly post: operations["AuthController_logout"];
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/auth/logout-all": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        /** Revoke all active user sessions */
+        readonly post: operations["AuthController_logoutAll"];
         readonly delete?: never;
         readonly options?: never;
         readonly head?: never;
@@ -697,6 +748,232 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/data/materials": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        /** List managed materials */
+        readonly get: operations["MaterialAdminController_list"];
+        readonly put?: never;
+        /** Create a material draft */
+        readonly post: operations["MaterialAdminController_create"];
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/data/materials/{id}": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        /** Read a managed material */
+        readonly get: operations["MaterialAdminController_find"];
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        /** Update a managed material */
+        readonly patch: operations["MaterialAdminController_update"];
+        readonly trace?: never;
+    };
+    readonly "/data/materials/{id}/archive": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        /** Archive a managed material */
+        readonly post: operations["MaterialAdminController_archive"];
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/data/materials/{id}/publish": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        /** Publish a managed material */
+        readonly post: operations["MaterialAdminController_publish"];
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/data/materials/{id}/restore": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        /** Restore an archived material as a draft */
+        readonly post: operations["MaterialAdminController_restore"];
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/data/materials/options": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        /** List material form options */
+        readonly get: operations["MaterialAdminController_options"];
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/data/news": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        /** List managed news */
+        readonly get: operations["FeedAdminController_list"];
+        readonly put?: never;
+        /** Create managed news draft */
+        readonly post: operations["FeedAdminController_create"];
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/data/news/{id}": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        /** Read managed news */
+        readonly get: operations["FeedAdminController_detail"];
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        /** Update managed news */
+        readonly patch: operations["FeedAdminController_update"];
+        readonly trace?: never;
+    };
+    readonly "/data/news/{id}/hide": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        /** Hide managed news */
+        readonly post: operations["FeedAdminController_hide"];
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/data/news/{id}/publish": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        /** Publish managed news */
+        readonly post: operations["FeedAdminController_publish"];
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/data/printers": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        /** List researched printers */
+        readonly get: operations["PrinterAdminController_list"];
+        readonly put?: never;
+        /** Upsert researched printer */
+        readonly post: operations["PrinterAdminController_upsert"];
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/data/printers/{slug}": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        /** Read researched printer */
+        readonly get: operations["PrinterAdminController_detail"];
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/data/printers/media/presign": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        /** Create printer media upload */
+        readonly post: operations["PrinterAdminController_upload"];
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/devices/agent/enroll": {
         readonly parameters: {
             readonly query?: never;
@@ -725,6 +1002,23 @@ export interface paths {
         readonly get: operations["DevicesController_install"];
         readonly put?: never;
         readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/devices/agent/recover": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        /** Recover or rotate a device agent identity from a one-time recovery credential */
+        readonly post: operations["DevicesController_recover"];
         readonly delete?: never;
         readonly options?: never;
         readonly head?: never;
@@ -1138,6 +1432,23 @@ export interface paths {
         readonly get: operations["GenerationsController_health"];
         readonly put?: never;
         readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/generations/upload-image": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        /** Upload Image to 3D source */
+        readonly post: operations["GenerationsController_uploadRudalleImage"];
         readonly delete?: never;
         readonly options?: never;
         readonly head?: never;
@@ -2929,6 +3240,38 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/metrics": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: operations["MetricsController_render"];
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/models/{id}": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: operations["ModelsController_getModel"];
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/orders": {
         readonly parameters: {
             readonly query?: never;
@@ -3670,7 +4013,8 @@ export interface paths {
             readonly path?: never;
             readonly cookie?: never;
         };
-        readonly get?: never;
+        /** List researched printers */
+        readonly get: operations["PrintersController_researchList"];
         readonly put?: never;
         /** Upsert researched printer */
         readonly post: operations["PrintersController_researchUpsert"];
@@ -3745,6 +4089,58 @@ export interface paths {
         readonly get: operations["BillingController_sales"];
         readonly put?: never;
         readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/sanctions": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        /** Create a reversible sanction */
+        readonly post: operations["SanctionsController_create"];
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/sanctions/{id}/appeals": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        /** List sanction appeals */
+        readonly get: operations["AppealsController_list"];
+        readonly put?: never;
+        /** Submit a sanction appeal */
+        readonly post: operations["AppealsController_submit"];
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/sanctions/{id}/cancel": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        /** Cancel a sanction */
+        readonly post: operations["SanctionsController_cancel"];
         readonly delete?: never;
         readonly options?: never;
         readonly head?: never;
@@ -3984,6 +4380,40 @@ export interface paths {
         readonly put?: never;
         /** Vote thread */
         readonly post: operations["CommunityController_voteThread"];
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/users/{id}/sanctions/active": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        /** Read active sanctions */
+        readonly get: operations["SanctionsController_active"];
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/users/{id}/sanctions/history": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        /** Read sanctions history */
+        readonly get: operations["SanctionsController_history"];
+        readonly put?: never;
+        readonly post?: never;
         readonly delete?: never;
         readonly options?: never;
         readonly head?: never;
@@ -4709,6 +5139,9 @@ export interface components {
             /** Format: uuid */
             readonly user_id: string;
         };
+        readonly CancelSanctionDto: {
+            readonly cancelReason: string;
+        };
         readonly CandidateCreateDto: {
             /** Format: date-time */
             readonly created_at: string;
@@ -5273,12 +5706,29 @@ export interface components {
             readonly tags?: readonly string[];
             readonly title: string;
         };
+        readonly CreateSanctionDto: {
+            /** Format: date-time */
+            readonly endsAt?: string;
+            /** Format: uri */
+            readonly evidenceUrl?: string;
+            readonly idempotencyKey: string;
+            /** @enum {string} */
+            readonly reasonCode: "spam" | "abuse" | "fraud" | "tos_violation" | "security" | "other";
+            readonly reasonNote?: string;
+            /** Format: uuid */
+            readonly targetId: string;
+            /** @enum {string} */
+            readonly type: "suspension" | "ban";
+        };
         readonly CreateThreadDto: {
             readonly content: string;
             readonly tags?: readonly string[];
             readonly title: string;
             /** @enum {string} */
             readonly type: "discussion" | "question";
+        };
+        readonly DevAvailabilityResponseDto: {
+            readonly available: boolean;
         };
         readonly DeviceCommandDto: {
             /** Format: date-time */
@@ -5308,6 +5758,23 @@ export interface components {
             /** Format: date-time */
             readonly token_expires_at?: string;
         };
+        readonly DeviceCommandVerificationKeyDto: {
+            /** @enum {string} */
+            readonly alg: "EdDSA";
+            /** @enum {string} */
+            readonly crv: "Ed25519";
+            readonly kid: string;
+            /** @enum {string} */
+            readonly kty: "OKP";
+            readonly x: string;
+        };
+        readonly DeviceCommandVerificationKeySetDto: {
+            readonly audience: string;
+            readonly issuer: string;
+            readonly keys: readonly components["schemas"]["DeviceCommandVerificationKeyDto"][];
+            /** @enum {string} */
+            readonly version: "device-agent-runtime.v1";
+        };
         readonly DeviceEnrollCodeDto: {
             readonly code: string;
             readonly docker_command: string;
@@ -5320,13 +5787,22 @@ export interface components {
         readonly DeviceEnrollmentDto: {
             /** Format: uuid */
             readonly agent_id: string;
-            readonly credential: string;
+            readonly ca_bundle_pem?: readonly string[];
+            readonly certificate_chain_pem?: readonly string[];
+            readonly certificate_fingerprint_sha256?: string;
+            readonly certificate_pem?: string;
+            readonly command_verification?: components["schemas"]["DeviceCommandVerificationKeySetDto"];
+            readonly credential?: string;
             /** Format: uuid */
             readonly device_id: string;
             /** Format: date-time */
             readonly expires_at?: string | null;
             /** Format: uuid */
+            readonly gateway_id?: string;
+            /** Format: uuid */
             readonly owner_id: string;
+            /** @enum {string} */
+            readonly version?: "device-agent-runtime.v1";
         };
         readonly DeviceIncidentDto: {
             /** Format: date-time */
@@ -5363,6 +5839,7 @@ export interface components {
             readonly code?: string;
             readonly command?: string;
             readonly copies?: number;
+            readonly csr_pem?: string;
             /** Format: uuid */
             readonly device_id?: string;
             readonly file_name?: string;
@@ -5484,6 +5961,44 @@ export interface components {
             /** Format: uri */
             readonly thumbnailUrl?: string;
             readonly title: string;
+        };
+        readonly FeedAdminCreateDto: {
+            readonly body?: string;
+            /** Format: uuid */
+            readonly community_id?: string | null;
+            readonly title: string;
+        };
+        readonly FeedAdminEnvelopeDto: {
+            readonly item: components["schemas"]["FeedAdminItemDto"];
+        };
+        readonly FeedAdminItemDto: {
+            readonly body: string | null;
+            /** Format: uuid */
+            readonly community_id: string | null;
+            /** Format: uuid */
+            readonly id: string;
+            readonly ingest_model: string | null;
+            readonly ingest_prompt_version: string | null;
+            readonly ingest_provider: string | null;
+            /** @enum {string} */
+            readonly source: "manual" | "scout";
+            readonly source_fingerprint: string | null;
+            /** Format: uri */
+            readonly source_url: string | null;
+            /** @enum {string} */
+            readonly status: "draft" | "published" | "hidden";
+            readonly title: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
+        readonly FeedAdminListDto: {
+            readonly items: readonly components["schemas"]["FeedAdminItemDto"][];
+        };
+        readonly FeedAdminUpdateDto: {
+            readonly body?: string;
+            /** Format: uuid */
+            readonly community_id?: string | null;
+            readonly title?: string;
         };
         readonly FeedAuthorDto: {
             readonly avatar_url: string | null;
@@ -5654,7 +6169,7 @@ export interface components {
         readonly GenerationDto: {
             readonly artifact_url: string | null;
             /** @enum {string} */
-            readonly branch: "openscad" | "kzd" | "hueforge" | "trellis" | "rudalle" | "rudalle_image" | "concepts" | "scan";
+            readonly branch: "openscad" | "kzd" | "hueforge" | "trellis" | "concepts" | "scan" | "rudalle" | "rudalle_image";
             /** Format: date-time */
             readonly created_at: string;
             readonly delayed: boolean | null;
@@ -5682,7 +6197,7 @@ export interface components {
         };
         readonly GenerationHealthBranchDto: {
             /** @enum {string} */
-            readonly branch: "openscad" | "kzd" | "hueforge" | "trellis" | "rudalle" | "rudalle_image" | "concepts" | "scan";
+            readonly branch: "openscad" | "kzd" | "hueforge" | "trellis" | "concepts" | "scan" | "rudalle" | "rudalle_image";
             readonly last_error: string | null;
             /** Format: date-time */
             readonly last_success_at: string | null;
@@ -6492,6 +7007,84 @@ export interface components {
             readonly is_master: boolean;
             readonly master_profile: components["schemas"]["MasterProfileResponseDto"];
         };
+        readonly MaterialAdminArchiveDto: {
+            readonly version: number;
+        };
+        readonly MaterialAdminCreateDto: {
+            /** @enum {string} */
+            readonly kind: "filament" | "resin" | "plywood" | "aluminum";
+            /** Format: uuid */
+            readonly material_type_id: string;
+            readonly name: string;
+            readonly slug: string;
+            readonly specs: {
+                readonly [key: string]: unknown;
+            };
+            /** Format: uuid */
+            readonly vendor_id: string;
+        };
+        readonly MaterialAdminItemDto: {
+            /** Format: uuid */
+            readonly id: string;
+            /** @enum {string} */
+            readonly kind: "filament" | "resin" | "plywood" | "aluminum";
+            /** Format: uuid */
+            readonly material_type_id: string;
+            readonly material_type_name: string;
+            readonly name: string;
+            readonly slug: string;
+            readonly specs: {
+                readonly [key: string]: unknown;
+            };
+            /** @enum {string} */
+            readonly status: "draft" | "published" | "archived";
+            /** Format: date-time */
+            readonly updated_at: string;
+            /** Format: uuid */
+            readonly vendor_id: string;
+            readonly vendor_name: string;
+            readonly version: number;
+        };
+        readonly MaterialAdminListDto: {
+            readonly has_more: boolean;
+            readonly items: readonly components["schemas"]["MaterialAdminItemDto"][];
+            readonly limit: number;
+            readonly offset: number;
+            readonly total: number;
+        };
+        readonly MaterialAdminMutationDto: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly version: number;
+        };
+        readonly MaterialAdminOptionDto: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly name: string;
+        };
+        readonly MaterialAdminOptionsDto: {
+            readonly material_types: readonly components["schemas"]["MaterialAdminOptionDto"][];
+            readonly vendors: readonly components["schemas"]["MaterialAdminOptionDto"][];
+        };
+        readonly MaterialAdminPublishDto: {
+            readonly version: number;
+        };
+        readonly MaterialAdminRestoreDto: {
+            readonly version: number;
+        };
+        readonly MaterialAdminUpdateDto: {
+            /** @enum {string} */
+            readonly kind?: "filament" | "resin" | "plywood" | "aluminum";
+            /** Format: uuid */
+            readonly material_type_id?: string;
+            readonly name?: string;
+            readonly specs?: {
+                readonly [key: string]: unknown;
+            };
+            /** Format: uuid */
+            readonly vendor_id?: string;
+            readonly version: number;
+        };
         readonly MaterialResponseDto: {
             readonly material: components["schemas"]["InventoryRecordDto"];
         };
@@ -6727,11 +7320,10 @@ export interface components {
             readonly created_at: string;
             /** Format: uuid */
             readonly device_id: string;
-            readonly error?: string | null;
             /** Format: uuid */
             readonly id: string;
             /** @enum {string} */
-            readonly status: "queued" | "accepted";
+            readonly status: "queued";
         };
         readonly PrinterCommandStatusResponseDto: {
             /** Format: date-time */
@@ -7100,6 +7692,25 @@ export interface components {
             readonly theirs: {
                 readonly [key: string]: string | number | boolean;
             };
+        };
+        readonly PrinterResearchListItemDto: {
+            readonly brand: string;
+            /** @enum {string|null} */
+            readonly confidence: "high" | "medium" | "low" | null;
+            readonly filled_by: string | null;
+            /** @enum {string|null} */
+            readonly filled_by_kind: "agent" | "human" | null;
+            readonly filled_count: number;
+            readonly flagged: boolean;
+            readonly model: string;
+            readonly slug: string;
+            /** @enum {string} */
+            readonly status: "announced" | "shipping" | "eol" | "rumored";
+            /** Format: date-time */
+            readonly updated_at: string | null;
+        };
+        readonly PrinterResearchListResponseDto: {
+            readonly items: readonly components["schemas"]["PrinterResearchListItemDto"][];
         };
         readonly PrinterResearchMetaDto: {
             /** Format: date-time */
@@ -7666,6 +8277,11 @@ export interface components {
             readonly type?: string;
             readonly unique_features?: readonly string[];
         };
+        readonly ResolveAppealDto: {
+            readonly resolutionNote: string;
+            /** @enum {string} */
+            readonly state: "accepted" | "rejected";
+        };
         readonly ResolvedModelDto: {
             /** Format: uuid */
             readonly id: string;
@@ -7678,6 +8294,9 @@ export interface components {
         readonly RoleDto: {
             /** @enum {string} */
             readonly role: "member" | "moderator" | "owner";
+        };
+        readonly RudalleImageUploadResponseDto: {
+            readonly s3_key: string;
         };
         readonly SaleDto: {
             /** Format: date-time */
@@ -7695,6 +8314,40 @@ export interface components {
         readonly SalesResponseDto: {
             readonly sales: readonly components["schemas"]["SaleDto"][];
         };
+        readonly SanctionAppealResponseDto: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly message: string;
+            readonly resolutionNote?: Record<string, unknown> | null;
+            /** Format: uuid */
+            readonly resolvedBy?: Record<string, unknown> | null;
+            /** Format: uuid */
+            readonly sanctionId: string;
+            readonly state: string;
+            /** Format: uuid */
+            readonly submittedBy: string;
+        };
+        readonly SanctionResponseDto: {
+            /** Format: uuid */
+            readonly cancelledBy?: Record<string, unknown> | null;
+            /** Format: date-time */
+            readonly createdAt: string;
+            /** Format: uuid */
+            readonly createdBy: string;
+            /** Format: date-time */
+            readonly endsAt?: Record<string, unknown> | null;
+            readonly evidenceUrl?: Record<string, unknown> | null;
+            /** Format: uuid */
+            readonly id: string;
+            readonly reasonCode: string;
+            readonly reasonNote?: Record<string, unknown> | null;
+            /** Format: date-time */
+            readonly startsAt: string;
+            readonly state: string;
+            readonly type: string;
+            /** Format: uuid */
+            readonly userId: string;
+        };
         readonly ScanCreatedResponseDto: {
             /** Format: uuid */
             readonly id: string;
@@ -7707,6 +8360,7 @@ export interface components {
         };
         readonly SessionUserDto: {
             readonly avatar_url: string | null;
+            readonly capabilities: readonly ("data.materials.manage" | "data.printers.manage" | "data.news.manage")[];
             readonly display_name: string | null;
             readonly handle_confirmed: boolean;
             /** Format: uuid */
@@ -7725,6 +8379,9 @@ export interface components {
         };
         readonly SlicerProfileListResponseDto: {
             readonly profiles: readonly components["schemas"]["ListedSlicerProfileDto"][];
+        };
+        readonly SubmitAppealDto: {
+            readonly message: string;
         };
         readonly SubmitVendorClaimDto: {
             readonly evidence_note?: string;
@@ -7945,6 +8602,76 @@ export interface operations {
             };
             /** @description Session is absent or invalid */
             readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+        };
+    };
+    readonly AppealsController_resolve: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path: {
+                readonly id: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["ResolveAppealDto"];
+            };
+        };
+        readonly responses: {
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["SanctionAppealResponseDto"];
+                };
+            };
+            readonly 400: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            /**
+             * @description Session is absent or invalid
+             *
+             *     May return account_restricted with endsAt null for indefinite sanctions
+             */
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 403: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 404: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 409: {
                 headers: {
                     readonly [name: string]: unknown;
                 };
@@ -8970,6 +9697,25 @@ export interface operations {
             };
         };
     };
+    readonly AuthController_devAvailable: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["DevAvailabilityResponseDto"];
+                };
+            };
+        };
+    };
     readonly AuthController_emailStart: {
         readonly parameters: {
             readonly query?: never;
@@ -9095,6 +9841,33 @@ export interface operations {
                 };
                 content: {
                     readonly "application/json": components["schemas"]["OkResponseDto"];
+                };
+            };
+        };
+    };
+    readonly AuthController_logoutAll: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["OkResponseDto"];
+                };
+            };
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
                 };
             };
         };
@@ -10345,6 +11118,659 @@ export interface operations {
             };
         };
     };
+    readonly MaterialAdminController_list: {
+        readonly parameters: {
+            readonly query?: {
+                readonly kind?: "filament" | "resin" | "plywood" | "aluminum";
+                readonly limit?: string;
+                readonly offset?: string;
+                readonly q?: string;
+                readonly status?: "draft" | "published" | "archived";
+            };
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["MaterialAdminListDto"];
+                };
+            };
+        };
+    };
+    readonly MaterialAdminController_create: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["MaterialAdminCreateDto"];
+            };
+        };
+        readonly responses: {
+            readonly 201: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["MaterialAdminMutationDto"];
+                };
+            };
+        };
+    };
+    readonly MaterialAdminController_find: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path: {
+                readonly id: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["MaterialAdminItemDto"];
+                };
+            };
+        };
+    };
+    readonly MaterialAdminController_update: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path: {
+                readonly id: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["MaterialAdminUpdateDto"];
+            };
+        };
+        readonly responses: {
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["MaterialAdminMutationDto"];
+                };
+            };
+        };
+    };
+    readonly MaterialAdminController_archive: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path: {
+                readonly id: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["MaterialAdminArchiveDto"];
+            };
+        };
+        readonly responses: {
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["MaterialAdminMutationDto"];
+                };
+            };
+        };
+    };
+    readonly MaterialAdminController_publish: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path: {
+                readonly id: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["MaterialAdminPublishDto"];
+            };
+        };
+        readonly responses: {
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["MaterialAdminMutationDto"];
+                };
+            };
+        };
+    };
+    readonly MaterialAdminController_restore: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path: {
+                readonly id: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["MaterialAdminRestoreDto"];
+            };
+        };
+        readonly responses: {
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["MaterialAdminMutationDto"];
+                };
+            };
+        };
+    };
+    readonly MaterialAdminController_options: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["MaterialAdminOptionsDto"];
+                };
+            };
+        };
+    };
+    readonly FeedAdminController_list: {
+        readonly parameters: {
+            readonly query?: {
+                readonly source?: "all" | "manual" | "scout";
+                readonly status?: "all" | "draft" | "published" | "hidden";
+            };
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["FeedAdminListDto"];
+                };
+            };
+            /** @description Session is absent or invalid */
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 422: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+        };
+    };
+    readonly FeedAdminController_create: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["FeedAdminCreateDto"];
+            };
+        };
+        readonly responses: {
+            readonly 201: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["FeedAdminEnvelopeDto"];
+                };
+            };
+            /** @description Session is absent or invalid */
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 422: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+        };
+    };
+    readonly FeedAdminController_detail: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path: {
+                readonly id: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["FeedAdminEnvelopeDto"];
+                };
+            };
+            /** @description Session is absent or invalid */
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 422: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+        };
+    };
+    readonly FeedAdminController_update: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path: {
+                readonly id: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["FeedAdminUpdateDto"];
+            };
+        };
+        readonly responses: {
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["FeedAdminEnvelopeDto"];
+                };
+            };
+            /** @description Session is absent or invalid */
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 422: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+        };
+    };
+    readonly FeedAdminController_hide: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path: {
+                readonly id: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["FeedAdminEnvelopeDto"];
+                };
+            };
+            /** @description Session is absent or invalid */
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 422: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+        };
+    };
+    readonly FeedAdminController_publish: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path: {
+                readonly id: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["FeedAdminEnvelopeDto"];
+                };
+            };
+            /** @description Session is absent or invalid */
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 422: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+        };
+    };
+    readonly PrinterAdminController_list: {
+        readonly parameters: {
+            readonly query?: {
+                readonly q?: string;
+                readonly scope?: "mine" | "brand" | "gaps" | "low_confidence" | "flagged" | "all";
+            };
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            /** @description Successful printers-domain response */
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["PrinterResearchListResponseDto"];
+                };
+            };
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 403: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 404: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 422: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+        };
+    };
+    readonly PrinterAdminController_upsert: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["ResearchPrinterDto"];
+            };
+        };
+        readonly responses: {
+            /** @description Successful printers-domain response */
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["PrinterResearchUpsertResponseDto"];
+                };
+            };
+            /** @description Created researched printer */
+            readonly 201: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["PrinterResearchUpsertResponseDto"];
+                };
+            };
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 403: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 404: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 422: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+        };
+    };
+    readonly PrinterAdminController_detail: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path: {
+                readonly slug: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            /** @description Successful printers-domain response */
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["PrinterResearchResponseDto"];
+                };
+            };
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 403: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 404: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 422: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+        };
+    };
+    readonly PrinterAdminController_upload: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["ResearchMediaDto"];
+            };
+        };
+        readonly responses: {
+            /** @description Successful printers-domain response */
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["PrinterResearchUploadResponseDto"];
+                };
+            };
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 403: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 404: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 422: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+        };
+    };
     readonly DevicesController_enroll: {
         readonly parameters: {
             readonly query?: never;
@@ -10407,6 +11833,53 @@ export interface operations {
                 };
                 content: {
                     readonly "text/x-shellscript": string;
+                };
+            };
+            readonly 400: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 404: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 422: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+        };
+    };
+    readonly DevicesController_recover: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["DeviceLooseBodyDto"];
+            };
+        };
+        readonly responses: {
+            readonly 201: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["DeviceEnrollmentDto"];
                 };
             };
             readonly 400: {
@@ -11762,6 +13235,66 @@ export interface operations {
                 };
                 content: {
                     readonly "application/json": components["schemas"]["GenerationHealthResponseDto"];
+                };
+            };
+            readonly 400: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            /** @description Session is absent or invalid */
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 404: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 413: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 422: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+        };
+    };
+    readonly GenerationsController_uploadRudalleImage: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["RudalleImageUploadResponseDto"];
                 };
             };
             readonly 400: {
@@ -18108,6 +19641,42 @@ export interface operations {
             };
         };
     };
+    readonly MetricsController_render: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    readonly ModelsController_getModel: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path: {
+                readonly id: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     readonly OrdersController_create: {
         readonly parameters: {
             readonly query?: never;
@@ -22202,6 +23771,61 @@ export interface operations {
             };
         };
     };
+    readonly PrintersController_researchList: {
+        readonly parameters: {
+            readonly query?: {
+                readonly q?: string;
+                readonly scope?: "mine" | "brand" | "gaps" | "low_confidence" | "flagged" | "all";
+            };
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            /** @description Successful printers-domain response */
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["PrinterResearchListResponseDto"];
+                };
+            };
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 403: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 404: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 422: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+        };
+    };
     readonly PrintersController_researchUpsert: {
         readonly parameters: {
             readonly query?: never;
@@ -22473,6 +24097,280 @@ export interface operations {
                 };
             };
             readonly 503: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+        };
+    };
+    readonly SanctionsController_create: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["CreateSanctionDto"];
+            };
+        };
+        readonly responses: {
+            readonly 201: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["SanctionResponseDto"];
+                };
+            };
+            readonly 400: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            /**
+             * @description Session is absent or invalid
+             *
+             *     May return account_restricted with endsAt null for indefinite sanctions
+             */
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 403: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 404: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 409: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+        };
+    };
+    readonly AppealsController_list: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path: {
+                readonly id: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": readonly components["schemas"]["SanctionAppealResponseDto"][];
+                };
+            };
+            readonly 400: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            /**
+             * @description Session is absent or invalid
+             *
+             *     May return account_restricted with endsAt null for indefinite sanctions
+             */
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 403: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 404: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 409: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+        };
+    };
+    readonly AppealsController_submit: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path: {
+                readonly id: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["SubmitAppealDto"];
+            };
+        };
+        readonly responses: {
+            readonly 201: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["SanctionAppealResponseDto"];
+                };
+            };
+            readonly 400: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            /**
+             * @description Session is absent or invalid
+             *
+             *     May return account_restricted with endsAt null for indefinite sanctions
+             */
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 403: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 404: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 409: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+        };
+    };
+    readonly SanctionsController_cancel: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path: {
+                readonly id: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["CancelSanctionDto"];
+            };
+        };
+        readonly responses: {
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["SanctionResponseDto"];
+                };
+            };
+            readonly 400: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            /**
+             * @description Session is absent or invalid
+             *
+             *     May return account_restricted with endsAt null for indefinite sanctions
+             */
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 403: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 404: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 409: {
                 headers: {
                     readonly [name: string]: unknown;
                 };
@@ -23131,6 +25029,139 @@ export interface operations {
             };
             /** @description Session is absent or invalid */
             readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+        };
+    };
+    readonly SanctionsController_active: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path: {
+                readonly id: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            /** @description Returns null when no active sanction exists */
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["SanctionResponseDto"];
+                };
+            };
+            readonly 400: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            /**
+             * @description Session is absent or invalid
+             *
+             *     May return account_restricted with endsAt null for indefinite sanctions
+             */
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 403: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 404: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 409: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+        };
+    };
+    readonly SanctionsController_history: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path: {
+                readonly id: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": readonly components["schemas"]["SanctionResponseDto"][];
+                };
+            };
+            readonly 400: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            /**
+             * @description Session is absent or invalid
+             *
+             *     May return account_restricted with endsAt null for indefinite sanctions
+             */
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 403: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 404: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 409: {
                 headers: {
                     readonly [name: string]: unknown;
                 };

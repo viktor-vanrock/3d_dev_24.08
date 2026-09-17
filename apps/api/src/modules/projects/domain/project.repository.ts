@@ -1,5 +1,6 @@
 import type { ModelId, ModelRevisionId, ProjectId, ProjectRevisionId, UserId } from "../../_kernel/brandedIds.ts";
 import type { ModelCreateInput, ProjectMetadataInput, ProjectPatchInput, ProjectSourceFormat } from "./project.ts";
+import type { ProjectStatus } from "./project-lifecycle.types.ts";
 
 export interface ProjectOwner {
   readonly id: string;
@@ -49,6 +50,9 @@ export interface ProjectView {
   readonly owner: ProjectOwner;
   readonly primary_model_id: ModelId | null;
   readonly published_revision_id: ProjectRevisionId | null;
+  readonly status: ProjectStatus;
+  readonly published_at: Date | null;
+  readonly archived_at: Date | null;
   readonly models_count: number;
   readonly version: number;
   readonly created_at: Date;
@@ -86,6 +90,12 @@ export interface ProjectRepository {
   listOwned(actorId: UserId, limit: number, cursor: readonly unknown[] | null): Promise<readonly ProjectView[]>;
   getPublished(projectId: ProjectId): Promise<PublishedProjectView | null>;
   getDraft(actorId: UserId, projectId: ProjectId): Promise<ProjectView | null>;
+  updateLifecycleStatus(
+    projectId: ProjectId,
+    actorId: UserId,
+    params: { readonly status: ProjectStatus; readonly publishedAt?: Date | null; readonly archivedAt?: Date | null },
+    version: number,
+  ): Promise<{ readonly version: number }>;
   updateProject(actorId: UserId, projectId: ProjectId, version: number, patch: ProjectPatchInput): Promise<MutationResult<ProjectView>>;
   deleteProject(actorId: UserId, projectId: ProjectId, version: number): Promise<void>;
   createModel(
@@ -118,7 +128,8 @@ export interface ProjectRepository {
     actorId: UserId,
     projectId: ProjectId,
     version: number,
+    lifecycle: { readonly status: ProjectStatus; readonly publishedAt: Date },
   ): Promise<MutationResult<{ project_revision_id: ProjectRevisionId; project_id: ProjectId; version: number; published_at: Date }>>;
-  unpublish(actorId: UserId, projectId: ProjectId, version: number): Promise<number>;
+  unpublish(actorId: UserId, projectId: ProjectId, version: number, lifecycle: { readonly status: ProjectStatus }): Promise<number>;
   transitionRevision(revisionId: ModelRevisionId, from: string, to: string, failure?: { code: string; detailSafe?: string }): Promise<boolean>;
 }

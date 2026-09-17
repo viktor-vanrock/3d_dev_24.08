@@ -28,6 +28,10 @@ export type ModelTab = "comments" | "makes" | "stats";
 export type ResearchScope = "mine" | "brand" | "gaps" | "low_confidence" | "flagged" | "all";
 export const RESEARCH_SCOPES: readonly ResearchScope[] = ["mine", "brand", "gaps", "low_confidence", "flagged", "all"];
 
+function isResearchScope(value: string | null): value is ResearchScope {
+  return value === "mine" || value === "brand" || value === "gaps" || value === "low_confidence" || value === "flagged" || value === "all";
+}
+
 // Скоуп ленты /feed (feed.md §1.2 «Всё» / «Мои подписки») — тот же приём валидации, что
 // ResearchScope выше; "all" — дефолт, не пишется в URL (feedPath()).
 export type FeedListScope = "all" | "subscribed";
@@ -66,6 +70,12 @@ export type Route =
   | { screen: "printer"; slug: string }
   | { screen: "materials" }
   | { screen: "material"; id: string }
+  | { screen: "data-materials" }
+  | { screen: "data-material"; id?: string }
+  | { screen: "data-printers"; scope?: ResearchScope }
+  | { screen: "data-printer"; slug?: string; draft?: string }
+  | { screen: "data-news" }
+  | { screen: "data-news-editor"; id?: string }
   | { screen: "printer-compare"; ids: string[] }
   | { screen: "printer-releases" }
   | { screen: "printer-device"; id: string }
@@ -113,6 +123,10 @@ export function clearAuthReturnUrl(): void {
 // Экспортируется для юнит-тестов (router.test.tsx) — чистая функция без побочных эффектов.
 export function parseLocation(pathname: string, search: string): Route {
   const parts = pathname.split("/").filter(Boolean);
+
+  if (parts[0] === "data" && parts[1] === "materials" && parts[2] === "new") return { screen: "data-material", id: undefined };
+  if (parts[0] === "data" && parts[1] === "materials" && parts[2]) return { screen: "data-material", id: decodeURIComponent(parts[2]) };
+  if (parts[0] === "data" && parts[1] === "materials") return { screen: "data-materials" };
 
   if (parts[0] === "login" && !parts[1]) {
     const returnUrl = new URLSearchParams(search).get("returnUrl");
@@ -272,6 +286,21 @@ export function parseLocation(pathname: string, search: string): Route {
     const view = new URLSearchParams(search).get("view");
     return { screen: "printers", view: view === "new" ? "new" : undefined };
   }
+  if (parts[0] === "data" && parts[1] === "printers" && parts[2] === "new") {
+    const draft = new URLSearchParams(search).get("draft");
+    return { screen: "data-printer", draft: draft ?? undefined };
+  }
+  if (parts[0] === "data" && parts[1] === "printers" && parts[2]) {
+    return { screen: "data-printer", slug: decodeURIComponent(parts[2]) };
+  }
+  if (parts[0] === "data" && parts[1] === "printers") {
+    const scopeParam = new URLSearchParams(search).get("scope");
+    const scope = isResearchScope(scopeParam) ? scopeParam : undefined;
+    return { screen: "data-printers", scope };
+  }
+  if (parts[0] === "data" && parts[1] === "news" && parts[2] === "new") return { screen: "data-news-editor", id: undefined };
+  if (parts[0] === "data" && parts[1] === "news" && parts[2]) return { screen: "data-news-editor", id: decodeURIComponent(parts[2]) };
+  if (parts[0] === "data" && parts[1] === "news") return { screen: "data-news" };
   // /research/new — форма создания с предзаполнением из строки поиска (§1.3), ДО общего
   // /research/:slug ниже, тот же приём, что /project/add. /research/:slug — форма карточки
   // (MF-916 п.6: заглушка, реальная форма — отдельная карточка Front), /research — очередь работ
@@ -285,7 +314,7 @@ export function parseLocation(pathname: string, search: string): Route {
   }
   if (parts[0] === "research") {
     const scopeParam = new URLSearchParams(search).get("scope");
-    const scope = (RESEARCH_SCOPES as readonly string[]).includes(scopeParam ?? "") ? (scopeParam as ResearchScope) : undefined;
+    const scope = isResearchScope(scopeParam) ? scopeParam : undefined;
     return { screen: "research", scope };
   }
   // /community/:slug — страница сообщества (community.md §0), /community — список,
@@ -557,7 +586,7 @@ export function makePath(id: string): string {
 
 export function profilePath(
   username: string,
-  tab?: "overview" | "projects" | "posts" | "workshop",
+  tab?: "overview" | "projects" | "posts" | "workshop" | "data",
 ): string {
   const base = `/u/${encodeURIComponent(username)}`;
   return tab && tab !== "overview" ? `${base}?tab=${tab}` : base;
@@ -633,6 +662,18 @@ export function researchFormPath(slug: string): string {
 // `/research/new?draft=<ввод>` — заголовок формы предзаполняется тем, что искали.
 export function researchNewPath(draft?: string): string {
   return draft ? `/research/new?draft=${encodeURIComponent(draft)}` : "/research/new";
+}
+
+export function dataPrintersPath(scope?: ResearchScope): string {
+  return scope ? `/data/printers?scope=${scope}` : "/data/printers";
+}
+
+export function dataPrinterPath(slug: string): string {
+  return `/data/printers/${encodeURIComponent(slug)}`;
+}
+
+export function dataPrinterNewPath(draft?: string): string {
+  return draft ? `/data/printers/new?draft=${encodeURIComponent(draft)}` : "/data/printers/new";
 }
 
 // Мастер «добавить принтер» (MF-903, printer.wizard.md §2): `brand`/`model` — префилл с карточки

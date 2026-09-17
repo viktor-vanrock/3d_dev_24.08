@@ -1,4 +1,4 @@
-import type { SessionUser } from "@shared/types";
+import type { DataCapability, SessionUser } from "@shared/types";
 // eslint-disable-next-line boundaries/element-types -- легатное междоменное ребро (микроэтап 7.6): рантайм-зависимость, не тип/utility; развязка отложена до pages/DI-этапа. См. apps/web/MIGRATION.md.
 import { FeedPostCard, FeedPostCardSkeleton, type FeedPost } from "@domains/social";
 import { AvatarBubble, deterministicAvatarConfig } from "@shared/avatar";
@@ -8,7 +8,7 @@ import { ModelTile } from "./market.tsx";
 import type { MarketModel, UserProfile } from "./models.ts";
 import "./profile.layout.css";
 
-export type ProfileTab = "overview" | "projects" | "posts" | "workshop";
+export type ProfileTab = "overview" | "projects" | "posts" | "workshop" | "data";
 
 const BADGE_LABELS: Record<string, string> = {
   verified: "Проверенный",
@@ -110,10 +110,12 @@ export function ProfileHero({
 export function ProfileTabs({
   value,
   own,
+  capabilities,
   onChange,
 }: {
   value: ProfileTab;
   own: boolean;
+  capabilities: readonly DataCapability[];
   onChange: (value: ProfileTab) => void;
 }) {
   const options: { value: ProfileTab; label: string }[] = [
@@ -122,6 +124,7 @@ export function ProfileTabs({
     { value: "posts", label: "Посты" },
   ];
   if (own) options.push({ value: "workshop", label: "Мастерская" });
+  if (own && capabilities.length > 0) options.push({ value: "data", label: "Данные" });
   return <SegmentToggle className="profileTabs" ariaLabel="Разделы профиля" options={options} value={value} onChange={onChange} />;
 }
 

@@ -23,6 +23,17 @@ describe("ResearcherRoleGate (MF-917)", () => {
     expect(screen.getByText("форма карточки")).toBeTruthy();
   });
 
+  it("permission управления принтерами → рендерит детей без роли researcher", () => {
+    render(
+      <ThemeProvider>
+        <ResearcherRoleGate user={{ ...baseUser, capabilities: ["data.printers.manage"] }}>
+          <div>форма карточки</div>
+        </ResearcherRoleGate>
+      </ThemeProvider>,
+    );
+    expect(screen.getByText("форма карточки")).toBeTruthy();
+  });
+
   it("роли нет → вербующий EmptyState, не «доступ запрещён»/404, дети не рендерятся", () => {
     render(
       <ThemeProvider>

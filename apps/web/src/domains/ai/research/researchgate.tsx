@@ -19,7 +19,7 @@ function SearchFolderIcon() {
 }
 
 export function ResearcherRoleGate({ user, children }: { user: SessionUser; children: ReactNode }) {
-  if (user.role !== "researcher") {
+  if (user.role !== "researcher" && user.capabilities?.includes("data.printers.manage") !== true) {
     return (
       <div className="rsGateWrap">
         <EmptyState

@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import type { SessionUser } from "@shared/types";
-import { HomeHeader, type Section, useSectionSwipeNav } from "@platform/nav";
+import { DataShell, HomeHeader, type Section, useSectionSwipeNav } from "@platform/nav";
 // eslint-disable-next-line boundaries/element-types, boundaries/entry-point -- легатное ребро (Этап 4.5): CSS side-effect, не index.ts; home.css остаётся общим "рабочим хромом" для доменных экранов, развязка отложена до pages/DI (Этап 10). См. MIGRATION.md.
 import "@pages/home/home.css";
-import { headerModeFor, issueNewPath, navigate, researchPath, type ResearchScope } from "../../../router.ts";
+import { dataPrinterNewPath, dataPrintersPath, headerModeFor, issueNewPath, navigate, researchPath, type ResearchScope } from "../../../router.ts";
 import { useInteractionSound } from "@platform/sound";
 import { AuroraBackground, Button, EmptyState, Eyebrow, SegmentToggle } from "@shared/ui";
-import { listResearchQueue, type ResearchQueueItem } from "./api.ts";
+import { listResearchQueue, type ResearchApiMode, type ResearchQueueItem } from "./api.ts";
 import { ResearchQueueRow, ResearchRowSkeleton } from "./researchrow.tsx";
 import { ResearchSearchCreate } from "./researchsearch.tsx";
 import "./research.css";
@@ -26,6 +26,13 @@ const SEGMENTS: { value: ResearchScope; label: string }[] = [
   { value: "all", label: "Все" },
 ];
 
+const DATA_SEGMENTS: { value: ResearchScope; label: string }[] = [
+  { value: "all", label: "Все" },
+  { value: "gaps", label: "С пробелами" },
+  { value: "low_confidence", label: "Низкая уверенность" },
+  { value: "flagged", label: "Помеченные" },
+];
+
 const VISITED_KEY = "research.queue.visited";
 
 type QueueState = { status: "loading" } | { status: "ready"; items: ResearchQueueItem[] } | { status: "error" };
@@ -35,23 +42,26 @@ export function ResearchScreen({
   section,
   onSectionChange,
   scope: routeScope,
+  mode = "research",
 }: {
   user: SessionUser;
   section: Section;
   onSectionChange: (section: Section) => void;
   scope?: ResearchScope;
+  mode?: ResearchApiMode;
 }) {
   const swipe = useSectionSwipeNav(section, onSectionChange);
   const sound = useInteractionSound();
   // Роль — прямо из сессии (`GET /auth/session`, MF-917), синхронно с первого рендера: не нужен
   // отдельный `GET /me/role` и его состояние загрузки, `AuthGate` уже отдаёт нам полный `user`.
-  const isResearcher = user.role === "researcher";
+  const isResearcher = user.role === "researcher" || user.capabilities?.includes("data.printers.manage") === true;
 
   // Дефолт сегмента при первом входе (§1.2): «Мой бренд» — бэкенд ещё не привязывает бренд к
   // ресёрчеру (нет колонки/эндпоинта, MF-839 п.3 воркстрим), поэтому дефолт всегда «С пробелами»
   // до появления этой привязки; переключение сегмента вручную работает уже сейчас.
-  const defaultScope: ResearchScope = "gaps";
+  const defaultScope: ResearchScope = mode === "data" ? "all" : "gaps";
   const scope = routeScope ?? defaultScope;
+  const segments = mode === "data" ? DATA_SEGMENTS : SEGMENTS;
 
   const [queue, setQueue] = useState<QueueState>({ status: "loading" });
   const [firstVisit, setFirstVisit] = useState(false);
@@ -70,12 +80,51 @@ export function ResearchScreen({
     if (!isResearcher) return;
     const controller = new AbortController();
     setQueue({ status: "loading" });
-    listResearchQueue(scope, controller.signal).then((items) => {
+    listResearchQueue(scope, controller.signal, mode).then((items) => {
       if (controller.signal.aborted) return;
       setQueue(items ? { status: "ready", items } : { status: "error" });
     });
     return () => controller.abort();
-  }, [scope, isResearcher]);
+  }, [scope, isResearcher, mode]);
+
+  const content = (
+    <main
+      className={mode === "data" ? "researchBody" : "homeContent researchBody"}
+      style={swipe.dragX !== 0 ? { transform: `translateX(${swipe.dragX}px)` } : undefined}
+      onPointerDown={swipe.onPointerDown}
+      onPointerMove={swipe.onPointerMove}
+      onPointerUp={swipe.onPointerUp}
+      onPointerCancel={swipe.onPointerCancel}
+    >
+      {!isResearcher ? (
+        <EmptyState
+          icon={<ResearcherIcon />}
+          title="Это рабочее место команды Ресёрчеров"
+          sub="Здесь заполняют базу принтеров — характеристики, фото, источники."
+          action={<Button variant="primary" onPointerDown={sound.tick} onClick={() => navigate(issueNewPath({ title: "Хочу заполнять каталог принтеров", category: "researcher-access" }))}>Хочу заполнять каталог</Button>}
+        />
+      ) : (
+        <>
+          <div className="researchHeaderRow">
+            <Eyebrow>{mode === "data" ? "Принтеры" : "Ресёрчеры"}</Eyebrow>
+            <div className="researchHeaderActions">
+              <ResearchSearchCreate mode={mode} />
+              {mode === "data" ? <Button variant="primary" onPointerDown={sound.tick} onClick={() => navigate(dataPrinterNewPath())}>Добавить принтер</Button> : null}
+            </div>
+          </div>
+          <div className="researchSegmentsScroll">
+            <SegmentToggle ariaLabel="Сегмент очереди" options={segments} value={scope} onChange={(next) => navigate(mode === "data" ? dataPrintersPath(next) : researchPath(next))} onPress={sound.toggle} />
+          </div>
+          {queue.status === "loading" ? <div className="researchRowList">{Array.from({ length: 5 }, (_, i) => <ResearchRowSkeleton key={i} />)}</div>
+            : queue.status === "error" ? <div className="researchLoadError">Очередь не отвечает. <button type="button" className="researchRetry" onClick={() => setQueue({ status: "loading" })}>Обновить</button></div>
+            : queue.items.length === 0 ? <EmptyState icon={<CheckIcon />} title="Пробелов по вашему бренду нет" action={<Button variant="secondary" onPointerDown={sound.tick} onClick={() => navigate("/printers/releases")}>Проверить анонсы</Button>} />
+            : <>{firstVisit ? <div className="researchHint">Начните с пробелов вашего бренда →</div> : null}<div className="researchRowList">{queue.items.map((item) => <ResearchQueueRow key={item.slug} item={item} mode={mode} onPress={sound.tick} />)}</div></>}
+        </>
+      )}
+    </main>
+  );
+
+  if (mode === "data") return <DataShell user={user} section={section} onSectionChange={onSectionChange} active="printers">{content}</DataShell>;
 
   return (
     <div className="home">
@@ -83,82 +132,7 @@ export function ResearchScreen({
       <div style={{ position: "relative", zIndex: 30 }}>
         <HomeHeader user={user} printers={[]} section={section} onSectionChange={onSectionChange} mode={headerModeFor("research")} />
       </div>
-      <main
-        className="homeContent researchBody"
-        style={swipe.dragX !== 0 ? { transform: `translateX(${swipe.dragX}px)` } : undefined}
-        onPointerDown={swipe.onPointerDown}
-        onPointerMove={swipe.onPointerMove}
-        onPointerUp={swipe.onPointerUp}
-        onPointerCancel={swipe.onPointerCancel}
-      >
-        {!isResearcher ? (
-          <EmptyState
-            icon={<ResearcherIcon />}
-            title="Это рабочее место команды Ресёрчеров"
-            sub="Здесь заполняют базу принтеров — характеристики, фото, источники."
-            action={
-              <Button
-                variant="primary"
-                onPointerDown={sound.tick}
-                onClick={() => navigate(issueNewPath({ title: "Хочу заполнять каталог принтеров", category: "researcher-access" }))}
-              >
-                Хочу заполнять каталог
-              </Button>
-            }
-          />
-        ) : (
-          <>
-            <div className="researchHeaderRow">
-              <Eyebrow>Ресёрчеры</Eyebrow>
-              <ResearchSearchCreate />
-            </div>
-
-            <div className="researchSegmentsScroll">
-              <SegmentToggle
-                ariaLabel="Сегмент очереди"
-                options={SEGMENTS}
-                value={scope}
-                onChange={(next) => navigate(researchPath(next))}
-                onPress={sound.toggle}
-              />
-            </div>
-
-            {queue.status === "loading" ? (
-              <div className="researchRowList">
-                {Array.from({ length: 5 }, (_, i) => (
-                  <ResearchRowSkeleton key={i} />
-                ))}
-              </div>
-            ) : queue.status === "error" ? (
-              <div className="researchLoadError">
-                Очередь не отвечает.{" "}
-                <button type="button" className="researchRetry" onClick={() => setQueue({ status: "loading" })}>
-                  Обновить
-                </button>
-              </div>
-            ) : queue.items.length === 0 ? (
-              <EmptyState
-                icon={<CheckIcon />}
-                title="Пробелов по вашему бренду нет"
-                action={
-                  <Button variant="secondary" onPointerDown={sound.tick} onClick={() => navigate("/printers/releases")}>
-                    Проверить анонсы
-                  </Button>
-                }
-              />
-            ) : (
-              <>
-                {firstVisit ? <div className="researchHint">Начните с пробелов вашего бренда →</div> : null}
-                <div className="researchRowList">
-                  {queue.items.map((item) => (
-                    <ResearchQueueRow key={item.slug} item={item} onPress={sound.tick} />
-                  ))}
-                </div>
-              </>
-            )}
-          </>
-        )}
-      </main>
+      {content}
     </div>
   );
 }

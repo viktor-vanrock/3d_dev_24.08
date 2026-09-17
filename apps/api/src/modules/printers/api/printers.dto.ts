@@ -1,4 +1,4 @@
-import { Allow, IsBoolean, IsOptional, IsString } from "class-validator";
+import { Allow, IsBoolean, IsIn, IsOptional, IsString, MaxLength } from "class-validator";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import type { PrinterJsonObject, PrinterJsonValue } from "../public/index.ts";
 
@@ -309,6 +309,33 @@ export class PrinterResearchConflictDto {
 }
 export class PrinterResearchResponseDto {
   @ApiProperty({ type: () => PrinterResponseDto }) declare printer: PrinterResponseDto;
+}
+export class PrinterResearchQueryDto {
+  @ApiProperty({ enum: ["mine", "brand", "gaps", "low_confidence", "flagged", "all"], required: false })
+  @IsOptional()
+  @IsIn(["mine", "brand", "gaps", "low_confidence", "flagged", "all"])
+  declare scope?: "mine" | "brand" | "gaps" | "low_confidence" | "flagged" | "all";
+
+  @ApiProperty({ type: String, required: false, maxLength: 120 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  declare q?: string;
+}
+export class PrinterResearchListItemDto {
+  @ApiProperty({ type: String }) declare slug: string;
+  @ApiProperty({ type: String }) declare brand: string;
+  @ApiProperty({ type: String }) declare model: string;
+  @ApiProperty({ enum: ["announced", "shipping", "eol", "rumored"] }) declare status: string;
+  @ApiProperty({ type: Number, minimum: 0, maximum: 7 }) declare filled_count: number;
+  @ApiProperty({ enum: ["high", "medium", "low"], nullable: true }) declare confidence: string | null;
+  @ApiProperty({ type: String, nullable: true }) declare filled_by: string | null;
+  @ApiProperty({ enum: ["agent", "human"], nullable: true }) declare filled_by_kind: string | null;
+  @ApiProperty({ type: String, format: "date-time", nullable: true }) declare updated_at: string | null;
+  @ApiProperty({ type: Boolean }) declare flagged: boolean;
+}
+export class PrinterResearchListResponseDto {
+  @ApiProperty({ type: [PrinterResearchListItemDto] }) declare items: PrinterResearchListItemDto[];
 }
 export class PrinterResearchUpsertResponseDto extends PrinterResearchResponseDto {
   @ApiProperty({ type: [PrinterResearchConflictDto] }) declare conflicts: PrinterResearchConflictDto[];

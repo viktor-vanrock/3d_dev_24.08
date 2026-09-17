@@ -80,6 +80,9 @@ describe("MaterialsScreen (MF-1476)", () => {
       if (url === "/me/activation") {
         return new Response(JSON.stringify({ activation: null, printers: [], filaments: [] }), { status: 200 });
       }
+      if (url === "/vendors") {
+        return new Response(JSON.stringify({ vendors: [{ id: "v1", slug: "prusa", name: "Prusa", verified: false }] }), { status: 200 });
+      }
       return new Response(JSON.stringify({ materials: [material], total: 1, limit: 24, offset: 0, has_more: false }), { status: 200 });
     });
     vi.stubGlobal("fetch", fetchSpy);
@@ -91,13 +94,13 @@ describe("MaterialsScreen (MF-1476)", () => {
     expect(screen.getByRole("button", { name: "Смола" }).classList.contains("uiChip")).toBe(true);
 
     await actor.type(screen.getByLabelText("Поиск материалов"), "PETG");
-    await actor.type(screen.getByLabelText("БРЕНД"), "Prusa");
+    await actor.type(screen.getByLabelText("БРЕНД"), "prusa");
     await actor.type(screen.getByLabelText("ТИП"), "PLA");
     await actor.type(screen.getByLabelText("ЦВЕТ"), "чёрный");
 
-    await waitFor(() => expect(requests).toContain("/materials?q=PETG&vendor=Prusa&type=PLA&color=black&limit=24"));
+    await waitFor(() => expect(requests).toContain("/materials?q=PETG&vendor=prusa&type=PLA&color=black&limit=24"));
     expect(screen.getByRole("button", { name: "Поиск: PETG ×" }).classList.contains("uiButton")).toBe(true);
-    expect(screen.getByRole("button", { name: "Бренд: Prusa ×" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Бренд: prusa ×" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Тип: PLA ×" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Цвет: чёрный ×" })).toBeTruthy();
   });

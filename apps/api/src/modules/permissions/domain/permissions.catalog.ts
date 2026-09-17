@@ -31,6 +31,8 @@ export enum Permissions {
   CATALOG_REVIEW_VENDOR_CLAIMS = "catalog.review_vendor_claims",
   CATALOG_REVIEW_PRINTER_REPORTS = "catalog.review_printer_reports",
 
+  FEED_MANAGE_NEWS = "feed.manage_news",
+
   RESEARCH_ACCESS = "research.access",
   RESEARCH_MANAGE = "research.manage",
   RESEARCH_MANAGE_PRINTERS = "research.manage_printers",
@@ -42,3 +44,23 @@ export enum Permissions {
 }
 
 export const ALL_PERMISSIONS = Object.freeze(Object.values(Permissions));
+
+export const DATA_CAPABILITIES = [
+  "data.materials.manage",
+  "data.printers.manage",
+  "data.news.manage",
+] as const;
+
+export type DataCapability = (typeof DATA_CAPABILITIES)[number];
+
+export const DATA_CAPABILITY_PERMISSIONS: Readonly<Record<DataCapability, Permissions>> = {
+  "data.materials.manage": Permissions.CATALOG_EDIT_ANY,
+  "data.printers.manage": Permissions.RESEARCH_MANAGE_PRINTERS,
+  "data.news.manage": Permissions.FEED_MANAGE_NEWS,
+};
+
+export const BOOTSTRAP_DATA_PERMISSIONS = Object.freeze([
+  Permissions.CATALOG_EDIT_ANY,
+  Permissions.RESEARCH_MANAGE_PRINTERS,
+  Permissions.FEED_MANAGE_NEWS,
+]);

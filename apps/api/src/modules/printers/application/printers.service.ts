@@ -42,6 +42,8 @@ import {
   type PrinterReportEnvelopeResponse,
   type PrinterReportsResponse,
   type PrinterResearchUploadResponse,
+  type PrinterResearchListResponse,
+  type PrinterResearchScope,
   type PrinterResearchConflictResponse,
   type PrinterResearchUpsertResponse,
   type PrinterPrusaPort,
@@ -76,6 +78,19 @@ function printerJsonValue(value: unknown): PrinterJsonValue {
   return null;
 }
 
+export function printerConflictValue(field: string, value: unknown): PrinterJsonValue {
+  if (value instanceof Date) {
+    if (field === "released_at") {
+      const year = value.getFullYear();
+      const month = String(value.getMonth() + 1).padStart(2, "0");
+      const day = String(value.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+    return value.toISOString();
+  }
+  return printerJsonValue(value);
+}
+
 function firmwareJson(row: {
   readonly id: string;
   readonly printer_id: string | null;
@@ -99,7 +114,7 @@ function invalid(): never {
 }
 
 function isAllowedReportField(field: string): boolean {
-  if ((ALLOWED_TOP_FIELDS as readonly string[]).includes(field)) return true;
+  if (ALLOWED_TOP_FIELDS.some((candidate) => candidate === field)) return true;
   const dot = field.indexOf(".");
   return dot > 0 && ALLOWED_LEAF_SECTIONS.has(field.slice(0, dot)) && field.slice(dot + 1).length > 0;
 }
@@ -135,8 +150,24 @@ function readFacts(body: unknown): DeviceFacts {
 }
 
 function currentValue(existing: PrinterRow, field: WritableField): unknown {
-  if ((WRITABLE_COLUMN_FIELDS as readonly string[]).includes(field)) return (existing as unknown as Record<string, unknown>)[field];
+  if (field === "brand") return existing.brand;
+  if (field === "model") return existing.model;
+  if (field === "aliases") return existing.aliases;
+  if (field === "released_at") return existing.released_at;
+  if (field === "status") return existing.status;
+  if (field === "kinematics") return existing.kinematics;
+  if (field === "type") return existing.type;
+  if (field === "enclosed") return existing.enclosed;
+  if (field === "media") return existing.media;
   return existing.specs[field] ?? null;
+}
+
+function optionalString(value: unknown): string | undefined {
+  return typeof value === "string" ? value : undefined;
+}
+
+function provenanceTimestamp(value: unknown): string | undefined {
+  return isPlainObject(value) && typeof value.ts === "string" ? value.ts : undefined;
 }
 
 function effectiveShape(existing: PrinterRow | null, applied: Partial<Record<WritableField, unknown>>): Record<string, unknown> {
@@ -279,10 +310,12 @@ export class PrintersService implements PrintersPort {
       throw new BadGatewayException();
     }
     const connection = await this.repository.upsertPrusaConnection(userId, this.prusa.encryptKey(rawApiKey.trim()));
+    const connectionRow = connection.rows[0];
+    if (connectionRow === undefined) throw new ServiceUnavailableException();
     const matches = await Promise.all(remote.printers.map((printer) => this.catalogMatch.matchPrusaModel(printer.modelName)));
     const matched = await this.repository.transaction(async (tx) => {
       await this.activation.lockUser(userId, tx);
-      const count = await this.repository.applyPrusaPrinters(userId, connection.rows[0]!.id, remote.printers, matches, tx);
+      const count = await this.repository.applyPrusaPrinters(userId, connectionRow.id, remote.printers, matches, tx);
       if (remote.printers.length > 0) await this.activation.setHasPrinter(userId, true, tx);
       return count;
     });
@@ -323,17 +356,40 @@ export class PrintersService implements PrintersPort {
     return { ok: ((await this.repository.disconnectPrusa(userId)).rowCount ?? 0) > 0 };
   }
 
-  async researchUpsert(userId: UserId, anonId: string, body: Readonly<Record<string, unknown>>): Promise<{ status: 200 | 201; body: PrinterResearchUpsertResponse }> {
+  async researchList(userId: UserId, query: { readonly scope?: PrinterResearchScope; readonly q?: string }): Promise<PrinterResearchListResponse> {
+    await this.assertResearcher(userId);
+    const actorUsername = query.scope === "mine" ? await this.researchAuth.username(userId) : undefined;
+    if (query.scope === "mine" && actorUsername === null) return { items: [] };
+    const rows = (await this.repository.researchPrinters({ ...(actorUsername === null || actorUsername === undefined ? {} : { actorUsername }), scope: query.scope, query: query.q })).rows;
+    return {
+      items: rows.map((row) => ({
+        slug: row.slug,
+        brand: row.brand,
+        model: row.model,
+        status: row.status,
+        filled_count: Number(row.filled_count),
+        confidence: row.confidence,
+        filled_by: row.filled_by,
+        filled_by_kind: row.filled_by?.startsWith("agent:") ? "agent" : row.filled_by === null ? null : "human",
+        updated_at: row.updated_at instanceof Date ? row.updated_at.toISOString() : row.updated_at,
+        flagged: row.flagged,
+      })),
+    };
+  }
+
+  async researchUpsert(userId: UserId, anonId: string, body: Readonly<Record<string, unknown>>, context: { readonly audit: boolean } = { audit: false }): Promise<{ status: 200 | 201; body: PrinterResearchUpsertResponse }> {
     await this.assertResearcher(userId);
     const { errors } = validatePrinterPayload(body);
     if (errors.length > 0) invalid();
-    const brand = (body.brand as string).trim();
-    const model = (body.model as string).trim();
-    const slugInput = (body.slug as string | undefined) ?? (body.id as string | undefined);
+    if (typeof body.brand !== "string" || typeof body.model !== "string" || !isPlainObject(body._meta)) invalid();
+    const brand = body.brand.trim();
+    const model = body.model.trim();
+    const slugInput = optionalString(body.slug) ?? optionalString(body.id);
     const slug = slugInput?.trim() || deriveSlug(brand, model);
-    const meta = body._meta as Record<string, unknown>;
-    const filledBy = (meta.filled_by as string).trim();
-    const confidence = meta.confidence as string;
+    const meta = body._meta;
+    if (typeof meta.filled_by !== "string" || typeof meta.confidence !== "string") invalid();
+    const filledBy = meta.filled_by.trim();
+    const confidence = meta.confidence;
     const now = new Date();
     const sourcesIncoming = Array.isArray(body.sources) ? body.sources.filter((source): source is string => typeof source === "string" && source.trim().length > 0) : [];
     const fieldSources = isPlainObject(body.field_sources) ? body.field_sources : {};
@@ -353,13 +409,13 @@ export class PrintersService implements PrintersPort {
           const merged = { ...currentSection };
           for (const [leaf, value] of Object.entries(incoming)) {
             const path = `${field}.${leaf}`;
-            const provenance = existing?.field_provenance[path] as { ts?: string } | undefined;
+            const provenanceTs = provenanceTimestamp(existing?.field_provenance[path]);
             if (
               existing !== null &&
               baseUpdatedAt !== null &&
               !resolveConflicts.has(path) &&
-              provenance?.ts !== undefined &&
-              new Date(provenance.ts) > baseUpdatedAt &&
+              provenanceTs !== undefined &&
+              new Date(provenanceTs) > baseUpdatedAt &&
               JSON.stringify(currentSection[leaf] ?? null) !== JSON.stringify(value ?? null)
             ) {
               conflicts.push({ field: path, ours: printerJsonValue(currentSection[leaf] ?? null), theirs: printerJsonValue(value) });
@@ -371,16 +427,16 @@ export class PrintersService implements PrintersPort {
           applied[field] = merged;
           continue;
         }
-        const provenance = existing?.field_provenance[field] as { ts?: string } | undefined;
+        const provenanceTs = provenanceTimestamp(existing?.field_provenance[field]);
         if (
           existing !== null &&
           baseUpdatedAt !== null &&
           !resolveConflicts.has(field) &&
-          provenance?.ts !== undefined &&
-          new Date(provenance.ts) > baseUpdatedAt &&
+          provenanceTs !== undefined &&
+          new Date(provenanceTs) > baseUpdatedAt &&
           JSON.stringify(currentValue(existing, field)) !== JSON.stringify(incoming)
         ) {
-          conflicts.push({ field, ours: printerJsonValue(currentValue(existing, field)), theirs: printerJsonValue(incoming) });
+          conflicts.push({ field, ours: printerConflictValue(field, currentValue(existing, field)), theirs: printerConflictValue(field, incoming) });
           continue;
         }
         applied[field] = incoming;
@@ -389,13 +445,13 @@ export class PrintersService implements PrintersPort {
       const facets: PrinterFacets = extractFacets(effective);
       const specs = extractSpecs(effective);
       const mergedSources = [...new Set([...(existing?.sources ?? []), ...sourcesIncoming])];
-      const provenance = { ...(existing?.field_provenance ?? {}) } as Record<string, unknown>;
+      const provenance: Record<string, unknown> = { ...(existing?.field_provenance ?? {}) };
       for (const field of Object.keys(applied))
         if (!LEAF_SECTIONS.has(field))
           provenance[field] = { source_url: resolveSourceUrl(field, sourcesIncoming, fieldSources), filled_by: filledBy, ts: now.toISOString(), confidence };
       for (const path of leafPaths)
         provenance[path] = { source_url: resolveSourceUrl(path, sourcesIncoming, fieldSources), filled_by: filledBy, ts: now.toISOString(), confidence };
-      const gaps = Array.isArray(meta.gaps) ? (meta.gaps as string[]) : (existing?.gaps ?? []);
+      const gaps = Array.isArray(meta.gaps) ? meta.gaps.filter((gap): gap is string => typeof gap === "string") : (existing?.gaps ?? []);
       const reviewedBy = typeof meta.reviewed_by === "string" && meta.reviewed_by.trim() ? meta.reviewed_by.trim() : (existing?.reviewed_by ?? null);
       const aliases = Array.isArray(effective.aliases) ? effective.aliases.filter((item): item is string => typeof item === "string") : (existing?.aliases ?? []);
       const values = [
@@ -403,10 +459,10 @@ export class PrintersService implements PrintersPort {
         brand,
         model,
         aliases,
-        (effective.released_at as string | undefined) ?? existing?.released_at ?? null,
-        (effective.status as string | undefined) ?? existing?.status ?? "announced",
-        (effective.kinematics as string | undefined) ?? existing?.kinematics ?? null,
-        (effective.type as string | undefined) ?? existing?.type ?? null,
+        optionalString(effective.released_at) ?? existing?.released_at ?? null,
+        optionalString(effective.status) ?? existing?.status ?? "announced",
+        optionalString(effective.kinematics) ?? existing?.kinematics ?? null,
+        optionalString(effective.type) ?? existing?.type ?? null,
         effective.enclosed !== undefined ? effective.enclosed : (existing?.enclosed ?? null),
         facets.build_volume_x,
         facets.build_volume_y,
@@ -449,7 +505,15 @@ export class PrintersService implements PrintersPort {
           reviewed_by=excluded.reviewed_by,gaps=excluded.gaps,verified=excluded.verified,updated_at=now() returning *`,
         values,
       );
-      return { row: upserted.rows[0]!, conflicts, isNew: existing === null };
+      const row = upserted.rows[0];
+      if (row === undefined) throw new Error("printer upsert returned no row");
+      if (context.audit) {
+        await tx.query(
+          `insert into audit_log(actor_user_id,action,target_type,target_id,details) values($1,$2,'printer',$3,$4)`,
+          [userId, existing === null ? "printer.created" : "printer.updated", row.id, JSON.stringify({ slug: row.slug, conflicts: conflicts.length })],
+        );
+      }
+      return { row, conflicts, isNew: existing === null };
     });
     void this.analytics
       .printerUpserted({
@@ -482,7 +546,8 @@ export class PrintersService implements PrintersPort {
     const extension = typeof contentType === "string" ? PHOTO_CONTENT_TYPES[contentType] : undefined;
     if (extension === undefined) invalid();
     const key = `printers/${slug}/media/${Date.now()}-${randomUUID()}.${extension}`;
-    const uploadUrl = await this.storage.uploadUrl(key, contentType as string);
+    if (typeof contentType !== "string") invalid();
+    const uploadUrl = await this.storage.uploadUrl(key, contentType);
     if (uploadUrl === null) throw new ServiceUnavailableException();
     return { upload_url: uploadUrl, key };
   }
@@ -502,8 +567,11 @@ export class PrintersService implements PrintersPort {
     if (!note && proposed === null) invalid();
     const printer = (await this.repository.findPrinter(idOrSlug)).rows[0];
     if (printer === undefined) throw new NotFoundException();
-    if (Number((await this.repository.reportCount(userId)).rows[0]!.count) >= REPORTS_PER_DAY_LIMIT) throw new HttpException("", HttpStatus.TOO_MANY_REQUESTS);
-    const row = (await this.repository.upsertReport(printer.id, body.field, note, proposed, userId)).rows[0]!;
+    const countRow = (await this.repository.reportCount(userId)).rows[0];
+    if (countRow === undefined) throw new ServiceUnavailableException();
+    if (Number(countRow.count) >= REPORTS_PER_DAY_LIMIT) throw new HttpException("", HttpStatus.TOO_MANY_REQUESTS);
+    const row = (await this.repository.upsertReport(printer.id, body.field, note, proposed, userId)).rows[0];
+    if (row === undefined) throw new ServiceUnavailableException();
     return { report: reportJson(row) };
   }
 
@@ -538,7 +606,7 @@ export class PrintersService implements PrintersPort {
       };
       const dot = report.field.indexOf(".");
       if (dot === -1) {
-        if (!(ALLOWED_TOP_FIELDS as readonly string[]).includes(report.field)) throw new ConflictException();
+        if (!ALLOWED_TOP_FIELDS.some((candidate) => candidate === report.field)) throw new ConflictException();
         await tx.query(`update printers set ${report.field}=$2,field_provenance=$3,updated_at=now() where id=$1`, [printer.id, report.proposed_value, JSON.stringify(provenance)]);
       } else {
         const section = report.field.slice(0, dot);
@@ -577,7 +645,8 @@ export class PrintersService implements PrintersPort {
         );
       }
       await this.repository.resolveReport(report.id, userId, "approved", tx);
-      const updated = (await this.repository.findPrinter(printer.id, tx)).rows[0]!;
+      const updated = (await this.repository.findPrinter(printer.id, tx)).rows[0];
+      if (updated === undefined) throw new ServiceUnavailableException();
       return { report: reportJson({ ...report, status: "approved" }), applied: true, printer: serializePrinter(updated) };
     });
   }
