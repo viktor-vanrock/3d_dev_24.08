@@ -110,7 +110,7 @@ export class UploadService {
     const object = await getModelObjectStream(tempKey);
     if (object === null) throw new Error("temporary upload object was not found");
     const chunks: Buffer<ArrayBufferLike>[] = [];
-    for await (const chunk of object.body) chunks.push(Buffer.from(chunk));
+    for await (const chunk of object.body) chunks.push(Buffer.from(chunk) as Buffer<ArrayBufferLike>);
     return detectAndValidateFormat(originalName, Buffer.concat(chunks));
   }
 
