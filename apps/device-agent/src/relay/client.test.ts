@@ -244,13 +244,13 @@ describe("RelayClient canonical device-protocol/v1", () => {
           next_seq: 1,
           next_offset_bytes: 3,
         }),
-        onFileChunk: async (frame) => ({
+        onFileChunkBinary: async (header, data) => ({
           type: "file_chunk_ack",
-          device_id: frame.device_id,
-          transfer_id: frame.transfer_id,
-          seq: frame.seq,
-          next_seq: frame.seq + 1,
-          next_offset_bytes: frame.offset_bytes + 2,
+          device_id: header.device_id,
+          transfer_id: header.transfer_id,
+          seq: header.seq,
+          next_seq: header.seq + 1,
+          next_offset_bytes: header.offset_bytes + data.byteLength,
         }),
       }),
     );
@@ -272,15 +272,16 @@ describe("RelayClient canonical device-protocol/v1", () => {
     );
     relay.sockets[0]!.send(
       JSON.stringify({
-        type: "file_chunk",
+        type: "file_chunk_header",
         device_id: "device-1",
         transfer_id: "transfer-1",
         seq: 1,
         offset_bytes: 3,
+        size_bytes: 2,
         last: true,
-        data_base64: "bG8=",
       }),
     );
+    relay.sockets[0]!.send(Buffer.from("lo"), { binary: true });
 
     await waitFor(() => relay.frames.filter((entry) => entry.frame.type === "file_start_ack" || entry.frame.type === "file_chunk_ack").length === 2);
     expect(relay.frames.filter((entry) => entry.frame.type === "file_start_ack" || entry.frame.type === "file_chunk_ack").map((entry) => entry.frame)).toEqual([

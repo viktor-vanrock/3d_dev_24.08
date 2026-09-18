@@ -140,6 +140,16 @@ export type FileChunk = {
   readonly data_base64: string;
 };
 
+export type FileChunkHeader = {
+  readonly type: "file_chunk_header";
+  readonly device_id: Identifier;
+  readonly transfer_id: Identifier;
+  readonly seq: Sequence;
+  readonly offset_bytes: number;
+  readonly size_bytes: number;
+  readonly last: boolean;
+};
+
 export type FileChunkAck = {
   readonly type: "file_chunk_ack";
   readonly device_id: Identifier;
@@ -160,7 +170,7 @@ export type FileResult = {
   readonly device_id: Identifier;
   readonly transfer_id: Identifier;
   readonly outcome: "failed";
-  readonly error_code: "device_not_authorized" | "invalid_transfer" | "transfer_conflict" | "unknown_transfer" | "invalid_sequence" | "invalid_data" | "source_changed" | "file_size_mismatch" | "checksum_mismatch" | "upload_failed" | "start_failed" | "transfer_timeout";
+  readonly error_code: "device_not_authorized" | "invalid_transfer" | "transfer_conflict" | "unknown_transfer" | "invalid_sequence" | "invalid_data" | "source_changed" | "file_size_mismatch" | "checksum_mismatch" | "upload_failed" | "start_failed" | "transfer_timeout" | "disk_full" | "quota_exceeded" | "write_error" | "transfer_expired" | "cancelled";
   readonly next_seq?: Sequence;
   readonly next_offset_bytes?: number;
   readonly message?: string;
@@ -175,6 +185,6 @@ export type Error = {
 
 export type GatewayToRelayFrame = Hello | Heartbeat | CommandAck | CommandResult | FileStartAck | FileChunkAck | FileResult;
 
-export type RelayToGatewayFrame = HelloChallenge | HelloAck | HeartbeatAck | Command | FileStart | FileChunk | Error;
+export type RelayToGatewayFrame = HelloChallenge | HelloAck | HeartbeatAck | Command | FileStart | FileChunk | FileChunkHeader | Error;
 
 export type AnyFrame = GatewayToRelayFrame | RelayToGatewayFrame;

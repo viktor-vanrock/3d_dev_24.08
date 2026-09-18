@@ -959,6 +959,19 @@
     }
   },
   {
+    "method": "POST",
+    "path": "/me/devices/:deviceId/transfers/:transferId/cancel",
+    "domain": "devices",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "devices/transfers.cancel",
+    "sampleParams": {
+      "deviceId": "11111111-1111-4111-8111-111111111111",
+      "transferId": "22222222-2222-4222-8222-222222222222"
+    }
+  },
+  {
     "method": "GET",
     "path": "/me/devices/:deviceId/incidents",
     "domain": "devices",

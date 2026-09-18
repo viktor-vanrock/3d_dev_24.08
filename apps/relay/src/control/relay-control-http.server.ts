@@ -4,6 +4,8 @@ import { Inject, Injectable, type OnApplicationShutdown, type OnModuleInit } fro
 import {
   RELAY_CONTROL_CLOSE_REASONS,
   RELAY_CONTROL_CLOSE_SESSIONS_PATH,
+  RELAY_CONTROL_CANCEL_TRANSFERS_PATH,
+  type CancelTransfersRequest,
   type CloseSessionsRequest,
   type RelayControlCloseReason,
 } from "@portal/contracts/http/relay-control.v1";
@@ -35,6 +37,15 @@ function isRequest(value: unknown): value is CloseSessionsRequest {
     && request.agentIds.length <= 100
     && request.agentIds.every((agentId) => typeof agentId === "string" && UUID.test(agentId))
     && isReason(request.reason);
+}
+
+function isCancelRequest(value: unknown): value is CancelTransfersRequest {
+  if (value === null || typeof value !== "object") return false;
+  const request = value as { transferIds?: unknown };
+  return Array.isArray(request.transferIds)
+    && request.transferIds.length >= 1
+    && request.transferIds.length <= 100
+    && request.transferIds.every((transferId) => typeof transferId === "string" && UUID.test(transferId));
 }
 
 async function readJson(request: IncomingMessage): Promise<unknown> {
@@ -86,7 +97,7 @@ export class RelayControlHttpServer implements OnModuleInit, OnApplicationShutdo
   }
 
   private async handle(request: IncomingMessage, response: ServerResponse): Promise<void> {
-    if (request.method !== "POST" || request.url !== RELAY_CONTROL_CLOSE_SESSIONS_PATH) {
+    if (request.method !== "POST" || (request.url !== RELAY_CONTROL_CLOSE_SESSIONS_PATH && request.url !== RELAY_CONTROL_CANCEL_TRANSFERS_PATH)) {
       response.writeHead(404).end();
       return;
     }
@@ -99,6 +110,15 @@ export class RelayControlHttpServer implements OnModuleInit, OnApplicationShutdo
     }
     try {
       const body = await readJson(request);
+      if (request.url === RELAY_CONTROL_CANCEL_TRANSFERS_PATH) {
+        if (!isCancelRequest(body)) {
+          response.writeHead(400).end();
+          return;
+        }
+        const result = this.gateway.cancelTransfers(body.transferIds);
+        response.writeHead(200, { "content-type": "application/json; charset=utf-8" }).end(JSON.stringify(result));
+        return;
+      }
       if (!isRequest(body)) {
         this.logger.warn({ event: "relay.control.close.rejected", outcome: "invalid" }, "relay control close request rejected");
         response.writeHead(400).end();

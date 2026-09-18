@@ -1,6 +1,5 @@
 import { createHash } from "node:crypto";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
-import type { FileChunk } from "@portal/contracts/device-protocol/v1";
 import type { RelayTransferMetadataResponseDto } from "@portal/contracts/http/relay-internal.v1.dto";
 import {
   createRelayE2eHarness,
@@ -9,6 +8,7 @@ import {
   removeTestCertificates,
   type RelayE2eHarness,
   type TestCertificates,
+  type BinaryFileChunk,
   type TestGatewayClient,
 } from "./relay-e2e-harness.ts";
 
@@ -80,10 +80,14 @@ class TransferControlPlane {
     const record = this.requireTransfer(transferId);
     const range = new Headers(init?.headers).get("range") ?? "";
     this.sourceRanges.push(`${transferId}:${range}`);
-    const match = /^bytes=(\d+)-(\d+)$/.exec(range);
+    const match = /^bytes=(\d+)-$/.exec(range);
+    if (!range) {
+      const body = record.malformedRange ? record.bytes.subarray(0, Math.max(0, record.bytes.byteLength - 1)) : record.bytes;
+      return new Response(body, { status: 200, headers: { "content-length": String(body.byteLength) } });
+    }
     if (!match) return new Response(null, { status: 400 });
     const start = Number(match[1]);
-    const end = Number(match[2]);
+    const end = record.bytes.byteLength - 1;
     if (record.malformedRange) {
       const body = record.bytes.subarray(start, Math.max(start, end));
       return new Response(body, {
@@ -225,14 +229,15 @@ class TransferControlPlane {
   }
 }
 
-async function acknowledgeChunk(gateway: TestGatewayClient, chunk: FileChunk): Promise<void> {
+async function acknowledgeChunk(gateway: TestGatewayClient, chunk: BinaryFileChunk): Promise<void> {
+  const { header, data } = chunk;
   gateway.send({
     type: "file_chunk_ack",
-    device_id: chunk.device_id,
-    transfer_id: chunk.transfer_id,
-    seq: chunk.seq,
-    next_seq: chunk.seq + 1,
-    next_offset_bytes: chunk.offset_bytes + Buffer.from(chunk.data_base64, "base64").byteLength,
+    device_id: header.device_id,
+    transfer_id: header.transfer_id,
+    seq: header.seq,
+    next_seq: header.seq + 1,
+    next_offset_bytes: header.offset_bytes + data.byteLength,
   });
 }
 
@@ -252,20 +257,20 @@ describe("relay file transfer over real WSS", () => {
     const start = await gateway.next("file_start");
     expect(start).toMatchObject({ transfer_id: "transfer-success", size_bytes: 6, chunk_size_bytes: 3, object_version: "version-transfer-success" });
     gateway.send({ type: "file_start_ack", device_id: start.device_id, transfer_id: start.transfer_id, next_seq: 0, next_offset_bytes: 0 });
-    const first = await gateway.next("file_chunk");
-    expect(Buffer.from(first.data_base64, "base64").toString()).toBe("abc");
+    const first = await gateway.nextBinaryChunk();
+    expect(first.data.toString()).toBe("abc");
     await acknowledgeChunk(gateway, first);
-    const final = await gateway.next("file_chunk");
-    expect(Buffer.from(final.data_base64, "base64").toString()).toBe("def");
-    expect(final.last).toBe(true);
+    const final = await gateway.nextBinaryChunk();
+    expect(final.data.toString()).toBe("def");
+    expect(final.header.last).toBe(true);
 
-    gateway.send({ type: "file_result", device_id: final.device_id, transfer_id: final.transfer_id, outcome: "stored", stored_as: "transfer-success.gcode" });
+    gateway.send({ type: "file_result", device_id: final.header.device_id, transfer_id: final.header.transfer_id, outcome: "stored", stored_as: "transfer-success.gcode" });
     await eventually(() => expect(api.resultWrites).toContainEqual(expect.objectContaining({ transferId: "transfer-success", status: "completed", nextOffset: 6, nextSequence: 2 })));
     expect(api.progressWrites).toEqual([
       { transferId: "transfer-success", nextOffset: 3, nextSequence: 1 },
       { transferId: "transfer-success", nextOffset: 6, nextSequence: 2 },
     ]);
-    expect(api.sourceRanges).toEqual(["transfer-success:bytes=0-2", "transfer-success:bytes=3-5"]);
+    expect(api.sourceRanges).toEqual(["transfer-success:"]);
   });
 
   it("resumes from durable progress after disconnect and a fresh relay runtime", async () => {
@@ -274,10 +279,10 @@ describe("relay file transfer over real WSS", () => {
     const firstGateway = await harness.connect(["file_transfer"]);
     const firstStart = await firstGateway.next("file_start");
     firstGateway.send({ type: "file_start_ack", device_id: firstStart.device_id, transfer_id: firstStart.transfer_id, next_seq: 0, next_offset_bytes: 0 });
-    const firstChunk = await firstGateway.next("file_chunk");
+    const firstChunk = await firstGateway.nextBinaryChunk();
     await acknowledgeChunk(firstGateway, firstChunk);
     await eventually(() => expect(api.progressWrites).toContainEqual({ transferId: "transfer-resume", nextOffset: 3, nextSequence: 1 }));
-    await firstGateway.next("file_chunk");
+    await firstGateway.nextBinaryChunk();
     firstGateway.terminate();
     await eventually(() => expect(harness?.fileTransfers.activeCount).toBe(0));
     expect(api.resultWrites).toEqual([]);
@@ -287,10 +292,10 @@ describe("relay file transfer over real WSS", () => {
     const restartedGateway = await harness.connect(["file_transfer"]);
     const resumedStart = await restartedGateway.next("file_start");
     restartedGateway.send({ type: "file_start_ack", device_id: resumedStart.device_id, transfer_id: resumedStart.transfer_id, next_seq: 1, next_offset_bytes: 3 });
-    const resumedChunk = await restartedGateway.next("file_chunk");
-    expect(resumedChunk).toMatchObject({ transfer_id: "transfer-resume", seq: 1, offset_bytes: 3 });
-    expect(Buffer.from(resumedChunk.data_base64, "base64").toString()).toBe("def");
-    expect(api.sourceRanges.at(-1)).toBe("transfer-resume:bytes=3-5");
+    const resumedChunk = await restartedGateway.nextBinaryChunk();
+    expect(resumedChunk.header).toMatchObject({ transfer_id: "transfer-resume", seq: 1, offset_bytes: 3 });
+    expect(resumedChunk.data.toString()).toBe("def");
+    expect(api.sourceRanges.at(-1)).toBe("transfer-resume:bytes=3-");
   });
 
   it.each([
@@ -304,7 +309,7 @@ describe("relay file transfer over real WSS", () => {
     gateway.send({ type: "file_start_ack", device_id: start.device_id, transfer_id: start.transfer_id, next_seq: 0, next_offset_bytes: 0 });
 
     await eventually(() => expect(api.resultWrites).toContainEqual(expect.objectContaining({ transferId: start.transfer_id, status: "failed", errorCode: expectedCode })));
-    await gateway.expectNoFrame("file_chunk");
+    await expect(gateway.nextBinaryChunk(100)).rejects.toThrow("timed out");
   });
 
   it("rejects a pending transfer for a device outside the authorized session", async () => {

@@ -279,6 +279,20 @@
         "data_base64": { "type": "string", "maxLength": 87384, "contentEncoding": "base64" }
       }
     },
+    "fileChunkHeader": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "device_id", "transfer_id", "seq", "offset_bytes", "size_bytes", "last"],
+      "properties": {
+        "type": { "const": "file_chunk_header" },
+        "device_id": { "$ref": "#/$defs/identifier" },
+        "transfer_id": { "$ref": "#/$defs/identifier" },
+        "seq": { "$ref": "#/$defs/sequence" },
+        "offset_bytes": { "type": "integer", "minimum": 0, "maximum": 1073741824 },
+        "size_bytes": { "type": "integer", "minimum": 1, "maximum": 1048576 },
+        "last": { "type": "boolean" }
+      }
+    },
     "fileChunkAck": {
       "type": "object",
       "additionalProperties": false,
@@ -328,7 +342,12 @@
                 "checksum_mismatch",
                 "upload_failed",
                 "start_failed",
-                "transfer_timeout"
+                "transfer_timeout",
+                "disk_full",
+                "quota_exceeded",
+                "write_error",
+                "transfer_expired",
+                "cancelled"
               ]
             },
             "next_seq": { "$ref": "#/$defs/sequence" },
@@ -381,6 +400,7 @@
         { "$ref": "#/$defs/command" },
         { "$ref": "#/$defs/fileStart" },
         { "$ref": "#/$defs/fileChunk" },
+        { "$ref": "#/$defs/fileChunkHeader" },
         { "$ref": "#/$defs/error" }
       ]
     },

@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import { BadRequestException, ConflictException, ForbiddenException, HttpException, Inject, Injectable, NotFoundException, Optional, UnauthorizedException } from "@nestjs/common";
+import { BadRequestException, ConflictException, ForbiddenException, HttpException, Inject, Injectable, Logger, NotFoundException, Optional, UnauthorizedException, type OnModuleDestroy, type OnModuleInit } from "@nestjs/common";
 import { DeviceId, UserId, type DeviceId as DeviceIdType, type UserId as UserIdType } from "../../_kernel/brandedIds.ts";
 import { PROFILE_READ_PORT, type ProfileReadPort } from "../../profile/public/index.ts";
 import type { OwnedUserPrinter } from "../../printers/public/index.ts";
@@ -150,7 +150,9 @@ function publicPrinter(printer: OwnedUserPrinter, state: PublicDeviceStateRow | 
 }
 
 @Injectable()
-export class DevicesService implements DevicesPort, DeviceProfileOperationsPort, DevicePublicApiOperationsPort, DeviceAdminPort {
+export class DevicesService implements DevicesPort, DeviceProfileOperationsPort, DevicePublicApiOperationsPort, DeviceAdminPort, OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(DevicesService.name);
+  private transferExpiryTimer: NodeJS.Timeout | null = null;
   constructor(
     @Inject(DevicesRepository) private readonly repository: DevicesRepository,
     @Inject(DEVICE_EXTERNAL_PORT) private readonly external: DeviceExternalPort,
@@ -158,6 +160,17 @@ export class DevicesService implements DevicesPort, DeviceProfileOperationsPort,
     @Optional() @Inject(DEVICE_RELAY_PUSH_PORT) private readonly relayControl?: DeviceRelayPushPort,
     @Optional() @Inject(MetricsService) private readonly metrics?: MetricsService,
   ) {}
+
+  onModuleInit(): void {
+    this.transferExpiryTimer = setInterval(() => {
+      void this.expireStaleTransfers().catch((error: unknown) => this.logger.error(`Transfer expiry cleanup failed: ${String(error)}`));
+    }, 10 * 60 * 1000);
+    this.transferExpiryTimer.unref();
+  }
+
+  onModuleDestroy(): void {
+    if (this.transferExpiryTimer !== null) clearInterval(this.transferExpiryTimer);
+  }
 
   async createEnrollCode(actorId: UserIdType, body: Record<string, unknown>) {
     const firmwareClass = isFirmwareClass(body.firmware_class) ? body.firmware_class : null;
@@ -352,6 +365,15 @@ export class DevicesService implements DevicesPort, DeviceProfileOperationsPort,
     const row = await this.repository.findTransfer(did, transferId);
     if (row === null) throw new NotFoundException();
     return transfer(row);
+  }
+  async cancelTransfer(actorId: UserIdType, id: string, transferId: string): Promise<{ readonly ok: true }> {
+    const did = deviceId(id);
+    if (!isUuid(transferId) || !(await this.repository.cancelTransfer(transferId, did, actorId))) throw new NotFoundException();
+    void this.relayControl?.cancelTransfers([transferId]).catch((error: unknown) => this.logger.warn(`Transfer cancel push failed transferId=${transferId}: ${String(error)}`));
+    return { ok: true };
+  }
+  async expireStaleTransfers(): Promise<number> {
+    return this.repository.expireStaleTransfers();
   }
   async listIncidents(actorId: UserIdType, id: string) {
     const did = deviceId(id);

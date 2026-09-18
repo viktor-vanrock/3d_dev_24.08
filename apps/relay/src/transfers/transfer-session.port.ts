@@ -1,4 +1,4 @@
-import type { FileChunk, FileStart } from "@portal/contracts/device-protocol/v1";
+import type { FileChunkHeader, FileStart } from "@portal/contracts/device-protocol/v1";
 
 export const TRANSFER_SESSION_PORT = Symbol("TRANSFER_SESSION_PORT");
 
@@ -19,5 +19,5 @@ export interface TransferSessionPort {
   isCurrent(session: TransferSessionFence): boolean;
   authorizes(session: TransferSessionFence, deviceId: string): boolean;
   sendFileStart(session: TransferSessionFence, frame: FileStart): TransferSendOutcome | Promise<TransferSendOutcome>;
-  sendFileChunk(session: TransferSessionFence, frame: FileChunk): TransferSendOutcome | Promise<TransferSendOutcome>;
+  sendFileChunk(session: TransferSessionFence, header: FileChunkHeader, data: Buffer): TransferSendOutcome | Promise<TransferSendOutcome>;
 }

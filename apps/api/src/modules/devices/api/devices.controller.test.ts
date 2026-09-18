@@ -100,6 +100,7 @@ const fakeDevices: DevicesPort = {
       },
     }),
   getTransfer: () => Promise.resolve(transferResponse),
+  cancelTransfer: () => Promise.resolve({ ok: true }),
   listIncidents: () => Promise.resolve({ items: [] }),
   acknowledgeIncident: () => Promise.resolve({ incident: incidentResponse }),
   resolveIncident: () => Promise.resolve({ incident: incidentResponse }),
@@ -171,12 +172,12 @@ describe("Nest devices non-relay route migration", () => {
     await app.close();
     delete process.env.JWT_SECRET;
   });
-  it("implements exactly the 19 non-relay device routes", () => {
+  it("implements exactly the 20 non-relay device routes", () => {
     const expected = routeManifest
       .filter((route) => route.domain === "devices" && !route.path.startsWith("/internal/relay/"))
       .map((route) => `${route.method} ${route.path}`)
       .sort();
-    expect(expected).toHaveLength(19);
+    expect(expected).toHaveLength(20);
     expect(routes()).toEqual(expected);
     expect(routes().some((route) => route.includes("/internal/relay/"))).toBe(false);
   });

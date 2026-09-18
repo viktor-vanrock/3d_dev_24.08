@@ -25,7 +25,7 @@ describe("loadRelayConfig", () => {
       gateway: {
         host: "0.0.0.0",
         port: 8443,
-        maxFrameBytes: 131_072,
+        maxFrameBytes: 1_048_576,
         maxSessions: 10_000,
         maxInflightFrames: 1_024,
         maxInflightFramesPerSession: 4,
@@ -61,7 +61,7 @@ describe("loadRelayConfig", () => {
     expect(() => loadRelayConfig({ ...BASE_ENV, RELAY_REVALIDATION_INTERVAL_MS: "2001" })).toThrow("between 100 and 2000");
     expect(() => loadRelayConfig({ ...BASE_ENV, RELAY_REVALIDATION_TIMEOUT_MS: "1001" })).toThrow("between 50 and 1000");
     expect(() => loadRelayConfig({ ...BASE_ENV, RELAY_REVALIDATION_FAIL_CLOSED_MS: "5001" })).toThrow("between 1000 and 5000");
-    expect(() => loadRelayConfig({ ...BASE_ENV, RELAY_MAX_FRAME_BYTES: "131073" })).toThrow("between 1024 and 131072");
+    expect(() => loadRelayConfig({ ...BASE_ENV, RELAY_MAX_FRAME_BYTES: "1048577" })).toThrow("between 1024 and 1048576");
   });
 
   it("requires HTTPS for production control-plane calls", () => {

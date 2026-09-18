@@ -26,7 +26,7 @@ const validateGatewayValue = compile("gatewayToRelayFrame");
 const validateRelayValue = compile("relayToGatewayFrame");
 
 const gatewayFrameTypes = new Set(["hello", "heartbeat", "command_ack", "command_result", "file_start_ack", "file_chunk_ack", "file_result"]);
-const relayFrameTypes = new Set(["hello_challenge", "hello_ack", "heartbeat_ack", "command", "file_start", "file_chunk", "error"]);
+const relayFrameTypes = new Set(["hello_challenge", "hello_ack", "heartbeat_ack", "command", "file_start", "file_chunk", "file_chunk_header", "error"]);
 
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
   return typeof value === "object" && value !== null && !Array.isArray(value);

@@ -35,7 +35,12 @@
     "checksum_mismatch",
     "upload_failed",
     "start_failed",
-    "transfer_timeout"
+    "transfer_timeout",
+    "disk_full",
+    "quota_exceeded",
+    "write_error",
+    "transfer_expired",
+    "cancelled"
   ],
   "close": {
     "4001": "protocol_or_authentication_failure",

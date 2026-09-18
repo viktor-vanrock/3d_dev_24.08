@@ -64,6 +64,7 @@ export interface TransferRow {
   error_code: string | null;
   error_message: string | null;
   updated_at: Date;
+  expires_at: Date | null;
 }
 export interface IncidentRow {
   id: string;
@@ -502,14 +503,14 @@ export class DevicesRepository implements DeviceIncidentEventReadPort, DeviceInc
     try {
       await client.query("begin");
       const inserted = await client.query<TransferRow>(
-        `insert into device_transfers(id,device_id,actor_user_id,file_name,size_bytes,sha256,start_print) values(coalesce($1::uuid,gen_random_uuid()),$2,$3,$4,$5,$6,$7) on conflict(id) do nothing returning id,device_id,file_name,size_bytes,sha256,start_print,kind,status,next_seq,bytes_transferred,error_code,error_message,updated_at`,
+        `insert into device_transfers(id,device_id,actor_user_id,file_name,size_bytes,sha256,start_print) values(coalesce($1::uuid,gen_random_uuid()),$2,$3,$4,$5,$6,$7) on conflict(id) do nothing returning id,device_id,file_name,size_bytes,sha256,start_print,kind,status,next_seq,bytes_transferred,error_code,error_message,updated_at,expires_at`,
         [input.transferId, input.deviceId, input.actorId, input.fileName, input.sizeBytes, input.sha256, input.startPrint],
       );
       let row = inserted.rows[0];
       let resumed = false;
       if (row === undefined && input.transferId !== null) {
         const owned = await client.query<TransferRow>(
-          `select id,device_id,file_name,size_bytes,sha256,start_print,kind,status,next_seq,bytes_transferred,error_code,error_message,updated_at from device_transfers where id=$1 and device_id=$2 and actor_user_id=$3 for update`,
+          `select id,device_id,file_name,size_bytes,sha256,start_print,kind,status,next_seq,bytes_transferred,error_code,error_message,updated_at,expires_at from device_transfers where id=$1 and device_id=$2 and actor_user_id=$3 for update`,
           [input.transferId, input.deviceId, input.actorId],
         );
         row = owned.rows[0];
@@ -535,7 +536,7 @@ export class DevicesRepository implements DeviceIncidentEventReadPort, DeviceInc
   }
   async findTransfer(deviceId: DeviceIdType, transferId: string): Promise<TransferRow | null> {
     const result = await this.pool.query<TransferRow>(
-      `select id,device_id,file_name,size_bytes,sha256,start_print,kind,status,next_seq,bytes_transferred,error_code,error_message,updated_at from device_transfers where id=$1 and device_id=$2`,
+      `select id,device_id,file_name,size_bytes,sha256,start_print,kind,status,next_seq,bytes_transferred,error_code,error_message,updated_at,expires_at from device_transfers where id=$1 and device_id=$2`,
       [transferId, deviceId],
     );
     return result.rows[0] ?? null;
@@ -581,6 +582,28 @@ export class DevicesRepository implements DeviceIncidentEventReadPort, DeviceInc
       input.message,
     ]);
     await this.audit(deviceId, actorId, "transfer.failed", { transfer_id: transferId, error_code: input.error, request_id: requestId });
+  }
+
+  async cancelTransfer(transferId: string, deviceId: DeviceIdType, actorId: UserIdType): Promise<boolean> {
+    const result = await this.pool.query(
+      `update device_transfers
+          set status='cancelled',updated_at=now(),completed_at=now()
+        where id=$1 and device_id=$2 and actor_user_id=$3
+          and status in ('initiated','transferring')
+        returning id`,
+      [transferId, deviceId, actorId],
+    );
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async expireStaleTransfers(): Promise<number> {
+    const result = await this.pool.query(
+      `update device_transfers
+          set status='failed',error_code='transfer_expired',error_message='Передача превысила максимальное время',updated_at=now(),completed_at=now()
+        where status in ('initiated','transferring') and expires_at < now()
+        returning id`,
+    );
+    return result.rowCount ?? 0;
   }
 
   async listIncidents(deviceId: DeviceIdType): Promise<IncidentRow[]> {
