@@ -3,7 +3,7 @@ import type { SessionUser } from "@domains/access";
 import { HomeHeader, type Section } from "@platform/nav";
 import "../../../pages/home/home.css";
 import { useOverlay } from "@platform/overlay";
-import { navigate, parkAddPath, printersPath } from "../../../router.ts";
+import { navigate, parkAddPath, printerHistoryPath, printersPath } from "../../../router.ts";
 import { useInteractionSound } from "@platform/sound";
 import { AuroraBackground, Button, Card, EmptyState, Eyebrow, Heading, StatusPill, type StatusTone } from "@shared/ui";
 import { fetchCommandResult, isTerminalCommandResult, queuedCommandResult, rememberCommandResult, queueCommand, type CommandResultState } from "./livecommands.ts";
@@ -579,6 +579,7 @@ export function PrinterLiveScreen({
           <Eyebrow>Мой принтер</Eyebrow>
           <Heading size="md">{`${basics.brand} ${basics.model}`.trim()}</Heading>
           <div className="printerLiveSub">{bindingLabel(basics.linkSource)}</div>
+          <a href={printerHistoryPath(id)}>История печати</a>
 
           <Card className="printerLiveCard">
             <div className="printerLiveStatusRow">

@@ -17,6 +17,7 @@ export { DiyScreen } from "./park/diyscreen.tsx";
 export { ParkScreen } from "./park/parkscreen.tsx";
 export { SlicePrintScreen } from "./park/sliceprintscreeen.tsx";
 export { PrinterLiveScreen } from "./park/printerlivescreen.tsx";
+export { PrintHistoryScreen } from "./park/printhistory.tsx";
 export { PrinterDeviceMissingScreen } from "./park/printerdevicemissing.tsx";
 // printerface (8.6):
 export { PrinterFaceScreen } from "./printerface/printerfacescreen.tsx";

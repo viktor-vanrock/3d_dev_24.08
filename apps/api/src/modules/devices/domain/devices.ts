@@ -9,6 +9,17 @@ export type DeviceControlCommand = (typeof DEVICE_CONTROL_COMMANDS)[number] | "s
 export type DeviceShareRole = (typeof DEVICE_SHARE_ROLES)[number];
 export type FirmwareClass = (typeof FIRMWARE_CLASSES)[number];
 
+export class DeviceError extends Error {
+  constructor(
+    public readonly statusCode: number,
+    public readonly code: "device.unknown_build_volume.v1",
+    message: string,
+  ) {
+    super(message);
+    this.name = "DeviceError";
+  }
+}
+
 export function isFirmwareClass(value: unknown): value is FirmwareClass {
   return typeof value === "string" && (FIRMWARE_CLASSES as readonly string[]).includes(value);
 }

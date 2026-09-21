@@ -262,6 +262,18 @@ export interface DevicePrintRequestResponse {
   readonly token?: string;
   readonly token_expires_at?: string;
 }
+export interface DevicePrintRequestListItem extends DevicePrintRequestResponse {
+  readonly result_outcome: "succeeded" | "failed" | null;
+  readonly result_reported_at: string | null;
+}
+export interface DeviceTransferMetricsResponse {
+  readonly activeTransfers: number;
+  readonly completedToday: number;
+  readonly failedToday: number;
+  readonly avgSpeedBytesPerSec: number;
+  readonly checksumErrors: number;
+  readonly queueAgeSeconds: number;
+}
 export interface PublicPrinterResponse {
   readonly id: string;
   readonly brand: string;
@@ -499,6 +511,8 @@ export interface DevicesPort {
     context: DeviceRequestContext,
   ): Promise<{ readonly status: number; readonly body: DevicePrintRequestResponse }>;
   getPrintRequest(actorId: UserId, deviceId: string, id: string): Promise<DevicePrintRequestResponse>;
+  listPrintRequests(actorId: UserId, deviceId: string, limit?: number): Promise<{ readonly requests: readonly DevicePrintRequestListItem[] }>;
+  getTransferMetrics(actorId: UserId, deviceId: string): Promise<DeviceTransferMetricsResponse>;
   confirmPrintStart(actorId: UserId, deviceId: string, id: string, requestId: string): Promise<{ readonly status: number; readonly body: DevicePrintRequestResponse }>;
 }
 export { buildInstallScript } from "../infrastructure/install-script.ts";

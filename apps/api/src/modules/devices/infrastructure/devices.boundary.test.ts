@@ -15,6 +15,7 @@ describe("devices ownership boundary", () => {
       "device_incidents",
       "device_jobs",
       "device_print_requests",
+      "device_print_results",
       "device_shares",
       "device_state",
       "device_telemetry",
