@@ -1022,7 +1022,7 @@ CREATE TABLE public.device_print_requests (
     CONSTRAINT device_print_requests_copies_check CHECK ((copies = 1)),
     CONSTRAINT device_print_requests_gcode_sha256_check CHECK (((gcode_sha256 IS NULL) OR (gcode_sha256 ~ '^[0-9a-fA-F]{64}$'::text))),
     CONSTRAINT device_print_requests_idempotency_key_check CHECK (((length(idempotency_key) >= 1) AND (length(idempotency_key) <= 128))),
-    CONSTRAINT device_print_requests_status_check CHECK ((status = ANY (ARRAY['slice_ready'::text, 'delivered'::text, 'awaiting_confirmation'::text, 'accepted'::text, 'printing'::text, 'failed'::text, 'rejected'::text])))
+    CONSTRAINT device_print_requests_status_check CHECK ((status = ANY (ARRAY['slice_ready'::text, 'delivered'::text, 'awaiting_confirmation'::text, 'accepted'::text, 'printing'::text, 'completed'::text, 'failed'::text, 'rejected'::text])))
 );
 
 
@@ -1043,6 +1043,7 @@ CREATE TABLE public.device_print_results (
     agent_id uuid,
     job_id uuid,
     model_id uuid,
+    print_request_id uuid,
     outcome text NOT NULL,
     client_result_id text NOT NULL,
     reported_at timestamp with time zone DEFAULT now() NOT NULL,
@@ -6090,6 +6091,12 @@ CREATE INDEX device_print_requests_device_idx ON public.device_print_requests US
 
 CREATE INDEX device_print_results_device_idx ON public.device_print_results USING btree (device_id, created_at DESC);
 
+--
+-- Name: idx_print_results_request_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_print_results_request_id ON public.device_print_results USING btree (print_request_id) WHERE (print_request_id IS NOT NULL);
+
 
 --
 -- Name: device_shares_user_idx; Type: INDEX; Schema: public; Owner: -
@@ -8386,6 +8393,13 @@ ALTER TABLE ONLY public.device_print_results
 
 ALTER TABLE ONLY public.device_print_results
     ADD CONSTRAINT device_print_results_model_id_fkey FOREIGN KEY (model_id) REFERENCES public.models(id) ON DELETE SET NULL;
+
+--
+-- Name: device_print_results device_print_results_print_request_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.device_print_results
+    ADD CONSTRAINT device_print_results_print_request_id_fkey FOREIGN KEY (print_request_id) REFERENCES public.device_print_requests(id) ON DELETE SET NULL;
 
 
 --

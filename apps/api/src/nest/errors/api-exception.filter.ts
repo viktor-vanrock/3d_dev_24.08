@@ -6,6 +6,7 @@ import { getRequestId, type RequestWithId } from "../observability/request-id.ts
 import { RuntimeLogger } from "../observability/runtime-logger.ts";
 import { ProjectError } from "../../modules/projects/domain/project.errors.ts";
 import { UploadError } from "../../modules/projects/domain/upload.ts";
+import { DeviceError } from "../../modules/devices/domain/devices.ts";
 import { AccountRestrictedException } from "../auth/account-restricted.exception.ts";
 import * as SanctionErrors from "../../modules/sanctions/domain/sanction.errors.ts";
 
@@ -56,6 +57,9 @@ export function classifyError(exception: unknown, projectRoute = false): Classif
   }
   if (exception instanceof UploadError) {
     return { status: exception.statusCode, code: exception.code as ApiErrorCode, message: exception.message };
+  }
+  if (exception instanceof DeviceError) {
+    return { status: exception.statusCode, code: exception.code, message: exception.message };
   }
   if (projectRoute && isRecord(exception) && exception.code === "LIMIT_FILE_SIZE") {
     return { status: HttpStatus.PAYLOAD_TOO_LARGE, code: "request.payload_too_large.v1", message: "Файл превышает допустимый размер" };

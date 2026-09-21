@@ -2652,7 +2652,8 @@ export interface paths {
             readonly path?: never;
             readonly cookie?: never;
         };
-        readonly get?: never;
+        /** List device print requests */
+        readonly get: operations["DevicesController_listPrintRequests"];
         readonly put?: never;
         /** Create an idempotent device print request */
         readonly post: operations["DevicesController_print"];
@@ -2764,6 +2765,23 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/me/devices/{deviceId}/transfer-metrics": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        /** Read device transfer metrics */
+        readonly get: operations["DevicesController_transferMetrics"];
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/me/devices/{deviceId}/transfers": {
         readonly parameters: {
             readonly query?: never;
@@ -2792,6 +2810,23 @@ export interface paths {
         readonly get: operations["DevicesController_getTransfer"];
         readonly put?: never;
         readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/me/devices/{deviceId}/transfers/{transferId}/cancel": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        /** Cancel an active device transfer */
+        readonly post: operations["DevicesController_cancelTransfer"];
         readonly delete?: never;
         readonly options?: never;
         readonly head?: never;
@@ -3700,6 +3735,23 @@ export interface paths {
         readonly patch: operations["projectsUpdate"];
         readonly trace?: never;
     };
+    readonly "/projects/{projectId}/archive": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        /** Archive a Project */
+        readonly post: operations["projectArchive"];
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/projects/{projectId}/draft": {
         readonly parameters: {
             readonly query?: never;
@@ -3709,6 +3761,23 @@ export interface paths {
         };
         /** Read current Project draft */
         readonly get: operations["projectsGetDraft"];
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/projects/{projectId}/forks": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        /** List Projects forked from a Project */
+        readonly get: operations["projectForksList"];
         readonly put?: never;
         readonly post?: never;
         readonly delete?: never;
@@ -3853,6 +3922,40 @@ export interface paths {
         readonly post?: never;
         /** Unpublish a Project */
         readonly delete: operations["projectPublicationClear"];
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/projects/{projectId}/readiness": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        /** Check whether a Project is ready to publish */
+        readonly get: operations["projectReadiness"];
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/projects/{projectId}/restore": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        /** Restore an archived Project */
+        readonly post: operations["projectRestore"];
+        readonly delete?: never;
         readonly options?: never;
         readonly head?: never;
         readonly patch?: never;
@@ -4802,7 +4905,7 @@ export interface components {
              * @example auth.unauthorized.v1
              * @enum {string}
              */
-            readonly code: "auth.unauthorized.v1" | "auth.forbidden.v1" | "validation.invalid.v1" | "http.bad_request.v1" | "http.malformed_json.v1" | "http.not_found.v1" | "http.timeout.v1" | "http.aborted.v1" | "http.not_implemented.v1" | "http.upstream.v1" | "http.service_unavailable.v1" | "http.upstream_timeout.v1" | "http.client_error.v1" | "http.server_error.v1" | "http.internal.v1" | "auth.unauthenticated.v1" | "request.validation.v1" | "request.payload_too_large.v1" | "request.unsupported_media_type.v1" | "request.rate_limited.v1" | "internal.safe_error.v1" | "project.file_format_mismatch.v1" | "project.not_found.v1" | "project.model_not_found.v1" | "project.revision_not_found.v1" | "project.asset_not_found.v1" | "project.version_conflict.v1" | "project.idempotency_conflict.v1" | "project.request_in_progress.v1" | "project.primary_model_required.v1" | "project.primary_model_published.v1" | "project.model_published.v1" | "project.ready_primary_required.v1" | "project.publication_conflict.v1";
+            readonly code: "auth.unauthorized.v1" | "auth.forbidden.v1" | "validation.invalid.v1" | "http.bad_request.v1" | "http.malformed_json.v1" | "http.not_found.v1" | "http.timeout.v1" | "http.aborted.v1" | "http.not_implemented.v1" | "http.upstream.v1" | "http.service_unavailable.v1" | "http.upstream_timeout.v1" | "http.client_error.v1" | "http.server_error.v1" | "http.internal.v1" | "auth.unauthenticated.v1" | "request.validation.v1" | "request.payload_too_large.v1" | "request.unsupported_media_type.v1" | "request.rate_limited.v1" | "internal.safe_error.v1" | "project.file_format_mismatch.v1" | "project.not_found.v1" | "project.model_not_found.v1" | "project.revision_not_found.v1" | "project.asset_not_found.v1" | "project.version_conflict.v1" | "project.idempotency_conflict.v1" | "project.request_in_progress.v1" | "project.primary_model_required.v1" | "project.primary_model_published.v1" | "project.model_published.v1" | "project.ready_primary_required.v1" | "project.publication_conflict.v1" | "project.invalid_transition.v1" | "device.unknown_build_volume.v1";
             /**
              * @description Safe user-facing error message
              * @example Требуется авторизация
@@ -5887,6 +5990,37 @@ export interface components {
             /** Format: date-time */
             readonly updated_at: string;
         };
+        readonly DevicePrintRequestListDto: {
+            readonly requests: readonly components["schemas"]["DevicePrintRequestListItemDto"][];
+        };
+        readonly DevicePrintRequestListItemDto: {
+            readonly copies: number;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: uuid */
+            readonly device_id: string;
+            readonly error_code?: string | null;
+            readonly error_message?: string | null;
+            readonly gcode_sha256?: string | null;
+            /** Format: uuid */
+            readonly id: string;
+            /** @enum {string|null} */
+            readonly result_outcome?: "succeeded" | "failed" | null;
+            /** Format: date-time */
+            readonly result_reported_at?: string | null;
+            /** Format: uuid */
+            readonly slice_job_id: string;
+            /** Format: uuid */
+            readonly start_command_id?: string | null;
+            readonly status: string;
+            readonly token?: string;
+            /** Format: date-time */
+            readonly token_expires_at?: string;
+            /** Format: uuid */
+            readonly transfer_id: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
         readonly DeviceProfileTransferDto: {
             readonly disclaimer: string;
             readonly file_name: string;
@@ -5931,6 +6065,14 @@ export interface components {
             readonly transfer_id: string;
             /** Format: date-time */
             readonly updated_at: string;
+        };
+        readonly DeviceTransferMetricsDto: {
+            readonly activeTransfers: number;
+            readonly avgSpeedBytesPerSec: number;
+            readonly checksumErrors: number;
+            readonly completedToday: number;
+            readonly failedToday: number;
+            readonly queueAgeSeconds: number;
         };
         readonly DevLoginResponseDto: {
             /** @example true */
@@ -7018,7 +7160,7 @@ export interface components {
             readonly name: string;
             readonly slug: string;
             readonly specs: {
-                readonly [key: string]: unknown;
+                readonly [key: string]: string | number | boolean | null;
             };
             /** Format: uuid */
             readonly vendor_id: string;
@@ -7034,7 +7176,7 @@ export interface components {
             readonly name: string;
             readonly slug: string;
             readonly specs: {
-                readonly [key: string]: unknown;
+                readonly [key: string]: string | number | boolean | null;
             };
             /** @enum {string} */
             readonly status: "draft" | "published" | "archived";
@@ -7079,7 +7221,7 @@ export interface components {
             readonly material_type_id?: string;
             readonly name?: string;
             readonly specs?: {
-                readonly [key: string]: unknown;
+                readonly [key: string]: string | number | boolean | null;
             };
             /** Format: uuid */
             readonly vendor_id?: string;
@@ -7911,11 +8053,17 @@ export interface components {
             /** Format: date-time */
             readonly updated_at: string;
             readonly version: number;
+            /** @enum {string} */
+            readonly visibility: "private" | "public";
         };
         readonly ProjectDraftResponseDto: {
             /** @enum {string} */
             readonly contract_version: "project-api.v1";
             readonly project: components["schemas"]["ProjectDraftDto"];
+        };
+        readonly ProjectLifecycleResponseDto: {
+            /** @enum {string} */
+            readonly contract_version: "project-api.v1";
         };
         readonly ProjectListResponseDto: {
             /** @enum {string} */
@@ -7950,6 +8098,8 @@ export interface components {
             /** Format: date-time */
             readonly updated_at: string;
             readonly version: number;
+            /** @enum {string} */
+            readonly visibility: "private" | "public";
         };
         readonly PrusaConnectDto: {
             /** Format: password */
@@ -8157,11 +8307,17 @@ export interface components {
             /** Format: date-time */
             readonly updated_at: string;
             readonly version: number;
+            /** @enum {string} */
+            readonly visibility: "private" | "public";
         };
         readonly PublishedProjectResponseDto: {
             /** @enum {string} */
             readonly contract_version: "project-api.v1";
             readonly project: components["schemas"]["PublishedProjectDto"];
+        };
+        readonly PublishProjectDto: {
+            /** @enum {boolean} */
+            readonly confirmed: true;
         };
         readonly PurchaseCreatedResponseDto: {
             /** Format: uri */
@@ -17266,6 +17422,62 @@ export interface operations {
             };
         };
     };
+    readonly DevicesController_listPrintRequests: {
+        readonly parameters: {
+            readonly query: {
+                readonly limit: string;
+            };
+            readonly header?: never;
+            readonly path: {
+                readonly deviceId: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["DevicePrintRequestListDto"];
+                };
+            };
+            readonly 400: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            /** @description Session is absent or invalid */
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 404: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 422: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+        };
+    };
     readonly DevicesController_print: {
         readonly parameters: {
             readonly query?: never;
@@ -17687,6 +17899,60 @@ export interface operations {
             };
         };
     };
+    readonly DevicesController_transferMetrics: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path: {
+                readonly deviceId: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["DeviceTransferMetricsDto"];
+                };
+            };
+            readonly 400: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            /** @description Session is absent or invalid */
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 404: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 422: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+        };
+    };
     readonly DevicesController_transfer: {
         readonly parameters: {
             readonly query?: never;
@@ -17771,6 +18037,61 @@ export interface operations {
                 };
                 content: {
                     readonly "application/json": components["schemas"]["DeviceTransferDto"];
+                };
+            };
+            readonly 400: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            /** @description Session is absent or invalid */
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 404: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+            readonly 422: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"];
+                };
+            };
+        };
+    };
+    readonly DevicesController_cancelTransfer: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path: {
+                readonly deviceId: string;
+                readonly transferId: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["DeviceOkDto"];
                 };
             };
             readonly 400: {
@@ -21600,6 +21921,121 @@ export interface operations {
             };
         };
     };
+    readonly projectArchive: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header: {
+                readonly "If-Match": string;
+            };
+            readonly path: {
+                readonly projectId: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            /** @description Success */
+            readonly 200: {
+                headers: {
+                    readonly ETag: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ProjectLifecycleResponseDto"];
+                };
+            };
+            readonly 400: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"] & {
+                        readonly error: {
+                            /** @enum {string} */
+                            readonly code: "request.validation.v1" | "project.invalid_transition.v1";
+                            readonly message: string;
+                            readonly requestId: string;
+                        };
+                    };
+                };
+            };
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"] & {
+                        readonly error: {
+                            /** @enum {string} */
+                            readonly code: "auth.unauthenticated.v1";
+                            readonly message: string;
+                            readonly requestId: string;
+                        };
+                    };
+                };
+            };
+            readonly 404: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"] & {
+                        readonly error: {
+                            /** @enum {string} */
+                            readonly code: "project.not_found.v1";
+                            readonly message: string;
+                            readonly requestId: string;
+                        };
+                    };
+                };
+            };
+            readonly 409: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"] & {
+                        readonly error: {
+                            /** @enum {string} */
+                            readonly code: "project.version_conflict.v1";
+                            readonly message: string;
+                            readonly requestId: string;
+                        };
+                    };
+                };
+            };
+            readonly 429: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"] & {
+                        readonly error: {
+                            /** @enum {string} */
+                            readonly code: "request.rate_limited.v1";
+                            readonly message: string;
+                            readonly requestId: string;
+                        };
+                    };
+                };
+            };
+            readonly 500: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"] & {
+                        readonly error: {
+                            /** @enum {string} */
+                            readonly code: "internal.safe_error.v1";
+                            readonly message: string;
+                            readonly requestId: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
     readonly projectsGetDraft: {
         readonly parameters: {
             readonly query?: never;
@@ -21659,6 +22095,71 @@ export interface operations {
                         readonly error: {
                             /** @enum {string} */
                             readonly code: "project.not_found.v1";
+                            readonly message: string;
+                            readonly requestId: string;
+                        };
+                    };
+                };
+            };
+            readonly 429: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"] & {
+                        readonly error: {
+                            /** @enum {string} */
+                            readonly code: "request.rate_limited.v1";
+                            readonly message: string;
+                            readonly requestId: string;
+                        };
+                    };
+                };
+            };
+            readonly 500: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"] & {
+                        readonly error: {
+                            /** @enum {string} */
+                            readonly code: "internal.safe_error.v1";
+                            readonly message: string;
+                            readonly requestId: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    readonly projectForksList: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path: {
+                readonly projectId: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            /** @description Success */
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content?: never;
+            };
+            readonly 400: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"] & {
+                        readonly error: {
+                            /** @enum {string} */
+                            readonly code: "request.validation.v1";
                             readonly message: string;
                             readonly requestId: string;
                         };
@@ -22945,7 +23446,11 @@ export interface operations {
             };
             readonly cookie?: never;
         };
-        readonly requestBody?: never;
+        readonly requestBody: {
+            readonly content: {
+                readonly "application/json": components["schemas"]["PublishProjectDto"];
+            };
+        };
         readonly responses: {
             /** @description Success */
             readonly 200: {
@@ -23078,6 +23583,216 @@ export interface operations {
                         readonly error: {
                             /** @enum {string} */
                             readonly code: "request.validation.v1";
+                            readonly message: string;
+                            readonly requestId: string;
+                        };
+                    };
+                };
+            };
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"] & {
+                        readonly error: {
+                            /** @enum {string} */
+                            readonly code: "auth.unauthenticated.v1";
+                            readonly message: string;
+                            readonly requestId: string;
+                        };
+                    };
+                };
+            };
+            readonly 404: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"] & {
+                        readonly error: {
+                            /** @enum {string} */
+                            readonly code: "project.not_found.v1";
+                            readonly message: string;
+                            readonly requestId: string;
+                        };
+                    };
+                };
+            };
+            readonly 409: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"] & {
+                        readonly error: {
+                            /** @enum {string} */
+                            readonly code: "project.version_conflict.v1";
+                            readonly message: string;
+                            readonly requestId: string;
+                        };
+                    };
+                };
+            };
+            readonly 429: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"] & {
+                        readonly error: {
+                            /** @enum {string} */
+                            readonly code: "request.rate_limited.v1";
+                            readonly message: string;
+                            readonly requestId: string;
+                        };
+                    };
+                };
+            };
+            readonly 500: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"] & {
+                        readonly error: {
+                            /** @enum {string} */
+                            readonly code: "internal.safe_error.v1";
+                            readonly message: string;
+                            readonly requestId: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    readonly projectReadiness: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path: {
+                readonly projectId: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            /** @description Success */
+            readonly 200: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content?: never;
+            };
+            readonly 400: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"] & {
+                        readonly error: {
+                            /** @enum {string} */
+                            readonly code: "request.validation.v1";
+                            readonly message: string;
+                            readonly requestId: string;
+                        };
+                    };
+                };
+            };
+            readonly 401: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"] & {
+                        readonly error: {
+                            /** @enum {string} */
+                            readonly code: "auth.unauthenticated.v1";
+                            readonly message: string;
+                            readonly requestId: string;
+                        };
+                    };
+                };
+            };
+            readonly 404: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"] & {
+                        readonly error: {
+                            /** @enum {string} */
+                            readonly code: "project.not_found.v1";
+                            readonly message: string;
+                            readonly requestId: string;
+                        };
+                    };
+                };
+            };
+            readonly 429: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"] & {
+                        readonly error: {
+                            /** @enum {string} */
+                            readonly code: "request.rate_limited.v1";
+                            readonly message: string;
+                            readonly requestId: string;
+                        };
+                    };
+                };
+            };
+            readonly 500: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"] & {
+                        readonly error: {
+                            /** @enum {string} */
+                            readonly code: "internal.safe_error.v1";
+                            readonly message: string;
+                            readonly requestId: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    readonly projectRestore: {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header: {
+                readonly "If-Match": string;
+            };
+            readonly path: {
+                readonly projectId: string;
+            };
+            readonly cookie?: never;
+        };
+        readonly requestBody?: never;
+        readonly responses: {
+            /** @description Success */
+            readonly 200: {
+                headers: {
+                    readonly ETag: string;
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ProjectLifecycleResponseDto"];
+                };
+            };
+            readonly 400: {
+                headers: {
+                    readonly [name: string]: unknown;
+                };
+                content: {
+                    readonly "application/json": components["schemas"]["ApiErrorEnvelopeDto"] & {
+                        readonly error: {
+                            /** @enum {string} */
+                            readonly code: "request.validation.v1" | "project.invalid_transition.v1";
                             readonly message: string;
                             readonly requestId: string;
                         };

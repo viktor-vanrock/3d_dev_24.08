@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Headers, HttpCode, Inject, Param, Post, Req, Res, UnauthorizedException } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Headers, HttpCode, Inject, Param, Post, Query, Req, Res, UnauthorizedException } from "@nestjs/common";
 import type { Response } from "express";
 import { SESSION_USER, type RequestWithSession } from "../../../nest/auth/session-verifier.ts";
 import { getRequestId } from "../../../nest/observability/request-id.ts";
@@ -13,8 +13,10 @@ import {
   DeviceLooseBodyDto,
   DeviceOkDto,
   DevicePrintRequestDto,
+  DevicePrintRequestListDto,
   DeviceProfileTransferDto,
   DeviceShareEnvelopeDto,
+  DeviceTransferMetricsDto,
   DeviceTransferDto,
 } from "./devices.dto.ts";
 import { ApiDevicesOperation } from "./openapi.ts";
@@ -152,10 +154,23 @@ export class DevicesController {
     res.status(out.status).json(out.body);
   }
 
+  @Get("me/devices/:deviceId/print-requests")
+  @ApiDevicesOperation("List device print requests", { responseType: DevicePrintRequestListDto })
+  listPrintRequests(@Req() req: RequestWithSession, @Param("deviceId") deviceId: string, @Query("limit") rawLimit?: string) {
+    const parsed = rawLimit === undefined ? undefined : Number(rawLimit);
+    return this.devices.listPrintRequests(actor(req), deviceId, parsed);
+  }
+
   @Get("me/devices/:deviceId/print-requests/:id")
   @ApiDevicesOperation("Read a device print request", { responseType: DevicePrintRequestDto })
   printStatus(@Req() req: RequestWithSession, @Param("deviceId") deviceId: string, @Param("id") id: string) {
     return this.devices.getPrintRequest(actor(req), deviceId, id);
+  }
+
+  @Get("me/devices/:deviceId/transfer-metrics")
+  @ApiDevicesOperation("Read device transfer metrics", { responseType: DeviceTransferMetricsDto })
+  transferMetrics(@Req() req: RequestWithSession, @Param("deviceId") deviceId: string) {
+    return this.devices.getTransferMetrics(actor(req), deviceId);
   }
 
   @Post("me/devices/:deviceId/print-requests/:id/confirm-start")

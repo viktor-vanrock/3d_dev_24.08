@@ -276,6 +276,14 @@ export class DeviceCommandRelayRepository implements DeviceCommandRelayPort {
         [input.commandId, input.claimOwner, input.claimToken, input.generation, input.commandSeq, input.status, input.errorCode, ACTIVE_STATES],
       );
       const row = updated.rows[0];
+      if (row !== undefined && input.status === "executed") {
+        await client.query(
+          `update device_print_requests
+              set status = 'printing', updated_at = now()
+            where start_command_id = $1 and status = 'accepted'`,
+          [input.commandId],
+        );
+      }
       await client.query("commit");
       return row === undefined ? { kind: "conflict" } : { kind: "accepted", row: toTerminalRow(row) };
     } catch (error) {

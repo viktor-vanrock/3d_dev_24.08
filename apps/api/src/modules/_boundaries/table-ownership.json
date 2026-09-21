@@ -178,9 +178,9 @@
       "crossDomain": false
     },
     "device_print_results": {
-      "owner": "models",
+      "owner": "devices",
       "writers": [
-        "models"
+        "devices"
       ],
       "crossDomain": false
     },
@@ -1046,7 +1046,6 @@
       "build_sessions",
       "build_step_photos",
       "build_steps",
-      "device_print_results",
       "device_reputation",
       "model_download_log",
       "model_embeddings",

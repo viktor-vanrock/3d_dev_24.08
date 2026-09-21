@@ -1035,6 +1035,18 @@
   },
   {
     "method": "GET",
+    "path": "/me/devices/:deviceId/print-requests",
+    "domain": "devices",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "devices/printJob.route.ts:print-request-list",
+    "sampleParams": {
+      "deviceId": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  {
+    "method": "GET",
     "path": "/me/devices/:deviceId/print-requests/:id",
     "domain": "devices",
     "authMode": "authed",
@@ -1057,6 +1069,18 @@
     "sampleParams": {
       "deviceId": "11111111-1111-4111-8111-111111111111",
       "id": "22222222-2222-4222-8222-222222222222"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/me/devices/:deviceId/transfer-metrics",
+    "domain": "devices",
+    "authMode": "authed",
+    "closedDevAuthed": false,
+    "ownGate": null,
+    "source": "devices/transfers.route.ts:transfer-metrics",
+    "sampleParams": {
+      "deviceId": "11111111-1111-4111-8111-111111111111"
     }
   },
   {

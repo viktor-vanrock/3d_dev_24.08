@@ -150,3 +150,18 @@ export class DevicePrintRequestDto {
   @ApiPropertyOptional({ type: String, writeOnly: true }) declare readonly token?: string;
   @ApiPropertyOptional({ type: String, format: "date-time" }) declare readonly token_expires_at?: string;
 }
+export class DevicePrintRequestListItemDto extends DevicePrintRequestDto {
+  @ApiPropertyOptional({ enum: ["succeeded", "failed"], nullable: true }) declare readonly result_outcome: "succeeded" | "failed" | null;
+  @ApiPropertyOptional({ type: String, format: "date-time", nullable: true }) declare readonly result_reported_at: string | null;
+}
+export class DevicePrintRequestListDto {
+  @ApiProperty({ type: [DevicePrintRequestListItemDto] }) declare readonly requests: readonly DevicePrintRequestListItemDto[];
+}
+export class DeviceTransferMetricsDto {
+  @ApiProperty({ type: Number }) declare readonly activeTransfers: number;
+  @ApiProperty({ type: Number }) declare readonly completedToday: number;
+  @ApiProperty({ type: Number }) declare readonly failedToday: number;
+  @ApiProperty({ type: Number }) declare readonly avgSpeedBytesPerSec: number;
+  @ApiProperty({ type: Number }) declare readonly checksumErrors: number;
+  @ApiProperty({ type: Number }) declare readonly queueAgeSeconds: number;
+}

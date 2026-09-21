@@ -869,6 +869,457 @@
         ]
       }
     },
+    "/projects/{projectId}/readiness": {
+      "get": {
+        "operationId": "projectReadiness",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "error"
+                      ],
+                      "properties": {
+                        "error": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "code",
+                            "message",
+                            "requestId"
+                          ],
+                          "properties": {
+                            "code": {
+                              "type": "string",
+                              "enum": [
+                                "request.validation.v1"
+                              ]
+                            },
+                            "message": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "requestId": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "error"
+                      ],
+                      "properties": {
+                        "error": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "code",
+                            "message",
+                            "requestId"
+                          ],
+                          "properties": {
+                            "code": {
+                              "type": "string",
+                              "enum": [
+                                "auth.unauthenticated.v1"
+                              ]
+                            },
+                            "message": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "requestId": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "error"
+                      ],
+                      "properties": {
+                        "error": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "code",
+                            "message",
+                            "requestId"
+                          ],
+                          "properties": {
+                            "code": {
+                              "type": "string",
+                              "enum": [
+                                "project.not_found.v1"
+                              ]
+                            },
+                            "message": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "requestId": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "error"
+                      ],
+                      "properties": {
+                        "error": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "code",
+                            "message",
+                            "requestId"
+                          ],
+                          "properties": {
+                            "code": {
+                              "type": "string",
+                              "enum": [
+                                "request.rate_limited.v1"
+                              ]
+                            },
+                            "message": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "requestId": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "error"
+                      ],
+                      "properties": {
+                        "error": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "code",
+                            "message",
+                            "requestId"
+                          ],
+                          "properties": {
+                            "code": {
+                              "type": "string",
+                              "enum": [
+                                "internal.safe_error.v1"
+                              ]
+                            },
+                            "message": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "requestId": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "portal_session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Check whether a Project is ready to publish",
+        "tags": [
+          "Projects"
+        ]
+      }
+    },
+    "/projects/{projectId}/forks": {
+      "get": {
+        "operationId": "projectForksList",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "error"
+                      ],
+                      "properties": {
+                        "error": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "code",
+                            "message",
+                            "requestId"
+                          ],
+                          "properties": {
+                            "code": {
+                              "type": "string",
+                              "enum": [
+                                "request.validation.v1"
+                              ]
+                            },
+                            "message": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "requestId": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "error"
+                      ],
+                      "properties": {
+                        "error": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "code",
+                            "message",
+                            "requestId"
+                          ],
+                          "properties": {
+                            "code": {
+                              "type": "string",
+                              "enum": [
+                                "request.rate_limited.v1"
+                              ]
+                            },
+                            "message": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "requestId": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "error"
+                      ],
+                      "properties": {
+                        "error": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "code",
+                            "message",
+                            "requestId"
+                          ],
+                          "properties": {
+                            "code": {
+                              "type": "string",
+                              "enum": [
+                                "internal.safe_error.v1"
+                              ]
+                            },
+                            "message": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "requestId": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {},
+          {
+            "portal_session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List Projects forked from a Project",
+        "tags": [
+          "Projects"
+        ]
+      }
+    },
     "/projects/{projectId}": {
       "get": {
         "operationId": "projectsGetPublished",
@@ -18173,6 +18624,93 @@
         ]
       }
     },
+    "/me/devices/{deviceId}/transfers/{transferId}/cancel": {
+      "post": {
+        "operationId": "DevicesController_cancelTransfer",
+        "parameters": [
+          {
+            "name": "deviceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "transferId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceOkDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "description": "Session is absent or invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "portal_session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Cancel an active device transfer",
+        "tags": [
+          "devices"
+        ]
+      }
+    },
     "/me/devices/{deviceId}/incidents": {
       "get": {
         "operationId": "DevicesController_incidents",
@@ -18612,6 +19150,91 @@
         "tags": [
           "devices"
         ]
+      },
+      "get": {
+        "operationId": "DevicesController_listPrintRequests",
+        "parameters": [
+          {
+            "name": "deviceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DevicePrintRequestListDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "description": "Session is absent or invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "portal_session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List device print requests",
+        "tags": [
+          "devices"
+        ]
       }
     },
     "/me/devices/{deviceId}/print-requests/{id}": {
@@ -18696,6 +19319,85 @@
           }
         ],
         "summary": "Read a device print request",
+        "tags": [
+          "devices"
+        ]
+      }
+    },
+    "/me/devices/{deviceId}/transfer-metrics": {
+      "get": {
+        "operationId": "DevicesController_transferMetrics",
+        "parameters": [
+          {
+            "name": "deviceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceTransferMetricsDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "description": "Session is absent or invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "portal_session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Read device transfer metrics",
         "tags": [
           "devices"
         ]
@@ -30104,7 +30806,8 @@
               "project.model_published.v1",
               "project.ready_primary_required.v1",
               "project.publication_conflict.v1",
-              "project.invalid_transition.v1"
+              "project.invalid_transition.v1",
+              "device.unknown_build_volume.v1"
             ],
             "description": "Stable, versioned machine-readable error code",
             "example": "auth.unauthorized.v1"
@@ -30293,6 +30996,13 @@
               "published"
             ]
           },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "private",
+              "public"
+            ]
+          },
           "primary_model_id": {
             "type": "string",
             "format": "uuid",
@@ -30341,6 +31051,7 @@
           "tags",
           "owner",
           "publication_state",
+          "visibility",
           "primary_model_id",
           "published_revision_id",
           "models_count",
@@ -30401,6 +31112,13 @@
               "published"
             ]
           },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "private",
+              "public"
+            ]
+          },
           "primary_model_id": {
             "type": "string",
             "format": "uuid",
@@ -30435,6 +31153,7 @@
           "tags",
           "owner",
           "publication_state",
+          "visibility",
           "primary_model_id",
           "published_revision_id",
           "models_count",
@@ -30502,6 +31221,13 @@
               "published"
             ]
           },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "private",
+              "public"
+            ]
+          },
           "primary_model_id": {
             "type": "string",
             "format": "uuid",
@@ -30550,6 +31276,7 @@
           "tags",
           "owner",
           "publication_state",
+          "visibility",
           "primary_model_id",
           "published_revision_id",
           "models_count",
@@ -39331,6 +40058,134 @@
           "transfer_id",
           "created_at",
           "updated_at"
+        ]
+      },
+      "DevicePrintRequestListItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "device_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "slice_job_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "copies": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string"
+          },
+          "gcode_sha256": {
+            "type": "string",
+            "nullable": true
+          },
+          "transfer_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "start_command_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "error_code": {
+            "type": "string",
+            "nullable": true
+          },
+          "error_message": {
+            "type": "string",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "token": {
+            "type": "string",
+            "writeOnly": true
+          },
+          "token_expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "result_outcome": {
+            "type": "string",
+            "enum": [
+              "succeeded",
+              "failed"
+            ],
+            "nullable": true
+          },
+          "result_reported_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "device_id",
+          "slice_job_id",
+          "copies",
+          "status",
+          "transfer_id",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "DevicePrintRequestListDto": {
+        "type": "object",
+        "properties": {
+          "requests": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DevicePrintRequestListItemDto"
+            }
+          }
+        },
+        "required": [
+          "requests"
+        ]
+      },
+      "DeviceTransferMetricsDto": {
+        "type": "object",
+        "properties": {
+          "activeTransfers": {
+            "type": "number"
+          },
+          "completedToday": {
+            "type": "number"
+          },
+          "failedToday": {
+            "type": "number"
+          },
+          "avgSpeedBytesPerSec": {
+            "type": "number"
+          },
+          "checksumErrors": {
+            "type": "number"
+          },
+          "queueAgeSeconds": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "activeTransfers",
+          "completedToday",
+          "failedToday",
+          "avgSpeedBytesPerSec",
+          "checksumErrors",
+          "queueAgeSeconds"
         ]
       },
       "ListedSlicerProfileDto": {

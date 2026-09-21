@@ -92,11 +92,24 @@ export interface PrintRequestRow {
   idempotency_key: string;
   status: string;
   gcode_sha256: string | null;
+  transfer_id: string | null;
   start_command_id: string | null;
   error_code: string | null;
   error_message: string | null;
   created_at: Date;
   updated_at: Date;
+}
+export interface PrintRequestListRow extends PrintRequestRow {
+  result_outcome: "succeeded" | "failed" | null;
+  result_reported_at: Date | null;
+}
+export interface TransferMetricsRow {
+  active_transfers: string;
+  completed_today: string;
+  failed_today: string;
+  avg_speed_bytes_per_sec: string | null;
+  checksum_errors: string;
+  queue_age_seconds: string | null;
 }
 export interface ProfileCommandRow {
   id: string;
@@ -683,6 +696,23 @@ export class DevicesRepository implements DeviceIncidentEventReadPort, DeviceInc
     const row = await this.pool.query<PrintRequestRow>(`select * from device_print_requests where ${where}`, values);
     return row.rows[0] ?? null;
   }
+  async listPrintRequests(deviceId: DeviceIdType, limit: number): Promise<readonly PrintRequestListRow[]> {
+    return (
+      await this.pool.query<PrintRequestListRow>(
+        `select pr.*, result.outcome as result_outcome, result.reported_at as result_reported_at
+           from device_print_requests pr
+           left join lateral (
+             select outcome, reported_at from device_print_results
+              where print_request_id = pr.id
+              order by reported_at desc, id desc limit 1
+           ) result on true
+          where pr.device_id = $1
+          order by pr.created_at desc, pr.id desc
+          limit $2`,
+        [deviceId, limit],
+      )
+    ).rows;
+  }
   async insertPrintRequest(input: { deviceId: DeviceIdType; actorId: UserIdType; sliceJobId: string; copies: number; key: string }): Promise<PrintRequestRow | null> {
     const row = await this.pool.query<PrintRequestRow>(
       `insert into device_print_requests(device_id,requested_by,slice_job_id,copies,idempotency_key,status) values($1,$2,$3,$4,$5,'slice_ready') on conflict(device_id,requested_by,idempotency_key) do nothing returning *`,
@@ -735,6 +765,62 @@ export class DevicesRepository implements DeviceIncidentEventReadPort, DeviceInc
     } finally {
       client.release();
     }
+  }
+
+  async savePrintResult(params: {
+    readonly deviceId: DeviceIdType;
+    readonly agentId: string | null;
+    readonly jobId: string | null;
+    readonly modelId: string | null;
+    readonly outcome: "succeeded" | "failed";
+    readonly clientResultId: string;
+  }): Promise<void> {
+    const client = await this.pool.connect();
+    try {
+      await client.query("begin");
+      const request = await client.query<{ id: string }>(
+        `select id from device_print_requests
+          where device_id = $1 and status = 'printing'
+          order by updated_at desc, id desc limit 1 for update`,
+        [params.deviceId],
+      );
+      const printRequestId = request.rows[0]?.id ?? null;
+      const inserted = await client.query(
+        `insert into device_print_results(device_id,agent_id,job_id,model_id,outcome,client_result_id,print_request_id,reported_at)
+         values($1,$2,$3,$4,$5,$6,$7,now())
+         on conflict(device_id,client_result_id) do nothing`,
+        [params.deviceId, params.agentId, params.jobId, params.modelId, params.outcome, params.clientResultId, printRequestId],
+      );
+      if ((inserted.rowCount ?? 0) > 0 && printRequestId !== null) {
+        await client.query(
+          "update device_print_requests set status = $1, updated_at = now() where id = $2",
+          [params.outcome === "succeeded" ? "completed" : "failed", printRequestId],
+        );
+      }
+      await client.query("commit");
+    } catch (error) {
+      await client.query("rollback").catch(() => undefined);
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async getTransferMetrics(deviceId: DeviceIdType): Promise<TransferMetricsRow> {
+    const result = await this.pool.query<TransferMetricsRow>(
+      `select
+         count(*) filter (where status in ('initiated', 'transferring'))::text as active_transfers,
+         count(*) filter (where status = 'completed' and updated_at >= now() - interval '24 hours')::text as completed_today,
+         count(*) filter (where status = 'failed' and updated_at >= now() - interval '24 hours')::text as failed_today,
+         coalesce(avg(size_bytes / nullif(extract(epoch from updated_at - created_at), 0)) filter (where status = 'completed'), 0)::text as avg_speed_bytes_per_sec,
+         count(*) filter (where error_code = 'sha256_mismatch')::text as checksum_errors,
+         extract(epoch from (now() - min(created_at) filter (where status = 'initiated')))::text as queue_age_seconds
+       from device_transfers where device_id = $1`,
+      [deviceId],
+    );
+    return result.rows[0] ?? {
+      active_transfers: "0", completed_today: "0", failed_today: "0", avg_speed_bytes_per_sec: "0", checksum_errors: "0", queue_age_seconds: null,
+    };
   }
 
   async publicPrinters(ownerId: UserIdType): Promise<readonly { readonly printer: OwnedUserPrinter; readonly state: PublicDeviceStateRow | null }[]> {

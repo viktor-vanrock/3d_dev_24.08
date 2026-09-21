@@ -79,6 +79,7 @@ export type Route =
   | { screen: "printer-compare"; ids: string[] }
   | { screen: "printer-releases" }
   | { screen: "printer-device"; id: string }
+  | { screen: "printer-history"; id: string }
   | { screen: "printer-device-missing" }
   | { screen: "park" }
   | { screen: "park-add" }
@@ -261,6 +262,9 @@ export function parseLocation(pathname: string, search: string): Route {
   }
   // /printer/:id — живая страница СВОЕГО устройства из парка (MF-953, брешь №2 firmware.pilot.md,
   // не путать с каталожным /printers/:slug ниже — другой сегмент, единственное число).
+  if (parts[0] === "printer" && parts[1] && parts[2] === "history") {
+    return { screen: "printer-history", id: decodeURIComponent(parts[1]) };
+  }
   if (parts[0] === "printer" && parts[1]) {
     return { screen: "printer-device", id: decodeURIComponent(parts[1]) };
   }
@@ -631,6 +635,10 @@ export function materialPath(id: string): string {
 // канона (тот — printerPath() выше, множественное число, другая сущность).
 export function printerDevicePath(id: string): string {
   return `/printer/${encodeURIComponent(id)}`;
+}
+
+export function printerHistoryPath(id: string): string {
+  return `/printer/${encodeURIComponent(id)}/history`;
 }
 
 // Сравнение `/printers/compare?ids=a,b,c` (MF-927, nav.sections.md §3.5) — 2–4 id набора,

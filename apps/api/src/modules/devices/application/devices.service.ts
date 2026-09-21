@@ -20,6 +20,7 @@ import {
 } from "../public/index.ts";
 import {
   BEST_EFFORT_DISCLAIMER,
+  DeviceError,
   DEVICE_CONTROL_COMMANDS,
   DEVICE_SHARE_ROLES,
   MAX_DEVICE_TRANSFER_SIZE_BYTES,
@@ -34,6 +35,7 @@ import {
   type CommandRow,
   type IncidentRow,
   type PrintRequestRow,
+  type PrintRequestListRow,
   type ProfileCommandRow,
   type PublicDeviceStateRow,
   type TransferRow,
@@ -126,13 +128,16 @@ function print(row: PrintRequestRow) {
     copies: row.copies,
     status: row.status,
     gcode_sha256: row.gcode_sha256,
-    transfer_id: row.id,
+    transfer_id: row.transfer_id ?? row.id,
     start_command_id: row.start_command_id,
     error_code: row.error_code,
     error_message: row.error_message,
     created_at: row.created_at.toISOString(),
     updated_at: row.updated_at.toISOString(),
   };
+}
+function printList(row: PrintRequestListRow) {
+  return { ...print(row), result_outcome: row.result_outcome, result_reported_at: row.result_reported_at?.toISOString() ?? null };
 }
 function publicPrinter(printer: OwnedUserPrinter, state: PublicDeviceStateRow | null) {
   return {
@@ -463,6 +468,9 @@ export class DevicesService implements DevicesPort, DeviceProfileOperationsPort,
     if (!policy.allowed) fail(policy.status);
     if (typeof device.deviceStatus !== "string" || !(device.deviceStatus === "ready" || device.deviceStatus === "idle")) throw new ConflictException();
     if (!device.configFingerprint || device.configFingerprint !== slice.job.slice_trust_material.config_fingerprint) throw new ConflictException();
+    if (device.buildVolume === null || device.buildVolume === undefined) {
+      throw new DeviceError(409, "device.unknown_build_volume.v1", "Рабочий объём принтера неизвестен — невозможно проверить совместимость");
+    }
     const compat = await this.external.evaluateSliceCompat(device, slice.job);
     if (compat.verdict === "blocked") throw new ConflictException();
     let row = existing ?? (await this.repository.insertPrintRequest({ deviceId: did, actorId, sliceJobId: sliceId, copies, key }));
@@ -527,6 +535,26 @@ export class DevicesService implements DevicesPort, DeviceProfileOperationsPort,
     const row = await this.repository.findPrintRequest(did, null, { id: printId });
     if (row === null) throw new NotFoundException();
     return print(row);
+  }
+  async listPrintRequests(actorId: UserIdType, id: string, limit = 20) {
+    const did = deviceId(id);
+    if ((await this.repository.access(did, actorId)) === null) throw new NotFoundException();
+    const safeLimit = Math.min(100, Math.max(1, Number.isSafeInteger(limit) ? limit : 20));
+    return { requests: (await this.repository.listPrintRequests(did, safeLimit)).map(printList) };
+  }
+
+  async getTransferMetrics(actorId: UserIdType, id: string) {
+    const did = deviceId(id);
+    if ((await this.repository.access(did, actorId)) === null) throw new NotFoundException();
+    const metrics = await this.repository.getTransferMetrics(did);
+    return {
+      activeTransfers: Number(metrics.active_transfers),
+      completedToday: Number(metrics.completed_today),
+      failedToday: Number(metrics.failed_today),
+      avgSpeedBytesPerSec: Number(metrics.avg_speed_bytes_per_sec ?? 0),
+      checksumErrors: Number(metrics.checksum_errors),
+      queueAgeSeconds: Number(metrics.queue_age_seconds ?? 0),
+    };
   }
   async confirmPrintStart(actorId: UserIdType, id: string, printId: string, requestId: string) {
     const did = deviceId(id);

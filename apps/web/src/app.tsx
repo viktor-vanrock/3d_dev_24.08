@@ -14,7 +14,7 @@ import { IdeaSubmitScreen } from "./pages/ideasubmit.tsx";
 import { KitchenSinkPage } from "./pages/kitchensink.tsx";
 import { LoginPage } from "./pages/login.tsx";
 import { MaterialCandidatesPage } from "./pages/materialcandidates.tsx";
-import { MaterialDetailScreen, MaterialsScreen, ParkAddScreen, CommunityFirmwareScreen, DiyScreen, ParkScreen, SlicePrintScreen, PlateScreen, PrinterLiveScreen, PrinterDeviceMissingScreen, PrinterFaceScreen, PrinterCompareScreen, PrinterDetailScreen, PrintersScreen, PrinterReleasesScreen } from "@domains/printing";
+import { MaterialDetailScreen, MaterialsScreen, ParkAddScreen, CommunityFirmwareScreen, DiyScreen, ParkScreen, SlicePrintScreen, PlateScreen, PrinterLiveScreen, PrintHistoryScreen, PrinterDeviceMissingScreen, PrinterFaceScreen, PrinterCompareScreen, PrinterDetailScreen, PrintersScreen, PrinterReleasesScreen } from "@domains/printing";
 import { ProductHealthPage } from "./pages/producthealth.tsx";
 import { InstallBanner, PwaRuntime } from "@platform/pwa";
 import { authReturnUrl, clearAuthReturnUrl, feedPath, filamentsPath, headerModeFor, issuesPath, loginPath, marketPath, navigate, navigateWithTransition, printersPath, saveAuthReturnUrl, useRoute } from "./router.ts";
@@ -315,6 +315,8 @@ export function App() {
               screen = <NewsAdminEditor user={protectedUser} section={section} onSectionChange={onSectionChange} id={route.id} />;
             } else if (route.screen === "printer-device") {
               screen = <PrinterLiveScreen user={protectedUser} section={section} onSectionChange={onSectionChange} id={route.id} />;
+            } else if (route.screen === "printer-history") {
+              screen = <PrintHistoryScreen user={protectedUser} section={section} onSectionChange={onSectionChange} id={route.id} />;
             } else if (route.screen === "printer-device-missing") {
               screen = <PrinterDeviceMissingScreen user={user} section={section} onSectionChange={onSectionChange} />;
             } else if (route.screen === "park") {
