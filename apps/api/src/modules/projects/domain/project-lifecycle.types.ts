@@ -10,6 +10,14 @@ export const PROJECT_STATUS = {
 
 export type ProjectStatus = (typeof PROJECT_STATUS)[keyof typeof PROJECT_STATUS];
 
+/** Visibility is lifecycle-owned: only publication may expose a project. */
+export const PROJECT_VISIBILITY = {
+  PRIVATE: "private",
+  PUBLIC: "public",
+} as const;
+
+export type ProjectVisibility = (typeof PROJECT_VISIBILITY)[keyof typeof PROJECT_VISIBILITY];
+
 export const PROJECT_EVENT = {
   START_UPLOAD: "start_upload",
   UPLOAD_COMPLETE: "upload_complete",
@@ -27,6 +35,7 @@ export type ProjectEvent = (typeof PROJECT_EVENT)[keyof typeof PROJECT_EVENT];
 
 export type TransitionResult = {
   readonly toStatus: ProjectStatus;
+  readonly toVisibility: ProjectVisibility;
   readonly setPublishedAt: "now" | "keep" | "null";
   readonly requiresConfirm: boolean;
 };
@@ -37,33 +46,33 @@ export type TransitionTable = {
 
 export const TRANSITION_TABLE = {
   draft: {
-    start_upload: { toStatus: "uploading", setPublishedAt: "keep", requiresConfirm: false },
-    submit_for_review: { toStatus: "reviewing", setPublishedAt: "keep", requiresConfirm: false },
-    archive: { toStatus: "archived", setPublishedAt: "null", requiresConfirm: false },
+    start_upload: { toStatus: "uploading", toVisibility: "private", setPublishedAt: "keep", requiresConfirm: false },
+    submit_for_review: { toStatus: "reviewing", toVisibility: "private", setPublishedAt: "keep", requiresConfirm: false },
+    archive: { toStatus: "archived", toVisibility: "private", setPublishedAt: "null", requiresConfirm: false },
   },
   uploading: {
-    upload_complete: { toStatus: "ready", setPublishedAt: "keep", requiresConfirm: false },
-    upload_failed: { toStatus: "draft", setPublishedAt: "keep", requiresConfirm: false },
+    upload_complete: { toStatus: "ready", toVisibility: "private", setPublishedAt: "keep", requiresConfirm: false },
+    upload_failed: { toStatus: "draft", toVisibility: "private", setPublishedAt: "keep", requiresConfirm: false },
   },
   reviewing: {
-    review_passed: { toStatus: "ready", setPublishedAt: "keep", requiresConfirm: false },
-    review_failed: { toStatus: "draft", setPublishedAt: "keep", requiresConfirm: false },
+    review_passed: { toStatus: "ready", toVisibility: "private", setPublishedAt: "keep", requiresConfirm: false },
+    review_failed: { toStatus: "draft", toVisibility: "private", setPublishedAt: "keep", requiresConfirm: false },
   },
   ready: {
-    publish: { toStatus: "published", setPublishedAt: "now", requiresConfirm: true },
-    start_upload: { toStatus: "uploading", setPublishedAt: "keep", requiresConfirm: false },
-    archive: { toStatus: "archived", setPublishedAt: "null", requiresConfirm: false },
+    publish: { toStatus: "published", toVisibility: "public", setPublishedAt: "now", requiresConfirm: true },
+    start_upload: { toStatus: "uploading", toVisibility: "private", setPublishedAt: "keep", requiresConfirm: false },
+    archive: { toStatus: "archived", toVisibility: "private", setPublishedAt: "null", requiresConfirm: false },
   },
   published: {
-    unpublish: { toStatus: "unpublished", setPublishedAt: "keep", requiresConfirm: false },
-    archive: { toStatus: "archived", setPublishedAt: "keep", requiresConfirm: false },
+    unpublish: { toStatus: "unpublished", toVisibility: "private", setPublishedAt: "keep", requiresConfirm: false },
+    archive: { toStatus: "archived", toVisibility: "private", setPublishedAt: "keep", requiresConfirm: false },
   },
   unpublished: {
-    publish: { toStatus: "published", setPublishedAt: "now", requiresConfirm: true },
-    archive: { toStatus: "archived", setPublishedAt: "keep", requiresConfirm: false },
+    publish: { toStatus: "published", toVisibility: "public", setPublishedAt: "now", requiresConfirm: true },
+    archive: { toStatus: "archived", toVisibility: "private", setPublishedAt: "keep", requiresConfirm: false },
   },
   archived: {
-    restore: { toStatus: "draft", setPublishedAt: "null", requiresConfirm: false },
+    restore: { toStatus: "draft", toVisibility: "private", setPublishedAt: "null", requiresConfirm: false },
   },
 } satisfies TransitionTable;
 

@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 import { canTransition, getAllowedEvents, getTransition, PROJECT_EVENT, PROJECT_STATUS, TRANSITION_TABLE } from "./project-lifecycle.types.ts";
 
 describe("TRANSITION_TABLE — полнота", () => {
@@ -18,6 +20,26 @@ describe("TRANSITION_TABLE — полнота", () => {
 
   it("publish требует подтверждения", () => {
     expect(getTransition("ready", PROJECT_EVENT.PUBLISH)?.requiresConfirm).toBe(true);
+  });
+
+  it("publish переводит visibility в public", () => {
+    expect(getTransition("ready", PROJECT_EVENT.PUBLISH)?.toVisibility).toBe("public");
+  });
+
+  it("только publish переводит visibility в public", () => {
+    const illegal: string[] = [];
+    for (const [from, events] of Object.entries(TRANSITION_TABLE)) {
+      for (const [event, result] of Object.entries(events)) {
+        if (result.toVisibility === "public" && event !== PROJECT_EVENT.PUBLISH) illegal.push(`${from} --${event}--> public`);
+      }
+    }
+    expect(illegal).toEqual([]);
+  });
+
+  it("новый проект создаётся с visibility = private", async () => {
+    const repositoryPath = fileURLToPath(new URL("../infrastructure/postgres-project.repository.ts", import.meta.url));
+    const source = await readFile(repositoryPath, "utf8");
+    expect(source).toContain("insert into projects(owner_id, title, description, repo_url, visibility) values ($1, $2, $3, $4, 'private')");
   });
 });
 

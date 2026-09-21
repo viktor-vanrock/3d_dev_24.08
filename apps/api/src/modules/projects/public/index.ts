@@ -19,6 +19,7 @@ export interface ProjectReadView {
     readonly avatar_url: string | null;
   };
   readonly publication_state: "draft" | "published";
+  readonly visibility: "private" | "public";
   readonly primary_model_id: string | null;
   readonly repo_url: string | null;
   readonly preview_url: string | null;

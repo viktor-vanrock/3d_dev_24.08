@@ -3,6 +3,7 @@ import { getModelObjectPresignedUrl } from "../../../storage/s3.ts";
 import { ProjectId, UserId, type ModelId, type ModelRevisionId } from "../../_kernel/brandedIds.ts";
 import { decodeCursor, encodeCursor, type CursorPage } from "../domain/project.ts";
 import { assetNotFound, modelNotFound, ProjectError, projectNotFound, revisionNotFound } from "../domain/project.errors.ts";
+import { getAllowedEvents, PROJECT_EVENT } from "../domain/project-lifecycle.types.ts";
 import type { ModelRevisionView, ModelView, ProjectRepository, ProjectView } from "../domain/project.repository.ts";
 import { PostgresProjectRepository } from "../infrastructure/postgres-project.repository.ts";
 import type { ProjectReadPort, ProjectReadView } from "../public/index.ts";
@@ -22,6 +23,16 @@ function page<T>(rows: readonly T[], limit: number, token: (row: T) => readonly 
   const items = hasMore ? rows.slice(0, limit) : rows;
   const last = items.at(-1);
   return { items, next_cursor: hasMore && last !== undefined ? encodeCursor(token(last)) : null };
+}
+
+export interface ReadinessBlock {
+  readonly code: "no_primary_model" | "primary_model_not_ready" | "invalid_status";
+  readonly message: string;
+}
+
+export interface ProjectReadiness {
+  readonly ready: boolean;
+  readonly blocking: readonly ReadinessBlock[];
 }
 
 @Injectable()
@@ -65,6 +76,26 @@ export class ProjectQueryService implements ProjectReadPort {
     return value;
   }
 
+  async getReadiness(actorId: UserId, projectId: ProjectId): Promise<ProjectReadiness> {
+    const project = await this.repository.getDraft(actorId, projectId);
+    if (project === null) throw projectNotFound();
+
+    const blocking: ReadinessBlock[] = [];
+    if (project.primary_model_id === null) {
+      blocking.push({ code: "no_primary_model", message: "Не выбрана основная модель" });
+    } else if (!await this.repository.isPrimaryModelReady(projectId, project.primary_model_id)) {
+      blocking.push({ code: "primary_model_not_ready", message: "Основная модель не имеет готовой ревизии с исходным файлом" });
+    }
+    if (!getAllowedEvents(project.status).includes(PROJECT_EVENT.PUBLISH)) {
+      blocking.push({ code: "invalid_status", message: `Публикация недопустима для статуса '${project.status}'` });
+    }
+    return { ready: blocking.length === 0, blocking };
+  }
+
+  getForkedProjects(actorId: UserId | null, projectId: ProjectId) {
+    return this.repository.getForkedProjects(projectId, actorId);
+  }
+
   async getDraft(id: string, userId: string): Promise<ProjectReadView | null> {
     try {
       const actorId = UserId(userId);
@@ -90,6 +121,7 @@ export class ProjectQueryService implements ProjectReadPort {
       tags: project.tags,
       owner: project.owner,
       publication_state: project.published_revision_id === null ? "draft" : "published",
+      visibility: project.visibility,
       primary_model_id: project.primary_model_id,
       repo_url: project.repo_url ?? null,
       preview_url: previewUrl,

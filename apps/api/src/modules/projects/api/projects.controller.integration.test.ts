@@ -106,9 +106,9 @@ describe.skipIf(!process.env.DATABASE_URL)("Project API v1 HTTP integration", ()
     const first = await create();
     expect(first.status).toBe(201);
     expect(first.headers.get("etag")).toBe('"1"');
-    const firstBody = (await first.json()) as { contract_version: string; project: { id: string; models_count: number } };
+    const firstBody = (await first.json()) as { contract_version: string; project: { id: string; models_count: number; visibility: string } };
     projectId = firstBody.project.id;
-    expect(firstBody).toMatchObject({ contract_version: "project-api.v1", project: { models_count: 0 } });
+    expect(firstBody).toMatchObject({ contract_version: "project-api.v1", project: { models_count: 0, visibility: "private" } });
     expect(first.headers.get("location")).toBe(`/projects/${projectId}/draft`);
 
     const replay = await create();
@@ -147,6 +147,18 @@ describe.skipIf(!process.env.DATABASE_URL)("Project API v1 HTTP integration", ()
     });
     expect(updated.status).toBe(200);
     expect(updated.headers.get("etag")).toBe('"2"');
+  });
+
+  it("reports all publication readiness blockers to the owner", async () => {
+    const response = await fetch(`${baseUrl}/projects/${projectId}/readiness`, { headers: { authorization: `Bearer ${ownerToken}` } });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      ready: false,
+      blocking: expect.arrayContaining([
+        { code: "no_primary_model" },
+        { code: "invalid_status" },
+      ]),
+    });
   });
 
   it("reuses unchanged publication and keeps public reads pinned across draft edits", async () => {

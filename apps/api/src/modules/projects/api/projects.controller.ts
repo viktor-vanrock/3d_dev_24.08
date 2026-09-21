@@ -108,6 +108,34 @@ export class ProjectsController {
     return pageBody(await this.queries.listOwned(requiredUser(request), query));
   }
 
+  @Get(":projectId/readiness")
+  @ApiProjectOperation({
+    operationId: "projectReadiness",
+    summary: "Check whether a Project is ready to publish",
+    success: 200,
+    security: "protected",
+    projectParam: true,
+    errors: { 400: ["request.validation.v1"], 404: ["project.not_found.v1"] },
+  })
+  getReadiness(@Req() request: RequestWithSession, @Param("projectId") rawProjectId: string) {
+    return this.queries.getReadiness(requiredUser(request), ProjectId(id(rawProjectId)));
+  }
+
+  @Get(":projectId/forks")
+  @Public()
+  @ApiProjectOperation({
+    operationId: "projectForksList",
+    summary: "List Projects forked from a Project",
+    success: 200,
+    security: "optional",
+    projectParam: true,
+    errors: { 400: ["request.validation.v1"] },
+  })
+  async forks(@Req() request: RequestWithSession, @Param("projectId") rawProjectId: string) {
+    const session = await this.sessions.readSession(request);
+    return this.queries.getForkedProjects(session === null ? null : UserId(session.id), ProjectId(id(rawProjectId)));
+  }
+
   @Get(":projectId")
   @Public()
   @ApiProjectOperation({

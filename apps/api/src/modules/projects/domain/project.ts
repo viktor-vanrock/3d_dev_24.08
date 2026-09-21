@@ -1,5 +1,5 @@
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
-import { PROJECT_STATUS, type ProjectStatus } from "./project-lifecycle.types.ts";
+import { PROJECT_STATUS, PROJECT_VISIBILITY, type ProjectStatus, type ProjectVisibility } from "./project-lifecycle.types.ts";
 import { UPLOAD_LIMITS } from "./upload.ts";
 
 export const PROJECT_CONTRACT_VERSION = "project-api.v1" as const;
@@ -14,10 +14,14 @@ export type ProjectCraft = (typeof PROJECT_CRAFTS)[number];
 export type ProjectManufacturingMethod = (typeof PROJECT_MANUFACTURING_METHODS)[number];
 export type ProjectRevisionStatus = (typeof PROJECT_REVISION_STATUSES)[number];
 
-export { type ProjectStatus } from "./project-lifecycle.types.ts";
+export { type ProjectStatus, type ProjectVisibility } from "./project-lifecycle.types.ts";
 
 export function parseProjectStatus(raw: unknown): ProjectStatus {
   return typeof raw === "string" && Object.values(PROJECT_STATUS).includes(raw as ProjectStatus) ? raw as ProjectStatus : PROJECT_STATUS.DRAFT;
+}
+
+export function parseProjectVisibility(raw: unknown): ProjectVisibility {
+  return typeof raw === "string" && Object.values(PROJECT_VISIBILITY).includes(raw as ProjectVisibility) ? raw as ProjectVisibility : PROJECT_VISIBILITY.PRIVATE;
 }
 
 export interface ProjectMetadataInput {
