@@ -59,7 +59,7 @@ export function classifyError(exception: unknown, projectRoute = false): Classif
     return { status: exception.statusCode, code: exception.code as ApiErrorCode, message: exception.message };
   }
   if (exception instanceof DeviceError) {
-    return { status: exception.statusCode, code: exception.code as ApiErrorCode, message: exception.message };
+    return { status: exception.statusCode, code: exception.code, message: exception.message };
   }
   if (projectRoute && isRecord(exception) && exception.code === "LIMIT_FILE_SIZE") {
     return { status: HttpStatus.PAYLOAD_TOO_LARGE, code: "request.payload_too_large.v1", message: "Файл превышает допустимый размер" };
