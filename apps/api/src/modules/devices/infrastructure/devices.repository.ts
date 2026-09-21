@@ -814,7 +814,7 @@ export class DevicesRepository implements DeviceIncidentEventReadPort, DeviceInc
          count(*) filter (where status = 'failed' and updated_at >= now() - interval '24 hours')::text as failed_today,
          coalesce(avg(size_bytes / nullif(extract(epoch from updated_at - created_at), 0)) filter (where status = 'completed'), 0)::text as avg_speed_bytes_per_sec,
          count(*) filter (where error_code = 'sha256_mismatch')::text as checksum_errors,
-         extract(epoch from (now() - min(created_at))) filter (where status = 'initiated')::text as queue_age_seconds
+         extract(epoch from (now() - min(created_at) filter (where status = 'initiated')))::text as queue_age_seconds
        from device_transfers where device_id = $1`,
       [deviceId],
     );
