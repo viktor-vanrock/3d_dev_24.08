@@ -35,7 +35,7 @@ describe("hostile transfer process-kill recovery", () => {
     const effects = await readEffects(directory);
     const driver = recoveryDriver();
     const handler = new FileTransferHandler(driver, "device-1", directory, {
-      reconcileUpload: async () => ({ status: "present", storedAs: `gcodes/${effects.remoteFile!}`, sizeBytes: 5, sha256: createHash("sha256").update(Buffer.from(effects.remoteBytes!, "base64")).digest("hex") }),
+      reconcileUpload: async () => ({ status: "present", storedAs: `gcodes/${effects.remoteFile!}`, sizeBytes: 5, sha256: createHash("sha256").update(effects.remoteBytes!).digest("hex") }),
     });
     await expect(handler.start(start(false))).resolves.toMatchObject({ outcome: "stored" });
     expect((await readEffects(directory)).uploads).toBe(1);

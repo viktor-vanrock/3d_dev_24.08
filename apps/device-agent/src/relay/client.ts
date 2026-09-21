@@ -4,7 +4,7 @@ import {
   parseGatewayToRelayFrame,
   parseRelayToGatewayFrame,
   type Command,
-  type FileChunk,
+  type FileChunkHeader,
   type FileChunkAck,
   type FileResult,
   type FileStart,
@@ -29,7 +29,7 @@ export interface RelayClientConfig {
   minPushGapMs?: number;
   onCommand?: (frame: Command) => Promise<CommandTerminalFrame>;
   onFileStart?: (frame: FileStart) => Promise<FileStartAck | FileResult>;
-  onFileChunk?: (frame: FileChunk) => Promise<FileChunkAck | FileResult>;
+  onFileChunkBinary?: (header: FileChunkHeader, data: Buffer) => Promise<FileChunkAck | FileResult>;
   log?: (message: string, ...args: unknown[]) => void;
   onLifecycle?: (event: RelayLifecycleEvent) => void;
 }
@@ -53,6 +53,7 @@ export class RelayClient {
   private closed = true;
   private heartbeatIntervalSeconds = 20;
   private socketGeneration = 0;
+  private pendingFileChunkHeader: FileChunkHeader | null = null;
 
   private readonly lastKnown = new Map<string, HeartbeatDeviceUpdate>();
   private readonly nextSeqByDevice = new Map<string, number>();
@@ -142,8 +143,21 @@ export class RelayClient {
       if (this.isActiveSocket(socket, generation)) this.config.onLifecycle?.({ type: "socket_open", generation });
     });
 
-    socket.on("message", (raw: Buffer) => {
+    socket.on("message", (raw: Buffer, isBinary: boolean) => {
       if (!this.isActiveSocket(socket, generation)) return;
+      if (isBinary) {
+        const header = this.pendingFileChunkHeader;
+        this.pendingFileChunkHeader = null;
+        if (!header || raw.byteLength !== header.size_bytes || !this.config.onFileChunkBinary) {
+          this.log("device-agent: rejected binary file frame");
+          socket.close(4001, "invalid_binary_file_frame");
+          return;
+        }
+        void this.config.onFileChunkBinary(header, raw).then((response) => this.sendFrame(response, socket, generation)).catch((error: unknown) => {
+          this.log("device-agent: binary file handler failed", error);
+        });
+        return;
+      }
       const parsed = parseRelayToGatewayFrame(raw.toString("utf8"));
       if (!parsed.ok) {
         this.log("device-agent: rejected relay frame", parsed.error);
@@ -185,8 +199,16 @@ export class RelayClient {
         this.handleCommandFrame(frame, socket, generation);
         return;
       }
-      if (frame.type === "file_start" || frame.type === "file_chunk") {
-        this.handleFileFrame(frame, socket, generation);
+      if (frame.type === "file_chunk_header") {
+        if (this.pendingFileChunkHeader !== null) {
+          socket.close(4001, "binary_file_header_pending");
+          return;
+        }
+        this.pendingFileChunkHeader = frame;
+        return;
+      }
+      if (frame.type === "file_start") {
+        this.handleFileStartFrame(frame, socket, generation);
       }
     });
 
@@ -291,8 +313,8 @@ export class RelayClient {
       });
   }
 
-  private handleFileFrame(frame: FileStart | FileChunk, socket: WebSocket, generation: number): void {
-    const result = frame.type === "file_start" ? this.config.onFileStart?.(frame) : this.config.onFileChunk?.(frame);
+  private handleFileStartFrame(frame: FileStart, socket: WebSocket, generation: number): void {
+    const result = this.config.onFileStart?.(frame);
     if (!result) return;
     void result.then((response) => this.sendFrame(response, socket, generation)).catch((error: unknown) => {
       this.log("device-agent: file handler failed", error);

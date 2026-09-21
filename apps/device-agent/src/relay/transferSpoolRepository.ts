@@ -168,6 +168,21 @@ export class TransferSpoolRepository {
     return total;
   }
 
+  async spoolBytes(): Promise<number> {
+    const { readdir } = await import("node:fs/promises");
+    await mkdir(this.directory, { recursive: true });
+    let total = 0;
+    for (const name of await readdir(this.directory)) {
+      if (!name.endsWith(".part")) continue;
+      try {
+        total += (await stat(join(this.directory, name))).size;
+      } catch (error) {
+        if (!isNotFound(error)) throw error;
+      }
+    }
+    return total;
+  }
+
   private async readValidStateWithoutRecovery(transferId: string): Promise<TransferSpoolState | null> {
     try {
       const value = JSON.parse(await readFile(this.statePath(transferId), "utf8")) as unknown;

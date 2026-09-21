@@ -1,6 +1,6 @@
 import { createHash, randomUUID, type Hash } from "node:crypto";
 import { Inject, Injectable } from "@nestjs/common";
-import type { FileChunk, FileChunkAck, FileResult, FileStart, FileStartAck } from "@portal/contracts/device-protocol/v1";
+import type { FileChunkAck, FileChunkHeader, FileResult, FileStart, FileStartAck } from "@portal/contracts/device-protocol/v1";
 import type { RelayTransferMetadataResponseDto, RelayTransferSourceUrlResponseDto } from "@portal/contracts/http/relay-internal.v1.dto";
 import { RelayApiClient } from "../api/relay-api-client.service.ts";
 import { RelayLogger } from "../observability/relay-logger.ts";
@@ -18,7 +18,7 @@ const DEFAULT_OPTIONS: FileTransferOptions = {
   sourceTimeoutMs: 10_000,
 };
 
-type ApiTransferErrorCode = "device_not_owned" | "device_revoked" | "invalid_transfer" | "invalid_file" | "transfer_conflict" | "invalid_sequence" | "checksum_mismatch" | "size_mismatch" | "source_changed" | "upload_failed" | "start_failed" | "timeout" | "disconnected" | "internal_error";
+type ApiTransferErrorCode = "device_not_owned" | "device_revoked" | "invalid_transfer" | "invalid_file" | "transfer_conflict" | "invalid_sequence" | "checksum_mismatch" | "size_mismatch" | "source_changed" | "upload_failed" | "start_failed" | "timeout" | "disconnected" | "internal_error" | "disk_full" | "quota_exceeded" | "write_error" | "transfer_expired" | "cancelled";
 type TransferOutcome = { readonly accepted: true; readonly replayed: boolean } | { readonly accepted: false; readonly errorCode: ApiTransferErrorCode };
 
 interface PendingChunk {
@@ -35,6 +35,8 @@ interface ActiveTransfer {
   readonly metadata: RelayTransferMetadataResponseDto;
   readonly resultOperationId: string;
   source?: RelayTransferSourceUrlResponseDto;
+  sourceReader?: ReadableStreamDefaultReader<Uint8Array>;
+  sourceRemainder?: Buffer;
   nextSequence: number;
   nextOffset: number;
   pending?: PendingChunk;
@@ -66,6 +68,21 @@ export class FileTransferService {
 
   get activeCount(): number {
     return this.active.size;
+  }
+
+  cancelTransfers(transferIds: readonly string[]): { readonly cancelled: readonly string[]; readonly notActive: readonly string[] } {
+    const cancelled: string[] = [];
+    const notActive: string[] = [];
+    for (const transferId of transferIds) {
+      const entry = this.active.get(transferId);
+      if (!entry || entry.closed) {
+        notActive.push(transferId);
+        continue;
+      }
+      this.release(entry);
+      cancelled.push(transferId);
+    }
+    return { cancelled, notActive };
   }
 
   async startTransfer(session: TransferSessionFence, transferId: string): Promise<TransferOutcome> {
@@ -194,8 +211,7 @@ export class FileTransferService {
     if (entry.nextOffset >= entry.metadata.size_bytes) return;
     entry.pumping = true;
     try {
-      const end = Math.min(entry.metadata.size_bytes, entry.nextOffset + entry.metadata.chunk_size_bytes) - 1;
-      const bytes = await this.fetchRange(entry, entry.nextOffset, end);
+      const bytes = await this.readChunk(entry);
       entry.checksum?.update(bytes);
       const pending: PendingChunk = {
         seq: entry.nextSequence,
@@ -205,16 +221,16 @@ export class FileTransferService {
         last: entry.nextOffset + bytes.byteLength === entry.metadata.size_bytes,
         operationId: randomUUID(),
       };
-      const frame: FileChunk = {
-        type: "file_chunk",
+      const header: FileChunkHeader = {
+        type: "file_chunk_header",
         device_id: entry.metadata.device_id,
         transfer_id: entry.metadata.transfer_id,
         seq: pending.seq,
         offset_bytes: pending.offset,
+        size_bytes: bytes.byteLength,
         last: pending.last,
-        data_base64: bytes.toString("base64"),
       };
-      const outcome = await this.sessions.sendFileChunk(entry.session, frame);
+      const outcome = await this.sessions.sendFileChunk(entry.session, header, bytes);
       if (outcome !== "sent") {
         this.release(entry);
         return;
@@ -231,7 +247,43 @@ export class FileTransferService {
     }
   }
 
-  private async fetchRange(entry: ActiveTransfer, start: number, end: number): Promise<Buffer> {
+  /** Opens one HTTP stream per relay session; a reconnect resumes with one Range request. */
+  private async readChunk(entry: ActiveTransfer): Promise<Buffer> {
+    const chunkSize = entry.metadata.chunk_size_bytes;
+    const parts: Buffer[] = [];
+    let received = 0;
+    if (entry.sourceRemainder?.length) {
+      const first = entry.sourceRemainder;
+      entry.sourceRemainder = undefined;
+      if (first.length > chunkSize) {
+        parts.push(first.subarray(0, chunkSize));
+        entry.sourceRemainder = first.subarray(chunkSize);
+        return Buffer.concat(parts, chunkSize);
+      }
+      parts.push(first);
+      received = first.length;
+    }
+    if (!entry.sourceReader) entry.sourceReader = await this.openSourceStream(entry);
+    while (received < chunkSize) {
+      const { done, value } = await entry.sourceReader.read();
+      if (done) break;
+      const bytes = Buffer.from(value);
+      const remaining = chunkSize - received;
+      if (bytes.length > remaining) {
+        parts.push(bytes.subarray(0, remaining));
+        entry.sourceRemainder = bytes.subarray(remaining);
+        received += remaining;
+        break;
+      }
+      parts.push(bytes);
+      received += bytes.length;
+    }
+    if (received === 0 || entry.nextOffset + received > entry.metadata.size_bytes) throw new TransferFailure("size_mismatch");
+    if (entry.nextOffset + received < entry.metadata.size_bytes && received !== chunkSize) throw new TransferFailure("size_mismatch");
+    return Buffer.concat(parts, received);
+  }
+
+  private async openSourceStream(entry: ActiveTransfer): Promise<ReadableStreamDefaultReader<Uint8Array>> {
     for (let attempt = 0; attempt < 2; attempt += 1) {
       const source = await this.ensureSource(entry, attempt > 0);
       const controller = new AbortController();
@@ -241,7 +293,7 @@ export class FileTransferService {
         let response: Response;
         try {
           response = await this.options.sourceFetch(source.source_url, {
-            headers: { range: `bytes=${start}-${end}` },
+            headers: entry.nextOffset > 0 ? { range: `bytes=${entry.nextOffset}-` } : {},
             signal: controller.signal,
             redirect: "error",
           });
@@ -253,46 +305,27 @@ export class FileTransferService {
           entry.source = undefined;
           continue;
         }
-        if (response.status !== 206) {
+        const expectedStatus = entry.nextOffset > 0 ? 206 : 200;
+        if (response.status !== expectedStatus) {
           if (response.status === 401 || response.status === 403) throw new TransferFailure("invalid_transfer");
           if (response.status >= 500) throw new Error("source temporarily unavailable");
           throw new TransferFailure("source_changed");
         }
-        const expectedLength = end - start + 1;
-        const contentRange = response.headers.get("content-range");
-        if (contentRange !== `bytes ${start}-${end}/${entry.metadata.size_bytes}`) throw new TransferFailure("size_mismatch");
+        if (!response.body) throw new TransferFailure("size_mismatch");
         const declaredLength = response.headers.get("content-length");
-        if (declaredLength !== null && Number(declaredLength) !== expectedLength) throw new TransferFailure("size_mismatch");
-        const bytes = await this.readBoundedBody(response, expectedLength);
-        if (bytes.byteLength !== expectedLength || bytes.byteLength > entry.metadata.chunk_size_bytes) throw new TransferFailure("size_mismatch");
-        return bytes;
+        const expectedLength = entry.metadata.size_bytes - entry.nextOffset;
+        if (declaredLength !== null && Number(declaredLength) !== expectedLength) {
+          throw new TransferFailure("size_mismatch");
+        }
+        if (entry.nextOffset > 0 && response.headers.get("content-range") !== `bytes ${entry.nextOffset}-${entry.metadata.size_bytes - 1}/${entry.metadata.size_bytes}`) {
+          throw new TransferFailure("size_mismatch");
+        }
+        return response.body.getReader();
       } finally {
         clearTimeout(timeout);
       }
     }
     throw new TransferFailure("invalid_transfer");
-  }
-
-  private async readBoundedBody(response: Response, expectedLength: number): Promise<Buffer> {
-    if (!response.body) throw new TransferFailure("size_mismatch");
-    const reader = response.body.getReader();
-    const chunks: Uint8Array[] = [];
-    let received = 0;
-    try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        received += value.byteLength;
-        if (received > expectedLength) throw new TransferFailure("size_mismatch");
-        chunks.push(value);
-      }
-    } catch (error) {
-      await reader.cancel().catch(() => undefined);
-      throw error;
-    } finally {
-      reader.releaseLock();
-    }
-    return Buffer.concat(chunks, received);
   }
 
   private async ensureSource(entry: ActiveTransfer, forceRefresh: boolean): Promise<RelayTransferSourceUrlResponseDto> {
@@ -407,6 +440,11 @@ export class FileTransferService {
       upload_failed: "upload_failed",
       start_failed: "start_failed",
       transfer_timeout: "timeout",
+      disk_full: "disk_full",
+      quota_exceeded: "quota_exceeded",
+      write_error: "write_error",
+      transfer_expired: "transfer_expired",
+      cancelled: "cancelled",
     };
     return mapping[code];
   }

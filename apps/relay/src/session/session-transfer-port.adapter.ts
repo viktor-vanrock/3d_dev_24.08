@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import type { FileChunk, FileStart } from "@portal/contracts/device-protocol/v1";
+import type { FileChunkHeader, FileStart } from "@portal/contracts/device-protocol/v1";
 import type { TransferSendOutcome, TransferSessionFence, TransferSessionPort } from "../transfers/transfer-session.port.ts";
 import { SessionRegistry } from "./session-registry.ts";
 
@@ -19,12 +19,16 @@ export class SessionTransferPortAdapter implements TransferSessionPort {
     return this.send(session, frame.device_id, JSON.stringify(frame));
   }
 
-  sendFileChunk(session: TransferSessionFence, frame: FileChunk): TransferSendOutcome {
-    return this.send(session, frame.device_id, JSON.stringify(frame));
+  sendFileChunk(session: TransferSessionFence, header: FileChunkHeader, data: Buffer): TransferSendOutcome {
+    if (!this.registry.current(session) || !this.registry.authorizes(session, header.device_id)) return "unavailable";
+    return this.registry.sendBatch(session, [
+      { payload: JSON.stringify(header), binary: false },
+      { payload: data, binary: true },
+    ]) ? "sent" : "backpressure";
   }
 
-  private send(session: TransferSessionFence, deviceId: string, payload: string): TransferSendOutcome {
+  private send(session: TransferSessionFence, deviceId: string, payload: string | Buffer, binary = false): TransferSendOutcome {
     if (!this.registry.current(session) || !this.registry.authorizes(session, deviceId)) return "unavailable";
-    return this.registry.send(session, payload) ? "sent" : "backpressure";
+    return this.registry.send(session, payload, binary) ? "sent" : "backpressure";
   }
 }

@@ -10,6 +10,7 @@ export type {
   DeviceStatus,
   Error,
   FileChunk,
+  FileChunkHeader,
   FileChunkAck,
   FileResult,
   FileStart,

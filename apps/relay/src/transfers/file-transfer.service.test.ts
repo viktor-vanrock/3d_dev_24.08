@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it, vi } from "vitest";
-import type { FileChunk, FileStart } from "@portal/contracts/device-protocol/v1";
+import type { FileChunkHeader, FileStart } from "@portal/contracts/device-protocol/v1";
 import type { RelayTransferMetadataResponseDto, RelayTransferSourceUrlResponseDto } from "@portal/contracts/http/relay-internal.v1.dto";
 import type { RelayApiClient } from "../api/relay-api-client.service.ts";
 import type { RelayLogger } from "../observability/relay-logger.ts";
@@ -52,7 +52,7 @@ interface Harness {
     current: boolean;
     chunkOutcome: TransferSendOutcome;
     starts: FileStart[];
-    chunks: FileChunk[];
+    chunks: Array<{ readonly header: FileChunkHeader; readonly data: Buffer }>;
   };
   readonly sourceFetch: ReturnType<typeof vi.fn>;
 }
@@ -94,30 +94,28 @@ function harness(bytes: Uint8Array, metadataOverrides: Partial<RelayTransferMeta
     current: true,
     chunkOutcome: "sent" as TransferSendOutcome,
     starts: [] as FileStart[],
-    chunks: [] as FileChunk[],
+    chunks: [] as Array<{ readonly header: FileChunkHeader; readonly data: Buffer }>,
     isCurrent: () => sessions.current,
     authorizes: (_session: TransferSessionFence, deviceId: string) => sessions.authorized && deviceId === transferMetadata.device_id,
     sendFileStart: (_session: TransferSessionFence, frame: FileStart) => {
       sessions.starts.push(frame);
       return sessions.current ? "sent" as const : "unavailable" as const;
     },
-    sendFileChunk: (_session: TransferSessionFence, frame: FileChunk) => {
-      sessions.chunks.push(frame);
+    sendFileChunk: (_session: TransferSessionFence, header: FileChunkHeader, data: Buffer) => {
+      sessions.chunks.push({ header, data });
       return sessions.chunkOutcome;
     },
   };
   const sourceFetch = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
     const range = new Headers(init?.headers).get("range");
-    const match = /^bytes=(\d+)-(\d+)$/.exec(range ?? "");
-    if (!match) return new Response(null, { status: 400 });
-    const start = Number(match[1]);
-    const end = Number(match[2]);
-    const body = bytes.slice(start, end + 1);
+    const match = /^bytes=(\d+)-$/.exec(range ?? "");
+    const start = match ? Number(match[1]) : 0;
+    const body = bytes.slice(start);
     return new Response(body, {
-      status: 206,
+      status: match ? 206 : 200,
       headers: {
         "content-length": String(body.byteLength),
-        "content-range": `bytes ${start}-${end}/${transferMetadata.size_bytes}`,
+        ...(match ? { "content-range": `bytes ${start}-${transferMetadata.size_bytes - 1}/${transferMetadata.size_bytes}` } : {}),
       },
     });
   });
@@ -132,16 +130,16 @@ async function acknowledgeLastChunk(test: Harness): Promise<void> {
   if (!chunk) throw new Error("expected a chunk");
   await test.service.handleChunkAcknowledged(session, {
     type: "file_chunk_ack",
-    device_id: chunk.device_id,
-    transfer_id: chunk.transfer_id,
-    seq: chunk.seq,
-    next_seq: chunk.seq + 1,
-    next_offset_bytes: chunk.offset_bytes + Buffer.from(chunk.data_base64, "base64").byteLength,
+    device_id: chunk.header.device_id,
+    transfer_id: chunk.header.transfer_id,
+    seq: chunk.header.seq,
+    next_seq: chunk.header.seq + 1,
+    next_offset_bytes: chunk.header.offset_bytes + chunk.data.byteLength,
   });
 }
 
 describe("FileTransferService", () => {
-  it("streams bounded ranges, accepts the agent's terminal result for the final chunk, and never exposes the source URL", async () => {
+  it("streams bounded chunks, accepts the agent's terminal result for the final chunk, and never exposes the source URL", async () => {
     const bytes = Buffer.from("abcdef");
     const test = harness(bytes);
 
@@ -150,17 +148,17 @@ describe("FileTransferService", () => {
     expect(test.sessions.starts).toHaveLength(1);
     await test.service.handleStartAcknowledged(session, { type: "file_start_ack", device_id: "device-1", transfer_id: "transfer-1", next_seq: 0, next_offset_bytes: 0 });
     expect(test.sessions.chunks).toHaveLength(1);
-    expect(Buffer.from(test.sessions.chunks[0]!.data_base64, "base64").toString()).toBe("abc");
+    expect(test.sessions.chunks[0]!.data.toString()).toBe("abc");
     await acknowledgeLastChunk(test);
     expect(test.sessions.chunks).toHaveLength(2);
-    expect(Buffer.from(test.sessions.chunks[1]!.data_base64, "base64").toString()).toBe("def");
+    expect(test.sessions.chunks[1]!.data.toString()).toBe("def");
 
     const result = await test.service.handleResult(session, { type: "file_result", device_id: "device-1", transfer_id: "transfer-1", outcome: "stored", stored_as: "part.gcode" });
     expect(result).toEqual({ accepted: true, replayed: false });
     expect(test.api.relayTransferProgress).toHaveBeenCalledTimes(2);
     expect(test.api.relayTransferResult).toHaveBeenCalledWith(expect.objectContaining({ body: expect.objectContaining({ status: "completed", next_offset: 6, next_sequence: 2 }) }));
     expect(JSON.stringify([...test.sessions.starts, ...test.sessions.chunks])).not.toContain("source.test");
-    expect(test.sourceFetch.mock.calls.map(([, init]) => new Headers(init?.headers).get("range"))).toEqual(["bytes=0-2", "bytes=3-5"]);
+    expect(test.sourceFetch.mock.calls.map(([, init]) => new Headers(init?.headers).get("range"))).toEqual([null]);
   });
 
   it("recovers service state from API metadata and resumes at the durable agent-confirmed position", async () => {
@@ -171,8 +169,8 @@ describe("FileTransferService", () => {
     expect(test.sessions.starts[0]).toMatchObject({ chunk_size_bytes: 3, object_version: "version-1" });
     await test.service.handleStartAcknowledged(session, { type: "file_start_ack", device_id: "device-1", transfer_id: "transfer-1", next_seq: 1, next_offset_bytes: 3 });
 
-    expect(test.sessions.chunks[0]).toMatchObject({ seq: 1, offset_bytes: 3, last: true });
-    expect(new Headers(test.sourceFetch.mock.calls[0]?.[1]?.headers).get("range")).toBe("bytes=3-5");
+    expect(test.sessions.chunks[0]?.header).toMatchObject({ seq: 1, offset_bytes: 3, last: true });
+    expect(new Headers(test.sourceFetch.mock.calls[0]?.[1]?.headers).get("range")).toBe("bytes=3-");
   });
 
   it("rejects checksum drift when refreshing the immutable source", async () => {
@@ -190,7 +188,7 @@ describe("FileTransferService", () => {
     expect(test.api.relayTransferResult).toHaveBeenCalledWith(expect.objectContaining({ body: expect.objectContaining({ status: "failed", error_code: "checksum_mismatch" }) }));
   });
 
-  it("rejects a source response whose bounded range has the wrong size", async () => {
+  it("rejects a source response whose streaming response is invalid", async () => {
     const bytes = Buffer.from("abcdef");
     const test = harness(bytes);
     test.sourceFetch.mockResolvedValueOnce(new Response(Buffer.from("ab"), { status: 206, headers: { "content-length": "2", "content-range": "bytes 0-1/6" } }));
@@ -198,7 +196,7 @@ describe("FileTransferService", () => {
     await test.service.startTransfer(session, "transfer-1");
     await test.service.handleStartAcknowledged(session, { type: "file_start_ack", device_id: "device-1", transfer_id: "transfer-1", next_seq: 0, next_offset_bytes: 0 });
 
-    expect(test.api.relayTransferResult).toHaveBeenCalledWith(expect.objectContaining({ body: expect.objectContaining({ error_code: "size_mismatch" }) }));
+    expect(test.api.relayTransferResult).toHaveBeenCalledWith(expect.objectContaining({ body: expect.objectContaining({ error_code: "source_changed" }) }));
   });
 
   it("fails closed when the API denies metadata authorization", async () => {
@@ -276,7 +274,7 @@ describe("FileTransferService", () => {
     await test.service.startTransfer(session, "transfer-1");
     await test.service.handleStartAcknowledged(session, { type: "file_start_ack", device_id: "device-1", transfer_id: "transfer-1", next_seq: 0, next_offset_bytes: 0 });
     const chunk = test.sessions.chunks[0]!;
-    const ack = { type: "file_chunk_ack" as const, device_id: "device-1", transfer_id: "transfer-1", seq: chunk.seq, next_seq: 1, next_offset_bytes: 3 };
+    const ack = { type: "file_chunk_ack" as const, device_id: "device-1", transfer_id: "transfer-1", seq: chunk.header.seq, next_seq: 1, next_offset_bytes: 3 };
     test.api.relayTransferProgress.mockRejectedValueOnce(new Error("response lost"));
 
     expect(await test.service.handleChunkAcknowledged(session, ack)).toEqual({ accepted: false, errorCode: "internal_error" });

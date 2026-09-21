@@ -193,7 +193,7 @@ async function main(): Promise<void> {
         return commands.handle(frame);
       },
       onFileStart: (frame) => fileTransfer.start(frame),
-      onFileChunk: (frame) => fileTransfer.chunk(frame),
+      onFileChunkBinary: (header, data) => fileTransfer.chunkBinary(header, data),
       onLifecycle: (event) => {
         applyRelayLifecycleEvent(runtime, event, () => { relayClient.disconnect(); });
       },

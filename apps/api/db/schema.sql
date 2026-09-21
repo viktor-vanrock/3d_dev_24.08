@@ -1135,6 +1135,7 @@ CREATE TABLE public.device_transfers (
     object_version text,
     content_type text DEFAULT 'application/octet-stream'::text NOT NULL,
     source_ready_at timestamp with time zone,
+    expires_at timestamp with time zone DEFAULT (now() + '24:00:00'::interval),
     CONSTRAINT device_transfers_bytes_transferred_check CHECK ((bytes_transferred >= 0)),
     CONSTRAINT device_transfers_content_type_check CHECK (((length(content_type) >= 1) AND (length(content_type) <= 128))),
     CONSTRAINT device_transfers_file_name_check CHECK (((length(TRIM(BOTH FROM file_name)) >= 1) AND (length(TRIM(BOTH FROM file_name)) <= 256))),
@@ -6105,6 +6106,13 @@ CREATE INDEX device_transfers_device_idx ON public.device_transfers USING btree 
 --
 
 CREATE INDEX device_transfers_pending_idx ON public.device_transfers USING btree (device_id, status) WHERE (status = ANY (ARRAY['initiated'::text, 'transferring'::text]));
+
+
+--
+-- Name: idx_device_transfers_expires; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_device_transfers_expires ON public.device_transfers USING btree (expires_at) WHERE (status = ANY (ARRAY['initiated'::text, 'transferring'::text]));
 
 
 --

@@ -33,7 +33,7 @@ const driver: PrinterDriver = {
     const chunks: Buffer[] = [];
     for await (const chunk of input.data) chunks.push(Buffer.from(chunk));
     const effects = await readEffects();
-    await writeFile(sideEffectsPath, JSON.stringify({ ...effects, uploads: effects.uploads + 1, remoteFile: input.fileName, remoteBytes: Buffer.concat(chunks).toString("base64") }));
+    await writeFile(sideEffectsPath, JSON.stringify({ ...effects, uploads: effects.uploads + 1, remoteFile: input.fileName, remoteBytes: Buffer.concat(chunks).toString("utf8") }));
     if (mode === "upload") process.kill(process.pid, "SIGKILL");
     return { ok: true, storedAs: `gcodes/${input.fileName}` };
   },
@@ -49,7 +49,10 @@ await handler.start({
   kind: "gcode", start_print: startPrint, chunk_size_bytes: 65_536,
 });
 armed = true;
-await handler.chunk({ type: "file_chunk", device_id: "device-1", transfer_id: "process-kill", seq: 0, offset_bytes: 0, last: mode !== "boundary", data_base64: "aGVsbG8=" });
+await handler.chunkBinary(
+  { type: "file_chunk_header", device_id: "device-1", transfer_id: "process-kill", seq: 0, offset_bytes: 0, size_bytes: 5, last: mode !== "boundary" },
+  Buffer.from("hello"),
+);
 throw new Error("hostile child was expected to be killed");
 
 async function readEffects(): Promise<{ uploads: number; starts: number; currentJob: string | null; remoteFile: string | null; remoteBytes: string | null }> {

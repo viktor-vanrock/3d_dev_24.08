@@ -135,6 +135,10 @@ export class GatewayRuntime implements OnApplicationBootstrap, OnApplicationShut
     return { closed, notConnected };
   }
 
+  cancelTransfers(transferIds: readonly string[]): { readonly cancelled: readonly string[]; readonly notActive: readonly string[] } {
+    return this.fileTransfers.cancelTransfers(transferIds);
+  }
+
   async shutdown(): Promise<void> {
     if (this.draining) return;
     this.draining = true;
