@@ -68,6 +68,13 @@ export interface PublishedProjectView extends ProjectView {
   readonly published_models: readonly ModelView[];
 }
 
+export interface ProjectForkView {
+  readonly id: ProjectId;
+  readonly title: string;
+  readonly visibility: ProjectVisibility;
+  readonly status: ProjectStatus;
+}
+
 export interface MutationResult<T> {
   readonly value: T;
   readonly version: number;
@@ -91,6 +98,8 @@ export interface ProjectRepository {
   listOwned(actorId: UserId, limit: number, cursor: readonly unknown[] | null): Promise<readonly ProjectView[]>;
   getPublished(projectId: ProjectId): Promise<PublishedProjectView | null>;
   getDraft(actorId: UserId, projectId: ProjectId): Promise<ProjectView | null>;
+  isPrimaryModelReady(projectId: ProjectId, modelId: ModelId): Promise<boolean>;
+  getForkedProjects(projectId: ProjectId, actorId: UserId | null): Promise<readonly ProjectForkView[]>;
   updateLifecycleStatus(
     projectId: ProjectId,
     actorId: UserId,

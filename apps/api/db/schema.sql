@@ -3137,6 +3137,7 @@ CREATE TABLE public.project_revisions (
     content_hash bytea NOT NULL,
     primary_model_id uuid NOT NULL,
     metadata_snapshot jsonb NOT NULL,
+    git_ref text,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     CONSTRAINT project_revisions_content_hash_check CHECK ((octet_length(content_hash) = 32)),
     CONSTRAINT project_revisions_metadata_object_check CHECK ((jsonb_typeof(metadata_snapshot) = 'object'::text))

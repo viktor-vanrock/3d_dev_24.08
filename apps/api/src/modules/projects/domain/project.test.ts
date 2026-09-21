@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 import { canonicalJson, decodeCursor, encodeCursor, normalizeTags, sha256Canonical } from "./project.ts";
 import { parseIdempotencyKey, parseIfMatch, projectEtag, ProjectError } from "./project.errors.ts";
 
@@ -33,5 +35,19 @@ describe("Project API v1 domain primitives", () => {
 
   it("normalizes and deterministically orders unique tags", () => {
     expect(normalizeTags([" Beta ", "alpha", "beta"])).toEqual(["alpha", "beta"]);
+  });
+
+  it("публичный листинг требует visibility = public", async () => {
+    const repositoryPath = fileURLToPath(new URL("../infrastructure/postgres-project.repository.ts", import.meta.url));
+    const source = await readFile(repositoryPath, "utf8");
+    expect(source).toContain("where p.deleted_at is null and p.visibility = 'public'");
+    expect(source).toContain("where p.id = $1 and p.deleted_at is null and p.visibility = 'public'");
+  });
+
+  it("публичный preview asset требует published revision и visibility = public", async () => {
+    const repositoryPath = fileURLToPath(new URL("../infrastructure/postgres-project.repository.ts", import.meta.url));
+    const source = await readFile(repositoryPath, "utf8");
+    expect(source).toContain("prm.project_revision_id = p.published_revision_id");
+    expect(source).toContain("p.visibility = 'public'");
   });
 });

@@ -1,12 +1,15 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { randomUUID } from "node:crypto";
+import { Inject, Injectable, Logger } from "@nestjs/common";
 import type { Pool, PoolClient, QueryResultRow } from "pg";
 import { DATABASE_POOL } from "../../../nest/database/database.constants.ts";
+import { absoluteRepoPath } from "../../../git/paths.ts";
+import { commitMarker } from "../../../git/repo.ts";
 import { ModelId, ModelRevisionId, ProjectId, ProjectRevisionId, type UserId } from "../../_kernel/brandedIds.ts";
 import { ensureOwnedTags } from "../../community/public/index.ts";
 import { normalizeTags, parseProjectStatus, parseProjectVisibility, sha256Canonical, type ModelCreateInput, type ProjectMetadataInput, type ProjectPatchInput } from "../domain/project.ts";
 import { modelNotFound, ProjectError, projectNotFound, revisionNotFound, versionConflict } from "../domain/project.errors.ts";
 import type { ProjectStatus, ProjectVisibility } from "../domain/project-lifecycle.types.ts";
-import type { ModelRevisionView, ModelView, MutationResult, ProjectRepository, ProjectView, PublishedProjectView, UploadedSource } from "../domain/project.repository.ts";
+import type { ModelRevisionView, ModelView, MutationResult, ProjectForkView, ProjectRepository, ProjectView, PublishedProjectView, UploadedSource } from "../domain/project.repository.ts";
 
 interface ProjectRow extends QueryResultRow {
   id: string;
@@ -69,6 +72,7 @@ interface LockedProject extends QueryResultRow {
   primary_model_id: string | null;
   published_revision_id: string | null;
   status: string;
+  repo_path: string | null;
 }
 
 const PROJECT_COLUMNS = `p.id, p.title, p.description, p.repo_url, p.primary_model_id, p.published_revision_id, p.status, p.visibility, p.published_at, p.archived_at,
@@ -154,6 +158,8 @@ function revisionView(row: RevisionRow, projectId: string): ModelRevisionView {
 
 @Injectable()
 export class PostgresProjectRepository implements ProjectRepository {
+  private readonly logger = new Logger(PostgresProjectRepository.name);
+
   constructor(@Inject(DATABASE_POOL) private readonly pool: Pool) {}
 
   private async transaction<T>(work: (client: PoolClient) => Promise<T>): Promise<T> {
@@ -174,7 +180,7 @@ export class PostgresProjectRepository implements ProjectRepository {
 
   private async lockProject(client: PoolClient, actorId: UserId, projectId: ProjectId, version?: number): Promise<LockedProject> {
     const result = await client.query<LockedProject>(
-      `select id, owner_id, version, primary_model_id, published_revision_id, status
+      `select id, owner_id, version, primary_model_id, published_revision_id, status, repo_path
          from projects where id = $1 and owner_id = $2 and deleted_at is null for update`,
       [projectId, actorId],
     );
@@ -334,6 +340,41 @@ export class PostgresProjectRepository implements ProjectRepository {
 
   getDraft(actorId: UserId, projectId: ProjectId): Promise<ProjectView | null> {
     return this.loadDraft(this.pool, actorId, projectId);
+  }
+
+  async isPrimaryModelReady(projectId: ProjectId, modelId: ModelId): Promise<boolean> {
+    const result = await this.pool.query<{ ready: boolean }>(
+      `select exists (
+         select 1
+           from models m
+           join model_revisions ar on ar.id = m.active_revision_id
+           join model_revision_files f on f.model_revision_id = ar.id
+           join storage_blobs b on b.id = f.blob_id
+          where m.id = $1 and m.project_id = $2 and m.deleted_at is null
+            and ar.status = 'ready' and f.is_source = true and b.state = 'ready'
+       ) as ready`,
+      [modelId, projectId],
+    );
+    return result.rows[0]?.ready ?? false;
+  }
+
+  async getForkedProjects(projectId: ProjectId, actorId: UserId | null): Promise<readonly ProjectForkView[]> {
+    const result = await this.pool.query<{ id: string; title: string; visibility: string; status: string }>(
+      `select child.id, child.title, child.visibility, child.status
+         from projects child
+        where child.forked_from = $1 and child.deleted_at is null
+          and (child.visibility = 'public'
+            or child.owner_id = $2
+            or exists (select 1 from projects parent where parent.id = $1 and parent.owner_id = $2 and parent.deleted_at is null))
+        order by child.created_at desc, child.id desc`,
+      [projectId, actorId],
+    );
+    return result.rows.map((row) => ({
+      id: ProjectId(row.id),
+      title: row.title,
+      visibility: parseProjectVisibility(row.visibility),
+      status: parseProjectStatus(row.status),
+    }));
   }
 
   async updateLifecycleStatus(
@@ -557,11 +598,10 @@ export class PostgresProjectRepository implements ProjectRepository {
          join model_revision_files f on f.model_revision_id = r.id and (($4 = 'source' and f.is_source) or ($4 = 'preview' and f.role = 'preview'))
          join storage_blobs b on b.id = f.blob_id and b.state = 'ready'
         where p.id = $1 and p.deleted_at is null
-          and (($4 = 'source' and p.owner_id = $5)
-            or ($4 = 'preview' and (p.owner_id = $5 or exists(
+          and (p.owner_id = $5 or exists(
               select 1 from project_revision_models prm
                where prm.project_id = p.id and prm.project_revision_id = p.published_revision_id
-                 and p.visibility = 'public' and prm.model_id = m.id and prm.model_revision_id = r.id))))`,
+                 and p.visibility = 'public' and prm.model_id = m.id and prm.model_revision_id = r.id)))`,
       [projectId, modelId, revisionId, role, actorId],
     );
     return result.rows[0]?.s3_key ?? null;
@@ -643,19 +683,32 @@ export class PostgresProjectRepository implements ProjectRepository {
         models: ready.map((row) => ({ model_id: row.id, model_revision_id: row.active_revision_id, position: row.position })),
       };
       const hash = sha256Canonical(snapshot);
-      const revision = await client.query<{ id: string; created_at: Date }>(
-        `with inserted as (
-           insert into project_revisions(project_id, content_hash, primary_model_id, metadata_snapshot)
-           values ($1, $2, $3, $4) on conflict (project_id, content_hash) do nothing
-           returning id, created_at
-         )
-         select id, created_at from inserted
-         union all
-         select id, created_at from project_revisions where project_id = $1 and content_hash = $2
-         limit 1`,
-        [projectId, hash, project.primary_model_id, metadata],
+      const existing = await client.query<{ id: string; created_at: Date }>(
+        "select id, created_at from project_revisions where project_id = $1 and content_hash = $2",
+        [projectId, hash],
       );
-      const publication = revision.rows[0]!;
+      let publication = existing.rows[0];
+      if (publication === undefined) {
+        const revisionId = randomUUID();
+        let gitRef: string | null = null;
+        if (project.repo_path !== null) {
+          try {
+            gitRef = await commitMarker(
+              absoluteRepoPath(project.repo_path),
+              `chore: publish revision ${revisionId}`,
+              { name: draft.owner.username, email: `${draft.owner.username}@users.3mf.tech` },
+            );
+          } catch (error) {
+            this.logger.warn(`Git ref creation failed for project=${projectId}: ${String(error)}`);
+          }
+        }
+        const inserted = await client.query<{ id: string; created_at: Date }>(
+          `insert into project_revisions(id, project_id, content_hash, primary_model_id, metadata_snapshot, git_ref)
+           values ($1, $2, $3, $4, $5, $6) returning id, created_at`,
+          [revisionId, projectId, hash, project.primary_model_id, metadata, gitRef],
+        );
+        publication = inserted.rows[0]!;
+      }
       for (const row of ready) {
         await client.query(
           `insert into project_revision_models(project_revision_id, project_id, model_id, model_revision_id, position)
