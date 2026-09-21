@@ -90,6 +90,7 @@ export class ProjectQueryService implements ProjectReadPort {
       tags: project.tags,
       owner: project.owner,
       publication_state: project.published_revision_id === null ? "draft" : "published",
+      visibility: project.visibility,
       primary_model_id: project.primary_model_id,
       repo_url: project.repo_url ?? null,
       preview_url: previewUrl,

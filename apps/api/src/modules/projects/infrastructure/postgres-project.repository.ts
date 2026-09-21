@@ -3,9 +3,9 @@ import type { Pool, PoolClient, QueryResultRow } from "pg";
 import { DATABASE_POOL } from "../../../nest/database/database.constants.ts";
 import { ModelId, ModelRevisionId, ProjectId, ProjectRevisionId, type UserId } from "../../_kernel/brandedIds.ts";
 import { ensureOwnedTags } from "../../community/public/index.ts";
-import { normalizeTags, parseProjectStatus, sha256Canonical, type ModelCreateInput, type ProjectMetadataInput, type ProjectPatchInput } from "../domain/project.ts";
+import { normalizeTags, parseProjectStatus, parseProjectVisibility, sha256Canonical, type ModelCreateInput, type ProjectMetadataInput, type ProjectPatchInput } from "../domain/project.ts";
 import { modelNotFound, ProjectError, projectNotFound, revisionNotFound, versionConflict } from "../domain/project.errors.ts";
-import type { ProjectStatus } from "../domain/project-lifecycle.types.ts";
+import type { ProjectStatus, ProjectVisibility } from "../domain/project-lifecycle.types.ts";
 import type { ModelRevisionView, ModelView, MutationResult, ProjectRepository, ProjectView, PublishedProjectView, UploadedSource } from "../domain/project.repository.ts";
 
 interface ProjectRow extends QueryResultRow {
@@ -16,6 +16,7 @@ interface ProjectRow extends QueryResultRow {
   primary_model_id: string | null;
   published_revision_id: string | null;
   status: string;
+  visibility: string;
   published_at: Date | null;
   archived_at: Date | null;
   version: string;
@@ -70,7 +71,7 @@ interface LockedProject extends QueryResultRow {
   status: string;
 }
 
-const PROJECT_COLUMNS = `p.id, p.title, p.description, p.repo_url, p.primary_model_id, p.published_revision_id, p.status, p.published_at, p.archived_at,
+const PROJECT_COLUMNS = `p.id, p.title, p.description, p.repo_url, p.primary_model_id, p.published_revision_id, p.status, p.visibility, p.published_at, p.archived_at,
          p.version, p.created_at, p.updated_at, p.owner_id,
          u.username, u.display_name, u.avatar_url,
          coalesce((select array_agg(t.name order by t.name) from model_tags mt join tags t on t.id = mt.tag_id where mt.model_id = p.id), '{}') as tags,
@@ -101,6 +102,7 @@ function projectView(row: ProjectRow, primaryModel?: ModelView | null): ProjectV
     primary_model_id: row.primary_model_id === null ? null : ModelId(row.primary_model_id),
     published_revision_id: row.published_revision_id === null ? null : ProjectRevisionId(row.published_revision_id),
     status: parseProjectStatus(row.status),
+    visibility: parseProjectVisibility(row.visibility),
     published_at: row.published_at,
     archived_at: row.archived_at,
     models_count: Number(row.models_count),
@@ -256,7 +258,7 @@ export class PostgresProjectRepository implements ProjectRepository {
     return this.transaction(async (client) => {
       const replay = await this.claimIdempotency<ProjectView>(client, actorId, "projectsCreate", key, fingerprint);
       if (replay !== null) return { value: replay, version: replay.version, replayed: true };
-      const inserted = await client.query<{ id: string }>(`insert into projects(owner_id, title, description, repo_url) values ($1, $2, $3, $4) returning id`, [
+      const inserted = await client.query<{ id: string }>(`insert into projects(owner_id, title, description, repo_url, visibility) values ($1, $2, $3, $4, 'private') returning id`, [
         actorId,
         input.title,
         input.description ?? null,
@@ -281,7 +283,7 @@ export class PostgresProjectRepository implements ProjectRepository {
     const result = await this.pool.query<ProjectRow & { published_at: Date; snapshot: { title: string; description: string | null; tags: string[] } }>(
       `select ${PROJECT_COLUMNS}, pr.created_at as published_at, pr.metadata_snapshot as snapshot
          ${PROJECT_FROM} join project_revisions pr on pr.id = p.published_revision_id and pr.project_id = p.id
-        where p.deleted_at is null ${cursorSql}
+        where p.deleted_at is null and p.visibility = 'public' ${cursorSql}
         order by pr.created_at desc, p.id desc limit $1`,
       values,
     );
@@ -311,7 +313,7 @@ export class PostgresProjectRepository implements ProjectRepository {
     >(
       `select ${PROJECT_COLUMNS}, pr.id as project_revision_id, pr.created_at as published_at, pr.metadata_snapshot as snapshot
          ${PROJECT_FROM} join project_revisions pr on pr.id = p.published_revision_id and pr.project_id = p.id
-        where p.id = $1 and p.deleted_at is null`,
+        where p.id = $1 and p.deleted_at is null and p.visibility = 'public'`,
       [projectId],
     );
     const row = result.rows[0];
@@ -337,14 +339,14 @@ export class PostgresProjectRepository implements ProjectRepository {
   async updateLifecycleStatus(
     projectId: ProjectId,
     actorId: UserId,
-    params: { readonly status: ProjectStatus; readonly publishedAt?: Date | null; readonly archivedAt?: Date | null },
+    params: { readonly status: ProjectStatus; readonly visibility: ProjectVisibility; readonly publishedAt?: Date | null; readonly archivedAt?: Date | null },
     version: number,
   ): Promise<{ readonly version: number }> {
     return this.transaction(async (client) => {
       await this.lockProject(client, actorId, projectId, version);
-      const sets = ["status = $2", "version = version + 1", "updated_at = now()"];
-      const values: unknown[] = [projectId, params.status];
-      let index = 3;
+      const sets = ["status = $2", "visibility = $3", "version = version + 1", "updated_at = now()"];
+      const values: unknown[] = [projectId, params.status, params.visibility];
+      let index = 4;
       if (params.publishedAt !== undefined) {
         sets.push(`published_at = $${index}`);
         values.push(params.publishedAt);
@@ -559,7 +561,7 @@ export class PostgresProjectRepository implements ProjectRepository {
             or ($4 = 'preview' and (p.owner_id = $5 or exists(
               select 1 from project_revision_models prm
                where prm.project_id = p.id and prm.project_revision_id = p.published_revision_id
-                 and prm.model_id = m.id and prm.model_revision_id = r.id))))`,
+                 and p.visibility = 'public' and prm.model_id = m.id and prm.model_revision_id = r.id))))`,
       [projectId, modelId, revisionId, role, actorId],
     );
     return result.rows[0]?.s3_key ?? null;
@@ -601,7 +603,7 @@ export class PostgresProjectRepository implements ProjectRepository {
     actorId: UserId,
     projectId: ProjectId,
     version: number,
-    lifecycle: { readonly status: ProjectStatus; readonly publishedAt: Date },
+    lifecycle: { readonly status: ProjectStatus; readonly visibility: ProjectVisibility; readonly publishedAt: Date },
   ): Promise<MutationResult<{ project_revision_id: ProjectRevisionId; project_id: ProjectId; version: number; published_at: Date }>> {
     return this.transaction(async (client) => {
       const project = await this.lockProject(client, actorId, projectId, version);
@@ -664,8 +666,8 @@ export class PostgresProjectRepository implements ProjectRepository {
       const changed = project.published_revision_id !== publication.id;
       if (changed) {
         await client.query(
-          "update projects set published_revision_id = $2, status = $3, published_at = $4, version = version + 1, updated_at = now() where id = $1",
-          [projectId, publication.id, lifecycle.status, lifecycle.publishedAt],
+          "update projects set published_revision_id = $2, status = $3, visibility = $4, published_at = $5, version = version + 1, updated_at = now() where id = $1",
+          [projectId, publication.id, lifecycle.status, lifecycle.visibility, lifecycle.publishedAt],
         );
       }
       const resultingVersion = changed ? version + 1 : version;
@@ -676,11 +678,11 @@ export class PostgresProjectRepository implements ProjectRepository {
     });
   }
 
-  async unpublish(actorId: UserId, projectId: ProjectId, version: number, lifecycle: { readonly status: ProjectStatus }): Promise<number> {
+  async unpublish(actorId: UserId, projectId: ProjectId, version: number, lifecycle: { readonly status: ProjectStatus; readonly visibility: ProjectVisibility }): Promise<number> {
     return this.transaction(async (client) => {
       const project = await this.lockProject(client, actorId, projectId, version);
       if (project.published_revision_id === null) return version;
-      await client.query("update projects set published_revision_id = null, status = $2, version = version + 1, updated_at = now() where id = $1", [projectId, lifecycle.status]);
+      await client.query("update projects set published_revision_id = null, status = $2, visibility = $3, version = version + 1, updated_at = now() where id = $1", [projectId, lifecycle.status, lifecycle.visibility]);
       return version + 1;
     });
   }

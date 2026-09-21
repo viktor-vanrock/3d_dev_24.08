@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger } from "@nestjs/common";
 import type { ProjectId, UserId } from "../../_kernel/brandedIds.ts";
 import { ProjectError } from "../domain/project.errors.ts";
-import { getAllowedEvents, getTransition, PROJECT_EVENT, type ProjectEvent, type ProjectStatus, type TransitionResult } from "../domain/project-lifecycle.types.ts";
+import { getAllowedEvents, getTransition, PROJECT_EVENT, type ProjectEvent, type ProjectStatus, type ProjectVisibility, type TransitionResult } from "../domain/project-lifecycle.types.ts";
 import type { ProjectRepository } from "../domain/project.repository.ts";
 import { PostgresProjectRepository } from "../infrastructure/postgres-project.repository.ts";
 import { PublicationEventsService } from "./publication-events.service.ts";
@@ -56,7 +56,7 @@ export class ProjectLifecycleService {
     if (project === null) throw new ProjectError(404, "project.not_found.v1", "Проект не найден");
     const transition = getTransition(project.status, PROJECT_EVENT.PUBLISH);
     if (transition === null) throw new InvalidTransitionError(project.status, PROJECT_EVENT.PUBLISH);
-    const publication = await this.repository.publish(actorId, projectId, version, { status: transition.toStatus, publishedAt: new Date() });
+    const publication = await this.repository.publish(actorId, projectId, version, { status: transition.toStatus, visibility: transition.toVisibility, publishedAt: new Date() });
     void this.dispatchPublishEvents(actorId, projectId, publication.value.project_revision_id).catch((error) =>
       this.logger.error(`afterPublish failed projectId=${projectId}: ${String(error)}`),
     );
@@ -69,7 +69,7 @@ export class ProjectLifecycleService {
     if (project === null) throw new ProjectError(404, "project.not_found.v1", "Проект не найден");
     const transition = getTransition(project.status, PROJECT_EVENT.UNPUBLISH);
     if (transition === null) throw new InvalidTransitionError(project.status, PROJECT_EVENT.UNPUBLISH);
-    const result = await this.repository.unpublish(actorId, projectId, version, { status: transition.toStatus });
+    const result = await this.repository.unpublish(actorId, projectId, version, { status: transition.toStatus, visibility: transition.toVisibility });
     void this.events.afterUnpublish({ projectId, actorId, version: result }).catch((error) =>
       this.logger.error(`afterUnpublish failed projectId=${projectId}: ${String(error)}`),
     );
@@ -116,7 +116,10 @@ export class ProjectLifecycleService {
     transition: TransitionResult,
     version: number,
   ): Promise<{ readonly version: number }> {
-    const params: { status: ProjectStatus; publishedAt?: Date | null; archivedAt?: Date | null } = { status: transition.toStatus };
+    const params: { status: ProjectStatus; visibility: ProjectVisibility; publishedAt?: Date | null; archivedAt?: Date | null } = {
+      status: transition.toStatus,
+      visibility: transition.toVisibility,
+    };
     if (transition.setPublishedAt === "now") params.publishedAt = new Date();
     if (transition.setPublishedAt === "null") params.publishedAt = null;
     if (event === PROJECT_EVENT.ARCHIVE) params.archivedAt = new Date();

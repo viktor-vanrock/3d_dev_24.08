@@ -28,6 +28,7 @@ export class ProjectSummaryDto {
   @ApiProperty({ type: [String] }) tags!: string[];
   @ApiProperty({ type: ProjectOwnerDto }) owner!: ProjectOwnerDto;
   @ApiProperty({ type: String, enum: ["draft", "published"] }) publication_state!: string;
+  @ApiProperty({ type: String, enum: ["private", "public"] }) visibility!: "private" | "public";
   @ApiProperty({ format: "uuid", nullable: true, type: String }) primary_model_id!: string | null;
   @ApiProperty({ format: "uuid", nullable: true, type: String }) published_revision_id!: string | null;
   @ApiProperty({ type: Number, minimum: 0 }) models_count!: number;

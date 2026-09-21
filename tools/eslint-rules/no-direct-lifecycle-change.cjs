@@ -16,7 +16,7 @@ module.exports = {
   },
   create(context) {
     const options = context.options[0] ?? {};
-    const protectedProps = options.protectedProps ?? ["status", "published_revision_id", "publishedAt", "published_at", "archivedAt", "archived_at"];
+    const protectedProps = options.protectedProps ?? ["status", "visibility", "published_revision_id", "publishedAt", "published_at", "archivedAt", "archived_at"];
     const allowedFiles = options.allowedFiles ?? ["project-lifecycle.service.ts", "postgres-project.repository.ts"];
     if (allowedFiles.some((file) => context.filename.endsWith(file))) return {};
     const isProjectLike = (node) => node.type === "Identifier" ? /project/i.test(node.name) : node.type === "MemberExpression" && isProjectLike(node.object);

@@ -277,6 +277,15 @@ CREATE TYPE public.project_status AS ENUM (
 );
 
 --
+-- Name: project_visibility; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.project_visibility AS ENUM (
+    'private',
+    'public'
+);
+
+--
 -- Name: achievements; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2041,6 +2050,7 @@ CREATE TABLE public.projects (
     deleted_at timestamp with time zone,
     deleted_by uuid,
     status public.project_status DEFAULT 'draft'::public.project_status NOT NULL,
+    visibility public.project_visibility DEFAULT 'private'::public.project_visibility NOT NULL,
     published_at timestamp with time zone,
     archived_at timestamp with time zone,
     CONSTRAINT models_price_minor_check CHECK ((price_minor >= 0)),
@@ -7240,6 +7250,18 @@ CREATE INDEX idx_projects_owner_status ON public.projects USING btree (owner_id,
 --
 
 CREATE INDEX idx_projects_status ON public.projects USING btree (status);
+
+--
+-- Name: idx_projects_visibility; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_projects_visibility ON public.projects USING btree (visibility);
+
+--
+-- Name: idx_projects_visibility_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_projects_visibility_status ON public.projects USING btree (visibility, status);
 
 
 --

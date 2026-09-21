@@ -151,7 +151,7 @@ export default [
     rules: {
       "local/no-direct-lifecycle-change": ["error", {
         allowedFiles: ["project-lifecycle.service.ts", "postgres-project.repository.ts"],
-        protectedProps: ["status", "published_revision_id", "publishedAt", "published_at", "archivedAt", "archived_at"],
+        protectedProps: ["status", "visibility", "published_revision_id", "publishedAt", "published_at", "archivedAt", "archived_at"],
       }],
       "local/no-buffer-concat-in-upload": "error",
     },
