@@ -10,7 +10,7 @@
     "./http/relay-internal.v1.openapi": "./http/relay-internal.v1.openapi.json",
     "./http/relay-internal.v1.client": "./http/generated/relay-internal.v1.client.ts",
     "./jobs/*": "./jobs/*.ts",
-    "./audit/*": "./src/audit/*.ts",
+    "./audit/*": "./audit/*.ts",
     "./device-protocol/v1": "./device-protocol/v1/index.ts",
     "./device-agent-runtime/v1": "./device-agent-runtime/v1/index.ts",
     "./printer-driver": "./printer-driver/index.ts",
