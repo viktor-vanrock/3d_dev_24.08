@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
-import { Inject, Injectable, Logger } from "@nestjs/common";
+import { Inject, Injectable, Logger, Optional } from "@nestjs/common";
 import type { Pool, PoolClient, QueryResultRow } from "pg";
 import { DATABASE_POOL } from "../../../nest/database/database.constants.ts";
+import { AUDIT_LOG_PORT, type AuditLogPort } from "../../audit/public/index.ts";
 import { absoluteRepoPath } from "../../../git/paths.ts";
 import { commitMarker } from "../../../git/repo.ts";
 import { ModelId, ModelRevisionId, ProjectId, ProjectRevisionId, type UserId } from "../../_kernel/brandedIds.ts";
@@ -160,7 +161,11 @@ function revisionView(row: RevisionRow, projectId: string): ModelRevisionView {
 export class PostgresProjectRepository implements ProjectRepository {
   private readonly logger = new Logger(PostgresProjectRepository.name);
 
-  constructor(@Inject(DATABASE_POOL) private readonly pool: Pool) {}
+  constructor(@Inject(DATABASE_POOL) private readonly pool: Pool, @Optional() @Inject(AUDIT_LOG_PORT) private readonly audit?: AuditLogPort) {}
+
+  private recordLifecycleAudit(client: PoolClient, actorId: UserId, projectId: ProjectId, action: "project.published" | "project.unpublished" | "project.archived" | "project.restored", afterState: Record<string, unknown>): Promise<void> {
+    return this.audit?.record({ schema_version: 1, id: randomUUID(), actor_user_id: actorId, actor_type: "user", subject_type: "project", subject_id: projectId, action, before_state: null, after_state: afterState, reason: null, correlation_id: randomUUID(), causation_id: null, idempotency_key: `${action}:${projectId}:${JSON.stringify(afterState)}`, occurred_at: new Date(), legal_hold: false }, client) ?? Promise.resolve();
+  }
 
   private async transaction<T>(work: (client: PoolClient) => Promise<T>): Promise<T> {
     const client = await this.pool.connect();
@@ -399,6 +404,8 @@ export class PostgresProjectRepository implements ProjectRepository {
       }
       if (params.status === "archived") sets.push("published_revision_id = null");
       const result = await client.query<{ version: string }>(`update projects set ${sets.join(", ")} where id = $1 returning version`, values);
+      if (params.status === "archived") await this.recordLifecycleAudit(client, actorId, projectId, "project.archived", { status: params.status, version: Number(result.rows[0]!.version) });
+      if (params.status === "draft" && params.archivedAt === null) await this.recordLifecycleAudit(client, actorId, projectId, "project.restored", { status: params.status, version: Number(result.rows[0]!.version) });
       return { version: Number(result.rows[0]!.version) };
     });
   }
@@ -724,6 +731,7 @@ export class PostgresProjectRepository implements ProjectRepository {
         );
       }
       const resultingVersion = changed ? version + 1 : version;
+      if (changed) await this.recordLifecycleAudit(client, actorId, projectId, "project.published", { revision_id: publication.id, version: resultingVersion });
       return {
         value: { project_revision_id: ProjectRevisionId(publication.id), project_id: projectId, version: resultingVersion, published_at: publication.created_at },
         version: resultingVersion,
@@ -736,6 +744,7 @@ export class PostgresProjectRepository implements ProjectRepository {
       const project = await this.lockProject(client, actorId, projectId, version);
       if (project.published_revision_id === null) return version;
       await client.query("update projects set published_revision_id = null, status = $2, visibility = $3, version = version + 1, updated_at = now() where id = $1", [projectId, lifecycle.status, lifecycle.visibility]);
+      await this.recordLifecycleAudit(client, actorId, projectId, "project.unpublished", { version: version + 1 });
       return version + 1;
     });
   }

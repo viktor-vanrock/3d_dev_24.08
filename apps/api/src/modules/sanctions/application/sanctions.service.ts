@@ -1,5 +1,5 @@
 import { ConfigService } from "@nestjs/config";
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, Optional } from "@nestjs/common";
 import type { Pool } from "pg";
 import { DATABASE_POOL } from "../../../nest/database/database.constants.ts";
 import type { UserId } from "../../_kernel/brandedIds.ts";
@@ -18,6 +18,8 @@ import {
 import { assertCanCreate, computeIdempotencyHash } from "../domain/sanction-policy.ts";
 import type { Sanction } from "../domain/sanctions.ts";
 import { SanctionsRepository } from "../infrastructure/sanctions.repository.ts";
+import { AUDIT_LOG_PORT, type AuditLogPort } from "../../audit/public/index.ts";
+import { randomUUID } from "node:crypto";
 import type { CancelSanctionCommand, CreateSanctionCommand, CreateSanctionResult, SanctionRecord, SanctionsPort } from "../public/index.ts";
 
 function recordOf(sanction: Sanction): SanctionRecord {
@@ -39,6 +41,7 @@ export class SanctionsService implements SanctionsPort {
     @Inject(DEVICE_SANCTIONS_PORT) private readonly devices: DeviceSanctionsPort,
     @Inject(PUBLICAPI_SANCTIONS_PORT) private readonly publicApi: PublicApiSanctionsPort,
     @Inject(OUTBOX_PORT) private readonly outbox: OutboxPort,
+    @Optional() @Inject(AUDIT_LOG_PORT) private readonly audit?: AuditLogPort,
   ) {}
 
   async create(input: CreateSanctionCommand): Promise<CreateSanctionResult> {
@@ -80,6 +83,7 @@ export class SanctionsService implements SanctionsPort {
         aggregateType: "Sanction", aggregateId: sanction.id, eventType: "sanction.relay_close.v1", eventVersion: 1,
         payload: { sanction_id: sanction.id, user_id: input.targetId, agent_ids: devices.agentIds, reason: "owner_sanctioned" },
       });
+      await this.audit?.record({ schema_version: 1, id: randomUUID(), actor_user_id: input.actorId, actor_type: "user", subject_type: "sanction", subject_id: sanction.id, action: "sanction.created", before_state: null, after_state: { type: sanction.type, reason: sanction.reasonCode, expires_at: sanction.endsAt?.toISOString() ?? null }, reason: input.reasonNote, correlation_id: randomUUID(), causation_id: null, idempotency_key: `sanction.created:${sanction.id}`, occurred_at: new Date(), legal_hold: false }, tx);
       await tx.query("commit");
       return {
         sanction: recordOf(sanction), reused: false,
@@ -107,6 +111,7 @@ export class SanctionsService implements SanctionsPort {
       if (await this.repository.countOtherActiveByUser(tx, { userId: cancelled.userId, excludingId: cancelled.id }) === 0) {
         await this.profiles.activateAfterSanctionExpiry(tx, { userId: cancelled.userId });
       }
+      await this.audit?.record({ schema_version: 1, id: randomUUID(), actor_user_id: input.actorId, actor_type: "user", subject_type: "sanction", subject_id: cancelled.id, action: "sanction.cancelled", before_state: { type: cancelled.type, reason: cancelled.reasonCode }, after_state: { cancelled_by: input.actorId, cancelled_at: cancelled.cancelledAt?.toISOString() ?? null }, reason: input.cancelReason, correlation_id: randomUUID(), causation_id: null, idempotency_key: `sanction.cancelled:${cancelled.id}`, occurred_at: new Date(), legal_hold: false }, tx);
       await tx.query("commit");
       return recordOf(cancelled);
     } catch (error) {
