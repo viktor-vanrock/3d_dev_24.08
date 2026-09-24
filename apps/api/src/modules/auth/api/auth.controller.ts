@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, ForbiddenException, Get, HttpCode, Inject, InternalServerErrorException, NotFoundException, Param, Post, Query, Req, Res, UnauthorizedException } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, Inject, InternalServerErrorException, NotFoundException, Param, Post, Query, Req, Res, UnauthorizedException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import type { Request, Response } from "express";
 import { parseCookie } from "cookie";
@@ -13,7 +13,6 @@ import { assertNestRateLimit } from "../../../nest/integration/rate-limit.ts";
 import { APP_INTENT_COOKIE_NAME } from "../domain/auth.ts";
 import { AuthService } from "../application/auth.service.ts";
 import { AuthSessionService } from "../application/session.service.ts";
-import { AuthRepository } from "../infrastructure/auth.repository.ts";
 import { AUTH_ERRORS } from "../domain/auth-errors.ts";
 import { createAuthError } from "../domain/auth-error.helper.ts";
 import { EmailStartDto, EmailVerifyDto, PasswordLoginDto, PlagIdCallbackQueryDto, PlagIdStartQueryDto, RecoveryStartDto, RecoveryVerifyDto, RegisterDto, RegisterVerifyDto } from "./auth.dto.ts";
@@ -50,7 +49,6 @@ export class AuthController {
   constructor(
     @Inject(AuthService) private readonly auth: AuthService,
     @Inject(AuthSessionService) private readonly sessions: AuthSessionService,
-    @Inject(AuthRepository) private readonly repository: AuthRepository,
     @Inject(SessionVerifier) private readonly verifier: SessionVerifier,
     @Inject(PROFILE_AUTH_PORT) private readonly profiles: ProfileAuthPort,
     @Inject(ConfigService) private readonly config: ConfigService,
@@ -114,8 +112,7 @@ export class AuthController {
   async listSessions(@Req() request: RequestWithSession) {
     const session = request[SESSION_USER];
     if (session === undefined) throw createAuthError(AUTH_ERRORS.SESSION_NOT_FOUND, "Сеанс не найден.", false, 401);
-    const rows = await this.repository.getSessionsByUserId(UserId(session.id));
-    return { sessions: rows.map((row) => ({ id: row.id, created_at: row.created_at, isCurrent: row.id === session.sessionId })) };
+    return { sessions: await this.auth.listSessions(UserId(session.id), session.sessionId) };
   }
 
   @Delete("sessions/:id")
@@ -124,10 +121,7 @@ export class AuthController {
   async deleteSession(@Req() request: RequestWithSession, @Param("id") id: string): Promise<void> {
     const session = request[SESSION_USER];
     if (session === undefined) throw createAuthError(AUTH_ERRORS.SESSION_NOT_FOUND, "Сеанс не найден.", false, 401);
-    const target = await this.repository.getSessionById(id);
-    if (target === null) throw createAuthError(AUTH_ERRORS.SESSION_NOT_FOUND, "Сеанс не найден.", false, 404);
-    if (target.user_id !== session.id) throw createAuthError(AUTH_ERRORS.FORBIDDEN, "Нет доступа к этому сеансу.", false, 403);
-    await this.repository.deleteSessionById(id);
+    await this.auth.deleteSession(UserId(session.id), id);
   }
 
   @Delete("sessions")
@@ -136,7 +130,7 @@ export class AuthController {
   async deleteOtherSessions(@Req() request: RequestWithSession): Promise<void> {
     const session = request[SESSION_USER];
     if (session === undefined) throw createAuthError(AUTH_ERRORS.SESSION_NOT_FOUND, "Сеанс не найден.", false, 401);
-    await this.repository.deleteAllSessionsByUserId(UserId(session.id), session.sessionId);
+    await this.auth.deleteOtherSessions(UserId(session.id), session.sessionId);
     await this.sessions.logoutAll(UserId(session.id));
   }
 

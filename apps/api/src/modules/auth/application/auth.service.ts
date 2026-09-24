@@ -13,6 +13,8 @@ import { AuthRepository } from "../infrastructure/auth.repository.ts";
 import { OtpEmailAdapter } from "../infrastructure/email.adapter.ts";
 import { IdentityStorageAdapter } from "../infrastructure/identity-storage.adapter.ts";
 import { hashPassword, verifyPassword } from "../infrastructure/password-hash.ts";
+import { AUTH_ERRORS } from "../domain/auth-errors.ts";
+import { createAuthError } from "../domain/auth-error.helper.ts";
 
 const LOCAL_PART_RE = /^[a-z0-9][a-z0-9._-]{0,63}$/;
 const OTP_TTL_MS = 10 * 60 * 1000;
@@ -247,6 +249,22 @@ export class AuthService {
     }
     this.audit("password", "success");
     return { id: credential.id, username: credential.username };
+  }
+
+  async listSessions(userId: UserIdType, currentSessionId: string | undefined): Promise<readonly { readonly id: string; readonly created_at: Date | string; readonly isCurrent: boolean }[]> {
+    const rows = await this.repository.getSessionsByUserId(userId);
+    return rows.map((row) => ({ id: row.id, created_at: row.created_at, isCurrent: row.id === currentSessionId }));
+  }
+
+  async deleteSession(userId: UserIdType, sessionId: string): Promise<void> {
+    const target = await this.repository.getSessionById(sessionId);
+    if (target === null) throw createAuthError(AUTH_ERRORS.SESSION_NOT_FOUND, "Сеанс не найден.", false, HttpStatus.NOT_FOUND);
+    if (target.user_id !== userId) throw createAuthError(AUTH_ERRORS.FORBIDDEN, "Нет доступа к этому сеансу.", false, HttpStatus.FORBIDDEN);
+    await this.repository.deleteSessionById(sessionId);
+  }
+
+  async deleteOtherSessions(userId: UserIdType, currentSessionId: string | undefined): Promise<void> {
+    await this.repository.deleteAllSessionsByUserId(userId, currentSessionId);
   }
 
   auditFailure(provider: "plag_id" | "sber_id", reason: string): void {
