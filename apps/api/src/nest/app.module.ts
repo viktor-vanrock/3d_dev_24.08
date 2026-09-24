@@ -74,7 +74,9 @@ import { createApiValidationPipe } from "./validation/api-validation.pipe.ts";
     ConfigModule.forRoot({
       isGlobal: true,
       ignoreEnvFile: process.env.NODE_ENV === "production" || process.env.NODE_ENV === "test",
-      envFilePath: [".env.local", ".env"],
+      // Package scripts execute from apps/api; also load the repository-root env
+      // used by local development.
+      envFilePath: [".env.local", ".env", "../../.env.local", "../../.env"],
       validate: validateRuntimeEnvironment,
     }),
     SessionVerifierModule,

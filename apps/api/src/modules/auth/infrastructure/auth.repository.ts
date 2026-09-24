@@ -137,6 +137,17 @@ export class AuthRepository implements AuthIdentityReadPort {
     }
   }
 
+  async hasPendingRegistration(emailHash: Buffer): Promise<boolean> {
+    const result = await this.pool.query(
+      `select 1
+       from user_identities identities
+       join auth_pending_registrations pending on pending.user_id = identities.user_id
+       where identities.provider = 'email_corp' and identities.identifier_hash = $1`,
+      [emailHash],
+    );
+    return (result.rowCount ?? 0) !== 0;
+  }
+
   async activatePendingRegistration(emailHash: Buffer): Promise<PasswordCredentialUser | null> {
     const client = await this.pool.connect();
     try {

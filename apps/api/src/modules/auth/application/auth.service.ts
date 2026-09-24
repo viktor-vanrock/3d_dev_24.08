@@ -167,7 +167,9 @@ export class AuthService {
       passwordHash: await hashPassword(input.password),
     });
     // A deliberately indistinguishable response prevents account enumeration.
-    if (created) await this.issueOtp(parsed.email, emailHash);
+    // A repeat request for an unconfirmed registration must still issue a code;
+    // otherwise the user is left with a 200 response and no mail after the first attempt.
+    if (created || await this.repository.hasPendingRegistration(emailHash)) await this.issueOtp(parsed.email, emailHash);
   }
 
   async activateWithCode(emailValue: unknown, codeValue: unknown): Promise<AuthenticatedUser> {
