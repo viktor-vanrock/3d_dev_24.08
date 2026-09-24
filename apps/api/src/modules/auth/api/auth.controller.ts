@@ -3,6 +3,7 @@ import { ConfigService } from "@nestjs/config";
 import type { Request, Response } from "express";
 import { parseCookie } from "cookie";
 import { randomUUID } from "node:crypto";
+import { AUDIT_LOG_PORT, type AuditLogPort } from "../../audit/public/index.ts";
 import { UserId } from "../../_kernel/brandedIds.ts";
 import { PROFILE_AUTH_PORT, type ProfileAuthPort } from "../../profile/public/index.ts";
 import { SESSION_USER, SessionVerifier, type RequestWithSession } from "../../../nest/auth/session-verifier.ts";
@@ -51,6 +52,7 @@ export class AuthController {
     @Inject(ConfigService) private readonly config: ConfigService,
     @Inject(MetricsService) private readonly metrics: MetricsService,
     @Inject(PermissionsService) private readonly permissions: PermissionsService,
+    @Inject(AUDIT_LOG_PORT) private readonly audit: AuditLogPort,
   ) {}
 
   @Get("session")
@@ -79,7 +81,9 @@ export class AuthController {
   @Public()
   @HttpCode(200)
   @ApiLogoutOperation()
-  logout(@Res({ passthrough: true }) response: Response): { readonly ok: true } {
+  async logout(@Req() request: RequestWithSession, @Res({ passthrough: true }) response: Response): Promise<{ readonly ok: true }> {
+    const user = await this.verifier.readSession(request);
+    if (user !== null) await this.record(user.id, "auth.logout", getRequestId(request));
     this.sessions.clear(response);
     return { ok: true };
   }
@@ -92,6 +96,7 @@ export class AuthController {
     const session = request[SESSION_USER];
     if (session === undefined) throw new UnauthorizedException();
     await this.sessions.logoutAll(UserId(session.id));
+    await this.record(session.id, "auth.logout_all", getRequestId(request));
     this.metrics.incCredentialRevocation("session", "logout_all");
     this.sessions.clear(response);
     return { ok: true };
@@ -116,6 +121,7 @@ export class AuthController {
     const result = await this.auth.verifyEmail(body.localPart, body.domain, body.code, anonId);
     if (result.created && cookies[ANON_COOKIE_NAME] === undefined) this.issueAnonCookie(response, anonId);
     await this.sessions.issue(response, result.user);
+    await this.record(result.user.id, "auth.login.success", getRequestId(request));
     return { ok: true };
   }
 
@@ -132,6 +138,7 @@ export class AuthController {
     await assertNestRateLimit(request, "auth_password", rateLimitIdentity);
     const user = await this.auth.loginPassword(body.username, body.password);
     await this.sessions.issue(response, user);
+    await this.record(user.id, "auth.login.success", getRequestId(request));
     return { ok: true, user: { id: user.id, username: user.username } };
   }
 
@@ -177,6 +184,7 @@ export class AuthController {
     const result = await this.auth.loginPlagId(query.token, secret, anonId);
     if (result.created && cookies[ANON_COOKIE_NAME] === undefined) this.issueAnonCookie(response, anonId);
     await this.sessions.issue(response, result.user);
+    await this.record(result.user.id, "auth.login.success", getRequestId(request));
     if (appIntent) {
       response.clearCookie(APP_INTENT_COOKIE_NAME, { path: "/auth/plagid" });
       const token = await this.sessions.createToken(result.user);
@@ -209,6 +217,7 @@ export class AuthController {
     const user = await this.auth.devLogin();
     if (user === null) throw new InternalServerErrorException();
     await this.sessions.issue(response, user);
+    await this.record(user.id, "auth.login.success", randomUUID());
     return { ok: true, user: { id: user.id, username: user.username } };
   }
 
@@ -231,6 +240,10 @@ export class AuthController {
       sameSite: "lax",
       maxAge: ANON_COOKIE_TTL_MS,
     });
+  }
+
+  private record(userId: string, action: "auth.login.success" | "auth.logout" | "auth.logout_all", correlationId: string): Promise<void> {
+    return this.audit.record({ schema_version: 1, id: randomUUID(), actor_user_id: userId, actor_type: "user", subject_type: "user", subject_id: userId, action, before_state: null, after_state: null, reason: null, correlation_id: correlationId, causation_id: null, idempotency_key: `${action}:${userId}:${correlationId}`, occurred_at: new Date(), legal_hold: false });
   }
 
   private issueDevCookie(response: Response): void {

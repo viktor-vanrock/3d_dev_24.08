@@ -1,5 +1,7 @@
 import { BadRequestException, HttpException, HttpStatus, Inject, Injectable, InternalServerErrorException, UnauthorizedException } from "@nestjs/common";
-import { randomInt } from "node:crypto";
+import { randomInt, randomUUID } from "node:crypto";
+import { Optional } from "@nestjs/common";
+import { AUDIT_LOG_PORT, type AuditLogPort } from "../../audit/public/index.ts";
 import { jwtVerify } from "jose";
 import { UserId, type UserId as UserIdType } from "../../_kernel/brandedIds.ts";
 import { ANALYTICS_PORT, type AnalyticsPort } from "../../analytics/public/index.ts";
@@ -56,10 +58,12 @@ export class AuthService {
     @Inject(OtpEmailAdapter) private readonly email: OtpEmailAdapter,
     @Inject(IdentityStorageAdapter) private readonly storage: IdentityStorageAdapter,
     @Inject(RuntimeLogger) private readonly logger: RuntimeLogger,
+    @Optional() @Inject(AUDIT_LOG_PORT) private readonly auditLog?: AuditLogPort,
   ) {}
 
   private audit(provider: "email_corp" | "plag_id" | "sber_id" | "password" | "dev_bypass", outcome: "success" | "failure", reason?: string): void {
     this.logger.info({ event: "auth.login_attempt", provider, outcome, reason }, "Auth attempt");
+    if (outcome === "failure") void this.auditLog?.record({ schema_version: 1, id: randomUUID(), actor_user_id: null, actor_type: "system", subject_type: "login_attempt", subject_id: randomUUID(), action: "auth.login.failed", before_state: null, after_state: { provider, outcome }, reason: reason ?? null, correlation_id: randomUUID(), causation_id: null, idempotency_key: `auth.failed:${provider}:${randomUUID()}`, occurred_at: new Date(), legal_hold: false });
   }
 
   async startEmail(localPartValue: unknown, domainValue: unknown): Promise<void> {

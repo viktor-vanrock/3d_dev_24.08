@@ -52,6 +52,7 @@ import { AgentsIntegrationModule } from "./integration/agents.adapters.ts";
 import { AgentsModule } from "../modules/agents/agents.module.ts";
 import { OrganizationsIntegrationModule } from "./integration/organizations.adapters.ts";
 import { OrganizationsModule } from "../modules/organizations/organizations.module.ts";
+import { AuditModule } from "../modules/audit/audit.module.ts";
 import { IdeasIntegrationModule } from "./integration/ideas.adapters.ts";
 import { FeedIntegrationModule } from "./integration/feed.adapters.ts";
 import { CommunityIntegrationModule } from "./integration/community.adapters.ts";
@@ -80,6 +81,7 @@ import { createApiValidationPipe } from "./validation/api-validation.pipe.ts";
     PermissionsModule,
     MetricsModule,
     DatabaseModule,
+    AuditModule,
     QueueModule,
     AnalyticsModule,
     ModelsModule,

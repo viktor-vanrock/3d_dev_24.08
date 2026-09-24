@@ -21,6 +21,7 @@ COPY packages/contracts/package.json packages/contracts/package.json
 RUN pnpm install --frozen-lockfile --filter @portal/api...
 
 COPY packages/config/tsconfig.base.json packages/config/tsconfig.base.json
+COPY packages/contracts/audit packages/contracts/audit
 COPY packages/contracts/db-rows packages/contracts/db-rows
 COPY packages/contracts/device-agent-runtime packages/contracts/device-agent-runtime
 COPY packages/contracts/device-dispatch packages/contracts/device-dispatch
