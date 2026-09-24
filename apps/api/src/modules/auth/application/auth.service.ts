@@ -149,14 +149,22 @@ export class AuthService {
     return { user, created };
   }
 
-  async registerWithPassword(input: { readonly email?: unknown; readonly password?: unknown; readonly displayName?: unknown; readonly gender?: unknown; readonly birthYear?: unknown }): Promise<void> {
-    const parsed = parseEmail(input.email);
-    if (!validPassword(input.password)) throw new BadRequestException("password must contain 12 to 20 characters");
+  async registerWithPassword(input: { readonly email?: unknown; readonly password?: unknown; readonly displayName?: unknown; readonly gender?: unknown; readonly birthYear?: unknown }): Promise<void> {    
+    const parsed = parseEmail(input.email);    
+    if (!validPassword(input.password)) {
+      throw new BadRequestException("password must contain 12 to 20 characters");
+    }    
     const displayName = typeof input.displayName === "string" ? input.displayName.trim().slice(0, 64) : "";
-    if (displayName === "") throw new BadRequestException("display name is required");
+
+    if (displayName === "") {
+      throw new BadRequestException("display name is required");
+    }
+    
     const gender = typeof input.gender === "string" && input.gender.trim() !== "" ? input.gender.trim().slice(0, 32) : null;
     const birthYear = typeof input.birthYear === "number" && Number.isInteger(input.birthYear) && input.birthYear >= 1900 && input.birthYear <= new Date().getFullYear() ? input.birthYear : null;
+    
     const emailHash = identifierHash(parsed.email);
+    
     const created = await this.repository.createPendingRegistration({
       emailHash,
       identityKey: `identities/pending/${emailHash.toString("hex")}.json.enc`,
@@ -166,10 +174,12 @@ export class AuthService {
       birthYear,
       passwordHash: await hashPassword(input.password),
     });
-    // A deliberately indistinguishable response prevents account enumeration.
-    // A repeat request for an unconfirmed registration must still issue a code;
-    // otherwise the user is left with a 200 response and no mail after the first attempt.
-    if (created || await this.repository.hasPendingRegistration(emailHash)) await this.issueOtp(parsed.email, emailHash);
+    
+    const hasPending = created || await this.repository.hasPendingRegistration(emailHash);
+    
+    if (hasPending) {
+      await this.issueOtp(parsed.email, emailHash);
+    }
   }
 
   async activateWithCode(emailValue: unknown, codeValue: unknown): Promise<AuthenticatedUser> {

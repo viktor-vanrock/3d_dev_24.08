@@ -52,7 +52,7 @@ export async function logout(): Promise<void> {
 export const EMAIL_DOMAINS = ["sberbank.ru", "sberdevices.ru"] as const;
 export type EmailDomain = string;
 
-export interface AuthFormError { readonly message: string; readonly traceId?: string; readonly retryable?: boolean }
+export interface AuthFormError { readonly code?: string; readonly message: string; readonly traceId?: string; readonly retryable?: boolean }
 async function postJson(path: string, body: unknown): Promise<{ ok: boolean; error?: AuthFormError }> {
   const response = await apiFetch(`${path}`, {
     method: "POST",
@@ -103,7 +103,7 @@ export async function devLogin(): Promise<void> {
 // эпика MF-15): PATCH /me, apps/api/src/profile/profile.ts. Ошибки — invalid_username/
 // invalid_display_name/invalid_avatar_url/invalid_bio/invalid_website_url/invalid_contacts
 // (400) и username_taken (409); вызывающая форма показывает их сама.
-export async function updateProfile(patch: ProfilePatch): Promise<{ ok: boolean; error?: string; user?: SessionUser }> {
+export async function updateProfile(patch: ProfilePatch): Promise<{ ok: boolean; status: number; error?: string; user?: SessionUser }> {
   const response = await apiFetch(`/me`, {
     method: "PATCH",
     credentials: "include",
@@ -111,7 +111,7 @@ export async function updateProfile(patch: ProfilePatch): Promise<{ ok: boolean;
     body: JSON.stringify(patch),
   });
   const data = (await response.json().catch(() => ({}))) as { user?: SessionUser; error?: string };
-  return { ok: response.ok, error: data.error, user: data.user };
+  return { ok: response.ok, status: response.status, error: data.error, user: data.user };
 }
 
 // Загрузка фото-аватарки (MF-357): POST /me/avatar-photo, apps/api/src/profile/avatarphoto.ts.

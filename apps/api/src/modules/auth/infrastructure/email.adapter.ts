@@ -19,8 +19,11 @@ export class OtpEmailAdapter {
     this.transporter = nodemailer.createTransport({
       host,
       port: Number(port),
-      secure: Number(port) === 465,
+      secure: false,
       auth: { user, pass },
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
     });
     return this.transporter;
   }
