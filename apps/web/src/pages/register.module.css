@@ -1,3 +1,77 @@
 .page { min-height: 100vh; }
 .card { max-width: 440px; margin: 0 auto; }
 .form { display: grid; gap: 10px; }
+
+.form > h1 {
+  margin-top: -8px;
+}
+
+.genderSelect {
+  width: 100%;
+  min-height: var(--control-height-m);
+  padding: 10px 38px 10px var(--control-padding-m);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background:
+    linear-gradient(45deg, transparent 50%, var(--text-dim) 50%) calc(100% - 18px) 18px / 6px 6px no-repeat,
+    linear-gradient(135deg, var(--text-dim) 50%, transparent 50%) calc(100% - 12px) 18px / 6px 6px no-repeat,
+    var(--bg);
+  color: var(--text);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  transition:
+    border-color var(--dur-toggle) var(--ease-out),
+    background-color var(--dur-toggle) var(--ease-out),
+    box-shadow var(--dur-toggle) var(--ease-out);
+}
+
+.genderSelect:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--border) 62%, var(--text));
+}
+
+.genderSelect:focus {
+  border-color: var(--accent);
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.genderSelect[aria-expanded="true"] {
+  border-bottom-right-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.genderMenu {
+  position: relative;
+}
+
+.genderOptions {
+  position: absolute;
+  z-index: 2;
+  top: calc(100% - 1px);
+  right: 0;
+  left: 0;
+  border: 1px solid var(--border);
+  border-top: 0;
+  border-radius: 0 0 12px 12px;
+  background: var(--bg);
+  overflow: hidden;
+  box-shadow: 0 10px 22px color-mix(in srgb, var(--shadow) 72%, transparent);
+}
+
+.genderOptions button {
+  display: block;
+  width: 100%;
+  padding: 10px var(--control-padding-m);
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.genderOptions button:hover,
+.genderOptions button[aria-selected="true"] {
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg));
+}

@@ -37,7 +37,9 @@ function normalizeLocalPart(value: unknown): string {
 function validateEmail(localPartValue: unknown, domainValue: unknown): { localPart: string; domain: EmailDomain; email: string } {
   const localPart = normalizeLocalPart(localPartValue);
   if (!LOCAL_PART_RE.test(localPart)) throw new BadRequestException("invalid local part");
-  if (!isAllowedEmailDomain(domainValue)) throw new BadRequestException("domain not allowed");
+  if (!isAllowedEmailDomain(domainValue)) {
+    throw createAuthError(AUTH_ERRORS.EMAIL_NOT_SUPPORTED, "Поддерживаются адреса с доменами .ru и .рф.", false);
+  }
   const domain = domainValue.trim().toLowerCase();
   return { localPart, domain, email: `${localPart}@${domain}` };
 }
@@ -287,23 +289,31 @@ export class AuthService {
     const latest = await this.repository.latestOtpCreatedAt(emailHash);
     if (latest !== null && Date.now() - latest.getTime() < RESEND_COOLDOWN_MS) return;
     const code = randomInt(0, 10 ** OTP_LENGTH).toString().padStart(OTP_LENGTH, "0");
+    console.log("DEV OTP CODE:", code);
+
     await this.repository.createOtp(emailHash, identifierHash(`${email}:${code}`), new Date(Date.now() + OTP_TTL_MS));
     await this.email.send(email, code);
   }
 
   private async verifyOtp(email: string, emailHash: Buffer, codeValue: unknown): Promise<void> {
     const code = typeof codeValue === "string" ? codeValue.trim() : "";
-    if (!new RegExp(`^\\d{${OTP_LENGTH}}$`).test(code)) throw new BadRequestException("invalid code");
-    const otp = await this.repository.latestOtp(emailHash);
-    if (otp === null || new Date(otp.expires_at).getTime() < Date.now()) throw new UnauthorizedException();
-    if (otp.block_until !== null && new Date(otp.block_until).getTime() > Date.now()) {
-      throw new HttpException({ code: "auth.code_blocked.v1", message: "Слишком много попыток. Повторите позже.", retryAt: new Date(otp.block_until).toISOString() }, HttpStatus.TOO_MANY_REQUESTS);
+    if (!new RegExp(`^\\d{${OTP_LENGTH}}$`).test(code)) {
+      throw createAuthError(AUTH_ERRORS.INVALID_CODE, "Неверный код.", false);
     }
-    if (new Date(otp.created_at).getTime() + OTP_ATTEMPT_WINDOW_MS < Date.now() || otp.attempts >= MAX_ATTEMPTS) throw new HttpException("too many attempts", HttpStatus.TOO_MANY_REQUESTS);
+    const otp = await this.repository.latestOtp(emailHash);
+    if (otp === null || new Date(otp.expires_at).getTime() < Date.now()) {
+      throw createAuthError(AUTH_ERRORS.CODE_EXPIRED, "Код неверный или истёк.", false, HttpStatus.UNAUTHORIZED);
+    }
+    if (otp.block_until !== null && new Date(otp.block_until).getTime() > Date.now()) {
+      throw createAuthError(AUTH_ERRORS.ACCOUNT_BLOCKED, "Слишком много попыток. Повторите позже.", true, HttpStatus.TOO_MANY_REQUESTS);
+    }
+    if (new Date(otp.created_at).getTime() + OTP_ATTEMPT_WINDOW_MS < Date.now() || otp.attempts >= MAX_ATTEMPTS) {
+      throw createAuthError(AUTH_ERRORS.TOO_MANY_ATTEMPTS, "Слишком много попыток. Повторите позже.", true, HttpStatus.TOO_MANY_REQUESTS);
+    }
     if (!otp.otp_hash.equals(identifierHash(`${email}:${code}`))) {
       const attempts = otp.attempts + 1;
       await this.repository.incrementOtpAttempts(otp.id, attempts >= MAX_ATTEMPTS ? new Date(Date.now() + OTP_BLOCK_MS) : null);
-      throw new UnauthorizedException();
+      throw createAuthError(AUTH_ERRORS.INVALID_CODE, "Неверный код.", true, HttpStatus.UNAUTHORIZED);
     }
     await this.repository.consumeOtp(otp.id);
   }
