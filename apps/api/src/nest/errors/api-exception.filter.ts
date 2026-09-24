@@ -75,6 +75,10 @@ export function classifyError(exception: unknown, projectRoute = false): Classif
   }
   if (exception instanceof HttpException) {
     const status = exception.getStatus();
+    const response = exception.getResponse();
+    if (isRecord(response) && typeof response.code === "string" && typeof response.message === "string") {
+      return { status, code: response.code as ApiErrorCode, message: response.message };
+    }
     if (projectRoute && status === 401) {
       return { status, code: "auth.unauthenticated.v1", message: "Требуется авторизация" };
     }

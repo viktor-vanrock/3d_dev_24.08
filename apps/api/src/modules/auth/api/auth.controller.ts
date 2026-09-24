@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, Inject, InternalServerErrorException, NotFoundException, Post, Query, Req, Res, UnauthorizedException } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, Inject, InternalServerErrorException, NotFoundException, Param, Post, Query, Req, Res, UnauthorizedException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import type { Request, Response } from "express";
 import { parseCookie } from "cookie";
@@ -13,7 +13,9 @@ import { assertNestRateLimit } from "../../../nest/integration/rate-limit.ts";
 import { APP_INTENT_COOKIE_NAME } from "../domain/auth.ts";
 import { AuthService } from "../application/auth.service.ts";
 import { AuthSessionService } from "../application/session.service.ts";
-import { EmailStartDto, EmailVerifyDto, PasswordLoginDto, PlagIdCallbackQueryDto, PlagIdStartQueryDto } from "./auth.dto.ts";
+import { AUTH_ERRORS } from "../domain/auth-errors.ts";
+import { createAuthError } from "../domain/auth-error.helper.ts";
+import { EmailStartDto, EmailVerifyDto, PasswordLoginDto, PlagIdCallbackQueryDto, PlagIdStartQueryDto, RecoveryStartDto, RecoveryVerifyDto, RegisterDto, RegisterVerifyDto } from "./auth.dto.ts";
 import {
   ApiDevAvailabilityOperation,
   ApiDevLoginOperation,
@@ -83,7 +85,10 @@ export class AuthController {
   @ApiLogoutOperation()
   async logout(@Req() request: RequestWithSession, @Res({ passthrough: true }) response: Response): Promise<{ readonly ok: true }> {
     const user = await this.verifier.readSession(request);
-    if (user !== null) await this.record(user.id, "auth.logout", getRequestId(request));
+    if (user !== null) {
+      await this.sessions.logout(UserId(user.id));
+      await this.record(user.id, "auth.logout", getRequestId(request));
+    }
     this.sessions.clear(response);
     return { ok: true };
   }
@@ -100,6 +105,33 @@ export class AuthController {
     this.metrics.incCredentialRevocation("session", "logout_all");
     this.sessions.clear(response);
     return { ok: true };
+  }
+
+  @Get("sessions")
+  @User()
+  async listSessions(@Req() request: RequestWithSession) {
+    const session = request[SESSION_USER];
+    if (session === undefined) throw createAuthError(AUTH_ERRORS.SESSION_NOT_FOUND, "Сеанс не найден.", false, 401);
+    return { sessions: await this.auth.listSessions(UserId(session.id), session.sessionId) };
+  }
+
+  @Delete("sessions/:id")
+  @User()
+  @HttpCode(204)
+  async deleteSession(@Req() request: RequestWithSession, @Param("id") id: string): Promise<void> {
+    const session = request[SESSION_USER];
+    if (session === undefined) throw createAuthError(AUTH_ERRORS.SESSION_NOT_FOUND, "Сеанс не найден.", false, 401);
+    await this.auth.deleteSession(UserId(session.id), id);
+  }
+
+  @Delete("sessions")
+  @User()
+  @HttpCode(204)
+  async deleteOtherSessions(@Req() request: RequestWithSession): Promise<void> {
+    const session = request[SESSION_USER];
+    if (session === undefined) throw createAuthError(AUTH_ERRORS.SESSION_NOT_FOUND, "Сеанс не найден.", false, 401);
+    await this.auth.deleteOtherSessions(UserId(session.id), session.sessionId);
+    await this.sessions.logoutAll(UserId(session.id));
   }
 
   @Post("email/start")
@@ -122,6 +154,38 @@ export class AuthController {
     if (result.created && cookies[ANON_COOKIE_NAME] === undefined) this.issueAnonCookie(response, anonId);
     await this.sessions.issue(response, result.user);
     await this.record(result.user.id, "auth.login.success", getRequestId(request));
+    return { ok: true };
+  }
+
+  @Post("register")
+  @Public()
+  @HttpCode(200)
+  async register(@Body() body: RegisterDto): Promise<{ readonly ok: true; readonly message: string }> {
+    await this.auth.registerWithPassword(body);
+    return { ok: true, message: "Если домен поддерживается, письмо отправлено" };
+  }
+
+  @Post("register/verify")
+  @Public()
+  @HttpCode(200)
+  async registerVerify(@Res({ passthrough: true }) response: Response, @Body() body: RegisterVerifyDto): Promise<{ readonly ok: true }> {
+    await this.sessions.issue(response, await this.auth.activateWithCode(body.email, body.code));
+    return { ok: true };
+  }
+
+  @Post("recovery/start")
+  @Public()
+  @HttpCode(200)
+  async recoveryStart(@Body() body: RecoveryStartDto): Promise<{ readonly ok: true; readonly message: string }> {
+    await this.auth.startRecovery(body.email);
+    return { ok: true, message: "Если адрес зарегистрирован, письмо придёт" };
+  }
+
+  @Post("recovery/verify")
+  @Public()
+  @HttpCode(200)
+  async recoveryVerify(@Body() body: RecoveryVerifyDto): Promise<{ readonly ok: true }> {
+    await this.auth.recoverPassword(body.email, body.code, body.newPassword);
     return { ok: true };
   }
 

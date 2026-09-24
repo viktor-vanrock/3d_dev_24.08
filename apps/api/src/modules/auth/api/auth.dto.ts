@@ -1,6 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { Allow } from "class-validator";
-import { EMAIL_DOMAINS } from "../domain/auth.ts";
 import { DATA_CAPABILITIES, type DataCapability } from "../../permissions/public/index.ts";
 
 export class EmailStartDto {
@@ -8,13 +7,13 @@ export class EmailStartDto {
   @Allow()
   declare readonly localPart?: unknown;
 
-  @ApiProperty({ type: String, enum: EMAIL_DOMAINS })
+  @ApiProperty({ type: String, example: "example.ru" })
   @Allow()
   declare readonly domain?: unknown;
 }
 
 export class EmailVerifyDto extends EmailStartDto {
-  @ApiProperty({ type: String, example: "012345", pattern: "^[0-9]{6}$" })
+  @ApiProperty({ type: String, example: "0123", pattern: "^[0-9]{4}$" })
   @Allow()
   declare readonly code?: unknown;
 }
@@ -27,6 +26,54 @@ export class PasswordLoginDto {
   @ApiProperty({ type: String, format: "password", minLength: 1 })
   @Allow()
   declare readonly password?: unknown;
+}
+
+export class RegisterDto {
+  @ApiProperty({ type: String, format: "email", example: "ivan@example.ru" })
+  @Allow()
+  declare readonly email?: unknown;
+
+  @ApiProperty({ type: String, format: "password", minLength: 12, maxLength: 20 })
+  @Allow()
+  declare readonly password?: unknown;
+
+  @ApiProperty({ type: String, minLength: 1, maxLength: 64 })
+  @Allow()
+  declare readonly displayName?: unknown;
+
+  @ApiPropertyOptional({ type: String, nullable: true })
+  @Allow()
+  declare readonly gender?: unknown;
+
+  @ApiPropertyOptional({ type: Number, nullable: true })
+  @Allow()
+  declare readonly birthYear?: unknown;
+}
+
+export class RegisterVerifyDto {
+  @ApiProperty({ type: String, format: "email" })
+  @Allow()
+  declare readonly email?: unknown;
+
+  @ApiProperty({ type: String, pattern: "^[0-9]{4}$" })
+  @Allow()
+  declare readonly code?: unknown;
+}
+
+export class RecoveryStartDto {
+  @ApiProperty({ type: String, format: "email" })
+  @Allow()
+  declare readonly email?: unknown;
+}
+
+export class RecoveryVerifyDto extends RecoveryStartDto {
+  @ApiProperty({ type: String, pattern: "^[0-9]{4}$" })
+  @Allow()
+  declare readonly code?: unknown;
+
+  @ApiProperty({ type: String, format: "password", minLength: 12, maxLength: 20 })
+  @Allow()
+  declare readonly newPassword?: unknown;
 }
 
 export class PlagIdStartQueryDto {

@@ -52,6 +52,8 @@ export interface UserUpdate {
   readonly username?: string;
   readonly handleConfirmed?: boolean;
   readonly displayName?: string | null;
+  readonly gender?: string | null;
+  readonly birthYear?: number | null;
   readonly avatarUrl?: string | null;
   readonly clearAvatarKey?: boolean;
   readonly bio?: string | null;
@@ -357,6 +359,8 @@ export class ProfileRepository implements ProfileReadPort, ProfileAdminPort, Pro
     if (update.username !== undefined) push("username", update.username);
     if (update.handleConfirmed !== undefined) push("handle_confirmed", update.handleConfirmed);
     if (update.displayName !== undefined) push("display_name", update.displayName);
+    if (update.gender !== undefined) push("gender", update.gender);
+    if (update.birthYear !== undefined) push("birth_year", update.birthYear);
     if (update.avatarUrl !== undefined) push("avatar_url", update.avatarUrl);
     if (update.clearAvatarKey === true) push("avatar_s3_key", null);
     if (update.bio !== undefined) push("bio", update.bio);

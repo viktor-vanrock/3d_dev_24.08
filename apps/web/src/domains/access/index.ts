@@ -7,6 +7,10 @@ export {
   startEmailAuth,
   verifyEmailAuth,
   passwordLogin,
+  registerAccount,
+  verifyRegistration,
+  startRecovery,
+  verifyRecovery,
   devLogin,
   updateProfile,
   uploadAvatarPhoto,
@@ -14,7 +18,8 @@ export {
   type SessionUser,
   type SessionState,
   type EmailDomain,
-  type ProfilePatch
+  type ProfilePatch,
+  type AuthFormError
 } from "./session.ts";
 
 export { AuthGate } from "./authgate.tsx";

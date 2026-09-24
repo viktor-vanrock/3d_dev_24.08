@@ -5,6 +5,7 @@ import type { OverlayApi } from "@platform/overlay";
 import { avatarEditorPath, navigate } from "../../router.ts";
 import { Button, Input } from "@shared/ui";
 import { AvatarBubble, useAvatar } from "@shared/avatar";
+import { SessionsList } from "../../domains/auth/sessions-list.tsx";
 
 // Форма правки профиля (MF-355, Фаза 2 эпика MF-14) — открывается из капсулы шапки
 // (homeheader.tsx, пункт «Профиль»), контент модалки overlay.modal(). Username/display_name/
@@ -23,6 +24,8 @@ export function ProfileEditForm({
 }) {
   const [username, setUsername] = useState(user.username);
   const [displayName, setDisplayName] = useState(user.display_name ?? "");
+  const [gender, setGender] = useState("");
+  const [birthYear, setBirthYear] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [revoking, setRevoking] = useState(false);
@@ -41,6 +44,8 @@ export function ProfileEditForm({
     const result = await updateProfile({
       username: trimmed,
       display_name: displayName.trim() || null,
+      ...(gender ? { gender } : {}),
+      ...(birthYear ? { birth_year: Number(birthYear) } : {}),
     });
     setBusy(false);
     if (!result.ok) {
@@ -93,6 +98,14 @@ export function ProfileEditForm({
           <div style={hintStyle}>Строчные латинские буквы, цифры, точки, 3–32 символа.</div>
         ) : null}
       </div>
+      <div>
+        <label style={labelStyle} htmlFor="pe-gender">Пол</label>
+        <select id="pe-gender" value={gender} onChange={(event) => setGender(event.target.value)}><option value="">Не указывать</option><option value="female">Женский</option><option value="male">Мужской</option><option value="other">Другой</option></select>
+      </div>
+      <div>
+        <label style={labelStyle} htmlFor="pe-birth-year">Год рождения</label>
+        <Input id="pe-birth-year" type="number" min="1900" max={new Date().getFullYear()} value={birthYear} onChange={(event) => setBirthYear(event.target.value)} />
+      </div>
 
       <div>
         <label style={labelStyle} htmlFor="pe-display-name">
@@ -117,6 +130,7 @@ export function ProfileEditForm({
       <Button type="button" variant="secondary" onClick={handleRevokeConsent} disabled={revoking}>
         {revoking ? "Отзываем…" : "Отозвать согласие на аналитику"}
       </Button>
+      <SessionsList />
     </form>
   );
 }

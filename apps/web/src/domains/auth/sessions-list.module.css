@@ -1,0 +1,5 @@
+.section { border-top: 1px solid var(--border, #d8dfdc); margin-top: 16px; padding-top: 16px; }
+.list { display: grid; gap: 8px; margin: 10px 0; }
+.row { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 13px; }
+.current { color: var(--text-dim); }
+.error { color: var(--accent-danger); font-size: 12px; }

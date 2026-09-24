@@ -56,6 +56,7 @@
   --ref-color-coral-600: #c14e35;
   --ref-color-sun-200: #ffdf9e;
   --ref-color-sun-400: #f2a93b;
+  --ref-color-blue-500: #4444e3;
 
   /* Тени (по теме, т.к. светлая тень должна быть тёплой, а не чёрной) */
   --ref-shadow-teal: rgba(0, 0, 0, 0.6);
@@ -90,6 +91,7 @@
   --border: var(--ref-color-teal-700);
   --text: var(--ref-color-mint-050);
   --text-dim: var(--ref-color-slate-400);
+  --text-dim-a: var(--ref-color-slate-400);
   --accent: var(--ref-color-mint-400);
   --accent-contrast: var(--ref-color-teal-975);
   --accent2: var(--ref-color-mint-500);
@@ -124,6 +126,7 @@
   --font-display: var(--ref-font-display);
   --font-sans: var(--ref-font-sans);
   --font-mono: var(--ref-font-mono);
+  --text-dim-a: var(--ref-color-blue-500);
   color-scheme: light;
 }
 

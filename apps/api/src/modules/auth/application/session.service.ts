@@ -1,10 +1,12 @@
-import { Inject, Injectable, UnauthorizedException } from "@nestjs/common";
+import { Inject, Injectable, Optional, UnauthorizedException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import type { Response } from "express";
 import { SignJWT } from "jose";
+import { createHash, randomUUID } from "node:crypto";
 import { PROFILE_AUTH_PORT, type ProfileAuthPort } from "../../profile/public/index.ts";
 import { RuntimeLogger } from "../../../nest/observability/runtime-logger.ts";
 import { SESSION_COOKIE_NAME, type AuthenticatedUser } from "../domain/auth.ts";
+import { AuthRepository } from "../infrastructure/auth.repository.ts";
 
 const THIRTY_DAYS_SECONDS = 30 * 24 * 60 * 60;
 
@@ -14,6 +16,7 @@ export class AuthSessionService {
     @Inject(ConfigService) private readonly config: ConfigService,
     @Inject(PROFILE_AUTH_PORT) private readonly profiles: ProfileAuthPort,
     @Inject(RuntimeLogger) private readonly logger: RuntimeLogger,
+    @Optional() @Inject(AuthRepository) private readonly repository?: AuthRepository,
   ) {}
 
   private cookieDomain(): string | undefined {
@@ -39,12 +42,15 @@ export class AuthSessionService {
       throw new UnauthorizedException("auth.session.issue_denied.v1");
     }
 
-    return new SignJWT({ username: user.username, sv: state.sessionVersion })
+    const sessionId = randomUUID();
+    const token = await new SignJWT({ username: user.username, sv: state.sessionVersion, sid: sessionId })
       .setProtectedHeader({ alg: "HS256" })
       .setSubject(user.id)
       .setIssuedAt()
       .setExpirationTime(`${THIRTY_DAYS_SECONDS}s`)
       .sign(this.secret());
+    await this.repository?.createSession(user.id, createHash("sha256").update(token).digest("hex"), sessionId);
+    return token;
   }
 
   async issue(response: Response, user: AuthenticatedUser): Promise<void> {
@@ -62,6 +68,11 @@ export class AuthSessionService {
   async logoutAll(userId: AuthenticatedUser["id"]): Promise<void> {
     if (!(await this.profiles.bumpSessionVersion(userId))) throw new UnauthorizedException("auth.session.issue_denied.v1");
     this.logger.info({ event: "auth.logout_all", credentialType: "session" }, "All sessions logged out");
+  }
+
+  async logout(userId: AuthenticatedUser["id"]): Promise<void> {
+    if (!(await this.profiles.bumpSessionVersion(userId))) throw new UnauthorizedException("auth.session.issue_denied.v1");
+    this.logger.info({ event: "auth.logout", credentialType: "session" }, "Session logged out");
   }
 
   clear(response: Response): void {

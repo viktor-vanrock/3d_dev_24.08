@@ -2,8 +2,21 @@ import type { UserId } from "../../_kernel/brandedIds.ts";
 
 export const SESSION_COOKIE_NAME = "portal_session";
 export const APP_INTENT_COOKIE_NAME = "plagid_app";
-export const EMAIL_DOMAINS = ["sberbank.ru", "sberdevices.ru"] as const;
-export type EmailDomain = (typeof EMAIL_DOMAINS)[number];
+/**
+ * Explicit exceptions are kept separate from suffixes: this is the extension
+ * point for future foreign/corporate domains without changing validation code.
+ */
+export const ALWAYS_ALLOWED_EMAIL_DOMAINS = ["sberbank.ru", "sberdevices.ru"] as const;
+export const ALLOWED_EMAIL_SUFFIXES = [".ru", ".рф"] as const;
+export type EmailDomain = string;
+
+export function isAllowedEmailDomain(value: unknown): value is EmailDomain {
+  if (typeof value !== "string") return false;
+  const domain = value.trim().toLowerCase();
+  if (domain === "" || domain.includes("@") || domain.includes(" ")) return false;
+  return (ALWAYS_ALLOWED_EMAIL_DOMAINS as readonly string[]).includes(domain)
+    || (ALLOWED_EMAIL_SUFFIXES as readonly string[]).some((suffix) => domain.endsWith(suffix));
+}
 
 export interface AuthenticatedUser {
   readonly id: UserId;

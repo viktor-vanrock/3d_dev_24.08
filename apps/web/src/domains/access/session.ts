@@ -50,17 +50,20 @@ export async function logout(): Promise<void> {
 
 // Метод 1 — email, только @sberbank.ru/@sberdevices.ru (docs/epics/auth.triple.md § «Метод 1»).
 export const EMAIL_DOMAINS = ["sberbank.ru", "sberdevices.ru"] as const;
-export type EmailDomain = (typeof EMAIL_DOMAINS)[number];
+export type EmailDomain = string;
 
-async function postJson(path: string, body: unknown): Promise<{ ok: boolean; error?: string }> {
+export interface AuthFormError { readonly code?: string; readonly message: string; readonly traceId?: string; readonly retryable?: boolean }
+async function postJson(path: string, body: unknown): Promise<{ ok: boolean; error?: AuthFormError }> {
   const response = await apiFetch(`${path}`, {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  const data = (await response.json().catch(() => ({}))) as { ok?: boolean; error?: string };
-  return { ok: response.ok && !!data.ok, error: data.error };
+  const data = (await response.json().catch(() => ({}))) as { ok?: boolean; error?: string | AuthFormError; message?: string; traceId?: string; retryable?: boolean };
+  const raw = data.error;
+  const error = typeof raw === "object" && raw !== null ? raw : { message: typeof raw === "string" ? raw : data.message ?? "Что-то пошло не так.", traceId: data.traceId, retryable: data.retryable };
+  return { ok: response.ok && !!data.ok, ...(response.ok ? {} : { error }) };
 }
 
 export function startEmailAuth(localPart: string, domain: EmailDomain) {
@@ -75,6 +78,22 @@ export function passwordLogin(username: string, password: string) {
   return postJson("/auth/password", { username, password });
 }
 
+export function registerAccount(body: { email: string; password: string; displayName: string; gender?: string; birthYear?: number }) {
+  return postJson("/auth/register", body);
+}
+
+export function verifyRegistration(email: string, code: string) {
+  return postJson("/auth/register/verify", { email, code });
+}
+
+export function startRecovery(email: string) {
+  return postJson("/auth/recovery/start", { email });
+}
+
+export function verifyRecovery(email: string, code: string, newPassword: string) {
+  return postJson("/auth/recovery/verify", { email, code, newPassword });
+}
+
 export async function devLogin(): Promise<void> {
   const response = await apiFetch("/auth/dev", { method: "POST", credentials: "include" });
   if (!response.ok) throw new Error("dev login failed");
@@ -84,7 +103,7 @@ export async function devLogin(): Promise<void> {
 // эпика MF-15): PATCH /me, apps/api/src/profile/profile.ts. Ошибки — invalid_username/
 // invalid_display_name/invalid_avatar_url/invalid_bio/invalid_website_url/invalid_contacts
 // (400) и username_taken (409); вызывающая форма показывает их сама.
-export async function updateProfile(patch: ProfilePatch): Promise<{ ok: boolean; error?: string; user?: SessionUser }> {
+export async function updateProfile(patch: ProfilePatch): Promise<{ ok: boolean; status: number; error?: string; user?: SessionUser }> {
   const response = await apiFetch(`/me`, {
     method: "PATCH",
     credentials: "include",
@@ -92,7 +111,7 @@ export async function updateProfile(patch: ProfilePatch): Promise<{ ok: boolean;
     body: JSON.stringify(patch),
   });
   const data = (await response.json().catch(() => ({}))) as { user?: SessionUser; error?: string };
-  return { ok: response.ok, error: data.error, user: data.user };
+  return { ok: response.ok, status: response.status, error: data.error, user: data.user };
 }
 
 // Загрузка фото-аватарки (MF-357): POST /me/avatar-photo, apps/api/src/profile/avatarphoto.ts.

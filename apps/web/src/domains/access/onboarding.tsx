@@ -25,12 +25,12 @@ export function HandleOnboarding({ user }: { user: SessionUser }) {
     const result = await updateProfile({ username: trimmed, display_name: displayName.trim() || null });
     setBusy(false);
     if (!result.ok) {
-      if (result.error === "username_taken") setError("Этот логин уже занят — выберите другой.");
+      if (result.status === 409 || result.error === "username_taken") setError("Этот логин уже занят — выберите другой логин.");
       else if (result.error === "invalid_username") setError("Логин: строчные латинские буквы, цифры, точки, 3–32 символа.");
       else setError("Не удалось сохранить. Попробуйте ещё раз.");
       return;
     }
-    window.location.reload();
+    window.location.assign("/");
   }
 
   return (
