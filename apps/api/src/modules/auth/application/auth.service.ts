@@ -15,6 +15,7 @@ import { IdentityStorageAdapter } from "../infrastructure/identity-storage.adapt
 import { hashPassword, verifyPassword } from "../infrastructure/password-hash.ts";
 import { AUTH_ERRORS } from "../domain/auth-errors.ts";
 import { createAuthError } from "../domain/auth-error.helper.ts";
+import type { SensitiveCommand } from "@portal/contracts/audit/sensitive-commands";
 
 const LOCAL_PART_RE = /^[a-z0-9][a-z0-9._-]{0,63}$/;
 const OTP_TTL_MS = 10 * 60 * 1000;
@@ -79,6 +80,26 @@ export class AuthService {
   private audit(provider: "email_corp" | "plag_id" | "sber_id" | "password" | "dev_bypass", outcome: "success" | "failure", reason?: string): void {
     this.logger.info({ event: "auth.login_attempt", provider, outcome, reason }, "Auth attempt");
     if (outcome === "failure") void this.auditLog?.record({ schema_version: 1, id: randomUUID(), actor_user_id: null, actor_type: "system", subject_type: "login_attempt", subject_id: randomUUID(), action: "auth.login.failed", before_state: null, after_state: { provider, outcome }, reason: reason ?? null, correlation_id: randomUUID(), causation_id: null, idempotency_key: `auth.failed:${provider}:${randomUUID()}`, occurred_at: new Date(), legal_hold: false });
+  }
+
+  private recordAuthAudit(userId: UserIdType, action: Extract<SensitiveCommand, "auth.register" | "auth.activate" | "auth.login" | "auth.recovery_requested" | "auth.recovery_completed">, afterState: Record<string, unknown> | null = null): void {
+    void this.auditLog?.record({
+      schema_version: 1,
+      id: randomUUID(),
+      actor_user_id: userId,
+      actor_type: "user",
+      subject_type: "user",
+      subject_id: userId,
+      action,
+      before_state: null,
+      after_state: afterState,
+      reason: null,
+      correlation_id: randomUUID(),
+      causation_id: null,
+      idempotency_key: `${action}:${userId}:${randomUUID()}`,
+      occurred_at: new Date(),
+      legal_hold: false,
+    });
   }
 
   async startEmail(localPartValue: unknown, domainValue: unknown): Promise<void> {
@@ -182,6 +203,10 @@ export class AuthService {
     if (hasPending) {
       await this.issueOtp(parsed.email, emailHash);
     }
+    if (created) {
+      const userId = await this.repository.findIdentity("email_corp", emailHash);
+      if (userId !== null) this.recordAuthAudit(userId, "auth.register", { provider: "password", email_domain: parsed.domain });
+    }
   }
 
   async activateWithCode(emailValue: unknown, codeValue: unknown): Promise<AuthenticatedUser> {
@@ -190,6 +215,7 @@ export class AuthService {
     await this.verifyOtp(parsed.email, emailHash, codeValue);
     const credential = await this.repository.activatePendingRegistration(emailHash);
     if (credential === null) throw new UnauthorizedException();
+    this.recordAuthAudit(credential.id, "auth.activate");
     return { id: credential.id, username: credential.username };
   }
 
@@ -197,7 +223,11 @@ export class AuthService {
     let parsed: ReturnType<typeof parseEmail>;
     try { parsed = parseEmail(emailValue); } catch { return; }
     const emailHash = identifierHash(parsed.email);
-    if (await this.repository.findUserByEmail(emailHash)) await this.issueOtp(parsed.email, emailHash);
+    const user = await this.repository.findUserByEmail(emailHash);
+    if (user !== null) {
+      await this.issueOtp(parsed.email, emailHash);
+      this.recordAuthAudit(user.id, "auth.recovery_requested", { provider: "password" });
+    }
   }
 
   async recoverPassword(emailValue: unknown, codeValue: unknown, passwordValue: unknown): Promise<void> {
@@ -209,6 +239,7 @@ export class AuthService {
     if (user === null) throw new UnauthorizedException();
     await this.repository.replacePassword(user.id, await hashPassword(passwordValue));
     await this.profiles.bumpSessionVersion(user.id);
+    this.recordAuthAudit(user.id, "auth.recovery_completed", { provider: "password" });
   }
 
   async loginPlagId(token: string, secret: string, anonId: string): Promise<LoginResult> {
@@ -262,6 +293,7 @@ export class AuthService {
       throw new UnauthorizedException();
     }
     this.audit("password", "success");
+    this.recordAuthAudit(credential.id, "auth.login", { provider: "password" });
     return { id: credential.id, username: credential.username };
   }
 
@@ -289,8 +321,6 @@ export class AuthService {
     const latest = await this.repository.latestOtpCreatedAt(emailHash);
     if (latest !== null && Date.now() - latest.getTime() < RESEND_COOLDOWN_MS) return;
     const code = randomInt(0, 10 ** OTP_LENGTH).toString().padStart(OTP_LENGTH, "0");
-    console.log("DEV OTP CODE:", code);
-
     await this.repository.createOtp(emailHash, identifierHash(`${email}:${code}`), new Date(Date.now() + OTP_TTL_MS));
     await this.email.send(email, code);
   }

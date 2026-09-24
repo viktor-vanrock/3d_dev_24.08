@@ -1,5 +1,6 @@
 export const SENSITIVE_COMMANDS = [
   "auth.login.success", "auth.login.failed", "auth.logout", "auth.logout_all", "auth.password_reset",
+  "auth.register", "auth.activate", "auth.login", "auth.recovery_requested", "auth.recovery_completed",
   "session.created", "session.revoked", "api_key.issued", "api_key.revoked", "permission.granted",
   "permission.revoked", "sanction.created", "sanction.cancelled", "sanction.expired", "project.published",
   "project.unpublished", "project.archived", "project.restored", "moderation.decision", "moderation.appeal",
@@ -10,6 +11,7 @@ export type SensitiveCommand = (typeof SENSITIVE_COMMANDS)[number];
 
 export const AUDIT_COVERAGE = {
   "auth.login.success": true, "auth.login.failed": true, "auth.logout": true, "auth.logout_all": true, "auth.password_reset": true,
+  "auth.register": true, "auth.activate": true, "auth.login": true, "auth.recovery_requested": true, "auth.recovery_completed": true,
   "session.created": true, "session.revoked": true, "api_key.issued": true, "api_key.revoked": true, "permission.granted": true,
   "permission.revoked": true, "sanction.created": true, "sanction.cancelled": true, "sanction.expired": true, "project.published": true,
   "project.unpublished": true, "project.archived": true, "project.restored": true, "moderation.decision": true, "moderation.appeal": true,
