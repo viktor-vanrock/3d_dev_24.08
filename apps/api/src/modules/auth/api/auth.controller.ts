@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, Inject, InternalServerErrorException, NotFoundException, Post, Query, Req, Res, UnauthorizedException } from "@nestjs/common";
+import { Body, Controller, Delete, ForbiddenException, Get, HttpCode, Inject, InternalServerErrorException, NotFoundException, Param, Post, Query, Req, Res, UnauthorizedException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import type { Request, Response } from "express";
 import { parseCookie } from "cookie";
@@ -13,7 +13,10 @@ import { assertNestRateLimit } from "../../../nest/integration/rate-limit.ts";
 import { APP_INTENT_COOKIE_NAME } from "../domain/auth.ts";
 import { AuthService } from "../application/auth.service.ts";
 import { AuthSessionService } from "../application/session.service.ts";
-import { EmailStartDto, EmailVerifyDto, PasswordLoginDto, PlagIdCallbackQueryDto, PlagIdStartQueryDto } from "./auth.dto.ts";
+import { AuthRepository } from "../infrastructure/auth.repository.ts";
+import { AUTH_ERRORS } from "../domain/auth-errors.ts";
+import { createAuthError } from "../domain/auth-error.helper.ts";
+import { EmailStartDto, EmailVerifyDto, PasswordLoginDto, PlagIdCallbackQueryDto, PlagIdStartQueryDto, RecoveryStartDto, RecoveryVerifyDto, RegisterDto, RegisterVerifyDto } from "./auth.dto.ts";
 import {
   ApiDevAvailabilityOperation,
   ApiDevLoginOperation,
@@ -47,6 +50,7 @@ export class AuthController {
   constructor(
     @Inject(AuthService) private readonly auth: AuthService,
     @Inject(AuthSessionService) private readonly sessions: AuthSessionService,
+    @Inject(AuthRepository) private readonly repository: AuthRepository,
     @Inject(SessionVerifier) private readonly verifier: SessionVerifier,
     @Inject(PROFILE_AUTH_PORT) private readonly profiles: ProfileAuthPort,
     @Inject(ConfigService) private readonly config: ConfigService,
@@ -83,7 +87,10 @@ export class AuthController {
   @ApiLogoutOperation()
   async logout(@Req() request: RequestWithSession, @Res({ passthrough: true }) response: Response): Promise<{ readonly ok: true }> {
     const user = await this.verifier.readSession(request);
-    if (user !== null) await this.record(user.id, "auth.logout", getRequestId(request));
+    if (user !== null) {
+      await this.sessions.logout(UserId(user.id));
+      await this.record(user.id, "auth.logout", getRequestId(request));
+    }
     this.sessions.clear(response);
     return { ok: true };
   }
@@ -100,6 +107,37 @@ export class AuthController {
     this.metrics.incCredentialRevocation("session", "logout_all");
     this.sessions.clear(response);
     return { ok: true };
+  }
+
+  @Get("sessions")
+  @User()
+  async listSessions(@Req() request: RequestWithSession) {
+    const session = request[SESSION_USER];
+    if (session === undefined) throw createAuthError(AUTH_ERRORS.SESSION_NOT_FOUND, "Сеанс не найден.", false, 401);
+    const rows = await this.repository.getSessionsByUserId(UserId(session.id));
+    return { sessions: rows.map((row) => ({ id: row.id, created_at: row.created_at, isCurrent: row.id === session.sessionId })) };
+  }
+
+  @Delete("sessions/:id")
+  @User()
+  @HttpCode(204)
+  async deleteSession(@Req() request: RequestWithSession, @Param("id") id: string): Promise<void> {
+    const session = request[SESSION_USER];
+    if (session === undefined) throw createAuthError(AUTH_ERRORS.SESSION_NOT_FOUND, "Сеанс не найден.", false, 401);
+    const target = await this.repository.getSessionById(id);
+    if (target === null) throw createAuthError(AUTH_ERRORS.SESSION_NOT_FOUND, "Сеанс не найден.", false, 404);
+    if (target.user_id !== session.id) throw createAuthError(AUTH_ERRORS.FORBIDDEN, "Нет доступа к этому сеансу.", false, 403);
+    await this.repository.deleteSessionById(id);
+  }
+
+  @Delete("sessions")
+  @User()
+  @HttpCode(204)
+  async deleteOtherSessions(@Req() request: RequestWithSession): Promise<void> {
+    const session = request[SESSION_USER];
+    if (session === undefined) throw createAuthError(AUTH_ERRORS.SESSION_NOT_FOUND, "Сеанс не найден.", false, 401);
+    await this.repository.deleteAllSessionsByUserId(UserId(session.id), session.sessionId);
+    await this.sessions.logoutAll(UserId(session.id));
   }
 
   @Post("email/start")
@@ -122,6 +160,38 @@ export class AuthController {
     if (result.created && cookies[ANON_COOKIE_NAME] === undefined) this.issueAnonCookie(response, anonId);
     await this.sessions.issue(response, result.user);
     await this.record(result.user.id, "auth.login.success", getRequestId(request));
+    return { ok: true };
+  }
+
+  @Post("register")
+  @Public()
+  @HttpCode(200)
+  async register(@Body() body: RegisterDto): Promise<{ readonly ok: true; readonly message: string }> {
+    await this.auth.registerWithPassword(body);
+    return { ok: true, message: "Если домен поддерживается, письмо отправлено" };
+  }
+
+  @Post("register/verify")
+  @Public()
+  @HttpCode(200)
+  async registerVerify(@Res({ passthrough: true }) response: Response, @Body() body: RegisterVerifyDto): Promise<{ readonly ok: true }> {
+    await this.sessions.issue(response, await this.auth.activateWithCode(body.email, body.code));
+    return { ok: true };
+  }
+
+  @Post("recovery/start")
+  @Public()
+  @HttpCode(200)
+  async recoveryStart(@Body() body: RecoveryStartDto): Promise<{ readonly ok: true; readonly message: string }> {
+    await this.auth.startRecovery(body.email);
+    return { ok: true, message: "Если адрес зарегистрирован, письмо придёт" };
+  }
+
+  @Post("recovery/verify")
+  @Public()
+  @HttpCode(200)
+  async recoveryVerify(@Body() body: RecoveryVerifyDto): Promise<{ readonly ok: true }> {
+    await this.auth.recoverPassword(body.email, body.code, body.newPassword);
     return { ok: true };
   }
 

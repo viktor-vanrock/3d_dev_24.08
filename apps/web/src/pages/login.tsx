@@ -1,12 +1,11 @@
-import { devLogin, plagIdStartUrl, useDevMode } from "@domains/access";
-import { navigate, saveAuthReturnUrl } from "../router.ts";
+import { devLogin, type AuthFormError, useDevMode } from "@domains/access";
+import { navigate } from "../router.ts";
 import { useState } from "react";
 import { ThemeToggle } from "@platform/theme";
 import { AuroraBackground, Button } from "@shared/ui";
-import { EmailLogin } from "./emaillogin.tsx";
 import { PasswordLogin } from "./passwordlogin.tsx";
-import { MethodIcon } from "./methodicon.tsx";
 import "./login.css";
+import { ErrorMessage } from "@shared/ui/error-message/error-message.tsx";
 
 const ERROR_MESSAGES: Record<string, string> = {
   access_denied: "Доступ закрыт — портал в приватной бете. Обратитесь к оператору за приглашением.",
@@ -25,23 +24,16 @@ export function LoginPage({ returnUrl }: { returnUrl?: string }) {
   const errorMessage = error ? (ERROR_MESSAGES[error] ?? ERROR_MESSAGES.missing_token) : null;
   const isDevMode = useDevMode();
   const [devError, setDevError] = useState("");
+  const [formError, setFormError] = useState<AuthFormError | null>(errorMessage ? { message: errorMessage } : null);
   const returnTarget = safeReturnUrl(returnUrl);
-  const plagIdUrl = returnTarget === "/"
-    ? plagIdStartUrl()
-    : `${plagIdStartUrl()}${plagIdStartUrl().includes("?") ? "&" : "?"}returnUrl=${encodeURIComponent(returnTarget)}`;
-
-  function handlePlagIdLogin() {
-    if (returnTarget !== "/") saveAuthReturnUrl(returnTarget);
-  }
-
   async function handleDevLogin() {
-    setDevError("");
+    setDevError(""); setFormError(null);
     try {
       await devLogin();
       navigate(returnTarget, "back");
       window.location.reload();
     } catch {
-      setDevError("Dev вход недоступен");
+      setDevError("Dev вход недоступен"); setFormError({ message: "Dev вход недоступен", retryable: true });
     }
   }
 
@@ -64,42 +56,13 @@ export function LoginPage({ returnUrl }: { returnUrl?: string }) {
 
         <section className="loginCard" aria-label="Вход в портал">
           <div className="loginCardGrain" aria-hidden="true" />
-          {errorMessage ? <div className="loginErrorBanner" role="alert">{errorMessage}</div> : null}
-          <EmailLogin onSuccess={() => {
-            navigate(returnTarget, "back");
-            window.location.reload();
-          }} />
-
-          <div className="loginDivider">
-            <div className="loginDividerLine" />
-            <span>или</span>
-            <div className="loginDividerLine" />
-          </div>
-
+          {formError ? <ErrorMessage {...formError} onRetry={() => void handleDevLogin()} /> : null}
           <PasswordLogin onSuccess={() => {
             navigate(returnTarget, "back");
             window.location.reload();
           }} />
-
-          <div className="loginDivider">
-            <div className="loginDividerLine" />
-            <span>Войти через</span>
-            <div className="loginDividerLine" />
-          </div>
-
-          <div className="loginMethods">
-            <Button
-              variant="secondary"
-              disabled
-              title="SberID пока недоступен — ждём Client ID от Сбер ID"
-              icon={<MethodIcon provider="sberid" muted />}
-            >
-              SberID
-            </Button>
-            <Button variant="secondary" href={plagIdUrl} icon={<MethodIcon provider="plagid" />} onClick={handlePlagIdLogin}>
-              PlagID
-            </Button>
-          </div>
+          <p className="loginDescription"><a href="/recovery">Забыли пароль?</a></p>
+          <p className="loginDescription">Нет аккаунта? <a href="/register">Зарегистрироваться</a></p>
 
           {isDevMode ? (
             <div className="devBypassSection">

@@ -50,17 +50,20 @@ export async function logout(): Promise<void> {
 
 // Метод 1 — email, только @sberbank.ru/@sberdevices.ru (docs/epics/auth.triple.md § «Метод 1»).
 export const EMAIL_DOMAINS = ["sberbank.ru", "sberdevices.ru"] as const;
-export type EmailDomain = (typeof EMAIL_DOMAINS)[number];
+export type EmailDomain = string;
 
-async function postJson(path: string, body: unknown): Promise<{ ok: boolean; error?: string }> {
+export interface AuthFormError { readonly message: string; readonly traceId?: string; readonly retryable?: boolean }
+async function postJson(path: string, body: unknown): Promise<{ ok: boolean; error?: AuthFormError }> {
   const response = await apiFetch(`${path}`, {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  const data = (await response.json().catch(() => ({}))) as { ok?: boolean; error?: string };
-  return { ok: response.ok && !!data.ok, error: data.error };
+  const data = (await response.json().catch(() => ({}))) as { ok?: boolean; error?: string | AuthFormError; message?: string; traceId?: string; retryable?: boolean };
+  const raw = data.error;
+  const error = typeof raw === "object" && raw !== null ? raw : { message: typeof raw === "string" ? raw : data.message ?? "Что-то пошло не так.", traceId: data.traceId, retryable: data.retryable };
+  return { ok: response.ok && !!data.ok, ...(response.ok ? {} : { error }) };
 }
 
 export function startEmailAuth(localPart: string, domain: EmailDomain) {
@@ -73,6 +76,22 @@ export function verifyEmailAuth(localPart: string, domain: EmailDomain, code: st
 
 export function passwordLogin(username: string, password: string) {
   return postJson("/auth/password", { username, password });
+}
+
+export function registerAccount(body: { email: string; password: string; displayName: string; gender?: string; birthYear?: number }) {
+  return postJson("/auth/register", body);
+}
+
+export function verifyRegistration(email: string, code: string) {
+  return postJson("/auth/register/verify", { email, code });
+}
+
+export function startRecovery(email: string) {
+  return postJson("/auth/recovery/start", { email });
+}
+
+export function verifyRecovery(email: string, code: string, newPassword: string) {
+  return postJson("/auth/recovery/verify", { email, code, newPassword });
 }
 
 export async function devLogin(): Promise<void> {

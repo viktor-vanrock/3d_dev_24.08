@@ -40,6 +40,8 @@ export const MAX_SNAPSHOT_BYTES = 2 * 1024 * 1024;
 export interface ProfilePatchInput {
   readonly username?: string | null;
   readonly display_name?: string | null;
+  readonly gender?: string | null;
+  readonly birth_year?: number | null;
   readonly avatar_url?: string | null;
   readonly bio?: string | null;
   readonly website_url?: string | null;
@@ -144,6 +146,14 @@ export class ProfileService {
       Object.assign(update, {
         displayName: typeof input.display_name === "string" ? input.display_name.trim().slice(0, DISPLAY_NAME_MAX) || null : null,
       });
+    }
+    if (input.gender !== undefined) {
+      if (input.gender !== null && typeof input.gender !== "string") throw new BadRequestException();
+      Object.assign(update, { gender: typeof input.gender === "string" ? input.gender.trim().slice(0, 32) || null : null });
+    }
+    if (input.birth_year !== undefined) {
+      if (input.birth_year !== null && (!Number.isInteger(input.birth_year) || input.birth_year < 1900 || input.birth_year > new Date().getFullYear())) throw new BadRequestException();
+      Object.assign(update, { birthYear: input.birth_year });
     }
     if (input.avatar_url !== undefined) {
       if (input.avatar_url !== null && typeof input.avatar_url !== "string") throw new BadRequestException();

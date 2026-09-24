@@ -42,6 +42,9 @@ export const LEGAL_SLUGS: readonly LegalSlug[] = ["license", "privacy", "terms"]
 
 export type Route =
   | { screen: "login"; returnUrl?: string }
+  | { screen: "register" }
+  | { screen: "register-verify" }
+  | { screen: "recovery" }
   | { screen: "home" }
   | { screen: "market"; tag?: string; q?: string; sort?: ModelSort }
   | { screen: "model"; id: string; tab?: ModelTab }
@@ -133,6 +136,9 @@ export function parseLocation(pathname: string, search: string): Route {
     const returnUrl = new URLSearchParams(search).get("returnUrl");
     return { screen: "login", returnUrl: returnUrl ?? undefined };
   }
+  if (parts[0] === "register" && parts[1] === "verify") return { screen: "register-verify" };
+  if (parts[0] === "register" && !parts[1]) return { screen: "register" };
+  if (parts[0] === "recovery" && !parts[1]) return { screen: "recovery" };
 
   if (parts[0] === "purchases" && parts[1]) {
     return { screen: "purchase-return", id: decodeURIComponent(parts[1]) };

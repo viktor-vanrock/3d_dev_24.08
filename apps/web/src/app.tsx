@@ -13,6 +13,9 @@ import { CatalogMetricsPage } from "./pages/catalogmetrics.tsx";
 import { IdeaSubmitScreen } from "./pages/ideasubmit.tsx";
 import { KitchenSinkPage } from "./pages/kitchensink.tsx";
 import { LoginPage } from "./pages/login.tsx";
+import { RegisterPage } from "./pages/register.tsx";
+import { RegisterVerifyPage } from "./pages/register-verify.tsx";
+import { RecoveryPage } from "./pages/recovery.tsx";
 import { MaterialCandidatesPage } from "./pages/materialcandidates.tsx";
 import { MaterialDetailScreen, MaterialsScreen, ParkAddScreen, CommunityFirmwareScreen, DiyScreen, ParkScreen, SlicePrintScreen, PlateScreen, PrinterLiveScreen, PrintHistoryScreen, PrinterDeviceMissingScreen, PrinterFaceScreen, PrinterCompareScreen, PrinterDetailScreen, PrintersScreen, PrinterReleasesScreen } from "@domains/printing";
 import { ProductHealthPage } from "./pages/producthealth.tsx";
@@ -54,6 +57,9 @@ const AvatarEditorPage = lazy(() =>
 // (тот же приём, что park-add/printer-diy), гость видит LoginPage.
 const GUEST_ALLOWED_SCREENS = new Set([
   "login",
+  "register",
+  "register-verify",
+  "recovery",
   "home",
   "market",
   "model",
@@ -197,6 +203,9 @@ export function App() {
             }
 
             if (route.screen === "login") return <LoginPage returnUrl={route.returnUrl} />;
+            if (route.screen === "register") return <RegisterPage />;
+            if (route.screen === "register-verify") return <RegisterVerifyPage />;
+            if (route.screen === "recovery") return <RecoveryPage />;
 
             if (route.screen === "catalog-metrics") {
               return <CatalogMetricsPage />;

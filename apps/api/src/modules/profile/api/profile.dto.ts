@@ -13,6 +13,14 @@ export class PatchProfileDto {
 
   @ApiPropertyOptional({ type: String, nullable: true })
   @IsOptional()
+  declare readonly gender?: string | null;
+
+  @ApiPropertyOptional({ type: Number, nullable: true })
+  @IsOptional()
+  declare readonly birth_year?: number | null;
+
+  @ApiPropertyOptional({ type: String, nullable: true })
+  @IsOptional()
   declare readonly avatar_url?: string | null;
 
   @ApiPropertyOptional({ type: String, nullable: true })

@@ -1,0 +1,2 @@
+.message { color: var(--accent-danger); font-size: 13px; margin: 8px 0; }
+.trace { color: var(--text-dim); display: block; font-size: 11px; margin-top: 4px; }

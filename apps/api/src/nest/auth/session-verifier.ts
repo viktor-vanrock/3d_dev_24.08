@@ -9,6 +9,8 @@ import { SANCTIONS_READ_PORT, type SanctionsReadPort } from "../../modules/sanct
 import { AccountRestrictedException } from "./account-restricted.exception.ts";
 import { RuntimeLogger } from "../observability/runtime-logger.ts";
 import { MetricsService } from "../observability/metrics.service.ts";
+import type { Pool } from "pg";
+import { DATABASE_POOL } from "../database/database.constants.ts";
 
 export const SESSION_COOKIE_NAME = "portal_session";
 export const SESSION_USER = Symbol("SESSION_USER");
@@ -17,6 +19,7 @@ export interface SessionUser {
   readonly id: string;
   readonly username: string;
   readonly sessionVersion: number;
+  readonly sessionId?: string;
 }
 
 export interface RequestWithSession extends Request {
@@ -39,12 +42,14 @@ interface SessionClaims {
   readonly sub: string;
   readonly username: string;
   readonly sessionVersion: number;
+  readonly sessionId?: string;
 }
 
-function parseSessionClaims(payload: { readonly sub?: unknown; readonly username?: unknown; readonly sv?: unknown }): SessionClaims | null {
+function parseSessionClaims(payload: { readonly sub?: unknown; readonly username?: unknown; readonly sv?: unknown; readonly sid?: unknown }): SessionClaims | null {
   if (typeof payload.sub !== "string" || typeof payload.username !== "string") return null;
   if (payload.sv !== undefined && (typeof payload.sv !== "number" || !Number.isInteger(payload.sv) || payload.sv < 0)) return null;
-  return { sub: payload.sub, username: payload.username, sessionVersion: payload.sv ?? 0 };
+  if (payload.sid !== undefined && typeof payload.sid !== "string") return null;
+  return { sub: payload.sub, username: payload.username, sessionVersion: payload.sv ?? 0, sessionId: payload.sid };
 }
 
 @Injectable()
@@ -55,6 +60,7 @@ export class SessionVerifier {
     @Optional() @Inject(SANCTIONS_READ_PORT) private readonly sanctions: SanctionsReadPort | undefined,
     @Inject(RuntimeLogger) private readonly logger: RuntimeLogger,
     @Optional() @Inject(MetricsService) private readonly metrics?: MetricsService,
+    @Optional() @Inject(DATABASE_POOL) private readonly pool?: Pool,
   ) {}
 
   private rejected(reason: "unknown" | "user_blocked" | "version_mismatch" | "invalid_token"): null {
@@ -70,7 +76,7 @@ export class SessionVerifier {
     const secret = this.config.get<string>("JWT_SECRET");
     if (secret === undefined || secret === "") throw new Error("JWT_SECRET не задан");
 
-    let payload: { readonly sub?: unknown; readonly username?: unknown; readonly sv?: unknown };
+    let payload: { readonly sub?: unknown; readonly username?: unknown; readonly sv?: unknown; readonly sid?: unknown };
     try {
       ({ payload } = await jwtVerify(token, new TextEncoder().encode(secret), { algorithms: ["HS256"] }));
     } catch {
@@ -89,7 +95,12 @@ export class SessionVerifier {
     }
     if (state.status !== "active") return this.rejected("user_blocked");
     if (claims.sessionVersion !== state.sessionVersion) return this.rejected("version_mismatch");
+    if (claims.sessionId !== undefined && this.pool !== undefined) {
+      const exists = await this.pool.query(`select 1 from sessions where id = $1 and user_id = $2`, [claims.sessionId, claims.sub]);
+      if ((exists.rowCount ?? 0) === 0) return this.rejected("invalid_token");
+      void this.pool.query(`update sessions set last_active_at = now() where id = $1`, [claims.sessionId]);
+    }
 
-    return { id: claims.sub, username: claims.username, sessionVersion: claims.sessionVersion };
+    return { id: claims.sub, username: claims.username, sessionVersion: claims.sessionVersion, sessionId: claims.sessionId };
   }
 }

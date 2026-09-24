@@ -46,8 +46,8 @@ export function PasswordLogin({ onSuccess }: { onSuccess?: () => void } = {}) {
 
   return (
     <form onSubmit={handleSubmit} className="passwordLoginForm">
-      <p className="passwordLoginTitle">Войти по логину и паролю</p>
-      <label className="emailLoginLabel" htmlFor={usernameId}>Логин</label>
+      <p className="passwordLoginTitle">Войти по email и паролю</p>
+      <label className="emailLoginLabel" htmlFor={usernameId}>Email</label>
       <Input
         id={usernameId}
         value={username}
@@ -55,7 +55,8 @@ export function PasswordLogin({ onSuccess }: { onSuccess?: () => void } = {}) {
           setUsername(event.target.value);
           setError(null);
         }}
-        autoComplete="username"
+        type="email"
+        autoComplete="email"
         autoCapitalize="none"
         spellCheck={false}
         aria-invalid={error ? true : undefined}

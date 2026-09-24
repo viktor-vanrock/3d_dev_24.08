@@ -1,7 +1,8 @@
 import { useId, useState, type CSSProperties } from "react";
-import { EMAIL_DOMAINS, startEmailAuth, verifyEmailAuth, type EmailDomain } from "@domains/access";
+import { EMAIL_DOMAINS, startEmailAuth, verifyEmailAuth, type AuthFormError, type EmailDomain } from "@domains/access";
 import { Button, FieldGroup, Input } from "@shared/ui";
 import "./login.css";
+import { ErrorMessage } from "@shared/ui/error-message/error-message.tsx";
 
 // Метод 1 — вводим только часть до "@", домен выбираем из списка (сейчас доступны только
 // корп-домены Сбера). Отправка письма пока не подключена (нет email-провайдера) — код
@@ -17,7 +18,7 @@ export function EmailLogin({ onSuccess }: { onSuccess?: () => void } = {}) {
   const [localPart, setLocalPart] = useState("");
   const [domain, setDomain] = useState<EmailDomain>(EMAIL_DOMAINS[0]);
   const [code, setCode] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<AuthFormError | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function handleStart(event: React.FormEvent) {
@@ -26,7 +27,7 @@ export function EmailLogin({ onSuccess }: { onSuccess?: () => void } = {}) {
     setBusy(true);
     const result = await startEmailAuth(localPart, domain);
     setBusy(false);
-    if (!result.ok) return setError(result.error ?? "Не удалось отправить код");
+    if (!result.ok) return setError(result.error ?? { message: "Не удалось отправить код" });
     setStep("code");
   }
 
@@ -36,7 +37,7 @@ export function EmailLogin({ onSuccess }: { onSuccess?: () => void } = {}) {
     setBusy(true);
     const result = await verifyEmailAuth(localPart, domain, code);
     setBusy(false);
-    if (!result.ok) return setError(result.error ?? "Неверный код");
+    if (!result.ok) return setError(result.error ?? { message: "Неверный код" });
     if (onSuccess) onSuccess();
     else window.location.reload();
   }
@@ -53,17 +54,17 @@ export function EmailLogin({ onSuccess }: { onSuccess?: () => void } = {}) {
           id={codeId}
           value={code}
           onChange={(event) => {
-            setCode(event.target.value.replace(/\D/g, "").slice(0, 6));
+            setCode(event.target.value.replace(/\D/g, "").slice(0, 4));
             setError(null);
           }}
-          placeholder="6-значный код"
+          placeholder="4-значный код"
           inputMode="numeric"
           autoComplete="one-time-code"
           aria-invalid={error ? true : undefined}
           aria-describedby={describedBy}
         />
-        {error ? <div id={errorId} role="alert" style={errorStyle}>{error}</div> : null}
-        <Button className="emailLoginSubmit" type="submit" disabled={busy || code.length !== 6} loading={busy}>
+        {error ? <div id={errorId}><ErrorMessage {...error} /></div> : null}
+        <Button className="emailLoginSubmit" type="submit" disabled={busy || code.length !== 4} loading={busy}>
           Войти
         </Button>
         <Button variant="ghost" icon={null} onClick={() => {
@@ -110,7 +111,7 @@ export function EmailLogin({ onSuccess }: { onSuccess?: () => void } = {}) {
           ))}
         </select>
       </FieldGroup>
-      {error ? <div id={errorId} role="alert" style={errorStyle}>{error}</div> : null}
+      {error ? <div id={errorId}><ErrorMessage {...error} /></div> : null}
       <Button className="emailLoginSubmit" type="submit" disabled={busy || !localPart.trim()} loading={busy}>
         Получить код
       </Button>
