@@ -13,6 +13,7 @@ export class OtpEmailAdapter {
     const { SMTP_HOST: host, SMTP_PORT: port, SMTP_USER: user, SMTP_PASS: pass } = process.env;
     if (!host || !port || !user || !pass) {
       this.transporter = null;
+      this.logger.warn({ event: "auth.otp.email.no_transporter", reason: "smtp_not_configured" }, "SMTP transporter is null");
       return null;
     }
     this.transporter = nodemailer.createTransport({
@@ -25,6 +26,7 @@ export class OtpEmailAdapter {
   }
 
   async send(to: string, code: string): Promise<void> {
+    this.logger.info({ event: "auth.otp.email.attempt", provider: "email" }, "OTP email attempt");
     const transporter = this.getTransporter();
     if (transporter === null) {
       this.logger.info({ event: "auth.otp.email.skipped", reason: "smtp_not_configured" }, "OTP email skipped");
