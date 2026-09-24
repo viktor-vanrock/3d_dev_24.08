@@ -1,3 +1,4 @@
+-- migrate:up
 ALTER TABLE public.email_otp
   ADD COLUMN IF NOT EXISTS block_until timestamp with time zone;
 
@@ -15,3 +16,6 @@ CREATE TABLE IF NOT EXISTS public.auth_pending_registrations (
   password_hash text NOT NULL,
   created_at timestamp with time zone NOT NULL DEFAULT now()
 );
+
+-- migrate:down
+
