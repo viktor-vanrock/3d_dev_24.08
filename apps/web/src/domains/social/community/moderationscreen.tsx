@@ -108,9 +108,9 @@ export function ModerationScreen({
     setBusy(true);
     setMessage("");
     try {
-      const result = await decideModerationFlag(selected.id, { action_type: actionType, reason_code: reason, details });
-      setFlags((previous) => previous.map((flag) => (flag.id === result.flag.id ? { ...flag, status: result.flag.status } : flag)));
-      setActiveAction(result.action);
+      const result = await decideModerationFlag(selected.id, { action: actionType, reason_code: reason, reason_note: details });
+      setFlags((previous) => previous.map((flag) => (flag.id === selected.id ? { ...flag, status: actionType === "dismiss" ? "dismissed" : "resolved" } : flag)));
+      setActiveAction({ id: result.decision.id, type: result.decision.action });
       setMessage("Решение применено. Оно попадёт в журнал модерации.");
     } catch {
       setMessage("Не удалось применить решение. Состояние материала не менялось в интерфейсе.");
@@ -180,7 +180,7 @@ export function ModerationScreen({
                   onClick={() => setSelectedId(flag.id)}
                 >
                   <span>{moderationReasonLabel(flag.reason_code)}</span>
-                  <small>{flag.target.type === "post" ? "Пост" : "Тред"} · {flag.status === "open" ? "Новая" : "На проверке"}</small>
+                  <small>{flag.subject.type === "post" ? "Пост" : flag.subject.type === "thread" ? "Тред" : flag.subject.type} · {flag.status === "open" ? "Новая" : "На проверке"}</small>
                 </button>
               ))}
             </section>
@@ -240,18 +240,18 @@ function FlagDetail({
 }) {
   const [reason, setReason] = useState<ModerationReasonCode | "">("");
   const [details, setDetails] = useState("");
-  const canDecide = flag.status === "in_review" && reason !== "" && details.trim().length > 0 && !busy;
+  const canDecide = flag.status === "assigned" && reason !== "" && details.trim().length > 0 && !busy;
 
   return (
     <section className="moderationDetail" aria-label="Детали жалобы">
       <div className="moderationDetailMeta">
         <StatusPill tone={flag.status === "open" ? "warn" : "dim"}>{flag.status === "open" ? "Новая жалоба" : "На проверке"}</StatusPill>
-        <span>{flag.target.type === "post" ? "Пост" : "Тред"}</span>
+        <span>{flag.subject.type === "post" ? "Пост" : flag.subject.type === "thread" ? "Тред" : flag.subject.type}</span>
       </div>
       <h2>{moderationReasonLabel(flag.reason_code)}</h2>
       <p>Открытие карточки не меняет статус. Жалобщик и внутренние данные не показаны.</p>
       {flag.status === "open" ? <Button loading={busy} onClick={onClaim}>Взять в работу</Button> : null}
-      {flag.status === "in_review" ? (
+      {flag.status === "assigned" ? (
         <>
           <label className="moderationLabel" htmlFor="moderation-reason">Причина решения</label>
           <select id="moderation-reason" className="uiInput" value={reason} onChange={(event) => setReason(event.target.value as ModerationReasonCode | "")} disabled={busy}>
@@ -263,25 +263,15 @@ function FlagDetail({
           <p className="moderationHint">Действие попадёт в журнал модерации.</p>
           <div className="moderationActionGrid">
             <Button variant="danger" disabled={!canDecide} onClick={() => onDecide("hide", reason as ModerationReasonCode, details)}>Скрыть</Button>
-            <Button variant="secondary" disabled={!canDecide} onClick={() => onDecide("restore", reason as ModerationReasonCode, details)}>Вернуть видимость</Button>
-            <Button variant="secondary" disabled={!canDecide || flag.target.type !== "thread"} onClick={() => onDecide("lock_thread", reason as ModerationReasonCode, details)}>Закрыть тред</Button>
-            <Button variant="secondary" disabled={!canDecide} onClick={() => onDecide("reject_flag", reason as ModerationReasonCode, details)}>Отклонить флаг</Button>
+            <Button variant="secondary" disabled={!canDecide} onClick={() => onDecide("approve", reason as ModerationReasonCode, details)}>Подтвердить</Button>
+            <Button variant="danger" disabled={!canDecide} onClick={() => onDecide("delete", reason as ModerationReasonCode, details)}>Удалить</Button>
+            <Button variant="secondary" disabled={!canDecide} onClick={() => onDecide("dismiss", reason as ModerationReasonCode, details)}>Отклонить жалобу</Button>
           </div>
         </>
       ) : null}
-      {flag.appeal ? <AppealStatus appeal={flag.appeal} /> : null}
       {action ? <Button variant="secondary" onClick={onReverse}>Отменить</Button> : null}
     </section>
   );
-}
-
-function AppealStatus({ appeal }: { appeal: NonNullable<ModerationFlag["appeal"]> }) {
-  const text = appeal.status === "pending"
-    ? "Апелляция уже рассматривается."
-    : appeal.status === "restored"
-      ? "Решение пересмотрено: материал снова виден."
-      : `Решение оставлено в силе: ${moderationReasonLabel(appeal.reason_code)}.`;
-  return <div className="moderationAppeal" aria-live="polite">{text}</div>;
 }
 
 function ReversalDialog({ busy, onCancel, onSubmit }: { busy: boolean; onCancel: () => void; onSubmit: (reason: string) => void }) {

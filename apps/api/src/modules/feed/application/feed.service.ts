@@ -28,6 +28,7 @@ import {
   type FeedVoteValue,
 } from "../domain/feed.ts";
 import { FeedRepository } from "../infrastructure/feed.repository.ts";
+import { checkContentRestrictions, CONTENT_RESTRICTIONS_PORT, type ContentRestrictionsPort } from "../../moderation/public/index.ts";
 import {
   FEED_ANALYTICS_PORT,
   FEED_COMMUNITY_PORT,
@@ -120,6 +121,7 @@ export class FeedService implements FeedPort, FeedSocialOwnerPort {
     @Inject(FEED_STORAGE_PORT) private readonly storage: FeedStoragePort,
     @Inject(FEED_GITVERSE_PORT) private readonly gitverse: FeedGitversePort,
     @Inject(FEED_RATE_LIMIT_PORT) private readonly rateLimits: FeedRateLimitPort,
+    @Inject(CONTENT_RESTRICTIONS_PORT) private readonly contentRestrictions: ContentRestrictionsPort,
   ) {}
 
   private firstPost(items: readonly FeedPostResponse[]): FeedPostResponse {
@@ -188,6 +190,7 @@ export class FeedService implements FeedPort, FeedSocialOwnerPort {
       if (!UUID_RE.test(modelId) || (await this.models.visibleOwner(ModelId(modelId), actor.userId)) === null) {
         throw new UnprocessableEntityException();
       }
+      await checkContentRestrictions(this.contentRestrictions, "model", modelId);
     }
     if (type === "media") {
       mediaKey = requiredString(body.media_s3_key);
@@ -275,6 +278,7 @@ export class FeedService implements FeedPort, FeedSocialOwnerPort {
   }
 
   async patch(postId: FeedPostIdType, body: FeedPatchInput, actor: FeedActor): Promise<FeedPostEnvelope> {
+    await checkContentRestrictions(this.contentRestrictions, "post", postId);
     const existing = await this.owned(postId, actor.userId);
     const title = body.title === undefined ? undefined : requiredString(body.title, TITLE_MAX).trim();
     const postBody = body.body === undefined ? undefined : requiredString(body.body);
@@ -297,6 +301,7 @@ export class FeedService implements FeedPort, FeedSocialOwnerPort {
   }
 
   async createComment(postId: FeedPostIdType, body: FeedCommentInput, actor: FeedActor, request: Request): Promise<{ readonly comment: FeedCommentResponse }> {
+    await checkContentRestrictions(this.contentRestrictions, "post", postId);
     await this.rateLimits.assertAllowed("feed_comment", actor.userId, request);
     const target = await this.visible(postId);
     const denial = await this.communities.gateDenial(target.community_id, actor.userId);
@@ -379,6 +384,7 @@ export class FeedService implements FeedPort, FeedSocialOwnerPort {
   }
 
   async uploadImage(postId: FeedPostIdType, upload: FeedUpload | undefined, actor: FeedActor): Promise<{ readonly url: string }> {
+    await checkContentRestrictions(this.contentRestrictions, "post", postId);
     if (upload === undefined) throw new BadRequestException();
     const existing = await this.owned(postId, actor.userId);
     if (existing.status !== "visible") throw new ConflictException();
@@ -392,6 +398,7 @@ export class FeedService implements FeedPort, FeedSocialOwnerPort {
   }
 
   async uploadImageStream(postId: FeedPostIdType, file: FeedStreamUpload, actor: FeedActor): Promise<{ readonly url: string }> {
+    await checkContentRestrictions(this.contentRestrictions, "post", postId);
     const existing = await this.owned(postId, actor.userId);
     if (existing.status !== "visible") throw new ConflictException();
     try {

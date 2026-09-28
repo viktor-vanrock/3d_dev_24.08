@@ -20,7 +20,7 @@ function flagErrorMessage(error: unknown): string {
 export function FlagDialog({
   target,
   onClose,
-  onHidden,
+  onHidden: _onHidden,
 }: {
   target: { type: ModerationTargetType; id: string };
   onClose: () => void;
@@ -38,13 +38,8 @@ export function FlagDialog({
     setBusy(true);
     setMessage("");
     try {
-      const result = await createModerationFlag({ target, reason_code: reason as ModerationReasonCode, details: details.trim() || undefined });
-      if (result.target.visibility === "hidden") {
-        onHidden();
-        setMessage("Жалоба отправлена. Материал временно скрыт на время проверки.");
-      } else {
-        setMessage("Жалоба отправлена. Мы рассмотрим её.");
-      }
+      await createModerationFlag({ target, reason_code: reason as ModerationReasonCode, details: details.trim() || undefined });
+      setMessage("Жалоба отправлена. Мы рассмотрим её.");
     } catch (error) {
       setMessage(flagErrorMessage(error));
     } finally {

@@ -1,3 +1,4 @@
+/* global process, console */
 import pg from "pg";
 import fs from "node:fs";
 import path from "node:path";

@@ -5,7 +5,7 @@ import { ACHIEVEMENTS_PORT, type AchievementsPort } from "../../achievements/pub
 import { CATALOG_MAKES_PORT, type CatalogMakesPort } from "../../catalog/public/index.ts";
 import { FEED_SOCIAL_OWNER_PORT, type FeedSocialOwnerPort } from "../../feed/public/index.ts";
 import { MODEL_MAKES_PORT, type ModelMakesPort } from "../../models/public/index.ts";
-import { REPORTS_PORT, type ReportsPort } from "../../moderation/public/index.ts";
+import { checkContentRestrictions, CONTENT_RESTRICTIONS_PORT, REPORTS_PORT, type ContentRestrictionsPort, type ReportsPort } from "../../moderation/public/index.ts";
 import {
   ISSUE_TAGS,
   MAKE_CAPTION_MAX_LENGTH,
@@ -132,6 +132,7 @@ export class MakesService implements MakesPort {
     @Inject(ACHIEVEMENTS_PORT) private readonly achievements: AchievementsPort,
     @Inject(MAKE_STORAGE_PORT) private readonly storage: MakeStoragePort,
     @Inject(MAKE_RATE_LIMIT_PORT) private readonly rateLimits: MakeRateLimitPort,
+    @Inject(CONTENT_RESTRICTIONS_PORT) private readonly contentRestrictions: ContentRestrictionsPort,
     @Optional() private readonly permissions?: PermissionsService,
   ) {}
 
@@ -210,6 +211,7 @@ export class MakesService implements MakesPort {
     const printSettings = this.printSettings(fields.print_settings);
     const model = modelIdRaw === null ? null : await this.models.find(ModelId(modelIdRaw));
     if (modelIdRaw !== null && model === null) invalid();
+    if (modelIdRaw !== null) await checkContentRestrictions(this.contentRestrictions, "model", modelIdRaw);
     if ((await this.catalog.machine(machineId)) === null) invalid();
     const materials = await this.catalog.materials(materialIds);
     if (materials.size !== new Set(materialIds).size) invalid();
@@ -308,6 +310,7 @@ export class MakesService implements MakesPort {
   }
 
   async comment(makeId: MakeIdType, userId: UserId, rawBody: string | undefined, rawParentId: string | null | undefined): Promise<MakeCommentRecord> {
+    await checkContentRestrictions(this.contentRestrictions, "make", makeId);
     if (typeof rawBody !== "string" || rawBody.trim() === "" || rawBody.length > MAKE_COMMENT_MAX_LENGTH) invalid();
     const parentId = rawParentId === undefined || rawParentId === null ? null : optionalUuid(rawParentId);
     if (rawParentId !== undefined && rawParentId !== null && parentId === null) invalid();

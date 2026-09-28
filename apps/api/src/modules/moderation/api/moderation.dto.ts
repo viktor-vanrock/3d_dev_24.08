@@ -1,4 +1,4 @@
-import { IsArray, IsIn, IsObject, IsOptional, IsString, MinLength } from "class-validator";
+import { IsArray, IsObject, IsOptional, IsString, MinLength } from "class-validator";
 export class SubmitFlagDto { @IsObject() target!: { type: string; id: string }; @IsString() reason_code!: string; @IsOptional() @IsString() reason_text?: string; @IsOptional() @IsArray() evidence?: { url: string }[]; }
 export class ClaimFlagDto {}
 export class ReleaseFlagDto {}

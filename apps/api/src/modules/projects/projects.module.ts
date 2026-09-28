@@ -14,10 +14,11 @@ import { PostgresProjectRepository } from "./infrastructure/postgres-project.rep
 import { ProjectsOutboxRepository } from "./infrastructure/outbox.repository.ts";
 import { UploadSessionRepository } from "./infrastructure/upload-session.repository.ts";
 import { OUTBOX_PORT, PROJECT_COMMAND_SERVICE, PROJECT_PROCESSING_SERVICE, PROJECT_QUERY_SERVICE, UPLOAD_CONCURRENCY_PORT } from "./public/index.ts";
+import { ModerationModule } from "../moderation/moderation.module.ts";
 
 @Global()
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, ModerationModule],
   controllers: [ProjectsController],
   providers: [
     PostgresProjectRepository,

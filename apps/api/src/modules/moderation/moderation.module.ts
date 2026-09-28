@@ -11,10 +11,11 @@ import { ModerationDecisionsRepository } from "./infrastructure/moderation-decis
 import { CONTENT_RESTRICTIONS_PORT, FLAG_CLAIMS_PORT, FLAGS_PORT, MODERATION_DECISIONS_PORT } from "./domain/moderation.ports.ts";
 import { AuditModule } from "../audit/audit.module.ts";
 import { SanctionsModule } from "../sanctions/sanctions.module.ts";
+import { PermissionsModule } from "../permissions/permissions.module.ts";
 
 @Global()
 @Module({
-  imports: [DatabaseModule, AuditModule, SanctionsModule], controllers: [ModerationController],
+  imports: [DatabaseModule, AuditModule, SanctionsModule, PermissionsModule], controllers: [ModerationController],
   providers: [ReportsRepository, FlagsRepository, FlagClaimsRepository, ModerationDecisionsRepository, ContentRestrictionsRepository, ModerationService, { provide: REPORTS_PORT, useExisting: ReportsRepository }, { provide: FLAGS_PORT, useExisting: FlagsRepository }, { provide: FLAG_CLAIMS_PORT, useExisting: FlagClaimsRepository }, { provide: MODERATION_DECISIONS_PORT, useExisting: ModerationDecisionsRepository }, { provide: CONTENT_RESTRICTIONS_PORT, useExisting: ContentRestrictionsRepository }],
   exports: [REPORTS_PORT, CONTENT_RESTRICTIONS_PORT],
 })

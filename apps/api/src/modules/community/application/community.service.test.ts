@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { UserId } from "../../_kernel/brandedIds.ts";
 import type { CommunityRepository } from "../infrastructure/community.repository.ts";
 import { CommunityService } from "./community.service.ts";
+import type { ContentRestrictionsPort } from "../../moderation/public/index.ts";
 import type {
   CommunityAnalyticsPort,
   CommunityCatalogPort,
@@ -24,6 +25,7 @@ describe("CommunityService owner boundary", () => {
       stub<CommunityAnalyticsPort>({}),
       stub<CommunityReputationPort>({}),
       stub<CommunityStoragePort>({}),
+      stub<ContentRestrictionsPort>({ findActiveBySubject: async () => [], findActiveBySubjectForUpdate: async () => [], createIdempotent: async () => ({ restriction: {} as any, created: false }), lift: async () => null }),
     );
     await expect(service.applyVote("feed_post", "11111111-1111-4111-8111-111111111111", UserId("22222222-2222-4222-8222-222222222222"), 1)).resolves.toEqual({
       votesUp: 3,

@@ -5,6 +5,7 @@ import { getAllowedEvents, getTransition, PROJECT_EVENT, type ProjectEvent, type
 import type { ProjectRepository } from "../domain/project.repository.ts";
 import { PostgresProjectRepository } from "../infrastructure/postgres-project.repository.ts";
 import { PublicationEventsService } from "./publication-events.service.ts";
+import { checkContentRestrictions, CONTENT_RESTRICTIONS_PORT, type ContentRestrictionsPort } from "../../moderation/public/index.ts";
 
 export class InvalidTransitionError extends ProjectError {
   constructor(from: ProjectStatus, event: ProjectEvent) {
@@ -22,7 +23,7 @@ export class ProjectLifecycleService {
   private readonly logger = new Logger(ProjectLifecycleService.name);
   private readonly repository: ProjectRepository;
 
-  constructor(@Inject(PostgresProjectRepository) repository: PostgresProjectRepository, @Inject(PublicationEventsService) private readonly events: PublicationEventsService) {
+  constructor(@Inject(PostgresProjectRepository) repository: PostgresProjectRepository, @Inject(PublicationEventsService) private readonly events: PublicationEventsService, @Inject(CONTENT_RESTRICTIONS_PORT) private readonly contentRestrictions: ContentRestrictionsPort) {
     this.repository = repository;
   }
 
@@ -51,6 +52,7 @@ export class ProjectLifecycleService {
   }
 
   async publish(actorId: UserId, projectId: ProjectId, version: number, cmd: PublishCommand) {
+    await checkContentRestrictions(this.contentRestrictions, "model", projectId);
     void cmd;
     const project = await this.repository.getDraft(actorId, projectId);
     if (project === null) throw new ProjectError(404, "project.not_found.v1", "Проект не найден");

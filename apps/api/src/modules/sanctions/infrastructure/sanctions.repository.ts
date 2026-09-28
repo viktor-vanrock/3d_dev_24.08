@@ -33,6 +33,14 @@ function appealFromRow(row: SanctionAppealRow): SanctionAppeal {
 @Injectable()
 export class SanctionsRepository implements SanctionsReadPort, SanctionsTransactionPort {
   constructor(@Inject(DATABASE_POOL) private readonly pool: Pool) {}
+  async findActiveSanctionForUser(userId: string): Promise<{ id: string; type: string; endsAt: Date | null } | null> {
+    const { rows } = await this.pool.query<{ id: string; type: string; ends_at: Date | null }>(
+      `select id, type, ends_at from sanctions where user_id = $1 and state = 'active' and (ends_at is null or ends_at > now()) limit 1`,
+      [userId],
+    );
+    const row = rows[0];
+    return row === undefined ? null : { id: row.id, type: row.type, endsAt: row.ends_at };
+  }
   async findActiveForUser(userId: UserIdType): Promise<Sanction | null> {
     const result = await this.pool.query<SanctionRow>(`select ${SANCTION_COLUMNS} from sanctions where user_id = $1 and state = 'active'`, [userId]);
     const row = result.rows[0]; return row === undefined ? null : sanctionFromRow(row);

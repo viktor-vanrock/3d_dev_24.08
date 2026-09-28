@@ -7,10 +7,11 @@ import { FeedService } from "./application/feed.service.ts";
 import { FeedProfileRepository } from "./infrastructure/feed-profile.repository.ts";
 import { FEED_ADMIN_PORT, FEED_PORT, FEED_PROFILE_READ_PORT, FEED_RANKING_READ_PORT, FEED_SOCIAL_OWNER_PORT } from "./public/index.ts";
 import { FeedRepository } from "./infrastructure/feed.repository.ts";
+import { ModerationModule } from "../moderation/moderation.module.ts";
 
 @Global()
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, ModerationModule],
   controllers: [FeedController, FeedAdminController],
   providers: [
     FeedRepository,

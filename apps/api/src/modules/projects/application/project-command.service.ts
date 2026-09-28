@@ -3,12 +3,13 @@ import type { ModelId, ProjectId, UserId } from "../../_kernel/brandedIds.ts";
 import { sha256Canonical, type ModelCreateInput, type ProjectMetadataInput, type ProjectPatchInput } from "../domain/project.ts";
 import type { ProjectRepository, UploadedSource } from "../domain/project.repository.ts";
 import { PostgresProjectRepository } from "../infrastructure/postgres-project.repository.ts";
+import { checkContentRestrictions, CONTENT_RESTRICTIONS_PORT, type ContentRestrictionsPort } from "../../moderation/public/index.ts";
 
 @Injectable()
 export class ProjectCommandService {
   private readonly repository: ProjectRepository;
 
-  constructor(@Inject(PostgresProjectRepository) repository: PostgresProjectRepository) {
+  constructor(@Inject(PostgresProjectRepository) repository: PostgresProjectRepository, @Inject(CONTENT_RESTRICTIONS_PORT) private readonly contentRestrictions: ContentRestrictionsPort) {
     this.repository = repository;
   }
 
@@ -16,7 +17,8 @@ export class ProjectCommandService {
     return this.repository.createProject(actorId, input, key, sha256Canonical(input));
   }
 
-  updateProject(actorId: UserId, projectId: ProjectId, version: number, patch: ProjectPatchInput) {
+  async updateProject(actorId: UserId, projectId: ProjectId, version: number, patch: ProjectPatchInput) {
+    await checkContentRestrictions(this.contentRestrictions, "model", projectId);
     return this.repository.updateProject(actorId, projectId, version, patch);
   }
 
@@ -25,11 +27,13 @@ export class ProjectCommandService {
   }
 
   async createModel(actorId: UserId, projectId: ProjectId, version: number, input: ModelCreateInput, source: UploadedSource, key: string) {
+    await checkContentRestrictions(this.contentRestrictions, "model", projectId);
     const fingerprint = sha256Canonical({ input, checksum: source.checksum.toString("hex"), size: source.sizeBytes, format: source.sourceFormat });
     return this.repository.createModel(actorId, projectId, version, input, source, key, fingerprint);
   }
 
   async createRevision(actorId: UserId, projectId: ProjectId, modelId: ModelId, version: number, source: UploadedSource, key: string) {
+    await checkContentRestrictions(this.contentRestrictions, "model", modelId);
     const fingerprint = sha256Canonical({ checksum: source.checksum.toString("hex"), size: source.sizeBytes, format: source.sourceFormat });
     return this.repository.createRevision(actorId, projectId, modelId, version, source, key, fingerprint);
   }

@@ -7,6 +7,7 @@ import { extractTableRefs } from "./ownership.ts";
 const MODULES_DIR = path.dirname(fileURLToPath(import.meta.url)).replace(/_boundaries$/, "");
 const ALLOWED_PATHS = new Set([
   "models/infrastructure/repo-backfill.ts",
+  "models\\infrastructure\\repo-backfill.ts",
   "profile/infrastructure/profile.repository.ts", // view owner; audit read surface is declared here.
 ]);
 
