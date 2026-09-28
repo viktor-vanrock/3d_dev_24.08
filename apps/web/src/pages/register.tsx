@@ -20,8 +20,8 @@ export function RegisterPage() {
   const [birthYear, setBirthYear] = useState("");
   const [error, setError] = useState<AuthFormError | null>(null);
   const [busy, setBusy] = useState(false);
-  async function submit(event: React.FormEvent) {
-    event.preventDefault(); setError(null);
+  async function submit(event?: React.FormEvent) {
+    event?.preventDefault(); setError(null);
     if (password.length < 12 || password.length > 20) return setError({ message: "Пароль должен содержать от 12 до 20 символов." });
     if (password !== confirmation) return setError({ message: "Пароли не совпадают." });
     if (!displayName.trim()) return setError({ message: "Укажите имя." });
@@ -66,7 +66,7 @@ export function RegisterPage() {
     </div>
     <label className="emailLoginLabel">Год рождения</label>
     <Input type="number" value={birthYear} onChange={(e) => setBirthYear(e.target.value)} min="1900" max={new Date().getFullYear()} />
-    {error && <ErrorMessage {...error} onRetry={() => void submit(new Event("submit") as unknown as React.FormEvent)} />}
+    {error && <ErrorMessage {...error} onRetry={() => void submit()} />}
       <Button type="submit" disabled={busy}>{busy ? "Отправляем…" : "Зарегистрироваться"}</Button>
       <div className="loginDescription"><a href="/login">Уже есть аккаунт? Войти</a></div>
   </form></section></main>;

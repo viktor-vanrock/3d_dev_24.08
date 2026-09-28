@@ -16,10 +16,12 @@ export class OtpEmailAdapter {
       this.logger.warn({ event: "auth.otp.email.no_transporter", reason: "smtp_not_configured" }, "SMTP transporter is null");
       return null;
     }
+    const secure = Number(port) === 465;
     this.transporter = nodemailer.createTransport({
       host,
       port: Number(port),
-      secure: false,
+      secure,
+      ...(!secure ? { requireTLS: true } : {}),
       auth: { user, pass },
       connectionTimeout: 10000,
       greetingTimeout: 10000,

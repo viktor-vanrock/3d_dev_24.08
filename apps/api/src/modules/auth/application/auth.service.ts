@@ -21,6 +21,7 @@ const LOCAL_PART_RE = /^[a-z0-9][a-z0-9._-]{0,63}$/;
 const OTP_TTL_MS = 10 * 60 * 1000;
 const RESEND_COOLDOWN_MS = 60 * 1000;
 const OTP_LENGTH = 4;
+const OTP_RE = /^\d{4}$/;
 const MAX_ATTEMPTS = 3;
 const OTP_ATTEMPT_WINDOW_MS = 30 * 60 * 1000;
 const OTP_BLOCK_MS = 60 * 60 * 1000;
@@ -47,9 +48,10 @@ function validateEmail(localPartValue: unknown, domainValue: unknown): { localPa
 
 function parseEmail(value: unknown): ReturnType<typeof validateEmail> {
   if (typeof value !== "string") throw new BadRequestException("invalid email");
-  const at = value.trim().lastIndexOf("@");
-  if (at <= 0) throw new BadRequestException("invalid email");
-  return validateEmail(value.slice(0, at), value.slice(at + 1));
+  const email = value.replace(/\s+/g, "");
+  const at = email.indexOf("@");
+  if (at <= 0 || at !== email.lastIndexOf("@") || at === email.length - 1) throw new BadRequestException("invalid email");
+  return validateEmail(email.slice(0, at), email.slice(at + 1));
 }
 
 function validPassword(value: unknown): value is string {
@@ -111,8 +113,12 @@ export class AuthService {
       throw error;
     }
     const emailHash = identifierHash(parsed.email);
-    const latest = await this.repository.latestOtpCreatedAt(emailHash);
-    if (latest !== null && Date.now() - latest.getTime() < RESEND_COOLDOWN_MS) {
+    const otp = await this.repository.latestOtp(emailHash);
+    if (otp?.block_until !== null && otp?.block_until !== undefined && new Date(otp.block_until).getTime() > Date.now()) {
+      this.audit("email_corp", "failure", "blocked");
+      throw new HttpException({ code: AUTH_ERRORS.ACCOUNT_BLOCKED, message: "Слишком много попыток. Повторите позже.", retryAt: new Date(otp.block_until).toISOString() }, HttpStatus.TOO_MANY_REQUESTS);
+    }
+    if (otp !== null && Date.now() - new Date(otp.created_at).getTime() < RESEND_COOLDOWN_MS) {
       this.audit("email_corp", "failure", "rate_limited");
       throw new HttpException("too many requests", HttpStatus.TOO_MANY_REQUESTS);
     }
@@ -124,7 +130,7 @@ export class AuthService {
   async verifyEmail(localPartValue: unknown, domainValue: unknown, codeValue: unknown, anonId: string): Promise<LoginResult> {
     const parsed = validateEmail(localPartValue, domainValue);
     const code = typeof codeValue === "string" ? codeValue.trim() : "";
-    if (!new RegExp(`^\\d{${OTP_LENGTH}}$`).test(code)) {
+    if (!OTP_RE.test(code)) {
       this.audit("email_corp", "failure", "invalid_code_format");
       throw new BadRequestException("invalid code");
     }
@@ -284,7 +290,8 @@ export class AuthService {
   async loginPassword(usernameValue: unknown, passwordValue: unknown): Promise<AuthenticatedUser> {
     const username = typeof usernameValue === "string" ? usernameValue.trim().toLowerCase() : "";
     const password = typeof passwordValue === "string" && passwordValue.length <= 1024 ? passwordValue : "";
-    const credential = username.includes("@")
+    const at = username.indexOf("@");
+    const credential = at > 0 && at < username.length - 1
       ? await this.repository.findPasswordCredentialByEmail(identifierHash(username))
       : username ? await this.repository.findPasswordCredential(username) : null;
     const passwordMatches = await verifyPassword(password, credential?.passwordHash ?? DUMMY_PASSWORD_HASH);
@@ -327,7 +334,7 @@ export class AuthService {
 
   private async verifyOtp(email: string, emailHash: Buffer, codeValue: unknown): Promise<void> {
     const code = typeof codeValue === "string" ? codeValue.trim() : "";
-    if (!new RegExp(`^\\d{${OTP_LENGTH}}$`).test(code)) {
+    if (!OTP_RE.test(code)) {
       throw createAuthError(AUTH_ERRORS.INVALID_CODE, "Неверный код.", false);
     }
     const otp = await this.repository.latestOtp(emailHash);

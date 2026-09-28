@@ -63,6 +63,8 @@ export interface SessionProfile {
   readonly id: UserId;
   readonly username: string;
   readonly displayName: string | null;
+  readonly gender: string | null;
+  readonly birthYear: number | null;
   readonly avatarUrl: string | null;
   readonly handleConfirmed: boolean;
   readonly role: "user" | "researcher";

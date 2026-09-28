@@ -1,4 +1,5 @@
 import { Inject, Injectable, Optional } from "@nestjs/common";
+import { randomBytes } from "node:crypto";
 import type { Pool } from "pg";
 import { DATABASE_POOL } from "../../../nest/database/database.constants.ts";
 import { UserId, type UserId as UserIdType } from "../../_kernel/brandedIds.ts";
@@ -118,12 +119,27 @@ export class AuthRepository implements AuthIdentityReadPort {
         await client.query("rollback");
         return false;
       }
-      const user = await client.query<{ id: string }>(
-        `insert into users (username, display_name, gender, birth_year, status, handle_confirmed)
-         values ($1, $2, $3, $4, 'restricted', false) returning id`,
-        [input.handle, input.displayName, input.gender, input.birthYear],
-      );
-      const userId = user.rows[0]?.id;
+      let userId: string | undefined;
+      for (let attempt = 0; attempt < 20 && userId === undefined; attempt += 1) {
+        const username = attempt === 0 ? input.handle : `${input.handle.slice(0, 30)}${attempt + 1}`;
+        const user = await client.query<{ id: string }>(
+          `insert into users (username, display_name, gender, birth_year, status, handle_confirmed)
+           values ($1, $2, $3, $4, 'restricted', false)
+           on conflict (username) do nothing returning id`,
+          [username, input.displayName, input.gender, input.birthYear],
+        );
+        userId = user.rows[0]?.id;
+      }
+      for (let attempt = 0; attempt < 10 && userId === undefined; attempt += 1) {
+        const username = `${input.handle.slice(0, 25)}${randomBytes(3).toString("hex")}`;
+        const user = await client.query<{ id: string }>(
+          `insert into users (username, display_name, gender, birth_year, status, handle_confirmed)
+           values ($1, $2, $3, $4, 'restricted', false)
+           on conflict (username) do nothing returning id`,
+          [username, input.displayName, input.gender, input.birthYear],
+        );
+        userId = user.rows[0]?.id;
+      }
       if (userId === undefined) throw new Error("registration user insert failed");
       await client.query(`insert into user_identities (user_id, provider, identifier_hash, s3_key) values ($1, 'email_corp', $2, $3)`, [userId, input.emailHash, input.identityKey]);
       await client.query(`insert into auth_pending_registrations (user_id, password_hash) values ($1, $2)`, [userId, input.passwordHash]);

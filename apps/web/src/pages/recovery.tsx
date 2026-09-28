@@ -23,6 +23,8 @@ export function RecoveryPage() {
   async function finish(event: React.FormEvent) {
     event.preventDefault();
     setError(null);
+    if (!/^\d{4}$/.test(code)) return setError({ message: "Введите 4-значный код." });
+    if (password.length < 12 || password.length > 20) return setError({ message: "Пароль должен содержать от 12 до 20 символов." });
     try {
       const result = await verifyRecovery(email, code, password);
       if (!result.ok) return setError(result.error ?? { message: "Не удалось обновить пароль." });
@@ -31,5 +33,5 @@ export function RecoveryPage() {
       setError({ message: "Не удалось отправить запрос. Проверьте соединение и попробуйте ещё раз.", retryable: true });
     }
   }
-  return <main className={`loginPage ${styles.page}`}><section className={`loginCard ${styles.card}`}><form className={`emailLoginForm ${styles.form}`} onSubmit={sent ? finish : start}><h1>Восстановление доступа</h1><label className="emailLoginLabel">Email</label><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />{sent && <><label className="emailLoginLabel">Код</label><Input value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 4))} /><label className="emailLoginLabel">Новый пароль</label><Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} /></>}<p>{message}</p>{error && <ErrorMessage {...error} />}<Button type="submit">{sent ? "Сменить пароль" : "Восстановить доступ"}</Button></form></section></main>;
+  return <main className={`loginPage ${styles.page}`}><section className={`loginCard ${styles.card}`}><form className={`emailLoginForm ${styles.form}`} onSubmit={sent ? finish : start}><h1>Восстановление доступа</h1><label className="emailLoginLabel">Email</label><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />{sent && <><label className="emailLoginLabel">Код</label><Input value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 4))} /><label className="emailLoginLabel">Новый пароль</label><Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} minLength={12} maxLength={20} /></>}<p>{message}</p>{error && <ErrorMessage {...error} />}<Button type="submit">{sent ? "Сменить пароль" : "Восстановить доступ"}</Button></form></section></main>;
 }
