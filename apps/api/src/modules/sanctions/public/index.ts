@@ -8,6 +8,7 @@ export const SANCTIONS_PORT = Symbol("SANCTIONS_PORT");
 export const SANCTIONS_RELAY_DISPATCH_PORT = Symbol("SANCTIONS_RELAY_DISPATCH_PORT");
 export const SANCTION_APPEALS_PORT = Symbol("SANCTION_APPEALS_PORT");
 export const SANCTIONS_EXPIRATION_PORT = Symbol("SANCTIONS_EXPIRATION_PORT");
+export { SANCTIONS_TRANSACTION_PORT, type SanctionsTransactionPort, type CreateSanctionInTransactionInput } from "../domain/sanctions-transaction.port.ts";
 
 export interface SanctionsReadPort {
   findActiveForUser(userId: UserId): Promise<Sanction | null>;

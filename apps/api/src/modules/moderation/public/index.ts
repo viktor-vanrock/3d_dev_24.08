@@ -1,5 +1,6 @@
 import type { UserId } from "../../_kernel/brandedIds.ts";
 import type { PoolClient } from "pg";
+export { CONTENT_RESTRICTIONS_PORT, type ContentRestrictionsPort } from "../domain/moderation.ports.ts";
 
 export const REPORTS_PORT = Symbol("REPORTS_PORT");
 

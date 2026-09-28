@@ -72,6 +72,89 @@ COMMENT ON EXTENSION vector IS 'vector data type and ivfflat and hnsw access met
 
 
 --
+-- Name: project_status; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.project_status AS ENUM (
+    'draft',
+    'uploading',
+    'reviewing',
+    'ready',
+    'published',
+    'unpublished',
+    'archived'
+);
+
+
+--
+-- Name: project_visibility; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.project_visibility AS ENUM (
+    'private',
+    'public'
+);
+
+
+--
+-- Name: audit_log_immutable(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.audit_log_immutable() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  IF TG_OP = 'UPDATE' THEN
+    IF current_setting('app.audit_legal_hold_write', true) = 'on'
+       AND OLD.legal_hold = false AND NEW.legal_hold = true
+       AND NEW.id IS NOT DISTINCT FROM OLD.id
+       AND NEW.actor_user_id IS NOT DISTINCT FROM OLD.actor_user_id
+       AND NEW.action IS NOT DISTINCT FROM OLD.action
+       AND NEW.target_type IS NOT DISTINCT FROM OLD.target_type
+       AND NEW.target_id IS NOT DISTINCT FROM OLD.target_id
+       AND NEW.details IS NOT DISTINCT FROM OLD.details
+       AND NEW.created_at IS NOT DISTINCT FROM OLD.created_at
+       AND NEW.schema_version IS NOT DISTINCT FROM OLD.schema_version
+       AND NEW.actor_type IS NOT DISTINCT FROM OLD.actor_type
+       AND NEW.before_state IS NOT DISTINCT FROM OLD.before_state
+       AND NEW.after_state IS NOT DISTINCT FROM OLD.after_state
+       AND NEW.reason IS NOT DISTINCT FROM OLD.reason
+       AND NEW.correlation_id IS NOT DISTINCT FROM OLD.correlation_id
+       AND NEW.causation_id IS NOT DISTINCT FROM OLD.causation_id
+       AND NEW.idempotency_key IS NOT DISTINCT FROM OLD.idempotency_key THEN
+      RETURN NEW;
+    END IF;
+    RAISE EXCEPTION 'audit_log: записи нельзя изменять';
+  END IF;
+  IF TG_OP = 'DELETE' THEN
+    IF OLD.legal_hold THEN
+      RAISE EXCEPTION 'audit_log: запись под legal hold нельзя удалять';
+    END IF;
+    IF OLD.created_at >= now() - INTERVAL '3 months' THEN
+      RAISE EXCEPTION 'audit_log: запись можно удалить только после истечения срока хранения';
+    END IF;
+  END IF;
+  RETURN OLD;
+END;
+$$;
+
+
+--
+-- Name: audit_log_set_legal_hold(uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.audit_log_set_legal_hold(p_id uuid) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+BEGIN
+  PERFORM set_config('app.audit_legal_hold_write', 'on', true);
+  UPDATE public.audit_log SET legal_hold = true WHERE id = p_id AND legal_hold = false;
+END;
+$$;
+
+
+--
 -- Name: bump_relay_device_authorization_revision(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -261,29 +344,6 @@ $$;
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
-
---
--- Name: project_status; Type: TYPE; Schema: public; Owner: -
---
-
-CREATE TYPE public.project_status AS ENUM (
-    'draft',
-    'uploading',
-    'reviewing',
-    'ready',
-    'published',
-    'unpublished',
-    'archived'
-);
-
---
--- Name: project_visibility; Type: TYPE; Schema: public; Owner: -
---
-
-CREATE TYPE public.project_visibility AS ENUM (
-    'private',
-    'public'
-);
 
 --
 -- Name: achievements; Type: TABLE; Schema: public; Owner: -
@@ -538,6 +598,44 @@ COMMENT ON TABLE public.assistant_threads IS 'Приватный чат-тред
 --
 
 COMMENT ON COLUMN public.assistant_threads.kind IS 'chat — обычный приватный тред (MF-1997); device_incident — материализован из device event (MF-2047), доп. поля device_id/severity/incident_status обязательны только для него.';
+
+
+--
+-- Name: audit_log; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.audit_log (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    actor_user_id uuid NOT NULL,
+    action text NOT NULL,
+    target_type text NOT NULL,
+    target_id uuid NOT NULL,
+    details jsonb DEFAULT '{}'::jsonb NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    schema_version integer DEFAULT 1 NOT NULL,
+    actor_type text DEFAULT 'user'::text NOT NULL,
+    before_state jsonb,
+    after_state jsonb,
+    reason text,
+    correlation_id text,
+    causation_id text,
+    idempotency_key text,
+    legal_hold boolean DEFAULT false NOT NULL,
+    CONSTRAINT audit_log_action_nonempty_check CHECK ((btrim(action) <> ''::text)),
+    CONSTRAINT audit_log_details_object_check CHECK ((jsonb_typeof(details) = 'object'::text)),
+    CONSTRAINT audit_log_target_type_nonempty_check CHECK ((btrim(target_type) <> ''::text))
+);
+
+
+--
+-- Name: auth_pending_registrations; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.auth_pending_registrations (
+    user_id uuid NOT NULL,
+    password_hash text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
 
 
 --
@@ -1043,11 +1141,11 @@ CREATE TABLE public.device_print_results (
     agent_id uuid,
     job_id uuid,
     model_id uuid,
-    print_request_id uuid,
     outcome text NOT NULL,
     client_result_id text NOT NULL,
     reported_at timestamp with time zone DEFAULT now() NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
+    print_request_id uuid,
     CONSTRAINT device_print_results_client_result_id_check CHECK (((length(client_result_id) >= 1) AND (length(client_result_id) <= 128))),
     CONSTRAINT device_print_results_outcome_check CHECK ((outcome = ANY (ARRAY['succeeded'::text, 'failed'::text])))
 );
@@ -1185,7 +1283,8 @@ CREATE TABLE public.email_otp (
     otp_hash bytea NOT NULL,
     expires_at timestamp with time zone NOT NULL,
     attempts integer DEFAULT 0 NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    block_until timestamp with time zone
 );
 
 
@@ -1571,12 +1670,13 @@ CREATE TABLE public.idempotency_records (
 CREATE TABLE public.users (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     username text NOT NULL,
-    display_name text,
+    display_name text DEFAULT ''::text NOT NULL,
     avatar_url text,
     status text DEFAULT 'active'::text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     handle_confirmed boolean DEFAULT true NOT NULL,
+    is_staff boolean DEFAULT false NOT NULL,
     reputation_score integer DEFAULT 0 NOT NULL,
     trust_level smallint DEFAULT 0 NOT NULL,
     trust_level_manual boolean DEFAULT false NOT NULL,
@@ -1589,6 +1689,8 @@ CREATE TABLE public.users (
     is_master boolean DEFAULT false NOT NULL,
     master_profile jsonb,
     session_version integer DEFAULT 1 NOT NULL,
+    gender text,
+    birth_year integer,
     CONSTRAINT users_role_check CHECK ((role = ANY (ARRAY['user'::text, 'researcher'::text]))),
     CONSTRAINT users_status_check CHECK ((status = ANY (ARRAY['active'::text, 'restricted'::text, 'deleted'::text]))),
     CONSTRAINT users_trust_level_check CHECK (((trust_level >= 0) AND (trust_level <= 4)))
@@ -2051,9 +2153,9 @@ CREATE TABLE public.projects (
     deleted_at timestamp with time zone,
     deleted_by uuid,
     status public.project_status DEFAULT 'draft'::public.project_status NOT NULL,
-    visibility public.project_visibility DEFAULT 'private'::public.project_visibility NOT NULL,
     published_at timestamp with time zone,
     archived_at timestamp with time zone,
+    visibility public.project_visibility DEFAULT 'private'::public.project_visibility NOT NULL,
     CONSTRAINT models_price_minor_check CHECK ((price_minor >= 0)),
     CONSTRAINT projects_title_check CHECK (((char_length(title) >= 1) AND (char_length(title) <= 200))),
     CONSTRAINT projects_version_check CHECK ((version > 0))
@@ -2863,6 +2965,31 @@ COMMENT ON TABLE public.payouts IS 'Заявка/факт выплаты авт�
 
 
 --
+-- Name: permission_grants; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.permission_grants (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    permission text NOT NULL,
+    scope jsonb DEFAULT '{}'::jsonb NOT NULL,
+    granted_by uuid NOT NULL,
+    reason text NOT NULL,
+    granted_at timestamp with time zone DEFAULT now() NOT NULL,
+    expires_at timestamp with time zone,
+    revoked_at timestamp with time zone,
+    revoked_by uuid,
+    revoke_reason text,
+    CONSTRAINT permission_grants_expiry_after_grant_check CHECK (((expires_at IS NULL) OR (expires_at > granted_at))),
+    CONSTRAINT permission_grants_permission_check CHECK ((permission = ANY (ARRAY['user.view_any'::text, 'user.edit_any'::text, 'user.deactivate'::text, 'user.grant_permission'::text, 'user.revoke_permission'::text, 'moderation.delete_content'::text, 'moderation.ban_user'::text, 'moderation.view_reports'::text, 'moderation.resolve_report'::text, 'moderation.manage_sanctions'::text, 'moderation.resolve_appeal'::text, 'moderation.manage_community_members'::text, 'analytics.view_platform'::text, 'analytics.export'::text, 'analytics.view_health'::text, 'billing.manage_payouts'::text, 'audit.view_log'::text, 'catalog.publish_any'::text, 'catalog.unpublish_any'::text, 'catalog.edit_any'::text, 'catalog.feature'::text, 'catalog.review_candidates'::text, 'catalog.review_vendor_claims'::text, 'catalog.review_printer_reports'::text, 'feed.manage_news'::text, 'research.access'::text, 'research.manage'::text, 'research.manage_printers'::text, 'support.view_tickets'::text, 'support.manage_devices'::text, 'support.view_device_incidents'::text, 'support.resolve_device_incidents'::text]))),
+    CONSTRAINT permission_grants_reason_nonempty_check CHECK ((btrim(reason) <> ''::text)),
+    CONSTRAINT permission_grants_revocation_after_grant_check CHECK (((revoked_at IS NULL) OR (revoked_at >= granted_at))),
+    CONSTRAINT permission_grants_revocation_fields_check CHECK ((((revoked_at IS NULL) AND (revoked_by IS NULL) AND (revoke_reason IS NULL)) OR ((revoked_at IS NOT NULL) AND (revoked_by IS NOT NULL) AND (revoke_reason IS NOT NULL) AND (btrim(revoke_reason) <> ''::text)))),
+    CONSTRAINT permission_grants_scope_object_check CHECK ((jsonb_typeof(scope) = 'object'::text))
+);
+
+
+--
 -- Name: post_attachments; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -3138,8 +3265,8 @@ CREATE TABLE public.project_revisions (
     content_hash bytea NOT NULL,
     primary_model_id uuid NOT NULL,
     metadata_snapshot jsonb NOT NULL,
-    git_ref text,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
+    git_ref text,
     CONSTRAINT project_revisions_content_hash_check CHECK ((octet_length(content_hash) = 32)),
     CONSTRAINT project_revisions_metadata_object_check CHECK ((jsonb_typeof(metadata_snapshot) = 'object'::text))
 );
@@ -3429,6 +3556,19 @@ CREATE TABLE public.search_index_jobs (
 --
 
 COMMENT ON COLUMN public.search_index_jobs.correlation_id IS 'Request/operation correlation propagated by the QueuePort producer; replaced only when a job is actually re-enqueued.';
+
+
+--
+-- Name: sessions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.sessions (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    last_active_at timestamp with time zone DEFAULT now() NOT NULL,
+    session_token_hash text NOT NULL
+);
 
 
 --
@@ -3753,6 +3893,31 @@ CREATE TABLE public.threads (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     CONSTRAINT threads_status_check CHECK ((status = ANY (ARRAY['open'::text, 'closed'::text, 'locked'::text]))),
     CONSTRAINT threads_type_check CHECK ((type = ANY (ARRAY['discussion'::text, 'question'::text])))
+);
+
+
+--
+-- Name: upload_sessions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.upload_sessions (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    owner_id uuid NOT NULL,
+    role text NOT NULL,
+    status text DEFAULT 'pending'::text NOT NULL,
+    object_key text,
+    final_key text,
+    original_name text,
+    mime_type text,
+    size_bytes bigint,
+    checksum_sha256 bytea,
+    error_code text,
+    error_message text,
+    expires_at timestamp with time zone DEFAULT (now() + '02:00:00'::interval) NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT upload_sessions_role_check CHECK ((role = ANY (ARRAY['source'::text, 'preview'::text, 'photo'::text, 'media'::text, 'avatar'::text]))),
+    CONSTRAINT upload_sessions_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'validating'::text, 'ready'::text, 'failed'::text, 'abandoned'::text])))
 );
 
 
@@ -4220,6 +4385,22 @@ ALTER TABLE ONLY public.assistant_thread_events
 
 ALTER TABLE ONLY public.assistant_threads
     ADD CONSTRAINT assistant_threads_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: audit_log audit_log_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.audit_log
+    ADD CONSTRAINT audit_log_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: auth_pending_registrations auth_pending_registrations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.auth_pending_registrations
+    ADD CONSTRAINT auth_pending_registrations_pkey PRIMARY KEY (user_id);
 
 
 --
@@ -5159,6 +5340,14 @@ ALTER TABLE ONLY public.payouts
 
 
 --
+-- Name: permission_grants permission_grants_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.permission_grants
+    ADD CONSTRAINT permission_grants_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: post_attachments post_attachments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5407,6 +5596,14 @@ ALTER TABLE ONLY public.search_index_jobs
 
 
 --
+-- Name: sessions sessions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sessions
+    ADD CONSTRAINT sessions_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: slice_cache_entries slice_cache_entries_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5548,6 +5745,14 @@ ALTER TABLE ONLY public.tags
 
 ALTER TABLE ONLY public.threads
     ADD CONSTRAINT threads_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: upload_sessions upload_sessions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.upload_sessions
+    ADD CONSTRAINT upload_sessions_pkey PRIMARY KEY (id);
 
 
 --
@@ -5862,6 +6067,34 @@ CREATE INDEX assistant_threads_owner_idx ON public.assistant_threads USING btree
 
 
 --
+-- Name: audit_log_actor_created_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX audit_log_actor_created_idx ON public.audit_log USING btree (actor_user_id, created_at DESC);
+
+
+--
+-- Name: audit_log_correlation_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX audit_log_correlation_id_idx ON public.audit_log USING btree (correlation_id) WHERE (correlation_id IS NOT NULL);
+
+
+--
+-- Name: audit_log_idempotency_key_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX audit_log_idempotency_key_idx ON public.audit_log USING btree (idempotency_key) WHERE (idempotency_key IS NOT NULL);
+
+
+--
+-- Name: audit_log_target_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX audit_log_target_idx ON public.audit_log USING btree (target_type, target_id, created_at DESC);
+
+
+--
 -- Name: build_session_revision_migrations_pending_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6091,12 +6324,6 @@ CREATE INDEX device_print_requests_device_idx ON public.device_print_requests US
 
 CREATE INDEX device_print_results_device_idx ON public.device_print_results USING btree (device_id, created_at DESC);
 
---
--- Name: idx_print_results_request_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_print_results_request_id ON public.device_print_results USING btree (print_request_id) WHERE (print_request_id IS NOT NULL);
-
 
 --
 -- Name: device_shares_user_idx; Type: INDEX; Schema: public; Owner: -
@@ -6124,13 +6351,6 @@ CREATE INDEX device_transfers_device_idx ON public.device_transfers USING btree 
 --
 
 CREATE INDEX device_transfers_pending_idx ON public.device_transfers USING btree (device_id, status) WHERE (status = ANY (ARRAY['initiated'::text, 'transferring'::text]));
-
-
---
--- Name: idx_device_transfers_expires; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_device_transfers_expires ON public.device_transfers USING btree (expires_at) WHERE (status = ANY (ARRAY['initiated'::text, 'transferring'::text]));
 
 
 --
@@ -6432,6 +6652,62 @@ CREATE INDEX ideas_type_status_idx ON public.ideas USING btree (type, status, cr
 --
 
 CREATE INDEX idempotency_records_expiry_idx ON public.idempotency_records USING btree (expires_at);
+
+
+--
+-- Name: idx_device_transfers_expires; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_device_transfers_expires ON public.device_transfers USING btree (expires_at) WHERE (status = ANY (ARRAY['initiated'::text, 'transferring'::text]));
+
+
+--
+-- Name: idx_print_results_request_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_print_results_request_id ON public.device_print_results USING btree (print_request_id) WHERE (print_request_id IS NOT NULL);
+
+
+--
+-- Name: idx_projects_owner_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_projects_owner_status ON public.projects USING btree (owner_id, status);
+
+
+--
+-- Name: idx_projects_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_projects_status ON public.projects USING btree (status);
+
+
+--
+-- Name: idx_projects_visibility; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_projects_visibility ON public.projects USING btree (visibility);
+
+
+--
+-- Name: idx_projects_visibility_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_projects_visibility_status ON public.projects USING btree (visibility, status);
+
+
+--
+-- Name: idx_upload_sessions_expire; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_upload_sessions_expire ON public.upload_sessions USING btree (expires_at) WHERE (status = ANY (ARRAY['pending'::text, 'validating'::text]));
+
+
+--
+-- Name: idx_upload_sessions_owner; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_upload_sessions_owner ON public.upload_sessions USING btree (owner_id, status);
 
 
 --
@@ -6764,17 +7040,17 @@ CREATE INDEX material_variants_material_idx ON public.material_variants USING bt
 
 
 --
--- Name: materials_kind_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX materials_kind_idx ON public.materials USING btree (kind);
-
-
---
 -- Name: materials_admin_updated_idx; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX materials_admin_updated_idx ON public.materials USING btree (status, updated_at DESC, id);
+
+
+--
+-- Name: materials_kind_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX materials_kind_idx ON public.materials USING btree (kind);
 
 
 --
@@ -7058,6 +7334,27 @@ CREATE INDEX payouts_user_idx ON public.payouts USING btree (user_id, created_at
 
 
 --
+-- Name: permission_grants_expires_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX permission_grants_expires_at_idx ON public.permission_grants USING btree (expires_at) WHERE (expires_at IS NOT NULL);
+
+
+--
+-- Name: permission_grants_granted_by_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX permission_grants_granted_by_idx ON public.permission_grants USING btree (granted_by);
+
+
+--
+-- Name: permission_grants_user_permission_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX permission_grants_user_permission_idx ON public.permission_grants USING btree (user_id, permission);
+
+
+--
 -- Name: post_attachments_post_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -7247,32 +7544,6 @@ CREATE INDEX projects_published_idx ON public.projects USING btree (published_re
 
 
 --
--- Name: idx_projects_owner_status; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_projects_owner_status ON public.projects USING btree (owner_id, status);
-
-
---
--- Name: idx_projects_status; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_projects_status ON public.projects USING btree (status);
-
---
--- Name: idx_projects_visibility; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_projects_visibility ON public.projects USING btree (visibility);
-
---
--- Name: idx_projects_visibility_status; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_projects_visibility_status ON public.projects USING btree (visibility, status);
-
-
---
 -- Name: purchases_buyer_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -7438,6 +7709,13 @@ CREATE INDEX search_index_jobs_model_idx ON public.search_index_jobs USING btree
 --
 
 CREATE INDEX search_index_jobs_queue_expiry_idx ON public.search_index_jobs USING btree (leased_until, id) WHERE (status = 'running'::text);
+
+
+--
+-- Name: sessions_user_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX sessions_user_id_idx ON public.sessions USING btree (user_id);
 
 
 --
@@ -7861,6 +8139,13 @@ CREATE TRIGGER agents_relay_revoke_revision_trigger BEFORE UPDATE ON public.agen
 
 
 --
+-- Name: audit_log audit_log_immutable_trigger; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER audit_log_immutable_trigger BEFORE DELETE OR UPDATE ON public.audit_log FOR EACH ROW EXECUTE FUNCTION public.audit_log_immutable();
+
+
+--
 -- Name: device_audit_log device_audit_log_correlation_immutable; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -8041,6 +8326,22 @@ ALTER TABLE ONLY public.assistant_threads
 
 ALTER TABLE ONLY public.assistant_threads
     ADD CONSTRAINT assistant_threads_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: audit_log audit_log_actor_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.audit_log
+    ADD CONSTRAINT audit_log_actor_user_id_fkey FOREIGN KEY (actor_user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: auth_pending_registrations auth_pending_registrations_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.auth_pending_registrations
+    ADD CONSTRAINT auth_pending_registrations_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --
@@ -8393,6 +8694,7 @@ ALTER TABLE ONLY public.device_print_results
 
 ALTER TABLE ONLY public.device_print_results
     ADD CONSTRAINT device_print_results_model_id_fkey FOREIGN KEY (model_id) REFERENCES public.models(id) ON DELETE SET NULL;
+
 
 --
 -- Name: device_print_results device_print_results_print_request_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
@@ -9283,6 +9585,30 @@ ALTER TABLE ONLY public.payouts
 
 
 --
+-- Name: permission_grants permission_grants_granted_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.permission_grants
+    ADD CONSTRAINT permission_grants_granted_by_fkey FOREIGN KEY (granted_by) REFERENCES public.users(id);
+
+
+--
+-- Name: permission_grants permission_grants_revoked_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.permission_grants
+    ADD CONSTRAINT permission_grants_revoked_by_fkey FOREIGN KEY (revoked_by) REFERENCES public.users(id);
+
+
+--
+-- Name: permission_grants permission_grants_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.permission_grants
+    ADD CONSTRAINT permission_grants_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
 -- Name: post_attachments post_attachments_owner_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -9619,6 +9945,14 @@ ALTER TABLE ONLY public.search_index_jobs
 
 
 --
+-- Name: sessions sessions_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sessions
+    ADD CONSTRAINT sessions_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: slice_cache_entries slice_cache_entries_account_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -9888,6 +10222,14 @@ ALTER TABLE ONLY public.threads
 
 ALTER TABLE ONLY public.threads
     ADD CONSTRAINT threads_community_id_fkey FOREIGN KEY (community_id) REFERENCES public.communities(id) ON DELETE CASCADE;
+
+
+--
+-- Name: upload_sessions upload_sessions_owner_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.upload_sessions
+    ADD CONSTRAINT upload_sessions_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --
@@ -10195,56 +10537,6 @@ ALTER TABLE ONLY public.zones
 
 
 --
--- Name: permission_grants; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.permission_grants (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    user_id uuid NOT NULL REFERENCES public.users(id),
-    permission text NOT NULL,
-    scope jsonb DEFAULT '{}'::jsonb NOT NULL,
-    granted_by uuid NOT NULL REFERENCES public.users(id),
-    reason text NOT NULL,
-    granted_at timestamp with time zone DEFAULT now() NOT NULL,
-    expires_at timestamp with time zone,
-    revoked_at timestamp with time zone,
-    revoked_by uuid REFERENCES public.users(id),
-    revoke_reason text,
-    CONSTRAINT permission_grants_pkey PRIMARY KEY (id),
-    CONSTRAINT permission_grants_permission_check CHECK ((permission = ANY (ARRAY['user.view_any'::text, 'user.edit_any'::text, 'user.deactivate'::text, 'user.grant_permission'::text, 'user.revoke_permission'::text, 'moderation.delete_content'::text, 'moderation.ban_user'::text, 'moderation.view_reports'::text, 'moderation.resolve_report'::text, 'moderation.manage_sanctions'::text, 'moderation.resolve_appeal'::text, 'moderation.manage_community_members'::text, 'analytics.view_platform'::text, 'analytics.export'::text, 'analytics.view_health'::text, 'billing.manage_payouts'::text, 'audit.view_log'::text, 'catalog.publish_any'::text, 'catalog.unpublish_any'::text, 'catalog.edit_any'::text, 'catalog.feature'::text, 'catalog.review_candidates'::text, 'catalog.review_vendor_claims'::text, 'catalog.review_printer_reports'::text, 'feed.manage_news'::text, 'research.access'::text, 'research.manage'::text, 'research.manage_printers'::text, 'support.view_tickets'::text, 'support.manage_devices'::text, 'support.view_device_incidents'::text, 'support.resolve_device_incidents'::text]))),
-    CONSTRAINT permission_grants_scope_object_check CHECK ((jsonb_typeof(scope) = 'object'::text)),
-    CONSTRAINT permission_grants_reason_nonempty_check CHECK ((btrim(reason) <> ''::text)),
-    CONSTRAINT permission_grants_expiry_after_grant_check CHECK (((expires_at IS NULL) OR (expires_at > granted_at))),
-    CONSTRAINT permission_grants_revocation_after_grant_check CHECK (((revoked_at IS NULL) OR (revoked_at >= granted_at))),
-    CONSTRAINT permission_grants_revocation_fields_check CHECK ((((revoked_at IS NULL) AND (revoked_by IS NULL) AND (revoke_reason IS NULL)) OR ((revoked_at IS NOT NULL) AND (revoked_by IS NOT NULL) AND (revoke_reason IS NOT NULL) AND (btrim(revoke_reason) <> ''::text))))
-);
-
---
--- Name: audit_log; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.audit_log (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    actor_user_id uuid NOT NULL REFERENCES public.users(id),
-    action text NOT NULL,
-    target_type text NOT NULL,
-    target_id uuid NOT NULL,
-    details jsonb DEFAULT '{}'::jsonb NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT audit_log_pkey PRIMARY KEY (id),
-    CONSTRAINT audit_log_action_nonempty_check CHECK ((btrim(action) <> ''::text)),
-    CONSTRAINT audit_log_target_type_nonempty_check CHECK ((btrim(target_type) <> ''::text)),
-    CONSTRAINT audit_log_details_object_check CHECK ((jsonb_typeof(details) = 'object'::text))
-);
-
-CREATE INDEX permission_grants_user_permission_idx ON public.permission_grants USING btree (user_id, permission);
-CREATE INDEX permission_grants_expires_at_idx ON public.permission_grants USING btree (expires_at) WHERE (expires_at IS NOT NULL);
-CREATE INDEX permission_grants_granted_by_idx ON public.permission_grants USING btree (granted_by);
-CREATE INDEX audit_log_actor_created_idx ON public.audit_log USING btree (actor_user_id, created_at DESC);
-CREATE INDEX audit_log_target_idx ON public.audit_log USING btree (target_type, target_id, created_at DESC);
-
-
---
 -- PostgreSQL database dump complete
 --
 
@@ -10277,4 +10569,13 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260903000000'),
     ('20260914180000'),
     ('20260914190000'),
-    ('20260915120000');
+    ('20260915120000'),
+    ('20260917120000'),
+    ('20260917130000'),
+    ('20260921120000'),
+    ('20260921130000'),
+    ('20260921140000'),
+    ('20260923120000'),
+    ('20260923120100'),
+    ('20260924090000'),
+    ('20260924100000');
