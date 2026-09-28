@@ -12,7 +12,9 @@ export function RegisterVerifyPage() {
     event.preventDefault();
     const result = await verifyRegistration(email, code);
     if (!result.ok) {
-      if (result.error?.code === "auth.unauthorized.v1" || result.error?.code === "auth.unauthenticated.v1") return setError({ message: "Неверный код." });
+      if (result.error?.code === "auth.invalid_code.v1") return setError({ message: "Неверный код." });
+      if (result.error?.code === "auth.code_expired.v1") return setError({ message: "Код истёк. Запросите новый код." });
+      if (result.error?.code === "auth.account_blocked.v1" || result.error?.code === "auth.too_many_attempts.v1") return setError({ message: "Слишком много попыток. Повторите позже.", retryable: true });
       return setError(result.error ?? { message: "Неверный или просроченный код." });
     }
     sessionStorage.removeItem("portal.registration.email");

@@ -13,8 +13,6 @@ import { assertNestRateLimit } from "../../../nest/integration/rate-limit.ts";
 import { APP_INTENT_COOKIE_NAME } from "../domain/auth.ts";
 import { AuthService } from "../application/auth.service.ts";
 import { AuthSessionService } from "../application/session.service.ts";
-import { AUTH_ERRORS } from "../domain/auth-errors.ts";
-import { createAuthError } from "../domain/auth-error.helper.ts";
 import { EmailStartDto, EmailVerifyDto, PasswordLoginDto, PlagIdCallbackQueryDto, PlagIdStartQueryDto, RecoveryStartDto, RecoveryVerifyDto, RegisterDto, RegisterVerifyDto } from "./auth.dto.ts";
 import {
   ApiDevAvailabilityOperation,
@@ -71,6 +69,8 @@ export class AuthController {
         id: user.id,
         username: user.username,
         display_name: user.displayName,
+        gender: user.gender,
+        birth_year: user.birthYear,
         avatar_url: user.avatarUrl,
         handle_confirmed: user.handleConfirmed,
         role: user.role,
@@ -98,8 +98,7 @@ export class AuthController {
   @HttpCode(200)
   @ApiLogoutAllOperation()
   async logoutAll(@Req() request: RequestWithSession, @Res({ passthrough: true }) response: Response): Promise<{ readonly ok: true }> {
-    const session = request[SESSION_USER];
-    if (session === undefined) throw new UnauthorizedException();
+    const session = request[SESSION_USER]!;
     await this.sessions.logoutAll(UserId(session.id));
     await this.record(session.id, "auth.logout_all", getRequestId(request));
     this.metrics.incCredentialRevocation("session", "logout_all");
@@ -110,8 +109,7 @@ export class AuthController {
   @Get("sessions")
   @User()
   async listSessions(@Req() request: RequestWithSession) {
-    const session = request[SESSION_USER];
-    if (session === undefined) throw createAuthError(AUTH_ERRORS.SESSION_NOT_FOUND, "Сеанс не найден.", false, 401);
+    const session = request[SESSION_USER]!;
     return { sessions: await this.auth.listSessions(UserId(session.id), session.sessionId) };
   }
 
@@ -119,8 +117,7 @@ export class AuthController {
   @User()
   @HttpCode(204)
   async deleteSession(@Req() request: RequestWithSession, @Param("id") id: string): Promise<void> {
-    const session = request[SESSION_USER];
-    if (session === undefined) throw createAuthError(AUTH_ERRORS.SESSION_NOT_FOUND, "Сеанс не найден.", false, 401);
+    const session = request[SESSION_USER]!;
     await this.auth.deleteSession(UserId(session.id), id);
   }
 
@@ -128,10 +125,8 @@ export class AuthController {
   @User()
   @HttpCode(204)
   async deleteOtherSessions(@Req() request: RequestWithSession): Promise<void> {
-    const session = request[SESSION_USER];
-    if (session === undefined) throw createAuthError(AUTH_ERRORS.SESSION_NOT_FOUND, "Сеанс не найден.", false, 401);
+    const session = request[SESSION_USER]!;
     await this.auth.deleteOtherSessions(UserId(session.id), session.sessionId);
-    await this.sessions.logoutAll(UserId(session.id));
   }
 
   @Post("email/start")

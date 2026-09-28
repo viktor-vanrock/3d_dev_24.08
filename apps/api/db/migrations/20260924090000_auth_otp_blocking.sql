@@ -18,4 +18,9 @@ CREATE TABLE IF NOT EXISTS public.auth_pending_registrations (
 );
 
 -- migrate:down
+ALTER TABLE public.email_otp DROP COLUMN IF EXISTS block_until;
+ALTER TABLE public.users DROP COLUMN IF EXISTS gender;
+ALTER TABLE public.users DROP COLUMN IF EXISTS birth_year;
+ALTER TABLE public.users ALTER COLUMN display_name DROP NOT NULL;
+DROP TABLE IF EXISTS public.auth_pending_registrations;
 

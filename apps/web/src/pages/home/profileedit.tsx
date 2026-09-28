@@ -24,8 +24,8 @@ export function ProfileEditForm({
 }) {
   const [username, setUsername] = useState(user.username);
   const [displayName, setDisplayName] = useState(user.display_name ?? "");
-  const [gender, setGender] = useState("");
-  const [birthYear, setBirthYear] = useState("");
+  const [gender, setGender] = useState(user.gender ?? "");
+  const [birthYear, setBirthYear] = useState(user.birth_year?.toString() ?? "");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [revoking, setRevoking] = useState(false);

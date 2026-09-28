@@ -34,6 +34,8 @@ interface ProfileRow {
 }
 
 interface SessionProfileRow extends ProfileRow {
+  gender: string | null;
+  birth_year: number | null;
   avatar_url: string | null;
   handle_confirmed: boolean;
   role: "user" | "researcher";
@@ -92,6 +94,8 @@ function mapSession(row: SessionProfileRow): SessionProfile {
     id: UserId(row.id),
     username: row.username,
     displayName: row.display_name,
+    gender: row.gender,
+    birthYear: row.birth_year,
     avatarUrl: row.avatar_url,
     handleConfirmed: row.handle_confirmed,
     role: row.role,
@@ -176,7 +180,7 @@ export class ProfileRepository implements ProfileReadPort, ProfileAdminPort, Pro
 
   async findSessionUser(userId: UserIdType): Promise<SessionProfile | null> {
     const result = await this.pool.query<SessionProfileRow>(
-      `select id, username, display_name, avatar_url, handle_confirmed, role
+      `select id, username, display_name, gender, birth_year, avatar_url, handle_confirmed, role
        from users where id = $1 and status = 'active'`,
       [userId],
     );
@@ -278,7 +282,7 @@ export class ProfileRepository implements ProfileReadPort, ProfileAdminPort, Pro
       `insert into users (username, display_name, handle_confirmed)
        values ('devuser', 'DEV Reviewer', true)
        on conflict (username) do update set display_name = excluded.display_name, updated_at = now()
-       returning id, username, display_name, avatar_url, handle_confirmed, role, status`,
+       returning id, username, display_name, gender, birth_year, avatar_url, handle_confirmed, role, status`,
     );
     const row = result.rows[0];
     return row === undefined || row.status !== "active" ? null : mapSession(row);

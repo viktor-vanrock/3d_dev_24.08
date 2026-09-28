@@ -13,6 +13,8 @@ export interface SessionUser {
   id: string;
   username: string;
   display_name: string | null;
+  gender?: string | null;
+  birth_year?: number | null;
   avatar_url: string | null;
   handle_confirmed: boolean;
   // RBAC (MF-878) — сегодня единственная не-"user" роль: researcher (гейт /research, MF-917).

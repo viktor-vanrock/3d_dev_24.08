@@ -9,5 +9,10 @@ CREATE TABLE public.sessions (
 
 CREATE INDEX sessions_user_id_idx ON public.sessions(user_id);
 
+ALTER TABLE public.sessions
+  ADD CONSTRAINT sessions_token_hash_unique
+  UNIQUE (session_token_hash);
+
 -- migrate:down
+DROP TABLE IF EXISTS public.sessions;
 

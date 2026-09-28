@@ -51,6 +51,8 @@ class TestProfileAuthPort implements ProfileAuthPort {
           id: UserId(row.id),
           username: row.username,
           displayName: row.display_name,
+          gender: null,
+          birthYear: null,
           avatarUrl: row.avatar_url,
           handleConfirmed: row.handle_confirmed,
           role: row.role,
