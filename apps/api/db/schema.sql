@@ -628,6 +628,13 @@ CREATE TABLE public.audit_log (
 
 
 --
+-- Name: COLUMN audit_log.action; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.audit_log.action IS 'Moderation actions: flag.submitted, flag.claimed, flag.claim_released, flag.claim_expired, flag.decided, flag.decision_reversed, flag.overdue, content.restricted, content.restriction_lifted';
+
+
+--
 -- Name: auth_pending_registrations; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -921,6 +928,39 @@ CREATE TABLE public.content_agents (
     CONSTRAINT content_agents_revoked_after_created_check CHECK (((revoked_at IS NULL) OR (revoked_at >= created_at))),
     CONSTRAINT content_agents_status_check CHECK ((status = ANY (ARRAY['active'::text, 'revoked'::text])))
 );
+
+
+--
+-- Name: content_restrictions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.content_restrictions (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    subject_type text NOT NULL,
+    subject_id uuid NOT NULL,
+    restriction_type text NOT NULL,
+    scope text DEFAULT 'public'::text NOT NULL,
+    started_by uuid NOT NULL,
+    starts_at timestamp with time zone DEFAULT now() NOT NULL,
+    ends_at timestamp with time zone,
+    idempotency_key text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    lifted_at timestamp with time zone,
+    lifted_by uuid,
+    lift_reason text,
+    CONSTRAINT content_restrictions_ends_after_starts_check CHECK (((ends_at IS NULL) OR (ends_at > starts_at))),
+    CONSTRAINT content_restrictions_lift_fields_check CHECK ((((lifted_at IS NULL) AND (lifted_by IS NULL) AND (lift_reason IS NULL)) OR ((lifted_at IS NOT NULL) AND (lifted_by IS NOT NULL) AND (btrim(lift_reason) <> ''::text)))),
+    CONSTRAINT content_restrictions_scope_check CHECK ((scope = ANY (ARRAY['public'::text, 'community'::text, 'author_only'::text]))),
+    CONSTRAINT content_restrictions_subject_type_check CHECK ((subject_type = ANY (ARRAY['make'::text, 'model'::text, 'post'::text, 'thread'::text, 'comment'::text]))),
+    CONSTRAINT content_restrictions_type_check CHECK ((restriction_type = ANY (ARRAY['hidden'::text, 'locked'::text, 'deleted'::text])))
+);
+
+
+--
+-- Name: TABLE content_restrictions; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.content_restrictions IS 'Active and historical restrictions over moderated content.';
 
 
 --
@@ -1404,6 +1444,54 @@ CREATE TABLE public.feed_posts (
     CONSTRAINT feed_posts_title_check CHECK (((length(title) > 0) AND (length(title) <= 300))),
     CONSTRAINT feed_posts_type_check CHECK ((type = ANY (ARRAY['model_link'::text, 'media'::text, 'text'::text, 'make'::text, 'printer_announcement'::text, 'gitverse'::text])))
 );
+
+
+--
+-- Name: flag_claims; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.flag_claims (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    flag_id uuid NOT NULL,
+    moderator_id uuid NOT NULL,
+    claimed_at timestamp with time zone DEFAULT now() NOT NULL,
+    expires_at timestamp with time zone NOT NULL,
+    released_at timestamp with time zone,
+    release_reason text,
+    state text DEFAULT 'active'::text NOT NULL,
+    CONSTRAINT flag_claims_expiry_check CHECK ((expires_at > claimed_at)),
+    CONSTRAINT flag_claims_release_state_check CHECK ((((state = 'active'::text) AND (released_at IS NULL) AND (release_reason IS NULL)) OR ((state = ANY (ARRAY['released'::text, 'expired'::text])) AND (released_at IS NOT NULL)))),
+    CONSTRAINT flag_claims_state_check CHECK ((state = ANY (ARRAY['active'::text, 'released'::text, 'expired'::text])))
+);
+
+
+--
+-- Name: TABLE flag_claims; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.flag_claims IS 'Leased moderation claims. Active claims expire after 30 minutes.';
+
+
+--
+-- Name: flag_evidence; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.flag_evidence (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    flag_id uuid NOT NULL,
+    url text NOT NULL,
+    storage_key text,
+    uploaded_by uuid,
+    uploaded_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT flag_evidence_url_nonempty_check CHECK ((btrim(url) <> ''::text))
+);
+
+
+--
+-- Name: TABLE flag_evidence; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.flag_evidence IS 'Immutable evidence links for moderation flags.';
 
 
 --
@@ -2817,6 +2905,38 @@ CREATE TABLE public.moderation_actions (
 
 
 --
+-- Name: moderation_decisions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.moderation_decisions (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    flag_id uuid NOT NULL,
+    moderator_id uuid NOT NULL,
+    action text NOT NULL,
+    reason_code text NOT NULL,
+    reason_note text,
+    linked_restriction_id uuid,
+    linked_sanction_id uuid,
+    idempotency_key text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    reversed_at timestamp with time zone,
+    reversed_by uuid,
+    reversal_reason text,
+    CONSTRAINT moderation_decisions_action_check CHECK ((action = ANY (ARRAY['approve'::text, 'hide'::text, 'delete'::text, 'restrict'::text, 'sanction'::text, 'dismiss'::text]))),
+    CONSTRAINT moderation_decisions_note_required_check CHECK (((action = ANY (ARRAY['approve'::text, 'dismiss'::text])) OR (btrim(COALESCE(reason_note, ''::text)) <> ''::text))),
+    CONSTRAINT moderation_decisions_reason_code_check CHECK ((reason_code = ANY (ARRAY['illegal'::text, 'copyright'::text, 'spam'::text, 'harassment'::text, 'abuse'::text, 'other'::text]))),
+    CONSTRAINT moderation_decisions_reversal_check CHECK ((((reversed_at IS NULL) AND (reversed_by IS NULL) AND (reversal_reason IS NULL)) OR ((reversed_at IS NOT NULL) AND (reversed_by IS NOT NULL) AND (btrim(reversal_reason) <> ''::text))))
+);
+
+
+--
+-- Name: TABLE moderation_decisions; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.moderation_decisions IS 'Append-only moderation decisions.';
+
+
+--
 -- Name: order_events; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -3440,10 +3560,30 @@ CREATE TABLE public.reports (
     resolved_at timestamp with time zone,
     resolved_by uuid,
     decision text,
-    CONSTRAINT reports_decision_check CHECK ((decision = ANY (ARRAY['accepted'::text, 'rejected'::text]))),
-    CONSTRAINT reports_status_check CHECK ((status = ANY (ARRAY['open'::text, 'resolved'::text]))),
-    CONSTRAINT reports_subject_type_check CHECK ((subject_type = ANY (ARRAY['make'::text, 'model'::text])))
+    reason_code text DEFAULT 'other'::text NOT NULL,
+    reason_text text,
+    subject_snapshot jsonb DEFAULT '{}'::jsonb NOT NULL,
+    priority integer DEFAULT 20 NOT NULL,
+    due_at timestamp with time zone DEFAULT (now() + '72:00:00'::interval) NOT NULL,
+    idempotency_key text,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    closed_at timestamp with time zone,
+    closed_by uuid,
+    CONSTRAINT reports_decision_check CHECK (((decision = ANY (ARRAY['accepted'::text, 'rejected'::text])) OR (decision IS NULL))),
+    CONSTRAINT reports_priority_nonnegative_check CHECK ((priority >= 0)),
+    CONSTRAINT reports_reason_code_check CHECK ((reason_code = ANY (ARRAY['illegal'::text, 'copyright'::text, 'spam'::text, 'harassment'::text, 'abuse'::text, 'other'::text]))),
+    CONSTRAINT reports_reason_text_length_check CHECK (((reason_text IS NULL) OR (char_length(reason_text) <= 2000))),
+    CONSTRAINT reports_snapshot_object_check CHECK ((jsonb_typeof(subject_snapshot) = 'object'::text)),
+    CONSTRAINT reports_status_check CHECK ((status = ANY (ARRAY['open'::text, 'assigned'::text, 'resolved'::text, 'dismissed'::text, 'withdrawn'::text]))),
+    CONSTRAINT reports_subject_type_check CHECK ((subject_type = ANY (ARRAY['make'::text, 'model'::text, 'post'::text, 'thread'::text, 'comment'::text])))
 );
+
+
+--
+-- Name: TABLE reports; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.reports IS 'Unified moderation flags. Legacy make/model reports retained and extended.';
 
 
 --
@@ -4540,6 +4680,14 @@ ALTER TABLE ONLY public.content_agents
 
 
 --
+-- Name: content_restrictions content_restrictions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.content_restrictions
+    ADD CONSTRAINT content_restrictions_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: device_audit_log device_audit_log_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -4745,6 +4893,22 @@ ALTER TABLE ONLY public.feed_post_saves
 
 ALTER TABLE ONLY public.feed_posts
     ADD CONSTRAINT feed_posts_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: flag_claims flag_claims_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.flag_claims
+    ADD CONSTRAINT flag_claims_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: flag_evidence flag_evidence_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.flag_evidence
+    ADD CONSTRAINT flag_evidence_pkey PRIMARY KEY (id);
 
 
 --
@@ -5268,6 +5432,14 @@ ALTER TABLE ONLY public.moderation_actions
 
 
 --
+-- Name: moderation_decisions moderation_decisions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.moderation_decisions
+    ADD CONSTRAINT moderation_decisions_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: order_events order_events_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5540,14 +5712,6 @@ ALTER TABLE ONLY public.reports
 
 
 --
--- Name: reports reports_subject_type_subject_id_reporter_id_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.reports
-    ADD CONSTRAINT reports_subject_type_subject_id_reporter_id_key UNIQUE (subject_type, subject_id, reporter_id);
-
-
---
 -- Name: reputation_events reputation_events_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5601,6 +5765,14 @@ ALTER TABLE ONLY public.search_index_jobs
 
 ALTER TABLE ONLY public.sessions
     ADD CONSTRAINT sessions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: sessions sessions_token_hash_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sessions
+    ADD CONSTRAINT sessions_token_hash_unique UNIQUE (session_token_hash);
 
 
 --
@@ -6228,6 +6400,27 @@ CREATE INDEX content_agents_owner_idx ON public.content_agents USING btree (owne
 
 
 --
+-- Name: content_restrictions_idempotency_key_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX content_restrictions_idempotency_key_idx ON public.content_restrictions USING btree (idempotency_key);
+
+
+--
+-- Name: content_restrictions_one_active_kind_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX content_restrictions_one_active_kind_idx ON public.content_restrictions USING btree (subject_type, subject_id, restriction_type) WHERE (lifted_at IS NULL);
+
+
+--
+-- Name: content_restrictions_subject_active_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX content_restrictions_subject_active_idx ON public.content_restrictions USING btree (subject_type, subject_id, starts_at DESC) WHERE (lifted_at IS NULL);
+
+
+--
 -- Name: device_audit_log_correlation_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6463,6 +6656,34 @@ CREATE INDEX feed_posts_model_idx ON public.feed_posts USING btree (model_id) WH
 --
 
 CREATE INDEX feed_posts_visible_created_idx ON public.feed_posts USING btree (created_at DESC) WHERE (status = 'visible'::text);
+
+
+--
+-- Name: flag_claims_expiry_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX flag_claims_expiry_idx ON public.flag_claims USING btree (expires_at) WHERE (state = 'active'::text);
+
+
+--
+-- Name: flag_claims_moderator_active_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX flag_claims_moderator_active_idx ON public.flag_claims USING btree (moderator_id, expires_at) WHERE (state = 'active'::text);
+
+
+--
+-- Name: flag_claims_one_active_per_flag_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX flag_claims_one_active_per_flag_idx ON public.flag_claims USING btree (flag_id) WHERE (state = 'active'::text);
+
+
+--
+-- Name: flag_evidence_flag_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX flag_evidence_flag_idx ON public.flag_evidence USING btree (flag_id, uploaded_at);
 
 
 --
@@ -7292,6 +7513,34 @@ CREATE INDEX moderation_actions_target_idx ON public.moderation_actions USING bt
 
 
 --
+-- Name: moderation_decisions_flag_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX moderation_decisions_flag_idx ON public.moderation_decisions USING btree (flag_id, created_at DESC);
+
+
+--
+-- Name: moderation_decisions_idempotency_key_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX moderation_decisions_idempotency_key_idx ON public.moderation_decisions USING btree (idempotency_key);
+
+
+--
+-- Name: moderation_decisions_moderator_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX moderation_decisions_moderator_idx ON public.moderation_decisions USING btree (moderator_id, created_at DESC);
+
+
+--
+-- Name: moderation_decisions_one_active_per_flag_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX moderation_decisions_one_active_per_flag_idx ON public.moderation_decisions USING btree (flag_id) WHERE (reversed_at IS NULL);
+
+
+--
 -- Name: order_events_order_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -7625,6 +7874,34 @@ CREATE INDEX release_events_ship_at_idx ON public.release_events USING btree (sh
 --
 
 CREATE INDEX release_events_status_idx ON public.release_events USING btree (status);
+
+
+--
+-- Name: reports_idempotency_key_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX reports_idempotency_key_idx ON public.reports USING btree (idempotency_key) WHERE (idempotency_key IS NOT NULL);
+
+
+--
+-- Name: reports_moderation_queue_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX reports_moderation_queue_idx ON public.reports USING btree (status, priority DESC, due_at, created_at) WHERE (status = ANY (ARRAY['open'::text, 'assigned'::text]));
+
+
+--
+-- Name: reports_one_open_per_reporter_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX reports_one_open_per_reporter_idx ON public.reports USING btree (subject_type, subject_id, reporter_id) WHERE (status = ANY (ARRAY['open'::text, 'assigned'::text]));
+
+
+--
+-- Name: reports_subject_history_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX reports_subject_history_idx ON public.reports USING btree (subject_type, subject_id, created_at DESC);
 
 
 --
@@ -8497,6 +8774,22 @@ ALTER TABLE ONLY public.content_agents
 
 
 --
+-- Name: content_restrictions content_restrictions_lifted_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.content_restrictions
+    ADD CONSTRAINT content_restrictions_lifted_by_fkey FOREIGN KEY (lifted_by) REFERENCES public.users(id) ON DELETE RESTRICT;
+
+
+--
+-- Name: content_restrictions content_restrictions_started_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.content_restrictions
+    ADD CONSTRAINT content_restrictions_started_by_fkey FOREIGN KEY (started_by) REFERENCES public.users(id) ON DELETE RESTRICT;
+
+
+--
 -- Name: device_audit_log device_audit_log_actor_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8878,6 +9171,38 @@ ALTER TABLE ONLY public.feed_posts
 
 ALTER TABLE ONLY public.feed_posts
     ADD CONSTRAINT feed_posts_model_id_fkey FOREIGN KEY (model_id) REFERENCES public.projects(id) ON DELETE SET NULL;
+
+
+--
+-- Name: flag_claims flag_claims_flag_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.flag_claims
+    ADD CONSTRAINT flag_claims_flag_id_fkey FOREIGN KEY (flag_id) REFERENCES public.reports(id) ON DELETE CASCADE;
+
+
+--
+-- Name: flag_claims flag_claims_moderator_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.flag_claims
+    ADD CONSTRAINT flag_claims_moderator_id_fkey FOREIGN KEY (moderator_id) REFERENCES public.users(id) ON DELETE RESTRICT;
+
+
+--
+-- Name: flag_evidence flag_evidence_flag_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.flag_evidence
+    ADD CONSTRAINT flag_evidence_flag_id_fkey FOREIGN KEY (flag_id) REFERENCES public.reports(id) ON DELETE CASCADE;
+
+
+--
+-- Name: flag_evidence flag_evidence_uploaded_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.flag_evidence
+    ADD CONSTRAINT flag_evidence_uploaded_by_fkey FOREIGN KEY (uploaded_by) REFERENCES public.users(id) ON DELETE SET NULL;
 
 
 --
@@ -9497,6 +9822,46 @@ ALTER TABLE ONLY public.moderation_actions
 
 
 --
+-- Name: moderation_decisions moderation_decisions_flag_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.moderation_decisions
+    ADD CONSTRAINT moderation_decisions_flag_id_fkey FOREIGN KEY (flag_id) REFERENCES public.reports(id) ON DELETE RESTRICT;
+
+
+--
+-- Name: moderation_decisions moderation_decisions_linked_sanction_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.moderation_decisions
+    ADD CONSTRAINT moderation_decisions_linked_sanction_id_fkey FOREIGN KEY (linked_sanction_id) REFERENCES public.sanctions(id) ON DELETE RESTRICT;
+
+
+--
+-- Name: moderation_decisions moderation_decisions_moderator_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.moderation_decisions
+    ADD CONSTRAINT moderation_decisions_moderator_id_fkey FOREIGN KEY (moderator_id) REFERENCES public.users(id) ON DELETE RESTRICT;
+
+
+--
+-- Name: moderation_decisions moderation_decisions_restriction_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.moderation_decisions
+    ADD CONSTRAINT moderation_decisions_restriction_fkey FOREIGN KEY (linked_restriction_id) REFERENCES public.content_restrictions(id) ON DELETE RESTRICT;
+
+
+--
+-- Name: moderation_decisions moderation_decisions_reversed_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.moderation_decisions
+    ADD CONSTRAINT moderation_decisions_reversed_by_fkey FOREIGN KEY (reversed_by) REFERENCES public.users(id) ON DELETE RESTRICT;
+
+
+--
 -- Name: order_events order_events_actor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -9862,6 +10227,14 @@ ALTER TABLE ONLY public.release_events
 
 ALTER TABLE ONLY public.release_events
     ADD CONSTRAINT release_events_vendor_id_fkey FOREIGN KEY (vendor_id) REFERENCES public.vendors(id);
+
+
+--
+-- Name: reports reports_closed_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.reports
+    ADD CONSTRAINT reports_closed_by_fkey FOREIGN KEY (closed_by) REFERENCES public.users(id) ON DELETE SET NULL;
 
 
 --
@@ -10578,4 +10951,10 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260923120000'),
     ('20260923120100'),
     ('20260924090000'),
-    ('20260924100000');
+    ('20260924100000'),
+    ('20260928000000'),
+    ('20260928000001'),
+    ('20260928000002'),
+    ('20260928000003'),
+    ('20260928000004'),
+    ('20260928000005');
