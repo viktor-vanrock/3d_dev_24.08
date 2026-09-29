@@ -2,7 +2,10 @@ import { describe, expect, it, vi } from "vitest";
 import { FeedPostId, UserId } from "../../_kernel/brandedIds.ts";
 import { FeedRepository } from "../infrastructure/feed.repository.ts";
 import type { FeedAnalyticsPort } from "../public/index.ts";
+import type { ContentRestrictionsPort } from "../../moderation/public/index.ts";
 import { FeedService } from "./feed.service.ts";
+
+const stub = <T>(value: unknown) => value as T;
 
 function serviceWithSignalDeps(consented: boolean | Error) {
   const repository = {
@@ -13,7 +16,7 @@ function serviceWithSignalDeps(consented: boolean | Error) {
     hasActiveConsent: vi.fn(() => (consented instanceof Error ? Promise.reject(consented) : Promise.resolve(consented))),
   };
   const unused = {} as never;
-  const service = new FeedService(repository as unknown as FeedRepository, unused, unused, unused, unused, unused, analytics, unused, unused, unused);
+  const service = new FeedService(repository as unknown as FeedRepository, unused, unused, unused, unused, unused, analytics, unused, unused, unused, stub<ContentRestrictionsPort>({ findActiveBySubject: async () => [], findActiveBySubjectForUpdate: async () => [], createIdempotent: async () => ({ restriction: {} as any, created: false }), lift: async () => null }));
   return { analytics, repository, service };
 }
 

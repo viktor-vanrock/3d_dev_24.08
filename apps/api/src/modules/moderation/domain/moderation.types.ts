@@ -1,0 +1,12 @@
+export const FLAG_STATUSES = ["open", "assigned", "resolved", "dismissed", "withdrawn"] as const;
+export const FLAG_REASON_CODES = ["illegal", "copyright", "spam", "harassment", "abuse", "other"] as const;
+export const MODERATION_ACTIONS = ["approve", "hide", "delete", "restrict", "sanction", "dismiss"] as const;
+export const CONTENT_RESTRICTION_TYPES = ["hidden", "locked", "deleted"] as const;
+export const CONTENT_RESTRICTION_SCOPES = ["public", "community", "author_only"] as const;
+export const MODERATION_SUBJECT_TYPES = ["make", "model", "post", "thread", "comment"] as const;
+export type FlagStatus = (typeof FLAG_STATUSES)[number];
+export type FlagReasonCode = (typeof FLAG_REASON_CODES)[number];
+export type ModerationAction = (typeof MODERATION_ACTIONS)[number];
+export type ContentRestrictionType = (typeof CONTENT_RESTRICTION_TYPES)[number];
+export type ContentRestrictionScope = (typeof CONTENT_RESTRICTION_SCOPES)[number];
+export type ModerationSubjectType = (typeof MODERATION_SUBJECT_TYPES)[number];

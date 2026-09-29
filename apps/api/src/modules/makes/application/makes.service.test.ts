@@ -4,7 +4,7 @@ import type { AchievementsPort } from "../../achievements/public/index.ts";
 import type { CatalogMakesPort } from "../../catalog/public/index.ts";
 import type { FeedSocialOwnerPort } from "../../feed/public/index.ts";
 import type { ModelMakesPort } from "../../models/public/index.ts";
-import type { ReportsPort } from "../../moderation/public/index.ts";
+import type { ContentRestrictionsPort, ReportsPort } from "../../moderation/public/index.ts";
 import type { MakesRepository } from "../infrastructure/makes.repository.ts";
 import type { MakeCommentsPort, MakeFeedSignalPort, MakeProfilePort, MakeRateLimitPort, MakeStoragePort, MakeTagsPort, MakeVotesPort } from "../public/index.ts";
 import { MakesService } from "./makes.service.ts";
@@ -34,6 +34,7 @@ function service(
     stub<AchievementsPort>({}),
     stub<MakeStoragePort>({}),
     stub<MakeRateLimitPort>({}),
+    stub<ContentRestrictionsPort>({ findActiveBySubject: async () => [], findActiveBySubjectForUpdate: async () => [], createIdempotent: async () => ({ restriction: {} as any, created: false }), lift: async () => null }),
   );
 }
 

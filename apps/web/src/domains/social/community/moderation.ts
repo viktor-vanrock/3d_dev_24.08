@@ -1,19 +1,20 @@
 import { API_URL } from "@shared/api";
 const MODERATION_API = `${API_URL}/v1/community`;
 
-export type ModerationTargetType = "post" | "thread";
-export type ModerationReasonCode = "illegal_or_dangerous" | "copyright" | "spam_or_fraud" | "harassment" | "other";
-export type ModerationActionType = "hide" | "restore" | "lock_thread" | "unlock_thread" | "reject_flag";
-export type ModerationFlagStatus = "open" | "in_review" | "actioned" | "rejected" | "withdrawn";
+export type ModerationTargetType = "post" | "thread" | "comment" | "model" | "make";
+export type ModerationReasonCode = "illegal" | "copyright" | "spam" | "harassment" | "abuse" | "other";
+export type ModerationActionType = "approve" | "hide" | "delete" | "restrict" | "sanction" | "dismiss";
+export type ModerationFlagStatus = "open" | "assigned" | "resolved" | "dismissed" | "withdrawn";
 
 export interface ModerationFlag {
   id: string;
-  target: { type: ModerationTargetType; id: string };
+  priority: number;
+  due_at: string;
+  subject: { type: ModerationTargetType; id: string; snapshot: Record<string, unknown> };
   reason_code: string;
   status: ModerationFlagStatus;
-  created_at: string;
-  updated_at?: string;
-  appeal?: { status: "pending" | "restored" | "upheld"; reason_code?: string };
+  evidence: Array<{ id: string; url: string; uploaded_at: string }>;
+  claim: { id: string; moderator_id: string; claimed_at: string; expires_at: string } | null;
 }
 
 export interface CommunityRestriction {
@@ -23,10 +24,11 @@ export interface CommunityRestriction {
 }
 
 export const MODERATION_REASONS: ReadonlyArray<{ code: ModerationReasonCode; label: string }> = [
-  { code: "illegal_or_dangerous", label: "Нарушение закона или опасный контент" },
+  { code: "illegal", label: "Нарушение закона или опасный контент" },
   { code: "copyright", label: "Нарушение прав" },
-  { code: "spam_or_fraud", label: "Спам или мошенничество" },
+  { code: "spam", label: "Спам или мошенничество" },
   { code: "harassment", label: "Оскорбления или травля" },
+  { code: "abuse", label: "Злоупотребление" },
   { code: "other", label: "Другое" },
 ];
 
@@ -92,19 +94,19 @@ export async function loadCommunityRestrictions(): Promise<CommunityRestriction[
   return result.restrictions ?? [];
 }
 
-export async function claimModerationFlag(id: string): Promise<Pick<ModerationFlag, "id" | "status" | "updated_at">> {
-  const result = await request<{ flag: Pick<ModerationFlag, "id" | "status" | "updated_at"> }>(`/flags/${encodeURIComponent(id)}/claim`, mutation({}));
+export async function claimModerationFlag(id: string): Promise<{ id: string; status: ModerationFlagStatus }> {
+  const result = await request<{ flag: { id: string; status: ModerationFlagStatus } }>(`/flags/${encodeURIComponent(id)}/claim`, mutation({}));
   return result.flag;
 }
 
 export async function decideModerationFlag(
   id: string,
-  fields: { action_type: ModerationActionType; reason_code: ModerationReasonCode; details: string },
-): Promise<{ action: { id: string; type: ModerationActionType; status: "applied" | "reversed" }; flag: { id: string; status: ModerationFlagStatus } }> {
+  fields: { action: ModerationActionType; reason_code: ModerationReasonCode; reason_note: string },
+): Promise<{ decision: { id: string; action: ModerationActionType } }> {
   return request(`/flags/${encodeURIComponent(id)}/decision`, mutation(fields));
 }
 
-export async function reverseModerationAction(actionId: string, reason: string): Promise<{ id: string; status: "reversed" }> {
+export async function reverseModerationAction(actionId: string, reason: string): Promise<{ id: string; reversedAt: string | null }> {
   return request(`/moderation/actions/${encodeURIComponent(actionId)}/reversal`, mutation({ reason }));
 }
 
@@ -112,11 +114,11 @@ export async function createModerationFlag(fields: {
   target: { type: ModerationTargetType; id: string };
   reason_code: ModerationReasonCode;
   details?: string;
-}): Promise<{ id: string; status: ModerationFlagStatus; target: { type: ModerationTargetType; id: string; visibility?: "visible" | "hidden" } }> {
-  const clientRequestId = requestId();
-  return request("/flags", {
+}): Promise<{ id: string; status: ModerationFlagStatus; target: { type: ModerationTargetType; id: string } }> {
+  const result = await request<{ flag: { id: string; status: ModerationFlagStatus; subjectType: ModerationTargetType; subjectId: string } }>("/flags", {
     method: "POST",
-    headers: { "Content-Type": "application/json", "Idempotency-Key": clientRequestId },
-    body: JSON.stringify({ schema_version: "v1", ...fields, client_request_id: clientRequestId }),
+    headers: { "Content-Type": "application/json", "Idempotency-Key": requestId() },
+    body: JSON.stringify({ target: fields.target, reason_code: fields.reason_code, reason_text: fields.details }),
   });
+  return { id: result.flag.id, status: result.flag.status, target: { type: result.flag.subjectType, id: result.flag.subjectId } };
 }

@@ -55,6 +55,7 @@ import {
   type ThreadView,
 } from "./community.ports.ts";
 import type { CommunitySocialOwnerPort } from "../public/index.ts";
+import { checkContentRestrictions, CONTENT_RESTRICTIONS_PORT, type ContentRestrictionsPort } from "../../moderation/public/index.ts";
 
 const fail = (status: number): never => {
   throw status === 404
@@ -98,6 +99,7 @@ export class CommunityService implements CommunityPort, CommunitySocialOwnerPort
     @Inject(COMMUNITY_ANALYTICS_PORT) private readonly analytics: CommunityAnalyticsPort,
     @Inject(COMMUNITY_REPUTATION_PORT) private readonly reputation: CommunityReputationPort,
     @Inject(COMMUNITY_STORAGE_PORT) private readonly storage: CommunityStoragePort,
+    @Inject(CONTENT_RESTRICTIONS_PORT) private readonly contentRestrictions: ContentRestrictionsPort,
   ) {}
   async create(i: { name: string; slug: string; description: string | null; visibility: string; tagIds: readonly string[]; userId: UserId }) {
     if (!i.name.trim() || i.name.trim().length > COMMUNITY_NAME_MAX_LENGTH || (i.description && i.description.length > COMMUNITY_DESCRIPTION_MAX_LENGTH)) fail(422);
@@ -192,6 +194,7 @@ export class CommunityService implements CommunityPort, CommunitySocialOwnerPort
     };
   }
   async createPost(id: string, u: UserId, i: { kind: PostKind; content: string; parentPostId?: string }) {
+    await checkContentRestrictions(this.contentRestrictions, "thread", id);
     const t = found(await this.repo.thread(id));
     if (t.status !== "open") fail(409);
     const allowed = t.type === "question" ? ["answer", "comment"] : ["reply", "comment"];
@@ -214,6 +217,7 @@ export class CommunityService implements CommunityPort, CommunitySocialOwnerPort
     return { votes_up: r.up, votes_down: r.down, my_vote: v };
   }
   async uploadAttachment(id: string, u: UserId, file: { buffer: Buffer; originalname: string }) {
+    await checkContentRestrictions(this.contentRestrictions, "post", id);
     if (!this.storage.configured()) throw new ServiceUnavailableException();
     const p = found(await this.repo.post(id));
     if (p.author_id !== u) fail(403);
@@ -236,6 +240,7 @@ export class CommunityService implements CommunityPort, CommunitySocialOwnerPort
     return { attachment: { id: a.id, kind: a.kind, url: `/posts/${id}/attachments/${a.id}`, size_bytes: a.size_bytes, created_at: a.created_at } };
   }
   async uploadAttachmentStream(id: string, u: UserId, file: { stream: NodeJS.ReadableStream; originalname: string; mimeType: string }): Promise<{ readonly attachment: AttachmentView }> {
+    await checkContentRestrictions(this.contentRestrictions, "post", id);
     if (!this.storage.configured()) throw new ServiceUnavailableException();
     const p = found(await this.repo.post(id));
     if (p.author_id !== u) fail(403);

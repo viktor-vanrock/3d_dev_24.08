@@ -37,6 +37,215 @@
         ]
       }
     },
+    "/admin/audit-log": {
+      "get": {
+        "operationId": "AuditLogController_list",
+        "parameters": [
+          {
+            "name": "actor_user_id",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "subject_type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "subject_id",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "action",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 0,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "AuditLog"
+        ]
+      }
+    },
+    "/admin/audit-log/health": {
+      "get": {
+        "operationId": "AuditLogController_health",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "AuditLog"
+        ]
+      }
+    },
+    "/admin/audit-log/export": {
+      "get": {
+        "operationId": "AuditLogController_export",
+        "parameters": [
+          {
+            "name": "actor_user_id",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "subject_type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "subject_id",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "action",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 0,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "AuditLog"
+        ]
+      }
+    },
+    "/admin/audit-log/{id}/legal-hold": {
+      "post": {
+        "operationId": "AuditLogController_legalHold",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "AuditLog"
+        ]
+      }
+    },
     "/consent": {
       "post": {
         "operationId": "AnalyticsController_consent",
@@ -7661,6 +7870,890 @@
         "summary": "Restore an archived Project",
         "tags": [
           "Projects"
+        ]
+      }
+    },
+    "/v1/community/flags": {
+      "post": {
+        "operationId": "ModerationController_submitFlag",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitFlagDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Moderation"
+        ]
+      }
+    },
+    "/v1/community/moderation/queue": {
+      "get": {
+        "operationId": "ModerationController_queue",
+        "parameters": [
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Moderation"
+        ]
+      }
+    },
+    "/v1/community/flags/{id}/claim": {
+      "post": {
+        "operationId": "ModerationController_claim",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Moderation"
+        ]
+      },
+      "delete": {
+        "operationId": "ModerationController_release",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Moderation"
+        ]
+      }
+    },
+    "/v1/community/flags/{id}/decision": {
+      "post": {
+        "operationId": "ModerationController_decide",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecideFlagDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Moderation"
+        ]
+      }
+    },
+    "/v1/community/moderation/actions/{id}/reversal": {
+      "post": {
+        "operationId": "ModerationController_reverse",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReversalDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Moderation"
+        ]
+      }
+    },
+    "/v1/community/restrictions": {
+      "get": {
+        "operationId": "ModerationController_restrictions",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Moderation"
+        ]
+      }
+    },
+    "/sanctions": {
+      "post": {
+        "operationId": "SanctionsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSanctionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SanctionResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session is absent or invalid\n\nMay return account_restricted with endsAt null for indefinite sanctions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "portal_session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a reversible sanction",
+        "tags": [
+          "sanctions"
+        ]
+      }
+    },
+    "/sanctions/{id}/cancel": {
+      "post": {
+        "operationId": "SanctionsController_cancel",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelSanctionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SanctionResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session is absent or invalid\n\nMay return account_restricted with endsAt null for indefinite sanctions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "portal_session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Cancel a sanction",
+        "tags": [
+          "sanctions"
+        ]
+      }
+    },
+    "/users/{id}/sanctions/active": {
+      "get": {
+        "operationId": "SanctionsController_active",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns null when no active sanction exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SanctionResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session is absent or invalid\n\nMay return account_restricted with endsAt null for indefinite sanctions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "portal_session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Read active sanctions",
+        "tags": [
+          "sanctions"
+        ]
+      }
+    },
+    "/users/{id}/sanctions/history": {
+      "get": {
+        "operationId": "SanctionsController_history",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SanctionResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session is absent or invalid\n\nMay return account_restricted with endsAt null for indefinite sanctions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "portal_session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Read sanctions history",
+        "tags": [
+          "sanctions"
+        ]
+      }
+    },
+    "/sanctions/{id}/appeals": {
+      "post": {
+        "operationId": "AppealsController_submit",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitAppealDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SanctionAppealResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session is absent or invalid\n\nMay return account_restricted with endsAt null for indefinite sanctions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "portal_session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Submit a sanction appeal",
+        "tags": [
+          "sanctions"
+        ]
+      },
+      "get": {
+        "operationId": "AppealsController_list",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SanctionAppealResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session is absent or invalid\n\nMay return account_restricted with endsAt null for indefinite sanctions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "portal_session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List sanction appeals",
+        "tags": [
+          "sanctions"
+        ]
+      }
+    },
+    "/appeals/{id}/resolve": {
+      "post": {
+        "operationId": "AppealsController_resolve",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveAppealDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SanctionAppealResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session is absent or invalid\n\nMay return account_restricted with endsAt null for indefinite sanctions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "portal_session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Resolve a sanction appeal",
+        "tags": [
+          "sanctions"
         ]
       }
     },
@@ -21344,670 +22437,6 @@
         ]
       }
     },
-    "/sanctions": {
-      "post": {
-        "operationId": "SanctionsController_create",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateSanctionDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SanctionResponseDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Session is absent or invalid\n\nMay return account_restricted with endsAt null for indefinite sanctions",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "portal_session": []
-          },
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Create a reversible sanction",
-        "tags": [
-          "sanctions"
-        ]
-      }
-    },
-    "/sanctions/{id}/cancel": {
-      "post": {
-        "operationId": "SanctionsController_cancel",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CancelSanctionDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SanctionResponseDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Session is absent or invalid\n\nMay return account_restricted with endsAt null for indefinite sanctions",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "portal_session": []
-          },
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Cancel a sanction",
-        "tags": [
-          "sanctions"
-        ]
-      }
-    },
-    "/users/{id}/sanctions/active": {
-      "get": {
-        "operationId": "SanctionsController_active",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Returns null when no active sanction exists",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SanctionResponseDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Session is absent or invalid\n\nMay return account_restricted with endsAt null for indefinite sanctions",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "portal_session": []
-          },
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Read active sanctions",
-        "tags": [
-          "sanctions"
-        ]
-      }
-    },
-    "/users/{id}/sanctions/history": {
-      "get": {
-        "operationId": "SanctionsController_history",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/SanctionResponseDto"
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Session is absent or invalid\n\nMay return account_restricted with endsAt null for indefinite sanctions",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "portal_session": []
-          },
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Read sanctions history",
-        "tags": [
-          "sanctions"
-        ]
-      }
-    },
-    "/sanctions/{id}/appeals": {
-      "post": {
-        "operationId": "AppealsController_submit",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SubmitAppealDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SanctionAppealResponseDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Session is absent or invalid\n\nMay return account_restricted with endsAt null for indefinite sanctions",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "portal_session": []
-          },
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Submit a sanction appeal",
-        "tags": [
-          "sanctions"
-        ]
-      },
-      "get": {
-        "operationId": "AppealsController_list",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/SanctionAppealResponseDto"
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Session is absent or invalid\n\nMay return account_restricted with endsAt null for indefinite sanctions",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "portal_session": []
-          },
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "List sanction appeals",
-        "tags": [
-          "sanctions"
-        ]
-      }
-    },
-    "/appeals/{id}/resolve": {
-      "post": {
-        "operationId": "AppealsController_resolve",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ResolveAppealDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SanctionAppealResponseDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Session is absent or invalid\n\nMay return account_restricted with endsAt null for indefinite sanctions",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorEnvelopeDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "portal_session": []
-          },
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Resolve a sanction appeal",
-        "tags": [
-          "sanctions"
-        ]
-      }
-    },
     "/seo/meta": {
       "get": {
         "operationId": "SeoController_meta",
@@ -23699,6 +24128,55 @@
         ]
       }
     },
+    "/auth/sessions": {
+      "get": {
+        "operationId": "AuthController_listSessions",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      },
+      "delete": {
+        "operationId": "AuthController_deleteOtherSessions",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/sessions/{id}": {
+      "delete": {
+        "operationId": "AuthController_deleteSession",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
     "/auth/email/start": {
       "post": {
         "operationId": "AuthController_emailStart",
@@ -23840,6 +24318,102 @@
         "summary": "Verify an email OTP and issue a session",
         "tags": [
           "auth"
+        ]
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "operationId": "AuthController_register",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/register/verify": {
+      "post": {
+        "operationId": "AuthController_registerVerify",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterVerifyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/recovery/start": {
+      "post": {
+        "operationId": "AuthController_recoveryStart",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecoveryStartDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/recovery/verify": {
+      "post": {
+        "operationId": "AuthController_recoveryVerify",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecoveryVerifyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Auth"
         ]
       }
     },
@@ -31692,6 +32266,214 @@
           "contract_version"
         ]
       },
+      "SubmitFlagDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "DecideFlagDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "ReversalDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateSanctionDto": {
+        "type": "object",
+        "properties": {
+          "targetId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "suspension",
+              "ban"
+            ]
+          },
+          "reasonCode": {
+            "type": "string",
+            "enum": [
+              "spam",
+              "abuse",
+              "fraud",
+              "tos_violation",
+              "security",
+              "other"
+            ]
+          },
+          "reasonNote": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "evidenceUrl": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 2000
+          },
+          "endsAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "minLength": 16,
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "targetId",
+          "type",
+          "reasonCode",
+          "idempotencyKey"
+        ]
+      },
+      "SanctionResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "reasonCode": {
+            "type": "string"
+          },
+          "reasonNote": {
+            "type": "object",
+            "nullable": true
+          },
+          "evidenceUrl": {
+            "type": "object",
+            "nullable": true
+          },
+          "startsAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "endsAt": {
+            "type": "object",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "createdBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "cancelledBy": {
+            "type": "object",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "type",
+          "state",
+          "reasonCode",
+          "startsAt",
+          "createdBy",
+          "createdAt"
+        ]
+      },
+      "CancelSanctionDto": {
+        "type": "object",
+        "properties": {
+          "cancelReason": {
+            "type": "string",
+            "maxLength": 2000
+          }
+        },
+        "required": [
+          "cancelReason"
+        ]
+      },
+      "SubmitAppealDto": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "maxLength": 4000
+          }
+        },
+        "required": [
+          "message"
+        ]
+      },
+      "SanctionAppealResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sanctionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "submittedBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "message": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "resolvedBy": {
+            "type": "object",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "resolutionNote": {
+            "type": "object",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "sanctionId",
+          "submittedBy",
+          "message",
+          "state"
+        ]
+      },
+      "ResolveAppealDto": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "type": "string",
+            "enum": [
+              "accepted",
+              "rejected"
+            ]
+          },
+          "resolutionNote": {
+            "type": "string",
+            "maxLength": 2000
+          }
+        },
+        "required": [
+          "state",
+          "resolutionNote"
+        ]
+      },
       "AvatarConfigDto": {
         "type": "object",
         "properties": {
@@ -32006,6 +32788,14 @@
           },
           "display_name": {
             "type": "string",
+            "nullable": true
+          },
+          "gender": {
+            "type": "string",
+            "nullable": true
+          },
+          "birth_year": {
+            "type": "number",
             "nullable": true
           },
           "avatar_url": {
@@ -41194,202 +41984,6 @@
           "model"
         ]
       },
-      "CreateSanctionDto": {
-        "type": "object",
-        "properties": {
-          "targetId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "type": {
-            "type": "string",
-            "enum": [
-              "suspension",
-              "ban"
-            ]
-          },
-          "reasonCode": {
-            "type": "string",
-            "enum": [
-              "spam",
-              "abuse",
-              "fraud",
-              "tos_violation",
-              "security",
-              "other"
-            ]
-          },
-          "reasonNote": {
-            "type": "string",
-            "maxLength": 2000
-          },
-          "evidenceUrl": {
-            "type": "string",
-            "format": "uri",
-            "maxLength": 2000
-          },
-          "endsAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "idempotencyKey": {
-            "type": "string",
-            "minLength": 16,
-            "maxLength": 128
-          }
-        },
-        "required": [
-          "targetId",
-          "type",
-          "reasonCode",
-          "idempotencyKey"
-        ]
-      },
-      "SanctionResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "userId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "type": {
-            "type": "string"
-          },
-          "state": {
-            "type": "string"
-          },
-          "reasonCode": {
-            "type": "string"
-          },
-          "reasonNote": {
-            "type": "object",
-            "nullable": true
-          },
-          "evidenceUrl": {
-            "type": "object",
-            "nullable": true
-          },
-          "startsAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "endsAt": {
-            "type": "object",
-            "nullable": true,
-            "format": "date-time"
-          },
-          "createdBy": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "cancelledBy": {
-            "type": "object",
-            "nullable": true,
-            "format": "uuid"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "userId",
-          "type",
-          "state",
-          "reasonCode",
-          "startsAt",
-          "createdBy",
-          "createdAt"
-        ]
-      },
-      "CancelSanctionDto": {
-        "type": "object",
-        "properties": {
-          "cancelReason": {
-            "type": "string",
-            "maxLength": 2000
-          }
-        },
-        "required": [
-          "cancelReason"
-        ]
-      },
-      "SubmitAppealDto": {
-        "type": "object",
-        "properties": {
-          "message": {
-            "type": "string",
-            "maxLength": 4000
-          }
-        },
-        "required": [
-          "message"
-        ]
-      },
-      "SanctionAppealResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "sanctionId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "submittedBy": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "message": {
-            "type": "string"
-          },
-          "state": {
-            "type": "string"
-          },
-          "resolvedBy": {
-            "type": "object",
-            "nullable": true,
-            "format": "uuid"
-          },
-          "resolutionNote": {
-            "type": "object",
-            "nullable": true
-          }
-        },
-        "required": [
-          "id",
-          "sanctionId",
-          "submittedBy",
-          "message",
-          "state"
-        ]
-      },
-      "ResolveAppealDto": {
-        "type": "object",
-        "properties": {
-          "state": {
-            "type": "string",
-            "enum": [
-              "accepted",
-              "rejected"
-            ]
-          },
-          "resolutionNote": {
-            "type": "string",
-            "maxLength": 2000
-          }
-        },
-        "required": [
-          "state",
-          "resolutionNote"
-        ]
-      },
       "AchievementDto": {
         "type": "object",
         "properties": {
@@ -42720,10 +43314,7 @@
           },
           "domain": {
             "type": "string",
-            "enum": [
-              "sberbank.ru",
-              "sberdevices.ru"
-            ]
+            "example": "example.ru"
           }
         },
         "required": [
@@ -42740,21 +43331,105 @@
           },
           "domain": {
             "type": "string",
-            "enum": [
-              "sberbank.ru",
-              "sberdevices.ru"
-            ]
+            "example": "example.ru"
           },
           "code": {
             "type": "string",
-            "example": "012345",
-            "pattern": "^[0-9]{6}$"
+            "example": "0123",
+            "pattern": "^[0-9]{4}$"
           }
         },
         "required": [
           "localPart",
           "domain",
           "code"
+        ]
+      },
+      "RegisterDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "ivan@example.ru"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "minLength": 12,
+            "maxLength": 20
+          },
+          "displayName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "gender": {
+            "type": "string",
+            "nullable": true
+          },
+          "birthYear": {
+            "type": "number",
+            "nullable": true
+          }
+        },
+        "required": [
+          "email",
+          "password",
+          "displayName"
+        ]
+      },
+      "RegisterVerifyDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "code": {
+            "type": "string",
+            "pattern": "^[0-9]{4}$"
+          }
+        },
+        "required": [
+          "email",
+          "code"
+        ]
+      },
+      "RecoveryStartDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          }
+        },
+        "required": [
+          "email"
+        ]
+      },
+      "RecoveryVerifyDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "code": {
+            "type": "string",
+            "pattern": "^[0-9]{4}$"
+          },
+          "newPassword": {
+            "type": "string",
+            "format": "password",
+            "minLength": 12,
+            "maxLength": 20
+          }
+        },
+        "required": [
+          "email",
+          "code",
+          "newPassword"
         ]
       },
       "PasswordLoginDto": {

@@ -27,7 +27,7 @@ module.exports = {
       from: {
         // any file inside a concrete domain (exclude shared _kernel/_boundaries)
         path: "^src/modules/(?!_)([^/]+)/",
-        pathNot: "\\.test\\.ts$",
+        pathNot: ["\\.test\\.ts$", "\\.module\\.ts$"],
       },
       to: {
         // lands in a DIFFERENT concrete domain ...
@@ -36,6 +36,24 @@ module.exports = {
         pathNot: [
           "^src/modules/(?!_)[^/]+/public/", // public barrel is allowed
           "^src/modules/$1/", // same-domain ($1 = source domain capture) is allowed
+        ],
+      },
+    },
+    {
+      name: "cross-domain-module-imports-only-modules-or-public",
+      comment:
+        "NestJS modules may import other NestJS modules directly; all other cross-domain " +
+        "dependencies from a module must still use the public barrel.",
+      severity: "error",
+      from: {
+        path: "^src/modules/(?!_)([^/]+)/.*\\.module\\.ts$",
+      },
+      to: {
+        path: "^src/modules/(?!_)([^/]+)/",
+        pathNot: [
+          "^src/modules/(?!_)[^/]+/public/",
+          "^src/modules/$1/",
+          "\\.module\\.ts$",
         ],
       },
     },

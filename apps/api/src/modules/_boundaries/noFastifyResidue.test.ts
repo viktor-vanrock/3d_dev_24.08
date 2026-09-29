@@ -16,7 +16,7 @@ import { parse as parseYaml } from "yaml";
 //    типов, 0 прямых Fastify-пакетов в manifest/lockfile/installed state, default scripts запускают Nest,
 //    а source/dist legacy-entrypoints и доменные routes.ts удалены. Красный гейт блокирует cutover.
 
-const API_ROOT = path.dirname(fileURLToPath(import.meta.url)).replace(/\/src\/modules\/_boundaries$/, "");
+const API_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const WORKSPACE_ROOT = path.resolve(API_ROOT, "../..");
 const SRC = path.join(API_ROOT, "src");
 const STRICT = process.env.NO_FASTIFY_STRICT === "1";

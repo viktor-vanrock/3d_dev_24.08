@@ -4,6 +4,7 @@ import { DATABASE_POOL } from "../../../nest/database/database.constants.ts";
 import { SanctionAppealId, SanctionId, UserId, type UserId as UserIdType } from "../../_kernel/brandedIds.ts";
 import type { Sanction, SanctionAppeal, SanctionAppealState, SanctionReasonCode, SanctionState, SanctionType } from "../domain/sanctions.ts";
 import type { SanctionsReadPort } from "../public/index.ts";
+import type { CreateSanctionInTransactionInput, SanctionsTransactionPort } from "../domain/sanctions-transaction.port.ts";
 
 export interface SanctionRow {
   id: string; user_id: string; type: SanctionType; state: SanctionState; reason_code: SanctionReasonCode; reason_note: string | null; evidence_url: string | null;
@@ -30,8 +31,16 @@ function appealFromRow(row: SanctionAppealRow): SanctionAppeal {
 }
 /** Private SQL owner for sanctions and appeals. Lifecycle orchestration arrives in later PRs. */
 @Injectable()
-export class SanctionsRepository implements SanctionsReadPort {
+export class SanctionsRepository implements SanctionsReadPort, SanctionsTransactionPort {
   constructor(@Inject(DATABASE_POOL) private readonly pool: Pool) {}
+  async findActiveSanctionForUser(userId: string): Promise<{ id: string; type: string; endsAt: Date | null } | null> {
+    const { rows } = await this.pool.query<{ id: string; type: string; ends_at: Date | null }>(
+      `select id, type, ends_at from sanctions where user_id = $1 and state = 'active' and (ends_at is null or ends_at > now()) limit 1`,
+      [userId],
+    );
+    const row = rows[0];
+    return row === undefined ? null : { id: row.id, type: row.type, endsAt: row.ends_at };
+  }
   async findActiveForUser(userId: UserIdType): Promise<Sanction | null> {
     const result = await this.pool.query<SanctionRow>(`select ${SANCTION_COLUMNS} from sanctions where user_id = $1 and state = 'active'`, [userId]);
     const row = result.rows[0]; return row === undefined ? null : sanctionFromRow(row);
@@ -72,6 +81,18 @@ export class SanctionsRepository implements SanctionsReadPort {
       [input.userId, input.type, input.state, input.reasonCode, input.reasonNote, input.evidenceUrl, input.startsAt, input.endsAt, input.createdBy, input.cancelledAt, input.cancelledBy, input.cancelReason, input.idempotencyKey, input.idempotencyPayloadHash],
     );
     return sanctionFromRow(result.rows[0]!);
+  }
+
+  async createInTransaction(tx: PoolClient, input: CreateSanctionInTransactionInput): Promise<Sanction> {
+    return this.insertSanction(tx, { userId: UserId(input.targetUserId), type: input.type, state: "active", reasonCode: input.reasonCode as SanctionReasonCode, reasonNote: input.reasonNote, evidenceUrl: input.evidenceUrl, startsAt: new Date(), endsAt: input.endsAt, createdBy: UserId(input.actorId), cancelledAt: null, cancelledBy: null, cancelReason: null, idempotencyKey: input.idempotencyKey, idempotencyPayloadHash: input.idempotencyPayloadHash });
+  }
+
+  async cancelInTransaction(tx: PoolClient, input: { readonly sanctionId: string; readonly cancelledBy: string; readonly cancelReason: string }): Promise<void> {
+    await tx.query(
+      `update sanctions set state = 'cancelled', cancelled_at = now(), cancelled_by = $2, cancel_reason = $3, updated_at = now()
+       where id = $1 and state = 'active'`,
+      [input.sanctionId, input.cancelledBy, input.cancelReason],
+    );
   }
 
   async cancelSanction(tx: PoolClient, id: ReturnType<typeof SanctionId>, input: { readonly actorId: UserIdType; readonly reason: string }): Promise<Sanction | null> {

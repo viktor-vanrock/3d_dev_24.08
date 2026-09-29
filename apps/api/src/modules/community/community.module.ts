@@ -4,9 +4,10 @@ import { CommunityController } from "./api/community.controller.ts";
 import { CommunityService } from "./application/community.service.ts";
 import { CommunityRepository } from "./infrastructure/community.repository.ts";
 import { COMMUNITY_FEED_READ_PORT, COMMUNITY_ORGANIZATION_PORT, COMMUNITY_PORT, COMMUNITY_SOCIAL_OWNER_PORT } from "./public/index.ts";
+import { ModerationModule } from "../moderation/moderation.module.ts";
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, ModerationModule],
   controllers: [CommunityController],
   providers: [
     CommunityRepository,
