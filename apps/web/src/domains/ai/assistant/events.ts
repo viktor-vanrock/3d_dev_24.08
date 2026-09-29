@@ -1,4 +1,4 @@
-export type AssistantPageKind = "home" | "feed" | "printers" | "projects" | "site";
+export type AssistantPageKind = "home" | "feed" | "printers" | "projects" | "materials" | "site";
 
 export interface AssistantPageContext {
   kind: AssistantPageKind;
@@ -22,6 +22,9 @@ export function assistantPageContext(pathname = window.location.pathname): Assis
   }
   if (pathname.startsWith("/project") || pathname.startsWith("/market")) {
     return { kind: "projects", label: "", placeholder: "Что хотите собрать?", pathname };
+  }
+  if (pathname.startsWith("/materials")) {
+    return { kind: "materials", label: "", placeholder: "Какой материал ищете?", pathname };
   }
   return { kind: "site", label: "", placeholder: "Что хотите найти?", pathname };
 }

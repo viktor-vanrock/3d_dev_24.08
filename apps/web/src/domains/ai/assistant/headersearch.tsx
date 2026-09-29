@@ -17,6 +17,7 @@ const QUICK_QUERIES: Record<AssistantPageKind, string[]> = {
   feed: ["Проекты сообщества", "Обзоры принтеров", "Новости брендов"],
   printers: ["Для начинающих", "С AMS", "До 100 000 ₽"],
   projects: ["Без AMS", "На один вечер", "Для моего принтера"],
+  materials: ["PLA для фигурок", "PETG для деталей", "Матовый филамент"],
   site: ["Найти проект", "Помочь с принтером", "Спросить о печати"],
 };
 
@@ -24,12 +25,14 @@ export function AssistantHeaderSearch({
   user,
   onTypingChange,
   contextKey,
+  page = false,
 }: {
   user: SessionUser | null;
   onTypingChange?: (typing: boolean) => void;
   // Постоянная шапка больше не перемонтируется на route. Ключ сообщает поиску, что нужно
   // перечитать pathname/placeholder и оставить тот же DOM-узел в новом контексте.
   contextKey?: string;
+  page?: boolean;
 }) {
   const promptGuestLogin = useGuestLogin();
   const context = useMemo(() => assistantPageContext(), [contextKey]);
@@ -85,7 +88,7 @@ export function AssistantHeaderSearch({
   return (
     <form
       ref={formRef}
-      className="assistantHeaderSearch"
+      className={`assistantHeaderSearch${page ? " assistantPageSearch" : ""}`}
       role="search"
       data-context={context.kind}
       data-has-query={query.trim() ? "true" : undefined}
@@ -104,21 +107,25 @@ export function AssistantHeaderSearch({
         }
       }}
     >
-      <button
-        type="button"
-        className="assistantHeaderFocus pressable"
-        aria-label="Перейти к поиску"
-        onClick={() => {
-          if (window.matchMedia("(max-width: 760px)").matches) {
-            openGiga();
-            return;
-          }
-          setFocused(true);
-          inputRef.current?.focus();
-        }}
-      >
-        <SearchIcon />
-      </button>
+      {page ? (
+        <span className="assistantHeaderFocus" aria-hidden="true"><SearchIcon /></span>
+      ) : (
+        <button
+          type="button"
+          className="assistantHeaderFocus pressable"
+          aria-label="Перейти к поиску"
+          onClick={() => {
+            if (window.matchMedia("(max-width: 760px)").matches) {
+              openGiga();
+              return;
+            }
+            setFocused(true);
+            inputRef.current?.focus();
+          }}
+        >
+          <SearchIcon />
+        </button>
+      )}
       <input
         ref={inputRef}
         aria-label={context.placeholder}
@@ -131,6 +138,19 @@ export function AssistantHeaderSearch({
           setFocused(true);
         }}
       />
+      {page && query ? (
+        <button
+          type="button"
+          className="assistantPageSearchClear"
+          aria-label="Очистить"
+          onClick={() => {
+            setQuery("");
+            inputRef.current?.focus();
+          }}
+        >
+          ×
+        </button>
+      ) : null}
       {suggestionsOpen ? (
         <section className="assistantHeaderDropdown" aria-label="Варианты поиска">
           <button type="button" className="assistantHeaderExact pressable" onClick={() => search(value)}>

@@ -2,7 +2,6 @@ import { useState } from "react";
 import type { MarketModel } from "@domains/commerce";
 import { apiAssetUrl } from "@shared/api";
 import { modelPath, navigate } from "../../router.ts";
-import { useInteractionSound } from "@platform/sound";
 
 // Плитка модели каталога (docs/design/model-preview.md § «Псевдо-3D превью») — общий
 // рендер для галереи популярного (home.tsx), модуля совместимости и ленты автора
@@ -51,7 +50,6 @@ export function ModelTileButton({
   onOpen?: (model: MarketModel, index: number) => void;
   hideBrokenPreview?: boolean;
 }) {
-  const sound = useInteractionSound();
   const [thumbnailFailed, setThumbnailFailed] = useState(false);
   if (hideBrokenPreview && (!isShowcaseModel(model) || thumbnailFailed)) return null;
 
@@ -60,7 +58,6 @@ export function ModelTileButton({
       type="button"
       className="homeModelTile pressable"
       style={{ ["--i" as string]: index % 6 }}
-      onPointerDown={sound.tick}
       onClick={() => {
         onOpen?.(model, index);
         navigate(modelPath(model.id));

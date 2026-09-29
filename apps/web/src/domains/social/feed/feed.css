@@ -21,6 +21,11 @@
   align-items: start;
 }
 
+.feedPageSearch {
+  margin-bottom: 20px;
+}
+
+
 .feedCenter {
   min-width: 0;
   max-width: none;
@@ -2904,16 +2909,20 @@
 
 .feedEditorComposerHead {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(190px, 230px);
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px;
 }
 
 .feedEditorContext {
+  width: 100%;
   gap: 12px;
   padding: 12px 14px;
+  box-sizing: border-box;
 }
 
 .feedEditorCommunity {
+  position: relative;
+  width: min(280px, 100%);
   display: flex;
   flex-direction: column;
   gap: 5px;
@@ -2923,7 +2932,33 @@
 
 .feedEditorCommunity .marketInput {
   min-height: 48px;
+  padding: 0 44px 0 16px;
   border-radius: 16px;
+  appearance: none;
+  cursor: pointer;
+}
+
+.feedEditorCommunity::after {
+  content: "";
+  position: absolute;
+  right: 16px;
+  bottom: 20px;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid #52605a;
+  border-bottom: 2px solid #52605a;
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+
+.feedEditorCommunity .marketInput:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent), 0 5px 18px color-mix(in srgb, var(--shadow) 16%, transparent);
+}
+
+.feedEditorCommunity .marketInput option {
+  background: #fff;
+  color: #17221b;
 }
 
 .feedEditorAttachmentLabel {

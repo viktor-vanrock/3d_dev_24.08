@@ -248,11 +248,7 @@ function DefaultFeed({ conceptFlow }: { conceptFlow: ConceptFlow }) {
     loadMoreConcepts();
   }, [loadMoreConcepts, loadMoreModels]);
   const sentinelRef = useInfiniteSentinel(hasMore, loadingMore, loadMore);
-  const feedKeys = useStableFeedKeys(
-    models,
-    concepts,
-    loading || conceptsInitialLoading || loadingMore,
-  );
+  const feedKeys = useStableFeedKeys(models, concepts, loading || conceptsInitialLoading || loadingMore);
   const modelById = new Map(models.map((model) => [model.id, model]));
   const conceptById = new Map(concepts.map((concept) => [concept.id, concept]));
   const tiles: ReactNode[] = [];

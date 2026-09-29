@@ -7,7 +7,7 @@ import { HomeHeader, type Section, useSectionSwipeNav } from "@platform/nav";
 // eslint-disable-next-line boundaries/element-types, boundaries/entry-point -- легатное ребро (Этап 4.5): CSS side-effect, не index.ts; home.css остаётся общим "рабочим хромом" для доменных экранов, развязка отложена до pages/DI (Этап 10). См. MIGRATION.md.
 import "@pages/home/home.css";
 // eslint-disable-next-line boundaries/element-types -- легатное междоменное ребро (Этап 9): printing→ai ASSISTANT_CONTEXT_SEARCH_EVENT/listPrinters/PrinterRecord/KINEMATICS_OPTIONS (каталог принтеров читает исследовательскую базу и слушает контекстный поиск ассистента), развязка отложена до pages/DI. См. MIGRATION.md.
-import { ASSISTANT_CONTEXT_SEARCH_EVENT, type AssistantContextSearchDetail, listPrinters, type PrinterRecord, KINEMATICS_OPTIONS } from "@domains/ai";
+import { ASSISTANT_CONTEXT_SEARCH_EVENT, AssistantHeaderSearch, type AssistantContextSearchDetail, listPrinters, type PrinterRecord, KINEMATICS_OPTIONS } from "@domains/ai";
 import { headerModeFor, issueNewPath, materialsPath, navigate, parkAddPath, researchNewPath } from "../../../router.ts";
 import { useInteractionSound } from "@platform/sound";
 import { AuroraBackground, SegmentToggle, Chip, EmptyState, Eyebrow, PrinterIcon } from "@shared/ui";
@@ -179,6 +179,7 @@ export function PrintersScreen({
         onPointerUp={swipe.onPointerUp}
         onPointerCancel={swipe.onPointerCancel}
       >
+        <AssistantHeaderSearch user={user} contextKey="printers" page />
         <FleetBar printers={activation.printers} />
 
         <div className="prnToggleRow">

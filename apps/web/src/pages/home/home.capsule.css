@@ -37,11 +37,22 @@
     min-width: 46px;
     height: 46px;
   }
+
+  .homeCapsule[data-guest] {
+    width: auto;
+    min-width: 0;
+  }
 }
 
 .homeCapsule[data-open] {
   border-color: color-mix(in srgb, var(--accent) 34%, var(--border));
   background: color-mix(in srgb, var(--surface) 76%, transparent);
+}
+
+.homeGuestControls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
 
 ::view-transition-group(shell-capsule) {
@@ -50,7 +61,27 @@
 }
 
 .homeClock {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  user-select: none;
   view-transition-name: shell-clock;
+}
+
+.homeClockTime {
+  flex-shrink: 0;
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.homeClockDate {
+  color: var(--text-dim);
+  font-size: 13px;
+  white-space: nowrap;
 }
 
 ::view-transition-group(shell-clock) {

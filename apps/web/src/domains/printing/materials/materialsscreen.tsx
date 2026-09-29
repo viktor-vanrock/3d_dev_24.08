@@ -2,6 +2,7 @@ import { useCallback, useEffect, useId, useState, type ChangeEvent } from "react
 import type { SessionUser } from "@shared/types";
 import { useActivation } from "@shared/lib";
 import { HomeHeader, type Section } from "@platform/nav";
+import { ASSISTANT_CONTEXT_SEARCH_EVENT, AssistantHeaderSearch, type AssistantContextSearchDetail } from "@domains/ai";
 // eslint-disable-next-line boundaries/element-types, boundaries/entry-point -- легатное ребро (Этап 4.5): CSS side-effect, не index.ts; home.css остаётся общим "рабочим хромом" для доменных экранов, разрядка отложена до pages/DI (Этап 10). Cм. MIGRATION.md.
 import "@pages/home/home.css";
 import { headerModeFor, materialPath, materialsPath } from "../../../router.ts";
@@ -56,6 +57,15 @@ export function MaterialsScreen({ user, section, onSectionChange }: { user: Sess
     }, 350);
     return () => window.clearTimeout(timer);
   }, [qInput]);
+
+  useEffect(() => {
+    const onContextSearch = (event: Event) => {
+      const detail = (event as CustomEvent<AssistantContextSearchDetail>).detail;
+      if (detail?.context.kind === "materials") setQInput(detail.query);
+    };
+    window.addEventListener(ASSISTANT_CONTEXT_SEARCH_EVENT, onContextSearch);
+    return () => window.removeEventListener(ASSISTANT_CONTEXT_SEARCH_EVENT, onContextSearch);
+  }, []);
 
   useEffect(() => {
     const onPopState = () => {
@@ -146,7 +156,8 @@ export function MaterialsScreen({ user, section, onSectionChange }: { user: Sess
       <div style={{ position: "relative", zIndex: 30 }}>
         <HomeHeader user={user} printers={activation.printers} section={section} onSectionChange={onSectionChange} mode={headerModeFor("materials")} />
       </div>
-      <main className="homeContent materialsContent">
+      <main className="homeContent homeWorkspaceBody materialsContent">
+        <AssistantHeaderSearch user={user} contextKey="materials" page />
         <header className="materialsIntro">
           <Eyebrow>КАТАЛОГ МАТЕРИАЛОВ</Eyebrow>
           <Heading size="md">Материалы для печати</Heading>

@@ -5768,14 +5768,6 @@ ALTER TABLE ONLY public.sessions
 
 
 --
--- Name: sessions sessions_token_hash_unique; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.sessions
-    ADD CONSTRAINT sessions_token_hash_unique UNIQUE (session_token_hash);
-
-
---
 -- Name: slice_cache_entries slice_cache_entries_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 

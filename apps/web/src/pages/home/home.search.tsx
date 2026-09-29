@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, type ChangeEvent, type ReactNode } from "react";
 import { ASSISTANT_CONTEXT_SEARCH_EVENT, type AssistantContextSearchDetail } from "@domains/ai";
 import { listModels, type MarketModel } from "@domains/commerce";
-import { useInteractionSound } from "@platform/sound";
 import { Coachmark } from "@shared/ui";
 import type { ActiveCoachmark } from "@domains/onboarding";
 import { CatIcon, ClearIcon, DragonIcon, HeadsetIcon, HookIcon, MoonIcon, PotIcon, SearchIcon, TrayIcon, VaseIcon } from "./home.icons.tsx";
@@ -207,8 +206,6 @@ export function HeroSearch({
   onQueryChange: (query: string) => void;
   coachmark: ActiveCoachmark | null;
 }) {
-  const sound = useInteractionSound();
-
   const trimmed = query.trim();
   function handleChange(event: ChangeEvent<HTMLInputElement>) {
     const next = event.target.value;
@@ -239,6 +236,7 @@ export function HeroSearch({
         <input
           id="home-search-input"
           className="homeGhostInput"
+          autoComplete="off"
           value={query}
           onChange={handleChange}
           placeholder="Найти или создать модель"
@@ -246,10 +244,9 @@ export function HeroSearch({
         />
         <button
           type="button"
-          className="homeInputClear pressable"
+          className="homeInputClear"
           aria-label="Очистить"
           data-visible={query.length > 0 || undefined}
-          onPointerDown={sound.tick}
           onClick={() => onQueryChange("")}
         >
           <ClearIcon />
@@ -267,7 +264,6 @@ export function HeroSearch({
             type="button"
             className="homeHintChip pressable"
             style={{ ["--i" as string]: index }}
-            onPointerDown={sound.tick}
             onClick={() => {
               trackActivation("home_hint_chip_click", { text: hint.text });
               onQueryChange(hint.text);
