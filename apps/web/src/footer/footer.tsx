@@ -22,11 +22,13 @@ const APPLICATION_VERSION = `v${version.year}.${version.release}.${version.minor
 function FooterLinks({ links, label }: { links: readonly { label: string; href: string }[]; label: string }) {
   return (
     <nav className="siteFooter__links" aria-label={label}>
-      {links.map((link) => (
-        <a key={link.href} href={link.href}>
-          {link.label}
-        </a>
-      ))}
+      <ul>
+        {links.map((link) => (
+          <li key={link.href}>
+            <a href={link.href}>{link.label}</a>
+          </li>
+        ))}
+      </ul>
     </nav>
   );
 }
@@ -43,13 +45,13 @@ export function Footer() {
             <p>3mf.tech — портал 3D-печати: модели, принтеры, филаменты, сообщество</p>
           </section>
 
-          <section className="siteFooter__section" aria-labelledby="footer-navigation-title">
+          {/* <section className="siteFooter__section" aria-labelledby="footer-navigation-title">
             <h2 id="footer-navigation-title" className="siteFooter__title">Навигация</h2>
             <FooterLinks links={NAVIGATION_LINKS} label="Основная навигация" />
-          </section>
+          </section> */}
 
           <section className="siteFooter__section" aria-labelledby="footer-legal-title">
-            <h2 id="footer-legal-title" className="siteFooter__title">Юридическая информация</h2>
+            <h2 id="footer-legal-title" className="siteFooter__title">Юридическая информация:</h2>
             <FooterLinks links={LEGAL_LINKS} label="Юридические ссылки" />
           </section>
         </div>

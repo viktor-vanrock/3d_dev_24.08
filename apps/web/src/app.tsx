@@ -20,7 +20,7 @@ import { MaterialCandidatesPage } from "./pages/materialcandidates.tsx";
 import { MaterialDetailScreen, MaterialsScreen, ParkAddScreen, CommunityFirmwareScreen, DiyScreen, ParkScreen, SlicePrintScreen, PlateScreen, PrinterLiveScreen, PrintHistoryScreen, PrinterDeviceMissingScreen, PrinterFaceScreen, PrinterCompareScreen, PrinterDetailScreen, PrintersScreen, PrinterReleasesScreen } from "@domains/printing";
 import { ProductHealthPage } from "./pages/producthealth.tsx";
 import { InstallBanner, PwaRuntime } from "@platform/pwa";
-import { authReturnUrl, clearAuthReturnUrl, feedPath, filamentsPath, headerModeFor, issuesPath, loginPath, marketPath, navigate, navigateWithTransition, printersPath, saveAuthReturnUrl, useRoute } from "./router.ts";
+import { authReturnUrl, clearAuthReturnUrl, feedPath, filamentsPath, headerModeFor, issuesPath, loginPath, marketPath, navigate, navigateWithTransition, printersPath, saveAuthReturnUrl, useRoute, communitiesListPath } from "./router.ts";
 import { ThemeProvider } from "@platform/theme";
 import { AuroraBackground } from "@shared/ui";
 import { DataMaterialEditor } from "./domains/printing/materials/admin/materialeditor.tsx";
@@ -117,7 +117,7 @@ export function App() {
   // (communities/community/thread) пока без своего пункта меню (MF-931) — тоже "home", а не
   // "market": сообщество не часть раздела «Проекты».
   const section: Section =
-    route.screen === "home" || route.screen === "generate" || route.screen === "assistant-chats" || route.screen === "assistant-workshop" || route.screen === "avatar-editor" || route.screen === "communities" || route.screen === "community" || route.screen === "thread" || route.screen === "moderation"
+    route.screen === "home" || route.screen === "generate" || route.screen === "assistant-chats" || route.screen === "assistant-workshop" || route.screen === "avatar-editor"  || route.screen === "thread" || route.screen === "moderation"
       ? "home"
       : route.screen === "feed" || route.screen === "feed-post" || route.screen === "feed-new"
         ? "feed"
@@ -137,6 +137,8 @@ export function App() {
             ? "materials"
           : route.screen === "issue" || route.screen === "idea" || route.screen === "issue-new"
             ? "issue"
+          : route.screen === "communities" || route.screen === "community"
+            ? "communities"
             : "market";
   // Профиль — самостоятельный пользовательский слой, а не подраздел «Проектов».
   // Контекстный `section` сохраняем для вычисления направления следующего перехода,
@@ -161,6 +163,8 @@ export function App() {
               ? printersPath()
               : next === "materials"
                 ? filamentsPath()
+                  : next === "communities"
+                  ? communitiesListPath()
                 : issuesPath();
     navigateWithTransition(path, direction);
   }

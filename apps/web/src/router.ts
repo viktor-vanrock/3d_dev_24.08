@@ -788,6 +788,10 @@ export function communitiesPath(): string {
   return "/community";
 }
 
+export function communitiesListPath(): string {
+  return "/communities";
+}
+
 export function communityPath(slug: string): string {
   return `/community/${encodeURIComponent(slug)}`;
 }

@@ -317,16 +317,16 @@ body:has(.homeTopbar) .ovlToaster {
 
 .ovlModalClose {
   position: absolute;
-  top: 0;
-  left: calc(100% + 8px);
-  width: 48px;
-  height: 48px;
+  top: 8px;
+  left: calc(100% - 40px);
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   border: none;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
   color: var(--text-dim);
   cursor: pointer;
 }
@@ -344,7 +344,7 @@ body:has(.homeTopbar) .ovlToaster {
 
   .ovlModalFrame {
     width: min(var(--ovl-modal-width), calc(100vw - 80px));
-    margin-inline-end: 56px;
+    margin-inline-end: 0;
   }
 
   .ovlModal {
@@ -355,9 +355,10 @@ body:has(.homeTopbar) .ovlToaster {
 
 @media (min-width: 1200px) and (min-height: 640px) {
   .ovlModalClose {
-    width: var(--tv-target-min);
-    height: var(--tv-target-min);
-    left: calc(100% + 12px);
+    width: 26px;
+    height: 26px;
+    left: calc(100% - 36px);
+    top: 10px
   }
 }
 

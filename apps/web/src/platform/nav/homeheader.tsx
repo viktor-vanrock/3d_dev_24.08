@@ -174,7 +174,7 @@ export function HomeHeader({
   }, [open]);
 
   const clock = <Clock key="shell-clock" />;
-
+  console.log('activeSection', activeSection)
   // Реестр маршрутов (navitems.ts) питает нав-табы в обоих режимах — добавление раздела
   // («Принтеры» и т.п.) не требует правок этого компонента (§1.3 projects.page.md). SegmentToggle
   // (ui/segmenttoggle.tsx) — общий компонент с сортировкой на /project (projectspage.tsx): один
@@ -344,6 +344,17 @@ export function HomeHeader({
             <GenerateIcon />
             Генерации
             <span className="homePopItemHint">История запросов</span>
+          </button>
+          <button
+            type="button"
+            className="personal settings"
+            onClick={() => {
+              setOpen("none");
+              navigate('/profile');
+            }}
+          >
+            <PersonaIcon />
+            Личный кабинет
           </button>
 
           <span className="homePopDivider" aria-hidden="true" />
