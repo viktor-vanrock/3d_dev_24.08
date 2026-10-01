@@ -452,7 +452,7 @@ describe("Nest auth domain migration", () => {
     const code = "1234";
     const emailHash = identifierHash(email);
     const database = app.get<Pool>(DATABASE_POOL);
-    await database.query(`insert into email_otp (email_hash, otp_hash, expires_at) values ($1, $2, now() + interval '10 minutes')`, [
+    await database.query(`insert into email_otp (email_hash, purpose, otp_hash, expires_at) values ($1, 'login', $2, now() + interval '10 minutes')`, [
       emailHash,
       identifierHash(`${email}:${code}`),
     ]);

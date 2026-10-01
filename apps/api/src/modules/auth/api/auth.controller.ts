@@ -164,7 +164,7 @@ export class AuthController {
   @Public()
   @HttpCode(200)
   async registerVerify(@Res({ passthrough: true }) response: Response, @Body() body: RegisterVerifyDto): Promise<{ readonly ok: true }> {
-    await this.sessions.issue(response, await this.auth.activateWithCode(body.email, body.code));
+    await this.sessions.issue(response, await this.auth.activateWithCode(body.email, body.code, body.password));
     return { ok: true };
   }
 
