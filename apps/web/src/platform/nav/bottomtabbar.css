@@ -1,5 +1,5 @@
 /*
-  Bottom-tab (docs/design/touch.nav.md §1): скрыт по умолчанию (>640px — навигация только
+  Bottom-tab (docs/design/touch.nav.md §1): скрыт по умолчанию (>800px — навигация только
   пилюлей в шапке), появляется на тач-ширинах. Стекло — тот же паттерн, что
   .consentBannerHost/.consentBanner (consent/consent.css).
 */
@@ -8,7 +8,7 @@
   display: none;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 800px) {
   .bottomTabBar {
     position: fixed;
     left: 0;
@@ -97,5 +97,23 @@
   .bottomTabItem,
   .bottomTabIconWrap {
     transition: none;
+  }
+}
+
+/* Отступы для диапазона, в котором нижнее меню раньше ещё не показывалось. */
+@media (min-width: 641px) and (max-width: 800px) {
+  .homeContent,
+  .projectsWideBody,
+  .feedWideBody {
+    padding-bottom: calc(56px + env(safe-area-inset-bottom) + 16px);
+  }
+
+  .homePrinterFab.uiButton {
+    bottom: calc(56px + env(safe-area-inset-bottom) + 16px);
+  }
+
+  .prnComparePanel,
+  .installBannerHost {
+    bottom: calc(56px + env(safe-area-inset-bottom));
   }
 }

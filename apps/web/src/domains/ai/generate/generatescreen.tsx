@@ -1,3 +1,4 @@
+import { Select, AuroraBackground, Eyebrow, Heading, Input, SelectionTile, StatusPill } from "@shared/ui";
 import { useEffect, useRef, useState, type DragEvent } from "react";
 import type { SessionUser } from "@shared/types";
 import { HomeHeader, type Section, useSectionSwipeNav } from "@platform/nav";
@@ -9,7 +10,6 @@ import "../../commerce/model.css";
 import { ModelViewer } from "@domains/commerce";
 import { useOverlay } from "@platform/overlay";
 import { modelPath, navigate } from "../../../router.ts";
-import { AuroraBackground, Eyebrow, Heading, Input, SelectionTile, StatusPill } from "@shared/ui";
 import { relativeDate, trackActivation } from "@shared/lib";
 import {
   apiAssetUrl,
@@ -484,12 +484,12 @@ export function GenerateScreen({
                   <>
                     <label className="generateParamField">
                       Детализация модели
-                      <select value={numTargetFaces} onChange={(event) => setNumTargetFaces(Number(event.target.value))} disabled={busy}>
+                      <Select value={numTargetFaces} onChange={(event) => setNumTargetFaces(Number(event.target.value))} disabled={busy}>
                         <option value={10_000}>Низкая — 10 000 полигонов</option>
                         <option value={50_000}>Стандарт — 50 000 полигонов</option>
                         <option value={100_000}>Высокая — 100 000 полигонов</option>
                         <option value={200_000}>Максимум — 200 000 полигонов</option>
-                      </select>
+                      </Select>
                     </label>
                     <label className="generateParamField">
                       <span>
@@ -505,11 +505,11 @@ export function GenerateScreen({
                     </label>
                     <label className="generateParamField">
                       LOD копии
-                      <select value={createLod} onChange={(event) => setCreateLod(Number(event.target.value))} disabled={busy}>
+                      <Select value={createLod} onChange={(event) => setCreateLod(Number(event.target.value))} disabled={busy}>
                         <option value={0}>Не создавать</option>
                         <option value={1}>1 копия</option>
                         <option value={2}>2 копии</option>
-                      </select>
+                      </Select>
                       <small>Упрощённые копии для разных дистанций</small>
                     </label>
                   </>

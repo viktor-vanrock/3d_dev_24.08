@@ -130,8 +130,7 @@ export function ProjectsPage({
             <Eyebrow>Проекты мастерской</Eyebrow>
             <h1 id="projectsPromiseTitle">Соберите вещь целиком</h1>
             <p>Не отдельный файл, а понятный путь от деталей до работающего результата.</p>
-            <Button className="projectsHeroAdd" onPointerDown={sound.tick} onClick={() => navigate(addModelPath())}>
-              <PlusIcon />
+            <Button className="projectsHeroAdd" icon={<PlusIcon />} iconPosition="start" onPointerDown={sound.tick} onClick={() => navigate(addModelPath())}>
               Добавить проект
             </Button>
           </div>

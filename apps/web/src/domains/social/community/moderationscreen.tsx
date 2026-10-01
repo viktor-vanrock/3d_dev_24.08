@@ -1,9 +1,9 @@
+import { Select, AuroraBackground, Button, EmptyState, Heading, StatusPill } from "@shared/ui";
 import { useEffect, useState } from "react";
 import type { SessionUser } from "@shared/types";
 import { HomeHeader, type Section } from "@platform/nav";
 // eslint-disable-next-line boundaries/element-types, boundaries/entry-point -- легатное ребро (Этап 4.5): CSS side-effect, не index.ts; home.css остаётся общим "рабочим хромом" для доменных экранов, развязка отложена до pages/DI (Этап 10). См. MIGRATION.md.
 import "@pages/home/home.css";
-import { AuroraBackground, Button, EmptyState, Heading, StatusPill } from "@shared/ui";
 import {
   claimModerationFlag,
   decideModerationFlag,
@@ -254,10 +254,10 @@ function FlagDetail({
       {flag.status === "assigned" ? (
         <>
           <label className="moderationLabel" htmlFor="moderation-reason">Причина решения</label>
-          <select id="moderation-reason" className="uiInput" value={reason} onChange={(event) => setReason(event.target.value as ModerationReasonCode | "")} disabled={busy}>
+          <Select id="moderation-reason" className="uiInput" value={reason} onChange={(event) => setReason(event.target.value as ModerationReasonCode | "")} disabled={busy}>
             <option value="">Выберите причину</option>
             {MODERATION_REASONS.map((item) => <option key={item.code} value={item.code}>{item.label}</option>)}
-          </select>
+          </Select>
           <label className="moderationLabel" htmlFor="moderation-details">Пояснение для журнала модерации</label>
           <textarea id="moderation-details" className="uiInput moderationTextarea" value={details} onChange={(event) => setDetails(event.target.value)} disabled={busy} />
           <p className="moderationHint">Действие попадёт в журнал модерации.</p>

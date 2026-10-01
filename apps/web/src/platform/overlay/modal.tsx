@@ -11,7 +11,7 @@ import type { ModalItem } from "./store.ts";
 */
 
 const FOCUSABLE_SELECTOR =
-  'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
+  'a[href], button:not([disabled]), textarea, input, select:not([aria-hidden="true"]), [tabindex]:not([tabindex="-1"])';
 
 export function OverlayModalHost() {
   const { state, dispatch } = useOverlayContext();

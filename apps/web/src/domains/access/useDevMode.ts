@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "@shared/api";
-import { getCookie } from "@shared/lib/cookie.ts";
+import { getCookie } from "@shared/lib";
 
 export function useDevMode(): boolean {
   const [isDevMode, setIsDevMode] = useState(() => getCookie("is_dev") === "true");

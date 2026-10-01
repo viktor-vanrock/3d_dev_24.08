@@ -135,3 +135,25 @@ dev-фронт ходит в `api.3mf.tech`. CORS API читает отдель�
 - **Стат-анализ/поведение:** `pyan` — python pandas/numpy/scipy/matplotlib/duckdb (dev-БД в `$DEV_DB`, графики в файл); `umami-q` — аналитика поведения (что смотрят/откуда/устройства/события).
 - **Песочница:** `sandbox-db create sbx_<имя> [--from portal_dev]` — эфемерная БД для теста миграций/запросов, не трогая боевую.
 Правило: заявляешь готовность → приложи в карточку ДОКАЗАТЕЛЬСТВО (скор lhaudit / diff vmatrix / p95 loadtest / скрин), не слова. Детали — по каждому инструменту свой скилл (autofab-visual/lighthouse/a11y/load/data/analytics/sandbox — у тебя назначены нужные под роль), док `docs/process/testing.md`.
+
+### Локальный запуск API-тестов в PowerShell
+
+Vitest читает `apps/api/.env.test`, если файл существует. Переменные текущего
+процесса имеют приоритет. Обычный `.env` для настройки Vitest не загружается.
+В `.env.test` укажи `DATABASE_URL` отдельной тестовой БД с настоящими реквизитами
+подключения. Файл игнорируется Git; не используй общую `portal`/`portal_dev`.
+
+```dotenv
+DATABASE_URL=postgresql://USER:PASSWORD@localhost:5432/portal_test?sslmode=disable
+```
+
+Замени USER/PASSWORD на реквизиты тестовой БД (спецсимволы кодируются для URL).
+Из `apps/api` примени миграции и запусти тесты:
+
+```powershell
+pnpm exec dbmate --env-file .env.test --migrations-dir db/migrations --schema-file db/schema.sql up
+pnpm test
+```
+
+При `SASL: ... client password must be a string` проверь, что задан пароль
+и переменная `DATABASE_URL` терминала не перекрывает `.env.test` старым значением.

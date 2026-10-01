@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { SessionUser } from "@shared/types";
 import { DataShell, type Section } from "@platform/nav";
-import { Button, EmptyState, Eyebrow, Heading, Input } from "@shared/ui";
+import { Button, CubeIcon, EmptyState, Eyebrow, Heading, Input } from "@shared/ui";
 import { listAdminMaterials, type AdminMaterial, type AdminMaterialKind } from "./api.ts";
 import "./materialadmin.css";
 
@@ -50,7 +50,7 @@ export function DataMaterialsScreen({ user, section, onSectionChange }: { user: 
                 {KINDS.map((option) => <button key={option.value || "all"} type="button" aria-pressed={kind === option.value} onClick={() => setKind(option.value)}>{option.label}</button>)}
               </div>
             </div>
-            {failed ? <EmptyState icon={null} title="Не удалось загрузить материалы" /> : items === null ? <p>Загрузка…</p> : items.length === 0 ? <EmptyState icon={null} title="Материалов пока нет" /> : (
+            {failed ? <EmptyState icon={null} title="Не удалось загрузить материалы" /> : items === null ? <p>Загрузка…</p> : items.length === 0 ? <EmptyState icon={<CubeIcon />} title="Материалов пока нет" /> : (
               <div className="materialAdminTable" role="list">
                 {items.map((material) => <a key={material.id} href={`/data/materials/${encodeURIComponent(material.id)}`} role="listitem"><strong>{material.name}</strong><span>{material.vendor_name} · {material.material_type_name}</span><span>{material.status}</span></a>)}
               </div>

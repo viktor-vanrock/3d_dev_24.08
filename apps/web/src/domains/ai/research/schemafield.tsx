@@ -1,3 +1,4 @@
+import { Select } from "@shared/ui";
 import { useState } from "react";
 import "./research.css";
 import type { FieldOption, FieldType } from "./schema.ts";
@@ -91,7 +92,7 @@ export function SchemaField({ label, type, options, placeholder, field, onChange
               </button>
             </div>
           ) : type === "select" ? (
-            <select
+            <Select
               id={inputId}
               className="rsSelect"
               disabled={field.notFound}
@@ -105,7 +106,7 @@ export function SchemaField({ label, type, options, placeholder, field, onChange
                   {opt.label}
                 </option>
               ))}
-            </select>
+            </Select>
           ) : (
             <input
               id={inputId}
@@ -120,7 +121,7 @@ export function SchemaField({ label, type, options, placeholder, field, onChange
           )}
           {untouched ? null : filled && sourceLabel ? (
             pickingSource && sources ? (
-              <select
+              <Select
                 className="rsFootnoteSelect"
                 autoFocus
                 value={field.sourceIndex ?? ""}
@@ -136,7 +137,7 @@ export function SchemaField({ label, type, options, placeholder, field, onChange
                     [{index + 1}] {url}
                   </option>
                 ))}
-              </select>
+              </Select>
             ) : (
               <button type="button" className="rsSourceFootnote pressable" onClick={() => setPickingSource(true)}>
                 {sourceLabel}

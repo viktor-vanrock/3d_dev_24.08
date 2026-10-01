@@ -22,7 +22,11 @@ import "./profile.css";
 
 const CONTACTS_MAX = 5;
 const BIO_MAX = 500;
-export function AccountEditor({ profile, onSaved }: { profile: UserProfile; onSaved: (patch: Partial<UserProfile>) => void }) {
+export function AccountEditor({ profile, onSaved, onClose }: {
+  profile: UserProfile;
+  onSaved: (patch: Partial<UserProfile>) => void;
+  onClose?: () => void;
+}) {
   const overlay = useOverlay();
   const [displayName, setDisplayName] = useState(profile.display_name ?? "");
   const [bio, setBio] = useState(profile.bio ?? "");
@@ -78,7 +82,10 @@ export function AccountEditor({ profile, onSaved }: { profile: UserProfile; onSa
         <div>
           <strong>Ваш 3D-персонаж</strong>
           <span>Его портрет используется в ленте, комментариях и проектах.</span>
-          <Button type="button" variant="secondary" onClick={() => navigate(avatarEditorPath())}>
+          <Button type="button" variant="secondary" onClick={() => {
+            onClose?.();
+            navigate(avatarEditorPath());
+          }}>
             Настроить персонажа
           </Button>
         </div>
@@ -126,22 +133,25 @@ export function AccountEditor({ profile, onSaved }: { profile: UserProfile; onSa
       <div style={{ marginBottom: 12 }}>
         <div style={fieldLabelStyle}>Контакты</div>
         {contacts.map((contact, index) => (
-          <div key={index} style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+          <div key={index} className="profileContactRow">
+            <span className="profileContactNumber" aria-label={`Контакт ${index + 1}`}>{index + 1}</span>
             <Input
               value={contact.label}
               onChange={(event) => updateContact(index, { label: event.target.value })}
               placeholder="Telegram"
               maxLength={40}
-              style={{ flex: "0 0 120px" }}
+              className="profileContactLabel"
+              aria-label={`Название контакта ${index + 1}`}
             />
             <Input
               value={contact.url}
               onChange={(event) => updateContact(index, { url: event.target.value })}
               placeholder="https://…"
               maxLength={256}
-              style={{ flex: 1 }}
+              className="profileContactUrl"
+              aria-label={`Ссылка контакта ${index + 1}`}
             />
-            <button type="button" className="modelGlassBtn pressable" onClick={() => removeContact(index)} aria-label="Удалить контакт">
+            <button type="button" className="modelGlassBtn profileContactRemove pressable" onClick={() => removeContact(index)} aria-label="Удалить контакт">
               ×
             </button>
           </div>

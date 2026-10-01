@@ -527,9 +527,12 @@ export function FeedScreen({
   // <900px левая колонка сворачивается в липкую полосу + «Фиды» открывает sheet() с тем же
   // содержимым п.3 §1.2 (feed.md §5) — тот же паттерн, что мобильный шит фильтров каталога.
   function openSubsSheet() {
-    overlay.sheet({
+    const handle = overlay.sheet({
       title: "Мои сабы",
-      content: <MySubsList items={mySubs} activeSlug={community} onDiscover={() => navigate(communitiesPath())} />,
+      content: <MySubsList items={mySubs} activeSlug={community} onDiscover={() => {
+        handle.close();
+        navigate(communitiesPath());
+      }} />,
     });
   }
 

@@ -335,3 +335,85 @@
   margin-top: 1px;
   color: var(--accent-warn);
 }
+
+@media (width < 600px) {
+  .profileCharacterEditor {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .profileCharacterEditor > :first-child {
+    width: 72px;
+    height: 72px;
+    min-width: 72px;
+    min-height: 72px;
+    flex: 0 0 72px;
+    align-self: center;
+  }
+
+  #ae-display-name,
+  #ae-website {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+}
+
+.profileContactRow {
+  display: grid;
+  grid-template-columns: 24px 120px minmax(0, 1fr) 48px;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.profileContactNumber {
+  text-align: center;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.profileContactRow .uiInput {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.profileContactRemove.modelGlassBtn {
+  width: 48px;
+  padding: 0;
+}
+
+@media (width < 700px) {
+  .profileContactRow {
+    grid-template-columns: 24px minmax(0, 1fr) 48px;
+  }
+
+  .profileContactNumber {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .profileContactLabel {
+    grid-column: 2 / -1;
+    grid-row: 1;
+  }
+
+  .profileContactRow::before {
+    content: "•";
+    grid-column: 1;
+    grid-row: 2;
+    text-align: center;
+    color: var(--text-dim);
+  }
+
+  .profileContactUrl {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .profileContactRemove {
+    grid-column: 3;
+    grid-row: 2;
+  }
+}

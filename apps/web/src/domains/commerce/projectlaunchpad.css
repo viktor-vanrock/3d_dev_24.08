@@ -65,6 +65,8 @@
 }
 
 .projectConfigCard {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
@@ -81,6 +83,7 @@
 }
 
 .projectConfigMedia {
+  flex-shrink: 0;
   position: relative;
   min-height: 210px;
   overflow: hidden;
@@ -126,7 +129,9 @@
 }
 
 .projectConfigBody {
-  display: grid;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
   gap: 20px;
   padding: 22px;
 }
@@ -175,6 +180,7 @@
 }
 
 .projectConfigResult {
+  margin-top: auto;
   padding: 14px;
   border-radius: 16px;
   background: color-mix(in srgb, var(--accent) 8%, transparent);
@@ -212,18 +218,11 @@
   opacity: 0.78;
 }
 
-@media (max-width: 1080px) {
+@media (width < 1100px) {
   .projectLaunchpadGrid {
     grid-template-columns: 1fr;
   }
 
-  .projectConfigCard {
-    display: grid;
-    grid-template-columns: minmax(240px, 0.42fr) 1fr;
-  }
-}
-
-@media (max-width: 720px) {
   .projectLaunchpad {
     padding: 22px;
     border-radius: 26px;
@@ -235,9 +234,5 @@
 
   .projectLaunchpadFlow {
     justify-content: flex-start;
-  }
-
-  .projectConfigCard {
-    display: block;
   }
 }

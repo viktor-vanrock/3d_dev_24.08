@@ -1,7 +1,7 @@
+import { Select, AuroraBackground, ReasonPanel, SegmentToggle, Vote, type VoteVariant, ActionCard, AgentBadge, Card, Checklist, Chip, EmptyState, Eyebrow, Heading, IconButton, Input, FieldGroup, SelectField, StatusDot, StatusPill, Button, TextField, TextareaField, type ChecklistStep, type StatusTone } from "@shared/ui";
 import { useState, type CSSProperties, type ReactNode } from "react";
 import { useOverlay } from "@platform/overlay";
 import { ThemeToggle } from "@platform/theme";
-import { AuroraBackground, ReasonPanel, SegmentToggle, Vote, type VoteVariant, ActionCard, AgentBadge, Card, Checklist, Chip, EmptyState, Eyebrow, Heading, IconButton, Input, FieldGroup, SelectField, StatusDot, StatusPill, Button, TextField, TextareaField, type ChecklistStep, type StatusTone } from "@shared/ui";
 
 // Стенд-витрина всей библиотеки apps/web/src/ui (эпик MF-40/MF-426): каждый компонент —
 // во всех состояниях (default/active/disabled/тона), плюс тумблер темы, чтобы одним взглядом
@@ -119,9 +119,9 @@ export function KitchenSinkPage() {
             <Input placeholder="Отключено" disabled />
             <FieldGroup>
               <input placeholder="ivan.petrov" />
-              <select defaultValue="sber.ru" aria-label="Домен почты">
+              <Select defaultValue="sber.ru" aria-label="Домен почты">
                 <option value="sber.ru">@sber.ru</option>
-              </select>
+              </Select>
             </FieldGroup>
           </div>
         </Section>

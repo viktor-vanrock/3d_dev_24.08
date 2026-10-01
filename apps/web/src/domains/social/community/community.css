@@ -673,6 +673,9 @@
 
 .cmtyThreadCardBody {
   flex: 1;
+  height: auto;
+  align-items: stretch;
+  justify-content: flex-start;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -705,6 +708,7 @@
 }
 
 .cmtyThreadCardTitle {
+  overflow-wrap: anywhere;
   font-family: var(--font-display);
   display: -webkit-box;
   font-size: 19px;
@@ -717,6 +721,7 @@
 
 .cmtyThreadCardSnippet {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   gap: 10px;
   color: var(--text-dim);
@@ -724,7 +729,9 @@
 }
 
 .cmtyThreadCardContent {
-  flex: 1;
+  flex: 1 1 180px;
+  min-width: 0;
+  overflow-wrap: anywhere;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;

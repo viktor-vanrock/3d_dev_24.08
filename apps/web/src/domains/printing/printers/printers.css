@@ -78,14 +78,14 @@
 
 .prnLayout {
   display: grid;
-  grid-template-columns: 280px 1fr;
+  grid-template-columns: 300px minmax(0, 1fr);
   gap: 20px;
   align-items: start;
   min-width: 0;
 }
 
 .prnSidebar {
-  min-width: 0;
+  min-width: 300px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -357,9 +357,17 @@
 }
 
 .prnChipGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
+}
+
+.prnChipGrid .uiChip {
+  max-width: 100%;
+  height: auto;
+  min-height: var(--control-height-s);
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 /* «Ещё фильтры» — аккордеон */
@@ -399,12 +407,14 @@
 
 .prnNumberFilterRow {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   gap: 8px;
 }
 
 .prnNumberFilterInput {
-  flex: 1;
+  width: 100%;
+  min-width: 0;
   min-height: 40px;
   padding: 0 10px;
   border-radius: 12px;
@@ -1078,14 +1088,8 @@
 
 .prnDetailBadges {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   gap: 8px;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.prnDetailBadges::-webkit-scrollbar {
-  display: none;
 }
 
 .prnDetailBadges > * {
@@ -1747,9 +1751,8 @@
   }
 
   [data-input-mode="dpad"] .prnLayout {
-    /* TV не должен раздувать sidebar за контракт каталога 264–288px:
-       правая колонка получает остаток и сохраняет 3-колоночную сетку. */
-    grid-template-columns: minmax(264px, 288px) minmax(0, 1fr);
+    /* Боковая колонка сохраняет минимальную ширину 300px и в TV-режиме. */
+    grid-template-columns: 300px minmax(0, 1fr);
     gap: clamp(32px, 3vw, 48px);
   }
 
@@ -1864,4 +1867,10 @@
     outline-offset: 4px;
     box-shadow: 0 0 0 7px color-mix(in srgb, var(--focus-ring-color) 35%, transparent);
   }
+}
+
+.prnFiltersTitle {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
 }

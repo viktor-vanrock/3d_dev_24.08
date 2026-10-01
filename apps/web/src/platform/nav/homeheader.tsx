@@ -174,7 +174,6 @@ export function HomeHeader({
   }, [open]);
 
   const clock = <Clock key="shell-clock" />;
-  console.log('activeSection', activeSection)
   // Реестр маршрутов (navitems.ts) питает нав-табы в обоих режимах — добавление раздела
   // («Принтеры» и т.п.) не требует правок этого компонента (§1.3 projects.page.md). SegmentToggle
   // (ui/segmenttoggle.tsx) — общий компонент с сортировкой на /project (projectspage.tsx): один
@@ -347,7 +346,7 @@ export function HomeHeader({
           </button>
           <button
             type="button"
-            className="personal settings"
+            className="homePopItem pressable"
             onClick={() => {
               setOpen("none");
               navigate('/profile');
@@ -414,13 +413,11 @@ export function HomeHeader({
     </div>
   );
 
-  // Возврат — часть общего API шапки, но не её трёхколоночной сетки: иначе наличие
-  // стрелки сдвигает часы и визуально меняет оболочку при переходе между маршрутами.
+  // В рабочей шапке возврат располагается в одном ряду слева от часов.
   const backButton = onBack && (resolvedMode === "back" || resolvedMode === "mixed") ? (
     <div className="homeTopbarBack">
-      <IconButton label={backLabel ?? "Назад"} wide={Boolean(backLabel)} onClick={onBack} onPress={sound.tick}>
+      <IconButton label={backLabel ?? "Назад"} onClick={onBack} onPress={sound.tick}>
         <BackIcon />
-        {backLabel ? <span className="homeTopbarBackLabel">{backLabel}</span> : null}
       </IconButton>
     </div>
   ) : null;
@@ -451,7 +448,7 @@ export function HomeHeader({
           </span>
           <div className="homeTopbarEdge homeTopbarEdge--right" data-collapsed={chromeCollapsed || undefined}>
             <div className="homeTopbarTools">
-              {user ? capsule : <div className="homeGuestControls"><ThemeToggle silent />{capsule}</div>}
+              <div className="homeGuestControls"><ThemeToggle silent />{capsule}</div>
             </div>
           </div>
         </div>
@@ -466,12 +463,14 @@ export function HomeHeader({
         data-has-back={Boolean(backButton) || undefined}
         data-back-wide={Boolean(backButton && backLabel) || undefined}
       >
-        {backButton}
-        <div className="homeTopbarEdge homeTopbarEdge--left">{clock}</div>
+        <div className="homeTopbarEdge homeTopbarEdge--left">
+          {backButton}
+          {clock}
+        </div>
         {navTabs}
         <div className="homeTopbarEdge homeTopbarEdge--right">
           <div className="homeTopbarTools">
-            {user ? capsule : <div className="homeGuestControls"><ThemeToggle silent />{capsule}</div>}
+            <div className="homeGuestControls"><ThemeToggle silent />{capsule}</div>
           </div>
         </div>
       </div>

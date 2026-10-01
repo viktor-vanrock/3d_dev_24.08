@@ -6,6 +6,7 @@ import { SignJWT } from "jose";
 import type { Pool } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { UserId, type UserId as UserIdType } from "../../_kernel/brandedIds.ts";
+import { AUDIT_LOG_PORT, type AuditLogPort } from "../../audit/public/index.ts";
 import { ANALYTICS_PORT } from "../../analytics/public/index.ts";
 import { PROFILE_AUTH_PORT, type NewUserSeed, type ProfileAuthPort, type SessionProfile } from "../../profile/public/index.ts";
 import { SANCTIONS_READ_PORT } from "../../sanctions/public/index.ts";
@@ -94,12 +95,13 @@ class TestProfileAuthPort implements ProfileAuthPort {
   imports: [DatabaseModule],
   providers: [
     TestProfileAuthPort,
+    { provide: AUDIT_LOG_PORT, useValue: { record: async (): Promise<void> => {} } satisfies AuditLogPort },
     { provide: PROFILE_AUTH_PORT, useExisting: TestProfileAuthPort },
     { provide: SANCTIONS_READ_PORT, useValue: { findActiveForUser: async (): Promise<null> => null, findActiveForUserTx: async (): Promise<null> => null } },
     { provide: ANALYTICS_PORT, useValue: { emitEvent: (): Promise<void> => Promise.resolve() } },
     { provide: FEED_AGENT_AUTH_PORT, useValue: { verifyAgentContentToken: (): Promise<null> => Promise.resolve(null) } },
   ],
-  exports: [PROFILE_AUTH_PORT, ANALYTICS_PORT, FEED_AGENT_AUTH_PORT],
+  exports: [PROFILE_AUTH_PORT, ANALYTICS_PORT, FEED_AGENT_AUTH_PORT, SANCTIONS_READ_PORT, AUDIT_LOG_PORT],
 })
 class AuthTestPortsModule {}
 

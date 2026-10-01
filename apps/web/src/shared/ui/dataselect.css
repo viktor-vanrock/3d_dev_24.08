@@ -1,0 +1,23 @@
+.dataSelect { position: relative; display: block; min-width: 0; width: 100%; }
+.dataSelect:focus-within { z-index: 10; }
+.dataSelectTrigger { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 48px; padding: 10px 8px 10px 14px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.dataSelectTrigger > span { min-width: 0; overflow-wrap: anywhere; }
+.dataSelectTrigger > svg { flex-shrink: 0; }
+.dataSelectTrigger:disabled { opacity: .55; cursor: not-allowed; }
+.dataSelectTrigger:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring-color); outline-offset: var(--focus-ring-offset); }
+.dataSelectMenu { position: absolute; z-index: 20; top: calc(100% + 4px); left: 0; right: 0; display: grid; max-height: 280px; overflow-y: auto; padding: 6px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); box-shadow: 0 12px 28px var(--shadow); }
+.dataSelectMenu > [role="option"] { padding: 10px 12px; min-height: 44px; box-sizing: border-box; border-radius: 9px; color: var(--text); cursor: pointer; }
+.dataSelectMenu > [role="option"]:hover, .dataSelectMenu > [data-active], .dataSelectMenu > [aria-selected="true"] { background: color-mix(in srgb, var(--accent) 12%, var(--surface)); }
+
+.uiSelectHost { position: relative; display: block; min-width: 0; width: 100%; box-sizing: border-box; }
+.uiSelectHost.uiInput, .uiSelectHost.uiFieldInput, .uiSelectHost.rsSelect, .uiSelectHost.rsFootnoteSelect, .uiSelectHost.cfbTypeSelectControl, .uiSelectHost.makesFilterSelect, .uiSelectHost.profileTabsSelect { padding: 0; border: 0; background: none; }
+.uiSelectNative { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; overflow: hidden; }
+.dataSelectMenu > [aria-disabled="true"] { opacity: .5; cursor: not-allowed; }
+.uiFieldGroup > .uiSelectHost { width: auto; flex: 0 1 auto; min-width: 110px; }
+
+.uiFieldGroup:has(.uiSelectHost) { overflow: visible; }
+.uiField--select .uiFieldControl:has(.uiSelectHost) { padding: 0; border: 0; background: transparent; }
+.uiField--select .dataSelectTrigger { min-height: var(--ui-control-height); }
+.ideaSubmitBody .uiSelectHost.cfbTypeSelectControl { padding: 0; border: 0; background: transparent; }
+.uiSelectHost.profileTabsSelect { padding: 0; border: 0; background: transparent; }
+.uiSelectHost .uiSelectNative { display: none; }

@@ -154,12 +154,13 @@ export function ProfileScreen({
 
   function openEditProfile() {
     if (!profile || !own) return;
-    overlay.modal({
+    const handle = overlay.modal({
       title: "Публичный профиль",
       size: "wide",
       content: (
         <AccountEditor
           profile={profile}
+          onClose={() => handle.close()}
           onSaved={(updated) => setProfile((previous) => previous ? { ...previous, ...updated } : previous)}
         />
       ),

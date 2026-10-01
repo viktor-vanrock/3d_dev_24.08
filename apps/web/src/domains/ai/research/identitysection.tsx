@@ -1,3 +1,4 @@
+import { Select } from "@shared/ui";
 import { useState } from "react";
 import "./research.css";
 import { KINEMATICS_OPTIONS, PRINTER_TYPE_OPTIONS, STATUS_OPTIONS, deriveSlug } from "./schema.ts";
@@ -161,24 +162,24 @@ export function IdentitySection(props: IdentitySectionProps) {
         </div>
         <div className="rsPlainField">
           <label className="rsPlainLabel" htmlFor="rsKinematics">Кинематика</label>
-          <select id="rsKinematics" className="rsSelect" value={props.kinematics} onChange={(e) => props.onKinematics(e.target.value)}>
+          <Select id="rsKinematics" className="rsSelect" value={props.kinematics} onChange={(e) => props.onKinematics(e.target.value)}>
             <option value="">—</option>
             {KINEMATICS_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
-          </select>
+          </Select>
         </div>
       </div>
 
       <div className="rsIdentityRow">
         <div className="rsPlainField">
           <label className="rsPlainLabel" htmlFor="rsType">Технология печати</label>
-          <select id="rsType" className="rsSelect" value={props.printerType} onChange={(e) => props.onPrinterType(e.target.value)}>
+          <Select id="rsType" className="rsSelect" value={props.printerType} onChange={(e) => props.onPrinterType(e.target.value)}>
             <option value="">—</option>
             {PRINTER_TYPE_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
-          </select>
+          </Select>
         </div>
         <div className="rsPlainField">
           <span className="rsPlainLabel">Закрытая камера</span>

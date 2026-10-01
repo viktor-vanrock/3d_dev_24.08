@@ -8,7 +8,14 @@ import { pool } from "../db/client.ts";
 const SHARED_DB_DENYLIST = new Set(["portal", "portal_dev"]);
 
 export default async function dbSafetyGuard(): Promise<void> {
-  if (!process.env.DATABASE_URL) return;
+  if (!process.env.DATABASE_URL?.trim()) {
+    throw new Error(
+      "dbSafetyGuard: DATABASE_URL не задан. Укажи подключение к отдельной тестовой БД " +
+        "в apps/api/.env.test или в окружении терминала. Пример: " +
+        "postgresql://USER:PASSWORD@localhost:5432/portal_test. " +
+        "Перед запуском примени миграции; см. docs/process/testing.md.",
+    );
+  }
 
   const { rows } = await pool.query<{ db: string }>("select current_database() as db");
   const db = rows[0]?.db;

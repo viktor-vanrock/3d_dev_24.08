@@ -7,7 +7,7 @@
   z-index: 2;
   width: min(1320px, calc(100% - 40px));
   margin: 0 auto;
-  padding-top: calc(max(16px, env(safe-area-inset-top)) + 96px);
+  padding-top: calc(var(--header-safe) + 16px);
   padding-bottom: 96px;
   display: grid;
   gap: 20px;
@@ -15,6 +15,8 @@
 
 .dataBreadcrumbs {
   display: flex;
+  justify-content: flex-start;
+  text-align: left;
   align-items: center;
   flex-wrap: wrap;
   gap: 8px;
@@ -36,41 +38,6 @@
   color: var(--text);
 }
 
-.dataSubnav {
-  display: flex;
-  gap: 8px;
-  max-width: 100%;
-  overflow-x: auto;
-  padding: 6px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--surface);
-  scrollbar-width: none;
-  width: fit-content;
-}
-
-.dataSubnav::-webkit-scrollbar {
-  display: none;
-}
-
-.dataSubnav a {
-  flex: 0 0 auto;
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 20px;
-  border-radius: 999px;
-  color: var(--text-dim);
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.dataSubnav a[aria-current="page"] {
-  background: var(--accent);
-  color: var(--accent-contrast);
-}
-
 .dataShellBody {
   min-width: 0;
   display: grid;
@@ -80,11 +47,5 @@
 @media (max-width: 700px) {
   .dataShellContent {
     width: min(100% - 24px, 1320px);
-    padding-top: calc(max(12px, env(safe-area-inset-top)) + 84px);
-  }
-
-  .dataSubnav {
-    width: 100%;
-    border-radius: 22px;
   }
 }

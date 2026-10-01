@@ -245,7 +245,7 @@
    четыре таба и полную capsule с 40px touch-targets: правый edge-кластер
    переполняет свою 1fr-track и заходит на навигацию. Два ряда сохраняют
    центральный якорь табов и полный набор controls, не ужимая интерактивы. */
-@media (min-width: 641px) and (max-width: 1150px) {
+@media (min-width: 801px) and (max-width: 1150px) {
   html:root {
     --header-safe: 128px;
   }
@@ -281,9 +281,9 @@
   }
 }
 
-/* Bottom-tab перехватывает навигацию на ≤640px (touch.nav.md §1) — одна навигация на экран,
+/* Bottom-tab перехватывает навигацию на ≤800px (touch.nav.md §1) — одна навигация на экран,
    пилюля в шапке (оба режима — light/wide) на этой ширине прячется. */
-@media (max-width: 640px) {
+@media (max-width: 800px) {
   .homeSectionTabs {
     display: none;
   }
@@ -323,7 +323,7 @@
   }
 }
 
-@media (width < 640px) {
+@media (width < 800px) {
   .homeTopbar,
   .homeTopbar:is([data-shell="full"], [data-shell="mixed"]) {
     padding-inline: 16px;
@@ -389,4 +389,41 @@
     animation-duration: 1ms;
     animation-delay: 0ms;
   }
+}
+
+/* Возврат входит в левую группу и всегда выровнен с часами. */
+.homeTopbar:not([data-shell="back"]) .homeTopbarEdge--left > .homeTopbarBack {
+  position: static;
+  transform: none;
+  flex-shrink: 0;
+}
+
+.homeTopbar:not([data-shell="back"]) .homeTopbarInner[data-has-back] {
+  padding-inline: 16px;
+}
+
+@media (max-width: 800px) {
+  .homeTopbar:not([data-shell="back"]) .homeTopbarInner[data-has-back] {
+    padding-inline: 0;
+  }
+
+  .homeTopbarInner[data-has-back] .homeTopbarEdge--left {
+    gap: 8px;
+  }
+}
+
+/* Навигация и меню пользователя — отдельные слои внутри общей шапки. */
+.homeTopbarInner > .homeSectionTabs,
+.homeTopbarInner > .homeTopbarNavSlot {
+  z-index: 1;
+  isolation: isolate;
+}
+
+.homeTopbarInner > .homeTopbarEdge--right {
+  position: relative;
+  z-index: 2;
+}
+
+.homeTopbarInner > .homeTopbarEdge--right:has(.homeCapsule[data-open]) {
+  z-index: 3;
 }

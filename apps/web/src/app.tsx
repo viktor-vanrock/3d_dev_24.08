@@ -1,3 +1,4 @@
+import { ProfileData } from "./domains/commerce/profile.data.tsx";
 import { lazy, Suspense, useEffect, type ReactNode } from "react";
 import { AuthGate, GuestIntentResumer, useSession, type SessionUser, LegalScreen } from "@domains/access";
 import { Footer } from "./footer/footer.tsx";
@@ -5,7 +6,7 @@ import { CommunitiesScreen, CommunityScreen, ModerationScreen, ThreadScreen, Fee
 import { ConsentBanner } from "@platform/consent";
 import { GenerateScreen, ResearchFormScreen, ResearchScreen, AssistantChatCenter, AssistantChatsScreen, AssistantWorkshopScreen } from "@domains/ai";
 import { HomeScreen } from "./pages/home/home.tsx";
-import { HomeHeader, type Section, BottomTabBar, NAV_ITEMS } from "@platform/nav";
+import { DataShell, HomeHeader, type Section, BottomTabBar, NAV_ITEMS } from "@platform/nav";
 import { useActivation } from "@shared/lib";
 import { AddModelPage, MakesGalleryScreen, MakeDetailScreen, MarketplaceScreen, ModelScreen, ProjectBuildScreen, ProjectStudioScreen, ProfileScreen, PurchaseReturnScreen } from "@domains/commerce";
 import { OverlayProvider } from "@platform/overlay";
@@ -314,6 +315,10 @@ export function App() {
               screen = <MaterialsScreen user={user} section={section} onSectionChange={onSectionChange} />;
             } else if (route.screen === "material") {
               screen = <MaterialDetailScreen user={user} section={section} onSectionChange={onSectionChange} id={route.id} />;
+            } else if (route.screen === "data") {
+              screen = <DataShell user={protectedUser} section={section} onSectionChange={onSectionChange}>
+                <ProfileData capabilities={protectedUser.capabilities ?? []} />
+              </DataShell>;
             } else if (route.screen === "data-materials") {
               screen = <DataMaterialsScreen user={protectedUser} section={section} onSectionChange={onSectionChange} />;
             } else if (route.screen === "data-material") {

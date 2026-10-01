@@ -5,6 +5,13 @@
   здесь только то, что специфично экрану.
 */
 
+.researchBody {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
 .researchHeaderRow {
   display: flex;
   align-items: center;
@@ -34,12 +41,14 @@
 
 @media (max-width: 720px) {
   .researchHeaderActions {
+    gap: 32px;
     align-items: stretch;
     flex-direction: column;
   }
 
   .researchHeaderActions .researchSearch {
-    flex-basis: auto;
+    flex: none;
+    width: 100%;
     max-width: none;
   }
 }
@@ -289,6 +298,17 @@
 /* --- Мобайл/тач (§3): сегменты уже скроллятся (researchSegmentsScroll), updated_at уходит
    на вторую строку под slug, компактный формат метаданных строки. --- */
 @media (max-width: 640px) {
+  .researchHeaderActions {
+    flex: none;
+    width: 100%;
+  }
+
+  .researchSearchPanel {
+    position: relative;
+    top: auto;
+    margin-top: 32px;
+  }
+
   .researchHeaderRow {
     flex-direction: column;
     align-items: stretch;
@@ -1012,7 +1032,7 @@
   flex-direction: column;
   gap: 10px;
   align-items: flex-start;
-  background: var(--bg);
+  background: transparent;
   padding-top: 12px;
   margin-top: 12px;
 }
@@ -1095,4 +1115,20 @@
   gap: 16px;
   font-size: 13px;
   color: var(--text);
+}
+
+.researchSearchBar:focus-within {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+.researchSearchBar .marketSearchInput:focus {
+  outline: none;
+  box-shadow: none;
+  min-width: 0;
+}
+.researchSegmentsMobile { display: none; }
+@media (width < 700px) {
+  .researchSegmentsDesktop { display: none; }
+  .researchSegmentsMobile { display: block; width: 100%; }
+  .dataShell .rsSaveBar > .uiButton { width: 100%; }
 }

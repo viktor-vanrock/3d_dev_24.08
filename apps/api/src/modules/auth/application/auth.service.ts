@@ -81,7 +81,9 @@ export class AuthService {
 
   private audit(provider: "email_corp" | "plag_id" | "sber_id" | "password" | "dev_bypass", outcome: "success" | "failure", reason?: string): void {
     this.logger.info({ event: "auth.login_attempt", provider, outcome, reason }, "Auth attempt");
-    if (outcome === "failure") void this.auditLog?.record({ schema_version: 1, id: randomUUID(), actor_user_id: null, actor_type: "system", subject_type: "login_attempt", subject_id: randomUUID(), action: "auth.login.failed", before_state: null, after_state: { provider, outcome }, reason: reason ?? null, correlation_id: randomUUID(), causation_id: null, idempotency_key: `auth.failed:${provider}:${randomUUID()}`, occurred_at: new Date(), legal_hold: false });
+    if (outcome === "failure") void this.auditLog?.record({ schema_version: 1, id: randomUUID(), actor_user_id: null, actor_type: "system", subject_type: "login_attempt", subject_id: randomUUID(), action: "auth.login.failed", before_state: null, after_state: { provider, outcome }, reason: reason ?? null, correlation_id: randomUUID(), causation_id: null, idempotency_key: `auth.failed:${provider}:${randomUUID()}`, occurred_at: new Date(), legal_hold: false }).catch(() => {
+      this.logger.error({ event: "auth.audit_write_failed" }, "Failed to persist authentication audit event");
+    });
   }
 
   private recordAuthAudit(userId: UserIdType, action: Extract<SensitiveCommand, "auth.register" | "auth.activate" | "auth.login" | "auth.recovery_requested" | "auth.recovery_completed">, afterState: Record<string, unknown> | null = null): void {
@@ -101,6 +103,8 @@ export class AuthService {
       idempotency_key: `${action}:${userId}:${randomUUID()}`,
       occurred_at: new Date(),
       legal_hold: false,
+    }).catch(() => {
+      this.logger.error({ event: "auth.audit_write_failed" }, "Failed to persist authentication audit event");
     });
   }
 

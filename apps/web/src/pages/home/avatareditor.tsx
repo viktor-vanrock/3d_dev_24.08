@@ -183,12 +183,13 @@ export function AvatarEditorPage({
       />
 
       <div className="avatarStudioShell">
-        <section className="avatarStudioPreview" aria-label="Предпросмотр персонажа">
-          <div className="avatarStudioIntro">
+        <div className="avatarStudioIntro">
             <span className="uiEyebrow">Мастерская персонажа</span>
             <h1>Соберите себя</h1>
             <p>Простой силуэт, ваши детали. Персонаж станет вашим лицом в ленте, проектах и комментариях.</p>
           </div>
+
+        <section className="avatarStudioPreview" aria-label="Предпросмотр персонажа">
 
           <div className="avatarStudioStage" data-state={sceneState}>
             <div className="avatarStudioGlow" aria-hidden="true" />
@@ -219,20 +220,7 @@ export function AvatarEditorPage({
         </section>
 
         <section className="avatarStudioEditor" aria-label="Каталог настройки персонажа">
-          <header className="avatarStudioEditorHead">
-            <div>
-              <span className="uiEyebrow">Ваш стиль</span>
-              <h2>{activeGroup.label}</h2>
-            </div>
-            <div className="avatarStudioActions">
-              <button type="button" className="avatarStudioGhost pressable" onClick={() => setDraft(avatar)}>
-                Сбросить
-              </button>
-              <button type="button" className="avatarStudioSave pressable" disabled={saving} onClick={handleSave}>
-                {saving ? "Фотографируем…" : saved ? "Сохранено ✓" : "Сохранить образ"}
-              </button>
-            </div>
-          </header>
+
 
           <nav className="avatarStudioTabs" aria-label="Категории персонажа">
             {GROUPS.map((group) => (
@@ -247,6 +235,21 @@ export function AvatarEditorPage({
               </button>
             ))}
           </nav>
+
+          <div className="avatarStudioEditorHead">
+            <div>
+              <span className="uiEyebrow">Ваш стиль</span>
+              <h2>{activeGroup.label}</h2>
+            </div>
+            <div className="avatarStudioActions">
+              <button type="button" className="avatarStudioGhost pressable" onClick={() => setDraft(avatar)}>
+                Сбросить
+              </button>
+              <button type="button" className="avatarStudioSave pressable" disabled={saving} onClick={handleSave}>
+                {saving ? "Фотографируем…" : saved ? "Сохранено ✓" : "Сохранить образ"}
+              </button>
+            </div>
+          </div>
 
           <div className="avatarStudioCatalogHead">
             <p>{activeGroup.description}</p>

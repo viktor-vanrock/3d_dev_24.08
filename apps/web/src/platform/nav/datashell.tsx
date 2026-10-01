@@ -29,11 +29,10 @@ export function DataShell({
   readonly user: SessionUser;
   readonly section: Section;
   readonly onSectionChange: (section: Section) => void;
-  readonly active: DataSection;
+  readonly active?: DataSection;
   readonly trail?: string;
   readonly children: ReactNode;
 }) {
-  const allowed = new Set(user.capabilities ?? []);
   const activeSection = DATA_SECTIONS.find((item) => item.id === active);
 
   return (
@@ -48,24 +47,19 @@ export function DataShell({
         mode="full"
       />
       <main className="dataShellContent">
-        <nav className="dataBreadcrumbs" aria-label="Хлебные крошки">
+        {activeSection ? <nav className="dataBreadcrumbs" aria-label="Хлебные крошки">
           <a href={`/u/${encodeURIComponent(user.username)}?tab=data`}>Данные</a>
-          <span aria-hidden="true">/</span>
-          <a href={activeSection?.href}>{activeSection?.label ?? "Данные"}</a>
+          {activeSection ? <>
+            <span aria-hidden="true">/</span>
+            <a href={activeSection.href} aria-current={trail ? undefined : "page"}>{activeSection.label}</a>
+          </> : null}
           {trail ? (
             <>
               <span aria-hidden="true">/</span>
               <span aria-current="page">{trail}</span>
             </>
           ) : null}
-        </nav>
-        <nav className="dataSubnav" aria-label="Разделы данных">
-          {DATA_SECTIONS.filter((item) => allowed.has(item.capability)).map((item) => (
-            <a key={item.id} href={item.href} aria-current={item.id === active ? "page" : undefined}>
-              {item.label}
-            </a>
-          ))}
-        </nav>
+        </nav> : null}
         <div className="dataShellBody">{children}</div>
       </main>
     </div>

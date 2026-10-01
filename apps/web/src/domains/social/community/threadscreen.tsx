@@ -34,6 +34,7 @@ import type { ModerationTargetType } from "./moderation.ts";
 import { useFlipReorder } from "@platform/theme";
 // eslint-disable-next-line boundaries/element-types -- легатное межданное ребро (Этап 8): social→printing (превью карточки принтера в треде-обсуждении принтера). Разрядка отложена до pages/DI. Cм. MIGRATION.md.
 import { printerCommunityPreviewById } from "@domains/printing";
+// eslint-disable-next-line boundaries/element-types -- Существующая интеграция через публичный API домена, до переноса оркестрации в pages (MIGRATION.md).
 import { useGuestLogin } from "@domains/access";
 
 // Страница треда `/thread/:id` (docs/design/community.md §3). «Отметить принятым» — тройное

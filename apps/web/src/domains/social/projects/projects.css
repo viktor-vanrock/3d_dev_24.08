@@ -63,6 +63,9 @@
 }
 
 .projectsHeroAdd {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   width: max-content;
   min-height: 46px;
   margin-top: 20px;
@@ -76,7 +79,7 @@
 .projectsPromiseFlow {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  gap: 28px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -98,16 +101,19 @@
   position: absolute;
   z-index: 2;
   top: 50%;
-  right: -9px;
-  width: 18px;
-  height: 18px;
+  right: -33px;
+  width: 36px;
+  height: 36px;
   display: grid;
   place-items: center;
   transform: translateY(-50%);
   border-radius: 50%;
+  border: 1px solid #dbd2d2;
   background: var(--surface);
   color: var(--text-dim);
-  font-size: 11px;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1;
 }
 
 .projectsPromiseFlow li > span {
@@ -134,12 +140,14 @@
 }
 
 .projectsSidebar {
+  min-width: 276px;
   gap: 16px;
   top: calc(var(--header-safe) + 12px);
   border-radius: 28px;
 }
 
 .projectsSidebarSection {
+  min-width: 0;
   display: grid;
   gap: 10px;
   padding-top: 14px;
@@ -147,6 +155,7 @@
 }
 
 .projectsFacetGrid {
+  min-width: 0;
   display: flex;
   flex-wrap: wrap;
   gap: 7px;
@@ -190,11 +199,28 @@
 }
 
 .projectsPopularList {
-  display: grid;
-  gap: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
   margin: 0 0 8px;
   padding: 0;
   list-style: none;
+}
+
+.projectsPopularList li {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.projectsPopularList .uiChip,
+.projectsFacetGrid .uiChip {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.projectsPopularList .uiChip {
+  gap: 6px;
 }
 
 .projectsPopularQuery {
@@ -624,16 +650,15 @@
   }
 }
 
-@media (max-width: 960px) {
+@media (width < 1150px) {
   .projectsPromise {
     grid-template-columns: 1fr;
     align-items: start;
   }
 
-  .projectsCatalogLayout {
-    grid-template-columns: 230px minmax(0, 1fr);
-  }
+}
 
+@media (max-width: 960px) {
   .projectsCatalogLayout .homeGallery {
     grid-template-columns: 1fr;
   }
@@ -648,16 +673,6 @@
     position: static;
   }
 
-  .projectsFacetGrid {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    padding-bottom: 3px;
-    scrollbar-width: none;
-  }
-
-  .projectsFacetGrid::-webkit-scrollbar {
-    display: none;
-  }
 }
 
 /* Место под bottom-tab (touch.nav.md §1/§4), тот же приём, что .homeContent (home.css). */
@@ -690,9 +705,10 @@
   .projectsPromiseFlow li:not(:last-child)::after {
     content: "↓";
     top: auto;
-    right: 20px;
-    bottom: -9px;
-    transform: none;
+    right: auto;
+    left: 50%;
+    bottom: -33px;
+    transform: translateX(-50%);
   }
 
   .projectsPromiseFlow small {

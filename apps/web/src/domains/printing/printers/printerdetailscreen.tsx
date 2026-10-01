@@ -206,7 +206,7 @@ export function PrinterDetailScreen({
     <div className="home">
       <AuroraBackground />
       <div style={{ position: "relative", zIndex: 30 }}>
-        <HomeHeader user={user} printers={[]} section={section} onSectionChange={onSectionChange} />
+        <HomeHeader user={user} printers={[]} section={section} onSectionChange={onSectionChange} onBack={() => navigate(printersPath())} />
       </div>
       <main className="homeContent">
         {printers === null ? (
