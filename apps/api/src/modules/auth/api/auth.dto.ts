@@ -33,10 +33,6 @@ export class RegisterDto {
   @Allow()
   declare readonly email?: unknown;
 
-  @ApiProperty({ type: String, format: "password", minLength: 12, maxLength: 20 })
-  @Allow()
-  declare readonly password?: unknown;
-
   @ApiProperty({ type: String, minLength: 1, maxLength: 64 })
   @Allow()
   declare readonly displayName?: unknown;
@@ -58,6 +54,10 @@ export class RegisterVerifyDto {
   @ApiProperty({ type: String, pattern: "^[0-9]{4}$" })
   @Allow()
   declare readonly code?: unknown;
+
+  @ApiProperty({ type: String, format: "password", minLength: 12, maxLength: 20 })
+  @Allow()
+  declare readonly password?: unknown;
 }
 
 export class RecoveryStartDto {

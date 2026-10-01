@@ -12,8 +12,6 @@ const RequiredField = (name: string) => {
 
 export function RegisterPage() {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmation, setConfirmation] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [gender, setGender] = useState("");
   const [birthYear, setBirthYear] = useState("");
@@ -21,14 +19,17 @@ export function RegisterPage() {
   const [busy, setBusy] = useState(false);
   async function submit(event?: React.FormEvent) {
     event?.preventDefault(); setError(null);
-    if (password.length < 12 || password.length > 20) return setError({ message: "Пароль должен содержать от 12 до 20 символов." });
-    if (password !== confirmation) return setError({ message: "Пароли не совпадают." });
     if (!displayName.trim()) return setError({ message: "Укажите имя." });
     setBusy(true);
-    const result = await registerAccount({ email, password, displayName, ...(gender ? { gender } : {}), ...(birthYear ? { birthYear: Number(birthYear) } : {}) });
+    const profile = { email, displayName, ...(gender ? { gender } : {}), ...(birthYear ? { birthYear: Number(birthYear) } : {}) };
+    const result = await registerAccount(profile);
     setBusy(false);
     if (!result.ok) return setError(result.error ?? { message: "Не удалось начать регистрацию. Проверьте данные." });
     sessionStorage.setItem("portal.registration.email", email);
+    sessionStorage.setItem("portal.registration.displayName", displayName);
+    sessionStorage.setItem("portal.registration.gender", gender);
+    sessionStorage.setItem("portal.registration.birthYear", birthYear);
+    sessionStorage.setItem("portal.registration.sentAt", String(Date.now()));
     navigate("/register/verify");
   }
   return <main className={`loginPage ${styles.page}`}>
@@ -37,11 +38,6 @@ export function RegisterPage() {
       <h1>Регистрация</h1>
       <label className="emailLoginLabel">{RequiredField('Email')}</label>
       <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-    <label className="emailLoginLabel">{RequiredField('Пароль')}</label>
-    <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" required />
-    <small>От 12 до 20 символов.</small>
-    <label className="emailLoginLabel">{RequiredField('Подтвердите пароль')}</label>
-    <Input type="password" value={confirmation} onChange={(e) => setConfirmation(e.target.value)} required />
     <label className="emailLoginLabel">{RequiredField('Имя')}</label>
     <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} required />
     <label className="emailLoginLabel" id="gender-label">Пол</label>

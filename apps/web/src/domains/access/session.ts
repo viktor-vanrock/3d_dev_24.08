@@ -78,12 +78,12 @@ export function passwordLogin(username: string, password: string) {
   return postJson("/auth/password", { username, password });
 }
 
-export function registerAccount(body: { email: string; password: string; displayName: string; gender?: string; birthYear?: number }) {
+export function registerAccount(body: { email: string; displayName: string; gender?: string; birthYear?: number }) {
   return postJson("/auth/register", body);
 }
 
-export function verifyRegistration(email: string, code: string) {
-  return postJson("/auth/register/verify", { email, code });
+export function verifyRegistration(email: string, code: string, password: string) {
+  return postJson("/auth/register/verify", { email, code, password });
 }
 
 export function startRecovery(email: string) {

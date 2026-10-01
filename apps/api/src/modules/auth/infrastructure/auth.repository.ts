@@ -28,8 +28,9 @@ export interface PendingRegistrationInput {
   readonly displayName: string;
   readonly gender: string | null;
   readonly birthYear: number | null;
-  readonly passwordHash: string;
 }
+
+export type OtpPurpose = "login" | "registration" | "recovery";
 
 interface OtpRow {
   readonly id: string;
@@ -38,6 +39,7 @@ interface OtpRow {
   readonly expires_at: Date | string;
   readonly created_at: Date | string;
   readonly block_until: Date | string | null;
+  readonly purpose: OtpPurpose;
 }
 
 @Injectable()
@@ -47,8 +49,8 @@ export class AuthRepository implements AuthIdentityReadPort {
     @Optional() @Inject(SANCTIONS_READ_PORT) private readonly sanctions?: SanctionsReadPort,
   ) {}
 
-  async latestOtpCreatedAt(emailHash: Buffer): Promise<Date | null> {
-    const result = await this.pool.query<{ created_at: Date | string }>(`select created_at from email_otp where email_hash = $1 order by created_at desc limit 1`, [emailHash]);
+  async latestOtpCreatedAt(emailHash: Buffer, purpose: OtpPurpose): Promise<Date | null> {
+    const result = await this.pool.query<{ created_at: Date | string }>(`select created_at from email_otp where email_hash = $1 and purpose = $2 order by created_at desc limit 1`, [emailHash, purpose]);
     const value = result.rows[0]?.created_at;
     return value === undefined ? null : new Date(value);
   }
@@ -83,21 +85,31 @@ export class AuthRepository implements AuthIdentityReadPort {
     await this.pool.query(`update sessions set last_active_at = now() where id = $1`, [id]);
   }
 
-  async createOtp(emailHash: Buffer, otpHash: Buffer, expiresAt: Date): Promise<void> {
-    await this.pool.query(`insert into email_otp (email_hash, otp_hash, expires_at) values ($1, $2, $3)`, [emailHash, otpHash, expiresAt]);
+  async createOtp(emailHash: Buffer, purpose: OtpPurpose, otpHash: Buffer, expiresAt: Date): Promise<void> {
+    await this.pool.query(`insert into email_otp (email_hash, purpose, otp_hash, expires_at) values ($1, $2, $3, $4)`, [emailHash, purpose, otpHash, expiresAt]);
   }
 
-  async latestOtp(emailHash: Buffer): Promise<OtpRow | null> {
-    const result = await this.pool.query<OtpRow>(`select id, otp_hash, attempts, expires_at, created_at, block_until from email_otp where email_hash = $1 order by created_at desc limit 1`, [emailHash]);
+  async latestOtp(emailHash: Buffer, purpose: OtpPurpose): Promise<OtpRow | null> {
+    const result = await this.pool.query<OtpRow>(`select id, otp_hash, attempts, expires_at, created_at, block_until, purpose from email_otp where email_hash = $1 and purpose = $2 order by created_at desc limit 1`, [emailHash, purpose]);
     return result.rows[0] ?? null;
   }
 
-  async incrementOtpAttempts(id: string, blockUntil: Date | null): Promise<void> {
-    await this.pool.query(`update email_otp set attempts = attempts + 1, block_until = coalesce($2, block_until) where id = $1`, [id, blockUntil]);
+  async incrementOtpAttempts(id: string): Promise<OtpRow | null> {
+    const result = await this.pool.query<OtpRow>(
+      `update email_otp
+       set attempts = attempts + 1,
+           block_until = case when attempts + 1 >= 3 then now() + interval '60 minutes' else block_until end
+       where id = $1
+         and attempts < 3
+         and (block_until is null or block_until < now())
+       returning id, otp_hash, attempts, expires_at, created_at, block_until, purpose`,
+      [id],
+    );
+    return result.rows[0] ?? null;
   }
 
-  async consumeOtp(id: string): Promise<void> {
-    await this.pool.query(`delete from email_otp where id = $1`, [id]);
+  async consumeOtp(emailHash: Buffer): Promise<void> {
+    await this.pool.query(`delete from email_otp where email_hash = $1`, [emailHash]);
   }
 
   async findIdentity(provider: "email_corp" | "plag_id", hash: Buffer): Promise<UserIdType | null> {
@@ -114,10 +126,28 @@ export class AuthRepository implements AuthIdentityReadPort {
     const client = await this.pool.connect();
     try {
       await client.query("begin");
-      const existing = await client.query(`select 1 from user_identities where provider = 'email_corp' and identifier_hash = $1`, [input.emailHash]);
-      if ((existing.rowCount ?? 0) !== 0) {
-        await client.query("rollback");
-        return false;
+      const existing = await client.query<{ id: string; status: string; pending_user_id: string | null }>(
+        `select u.id, u.status, pending.user_id as pending_user_id
+         from user_identities identities
+         join users u on u.id = identities.user_id
+         left join auth_pending_registrations pending on pending.user_id = u.id
+         where identities.provider = 'email_corp' and identities.identifier_hash = $1
+         for update of u`,
+        [input.emailHash],
+      );
+      const existingRow = existing.rows[0];
+      if (existingRow !== undefined) {
+        if (existingRow.pending_user_id === null || existingRow.status !== "restricted") {
+          await client.query("rollback");
+          return false;
+        }
+        await client.query(
+          `update users set display_name=$2, gender=$3, birth_year=$4, updated_at=now() where id=$1`,
+          [existingRow.id, input.displayName, input.gender, input.birthYear],
+        );
+        await client.query(`update auth_pending_registrations set password_hash = null, created_at = now() where user_id=$1`, [existingRow.id]);
+        await client.query("commit");
+        return true;
       }
       let userId: string | undefined;
       for (let attempt = 0; attempt < 20 && userId === undefined; attempt += 1) {
@@ -142,7 +172,7 @@ export class AuthRepository implements AuthIdentityReadPort {
       }
       if (userId === undefined) throw new Error("registration user insert failed");
       await client.query(`insert into user_identities (user_id, provider, identifier_hash, s3_key) values ($1, 'email_corp', $2, $3)`, [userId, input.emailHash, input.identityKey]);
-      await client.query(`insert into auth_pending_registrations (user_id, password_hash) values ($1, $2)`, [userId, input.passwordHash]);
+      await client.query(`insert into auth_pending_registrations (user_id, password_hash) values ($1, null)`, [userId]);
       await client.query("commit");
       return true;
     } catch (error) {
@@ -164,12 +194,12 @@ export class AuthRepository implements AuthIdentityReadPort {
     return (result.rowCount ?? 0) !== 0;
   }
 
-  async activatePendingRegistration(emailHash: Buffer): Promise<PasswordCredentialUser | null> {
+  async activatePendingRegistration(emailHash: Buffer, passwordHash: string): Promise<PasswordCredentialUser | null> {
     const client = await this.pool.connect();
     try {
       await client.query("begin");
-      const result = await client.query<{ id: string; username: string; password_hash: string }>(
-        `select u.id, u.username, pending.password_hash
+      const result = await client.query<{ id: string; username: string }>(
+        `select u.id, u.username
          from users u join user_identities identities on identities.user_id = u.id
          join auth_pending_registrations pending on pending.user_id = u.id
          where identities.provider = 'email_corp' and identities.identifier_hash = $1 for update`,
@@ -178,10 +208,10 @@ export class AuthRepository implements AuthIdentityReadPort {
       const row = result.rows[0];
       if (row === undefined) { await client.query("rollback"); return null; }
       await client.query(`update users set status = 'active', updated_at = now() where id = $1`, [row.id]);
-      await client.query(`insert into user_password_credentials (user_id, password_hash) values ($1, $2)`, [row.id, row.password_hash]);
+      await client.query(`insert into user_password_credentials (user_id, password_hash) values ($1, $2) on conflict (user_id) do update set password_hash=excluded.password_hash, updated_at=now()`, [row.id, passwordHash]);
       await client.query(`delete from auth_pending_registrations where user_id = $1`, [row.id]);
       await client.query("commit");
-      return { id: UserId(row.id), username: row.username, passwordHash: row.password_hash };
+      return { id: UserId(row.id), username: row.username, passwordHash };
     } catch (error) {
       await client.query("rollback");
       throw error;

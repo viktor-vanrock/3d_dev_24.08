@@ -640,7 +640,7 @@ COMMENT ON COLUMN public.audit_log.action IS 'Moderation actions: flag.submitted
 
 CREATE TABLE public.auth_pending_registrations (
     user_id uuid NOT NULL,
-    password_hash text NOT NULL,
+    password_hash text,
     created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
@@ -1320,11 +1320,13 @@ COMMENT ON COLUMN public.device_transfers.kind IS 'Куда агент клад�
 CREATE TABLE public.email_otp (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     email_hash bytea NOT NULL,
+    purpose text DEFAULT 'login'::text NOT NULL,
     otp_hash bytea NOT NULL,
     expires_at timestamp with time zone NOT NULL,
     attempts integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    block_until timestamp with time zone
+    block_until timestamp with time zone,
+    CONSTRAINT email_otp_purpose_check CHECK ((purpose = ANY (ARRAY['login'::text, 'registration'::text, 'recovery'::text])))
 );
 
 
