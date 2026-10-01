@@ -706,7 +706,7 @@ export class PostgresProjectRepository implements ProjectRepository {
               { name: draft.owner.username, email: `${draft.owner.username}@users.3mf.tech` },
             );
           } catch (error) {
-            this.logger.warn(`Git ref creation failed for project=${projectId}: ${String(error)}`);
+            this.logger.warn("Git ref creation failed");
           }
         }
         const inserted = await client.query<{ id: string; created_at: Date }>(

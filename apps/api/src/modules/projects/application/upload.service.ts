@@ -32,13 +32,13 @@ export class UploadService {
       objectKey: tempKey,
       expiresAt: new Date(Date.now() + UploadService.TTL_MS),
     });
-    this.logger.log(`Session created: ${uploadId}`);
+    this.logger.log("Upload session created");
 
     let checksum: Buffer;
     let sizeBytes: number;
     try {
       ({ checksum, sizeBytes } = await putStreamingObject(tempKey, params.inputStream, mimeType, UPLOAD_LIMITS[params.role]));
-      this.logger.log(`Stream written, size=${sizeBytes}`);
+      this.logger.log("Upload stream written");
       await this.sessions.markValidating(uploadId, params.ownerId);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -86,7 +86,7 @@ export class UploadService {
       throw error;
     }
 
-    this.logger.log(`Upload accepted uploadId=${uploadId} role=${params.role} size=${sizeBytes}`);
+    this.logger.log("Upload accepted");
     return {
       uploadId,
       finalKey,

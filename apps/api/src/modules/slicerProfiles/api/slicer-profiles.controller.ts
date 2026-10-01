@@ -23,7 +23,7 @@ import {
   RecommendSlicerProfileQueryDto,
   SlicerProfileListResponseDto,
 } from "./slicer-profiles.dto.ts";
-import { Public, User } from "../../permissions/public/index.ts";
+import { User } from "../../permissions/public/index.ts";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -70,7 +70,6 @@ export class SlicerProfilesController {
   constructor(@Inject(SLICER_PROFILES_PORT) private readonly slicerProfiles: SlicerProfilesPort) {}
 
   @Get()
-  @Public()
   @ApiSlicerProfilesOperation("List active slicer profiles selectable by the current user", { responseType: SlicerProfileListResponseDto })
   list(@Query() query: ListSlicerProfilesQueryDto) {
     return this.slicerProfiles.list(query.class);
@@ -114,7 +113,6 @@ export class SlicerProfilesController {
   }
 
   @Get(":id/calibrations")
-  @Public()
   @ApiSlicerProfilesOperation("List the latest calibrations for a slicer profile", { notFound: true, responseType: CalibrationListResponseDto })
   async calibrations(@Param("id") rawProfileId: string) {
     if (!UUID_RE.test(rawProfileId)) throw new NotFoundException();

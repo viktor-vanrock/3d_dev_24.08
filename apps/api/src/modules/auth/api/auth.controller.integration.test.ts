@@ -73,7 +73,7 @@ class TestProfileAuthPort implements ProfileAuthPort {
   async createUserWithFreeHandle(seed: NewUserSeed): Promise<UserIdType> {
     const result = await this.pool.query<{ id: string }>(`insert into users (username, display_name, avatar_url) values ($1, $2, $3) returning id`, [
       seed.handle,
-      seed.displayName,
+      seed.displayName ?? "",
       seed.avatarUrl,
     ]);
     return UserId(result.rows[0]!.id);
@@ -449,7 +449,7 @@ describe("Nest auth domain migration", () => {
 
     const localPart = `nestauth${Date.now()}`;
     const email = `${localPart}@sberdevices.ru`;
-    const code = "123456";
+    const code = "1234";
     const emailHash = identifierHash(email);
     const database = app.get<Pool>(DATABASE_POOL);
     await database.query(`insert into email_otp (email_hash, otp_hash, expires_at) values ($1, $2, now() + interval '10 minutes')`, [

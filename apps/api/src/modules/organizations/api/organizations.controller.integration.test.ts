@@ -79,6 +79,7 @@ describe.skipIf(!canRun)("Nest organizations migration", () => {
     }
     if (machineId !== undefined) await pool.query(`delete from machines where id = $1`, [machineId]);
     if (vendorId !== undefined) await pool.query(`delete from vendors where id = $1`, [vendorId]);
+    if (staffId !== undefined) await pool.query(`delete from permission_grants where user_id=$1`, [staffId]);
     for (const id of [claimantId, staffId, nonStaffId]) {
       if (id !== undefined) await pool.query(`delete from users where id = $1`, [id]);
     }

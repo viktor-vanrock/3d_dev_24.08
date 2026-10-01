@@ -9,7 +9,7 @@ async function user(status: "active" | "deleted" = "active"): Promise<ReturnType
   const row = await pool.query<{ id: string }>(`insert into users(username, status, display_name, avatar_url, bio, contacts) values($1,$2,'Name','https://example.test/a','Bio','[{"label":"x","url":"https://example.test"}]') returning id`, [`profile-sanctions-${randomUUID()}`, status]);
   created.push(row.rows[0]!.id); return UserId(row.rows[0]!.id);
 }
-afterAll(async () => { if (created.length > 0) await pool.query(`delete from users where id = any($1::uuid[])`, [created]); });
+afterAll(async () => { if (created.length > 0) { await pool.query(`delete from permission_grants where user_id = any($1::uuid[])`, [created]); await pool.query(`delete from users where id = any($1::uuid[])`, [created]); } });
 
 describe("ProfileSanctionsPort", () => {
   it("loads sanction actor and target under a row lock", async () => {

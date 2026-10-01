@@ -201,8 +201,21 @@ export class ProfileRepository implements ProfileReadPort, ProfileAdminPort, Pro
   }
 
   async loadSanctionActor(tx: PoolClient, input: { readonly actorId: UserIdType }): Promise<{ readonly isStaff: boolean } | null> {
-    const row = (await tx.query<{ id: string }>(`select id from users where id = $1 and status = 'active'`, [input.actorId])).rows[0];
-    return row === undefined ? null : { isStaff: false };
+    const row = (await tx.query<{ id: string; is_staff: boolean }>(
+      `select u.id,
+              exists (
+                select 1 from permission_grants pg
+                where pg.user_id = u.id
+                  and pg.permission in ('moderation.delete_content', 'moderation.manage_sanctions', 'moderation.view_reports')
+                  and pg.revoked_at is null
+                  and (pg.expires_at is null or pg.expires_at > now())
+              ) as is_staff
+       from users u
+       where u.id = $1 and u.status = 'active'
+       for update of u`,
+      [input.actorId],
+    )).rows[0];
+    return row === undefined ? null : { isStaff: row.is_staff };
   }
 
   async isStaff(userId: UserIdType): Promise<boolean> {
@@ -210,7 +223,7 @@ export class ProfileRepository implements ProfileReadPort, ProfileAdminPort, Pro
       `select exists(
          select 1 from permission_grants
          where user_id = $1
-           and permission in ('moderation.delete_content', 'moderation.manage_sanctions')
+           and permission in ('moderation.delete_content', 'moderation.manage_sanctions', 'moderation.manage_community_members', 'catalog.review_vendor_claims')
            and revoked_at is null
            and (expires_at is null or expires_at > now())
        ) as granted`,
@@ -263,7 +276,7 @@ export class ProfileRepository implements ProfileReadPort, ProfileAdminPort, Pro
          values ($1, $2, $3, false)
          on conflict (username) do nothing
          returning id`,
-        [candidate, seed.displayName, seed.avatarUrl],
+        [candidate, seed.displayName ?? "", seed.avatarUrl],
       );
       if (result.rows[0] !== undefined) return UserId(result.rows[0].id);
     }

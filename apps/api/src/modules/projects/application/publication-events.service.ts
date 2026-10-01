@@ -44,9 +44,9 @@ export class PublicationEventsService {
           description: snapshot.description,
           tags: [...snapshot.tags],
         });
-        this.logger.log(`Search index job enqueued modelId=${model.modelId} projectId=${snapshot.projectId}`);
+        this.logger.log("Search index job enqueued");
       } catch (error) {
-        this.logger.warn(`Failed to enqueue search index for modelId=${model.modelId}: ${String(error)}`);
+        this.logger.warn("Failed to enqueue search index");
       }
     }
   }
@@ -55,16 +55,16 @@ export class PublicationEventsService {
     try {
       await this.index.markQueuedForProjectUnpublished(projectId);
     } catch (error) {
-      this.logger.warn(`Failed to remove from search index projectId=${projectId}: ${String(error)}`);
+      this.logger.warn("Failed to remove from search index");
     }
   }
 
   private async createFeedPost(snapshot: PublishedProjectSnapshot): Promise<void> {
     try {
       await this.feed.ensureModelLinkPost(ModelId(snapshot.primaryModelId), UserId(snapshot.actorId), snapshot.title);
-      this.logger.log(`Feed post created or updated projectId=${snapshot.projectId}`);
+      this.logger.log("Feed post created or updated");
     } catch (error) {
-      this.logger.warn(`Failed to create feed post projectId=${snapshot.projectId}: ${String(error)}`);
+      this.logger.warn("Failed to create feed post");
     }
   }
 
