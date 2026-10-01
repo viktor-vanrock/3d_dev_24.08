@@ -45,7 +45,7 @@ export class PublicationEventsService {
           tags: [...snapshot.tags],
         });
         this.logger.log("Search index job enqueued");
-      } catch (error) {
+      } catch {
         this.logger.warn("Failed to enqueue search index");
       }
     }
@@ -54,7 +54,7 @@ export class PublicationEventsService {
   private async removeFromSearchIndex(projectId: string): Promise<void> {
     try {
       await this.index.markQueuedForProjectUnpublished(projectId);
-    } catch (error) {
+    } catch {
       this.logger.warn("Failed to remove from search index");
     }
   }
@@ -63,7 +63,7 @@ export class PublicationEventsService {
     try {
       await this.feed.ensureModelLinkPost(ModelId(snapshot.primaryModelId), UserId(snapshot.actorId), snapshot.title);
       this.logger.log("Feed post created or updated");
-    } catch (error) {
+    } catch {
       this.logger.warn("Failed to create feed post");
     }
   }

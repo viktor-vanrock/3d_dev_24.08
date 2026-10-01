@@ -3,6 +3,7 @@ import { randomBytes } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
 import { DATABASE_POOL } from "../../../nest/database/database.constants.ts";
 import { UserId, type UserId as UserIdType } from "../../_kernel/brandedIds.ts";
+import { Permissions } from "../../permissions/public/index.ts";
 import {
   avatarSnapshotUrl,
   deterministicAvatarConfig,
@@ -201,21 +202,21 @@ export class ProfileRepository implements ProfileReadPort, ProfileAdminPort, Pro
   }
 
   async loadSanctionActor(tx: PoolClient, input: { readonly actorId: UserIdType }): Promise<{ readonly isStaff: boolean } | null> {
-    const row = (await tx.query<{ id: string; is_staff: boolean }>(
+    const row = (await tx.query<{ id: string; staff_granted: boolean }>(
       `select u.id,
               exists (
                 select 1 from permission_grants pg
                 where pg.user_id = u.id
-                  and pg.permission in ('moderation.delete_content', 'moderation.manage_sanctions', 'moderation.view_reports')
+                  and pg.permission in ('${Permissions.MODERATION_DELETE_CONTENT}', '${Permissions.MODERATION_MANAGE_SANCTIONS}', '${Permissions.MODERATION_VIEW_REPORTS}')
                   and pg.revoked_at is null
                   and (pg.expires_at is null or pg.expires_at > now())
-              ) as is_staff
+              ) as staff_granted
        from users u
        where u.id = $1 and u.status = 'active'
        for update of u`,
       [input.actorId],
     )).rows[0];
-    return row === undefined ? null : { isStaff: row.is_staff };
+    return row === undefined ? null : { isStaff: row.staff_granted };
   }
 
   async isStaff(userId: UserIdType): Promise<boolean> {
@@ -223,7 +224,7 @@ export class ProfileRepository implements ProfileReadPort, ProfileAdminPort, Pro
       `select exists(
          select 1 from permission_grants
          where user_id = $1
-           and permission in ('moderation.delete_content', 'moderation.manage_sanctions', 'moderation.manage_community_members', 'catalog.review_vendor_claims')
+           and permission in ('${Permissions.MODERATION_DELETE_CONTENT}', '${Permissions.MODERATION_MANAGE_SANCTIONS}', '${Permissions.MODERATION_MANAGE_COMMUNITY_MEMBERS}', '${Permissions.CATALOG_REVIEW_VENDOR_CLAIMS}')
            and revoked_at is null
            and (expires_at is null or expires_at > now())
        ) as granted`,

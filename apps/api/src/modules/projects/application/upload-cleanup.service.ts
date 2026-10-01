@@ -25,7 +25,7 @@ export class UploadCleanupService implements OnModuleInit, OnModuleDestroy {
       try {
         if (session.object_key !== null) await deleteObject(session.object_key);
         await this.sessions.markAbandoned(session.id);
-      } catch (error) {
+      } catch {
         this.logger.warn("Cleanup could not remove upload session");
       }
     }

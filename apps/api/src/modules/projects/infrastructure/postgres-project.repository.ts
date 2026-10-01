@@ -705,7 +705,7 @@ export class PostgresProjectRepository implements ProjectRepository {
               `chore: publish revision ${revisionId}`,
               { name: draft.owner.username, email: `${draft.owner.username}@users.3mf.tech` },
             );
-          } catch (error) {
+          } catch {
             this.logger.warn("Git ref creation failed");
           }
         }

@@ -169,7 +169,7 @@ export class DevicesService implements DevicesPort, DeviceProfileOperationsPort,
 
   onModuleInit(): void {
     this.transferExpiryTimer = setInterval(() => {
-      void this.expireStaleTransfers().catch((error: unknown) => this.logger.error({ event: "device.transfer.expiry_cleanup.failed" }, "Transfer expiry cleanup failed"));
+      void this.expireStaleTransfers().catch((_error: unknown) => this.logger.error({ event: "device.transfer.expiry_cleanup.failed" }, "Transfer expiry cleanup failed"));
     }, 10 * 60 * 1000);
     this.transferExpiryTimer.unref();
   }
@@ -375,7 +375,7 @@ export class DevicesService implements DevicesPort, DeviceProfileOperationsPort,
   async cancelTransfer(actorId: UserIdType, id: string, transferId: string): Promise<{ readonly ok: true }> {
     const did = deviceId(id);
     if (!isUuid(transferId) || !(await this.repository.cancelTransfer(transferId, did, actorId))) throw new NotFoundException();
-    void this.relayControl?.cancelTransfers([transferId]).catch((error: unknown) => this.logger.warn({ event: "device.transfer.cancel_push.failed" }, "Transfer cancel push failed"));
+    void this.relayControl?.cancelTransfers([transferId]).catch((_error: unknown) => this.logger.warn({ event: "device.transfer.cancel_push.failed" }, "Transfer cancel push failed"));
     return { ok: true };
   }
   async expireStaleTransfers(): Promise<number> {

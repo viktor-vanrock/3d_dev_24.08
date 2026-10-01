@@ -64,7 +64,7 @@ export class ProjectLifecycleService {
     const transition = getTransition(project.status, PROJECT_EVENT.PUBLISH);
     if (transition === null) throw new InvalidTransitionError(project.status, PROJECT_EVENT.PUBLISH);
     const publication = await this.repository.publish(actorId, projectId, version, { status: transition.toStatus, visibility: transition.toVisibility, publishedAt: new Date() });
-    void this.dispatchPublishEvents(actorId, projectId, publication.value.project_revision_id).catch((error) =>
+    void this.dispatchPublishEvents(actorId, projectId, publication.value.project_revision_id).catch((_error) =>
       this.logger.error({ event: "project.publish.events.failed" }, "afterPublish failed"),
     );
     this.logger.info({ event: "project.published", actorId }, "Published project");
@@ -77,7 +77,7 @@ export class ProjectLifecycleService {
     const transition = getTransition(project.status, PROJECT_EVENT.UNPUBLISH);
     if (transition === null) throw new InvalidTransitionError(project.status, PROJECT_EVENT.UNPUBLISH);
     const result = await this.repository.unpublish(actorId, projectId, version, { status: transition.toStatus, visibility: transition.toVisibility });
-    void this.events.afterUnpublish({ projectId, actorId, version: result }).catch((error) =>
+    void this.events.afterUnpublish({ projectId, actorId, version: result }).catch((_error) =>
       this.logger.error({ event: "project.unpublish.events.failed" }, "afterUnpublish failed"),
     );
     this.logger.info({ event: "project.unpublished", actorId }, "Unpublished project");

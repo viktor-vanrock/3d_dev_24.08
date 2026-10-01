@@ -28,7 +28,7 @@ export class PublicationReconciliationService implements OnModuleInit, OnModuleD
       try {
         await this.index.enqueue(row.modelId, row.document);
         fixed += 1;
-      } catch (error) {
+      } catch {
         this.logger.warn("Reconciliation failed to enqueue search index job");
       }
     }

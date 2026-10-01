@@ -18,7 +18,7 @@ export class AuditLogCleanupService implements OnModuleInit, OnModuleDestroy {
     this.timer = setTimeout(() => void this.run(), next.getTime() - now.getTime());
   }
   async run(): Promise<number> {
-    try { const removed = await this.repository.cleanup(); this.logger.info({ event: "audit.retention.cleanup", count: removed }, `Audit retention cleanup removed=${removed}`); return removed; }
+    try { const removed = await this.repository.cleanup(); this.logger.info({ event: "audit_retention.cleanup", count: removed }, `Audit retention cleanup removed=${removed}`); return removed; }
     finally { this.schedule(); }
   }
 }
