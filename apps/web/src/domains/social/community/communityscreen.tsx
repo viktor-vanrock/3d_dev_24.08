@@ -438,7 +438,7 @@ function ThreadRow({
 
   return (
     <div className="cmtyThreadCard reveal" style={{ ["--i" as string]: index }}>
-      <Button variant="ghost" icon={null}
+      <button
         type="button"
         className="cmtyThreadCardBody pressable"
         onPointerDown={sound.tick}
@@ -465,7 +465,7 @@ function ThreadRow({
         <div className="cmtyThreadCardMeta">
           {authorDisplayName(thread.author_id, user)} · {relativeDate(thread.created_at)}
         </div>
-      </Button>
+      </button>
       <div className="cmtyThreadCardVote">
         <span className="cmtyThreadCardVoteLabel">Голоса</span>
         <VoteArrows

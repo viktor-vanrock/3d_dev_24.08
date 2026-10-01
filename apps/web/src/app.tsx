@@ -1,3 +1,4 @@
+import { ProfileData } from "./domains/commerce/profile.data.tsx";
 import { lazy, Suspense, useEffect, type ReactNode } from "react";
 import { AuthGate, GuestIntentResumer, useSession, type SessionUser, LegalScreen } from "@domains/access";
 import { Footer } from "./footer/footer.tsx";
@@ -5,7 +6,7 @@ import { CommunitiesScreen, CommunityScreen, ModerationScreen, ThreadScreen, Fee
 import { ConsentBanner } from "@platform/consent";
 import { GenerateScreen, ResearchFormScreen, ResearchScreen, AssistantChatCenter, AssistantChatsScreen, AssistantWorkshopScreen } from "@domains/ai";
 import { HomeScreen } from "./pages/home/home.tsx";
-import { HomeHeader, type Section, BottomTabBar, NAV_ITEMS } from "@platform/nav";
+import { DataShell, HomeHeader, type Section, BottomTabBar, NAV_ITEMS } from "@platform/nav";
 import { useActivation } from "@shared/lib";
 import { AddModelPage, MakesGalleryScreen, MakeDetailScreen, MarketplaceScreen, ModelScreen, ProjectBuildScreen, ProjectStudioScreen, ProfileScreen, PurchaseReturnScreen } from "@domains/commerce";
 import { OverlayProvider } from "@platform/overlay";
@@ -20,7 +21,7 @@ import { MaterialCandidatesPage } from "./pages/materialcandidates.tsx";
 import { MaterialDetailScreen, MaterialsScreen, ParkAddScreen, CommunityFirmwareScreen, DiyScreen, ParkScreen, SlicePrintScreen, PlateScreen, PrinterLiveScreen, PrintHistoryScreen, PrinterDeviceMissingScreen, PrinterFaceScreen, PrinterCompareScreen, PrinterDetailScreen, PrintersScreen, PrinterReleasesScreen } from "@domains/printing";
 import { ProductHealthPage } from "./pages/producthealth.tsx";
 import { InstallBanner, PwaRuntime } from "@platform/pwa";
-import { authReturnUrl, clearAuthReturnUrl, feedPath, filamentsPath, headerModeFor, issuesPath, loginPath, marketPath, navigate, navigateWithTransition, printersPath, saveAuthReturnUrl, useRoute } from "./router.ts";
+import { authReturnUrl, clearAuthReturnUrl, feedPath, filamentsPath, headerModeFor, issuesPath, loginPath, marketPath, navigate, navigateWithTransition, printersPath, saveAuthReturnUrl, useRoute, communitiesListPath } from "./router.ts";
 import { ThemeProvider } from "@platform/theme";
 import { AuroraBackground } from "@shared/ui";
 import { DataMaterialEditor } from "./domains/printing/materials/admin/materialeditor.tsx";
@@ -117,7 +118,7 @@ export function App() {
   // (communities/community/thread) пока без своего пункта меню (MF-931) — тоже "home", а не
   // "market": сообщество не часть раздела «Проекты».
   const section: Section =
-    route.screen === "home" || route.screen === "generate" || route.screen === "assistant-chats" || route.screen === "assistant-workshop" || route.screen === "avatar-editor" || route.screen === "communities" || route.screen === "community" || route.screen === "thread" || route.screen === "moderation"
+    route.screen === "home" || route.screen === "generate" || route.screen === "assistant-chats" || route.screen === "assistant-workshop" || route.screen === "avatar-editor"  || route.screen === "thread" || route.screen === "moderation"
       ? "home"
       : route.screen === "feed" || route.screen === "feed-post" || route.screen === "feed-new"
         ? "feed"
@@ -137,6 +138,8 @@ export function App() {
             ? "materials"
           : route.screen === "issue" || route.screen === "idea" || route.screen === "issue-new"
             ? "issue"
+          : route.screen === "communities" || route.screen === "community"
+            ? "communities"
             : "market";
   // Профиль — самостоятельный пользовательский слой, а не подраздел «Проектов».
   // Контекстный `section` сохраняем для вычисления направления следующего перехода,
@@ -161,6 +164,8 @@ export function App() {
               ? printersPath()
               : next === "materials"
                 ? filamentsPath()
+                  : next === "communities"
+                  ? communitiesListPath()
                 : issuesPath();
     navigateWithTransition(path, direction);
   }
@@ -310,6 +315,10 @@ export function App() {
               screen = <MaterialsScreen user={user} section={section} onSectionChange={onSectionChange} />;
             } else if (route.screen === "material") {
               screen = <MaterialDetailScreen user={user} section={section} onSectionChange={onSectionChange} id={route.id} />;
+            } else if (route.screen === "data") {
+              screen = <DataShell user={protectedUser} section={section} onSectionChange={onSectionChange}>
+                <ProfileData capabilities={protectedUser.capabilities ?? []} />
+              </DataShell>;
             } else if (route.screen === "data-materials") {
               screen = <DataMaterialsScreen user={protectedUser} section={section} onSectionChange={onSectionChange} />;
             } else if (route.screen === "data-material") {

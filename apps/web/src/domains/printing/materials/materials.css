@@ -567,3 +567,130 @@
     box-shadow: 0 0 0 7px color-mix(in srgb, var(--focus-ring-color) 35%, transparent);
   }
 }
+
+/* Focus is indicated by the search field wrapper. */
+.materialsSearchField .uiInput:focus {
+  outline: none;
+  border: none;
+  box-shadow: none;
+}
+
+/* Reserve the clear action slot so typing cannot resize the filters. */
+.materialsSidebar,
+.materialsFilters,
+.materialsSearchField,
+.materialsTextControl {
+  min-width: 0;
+}
+
+.materialsFilters {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.materialsSearchField {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) var(--icon-button-size);
+}
+
+.materialsTextControl {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--icon-button-size);
+}
+
+.materialsSearchField input,
+.materialsTextControl input {
+  width: 100%;
+  min-width: 0;
+}
+
+.materialsBrandSelect {
+  position: relative;
+}
+
+.materialsBrandSelect:focus-within {
+  z-index: 5;
+}
+
+.materialsBrandSelect .uiInput:focus {
+  outline: none;
+  border: 0;
+  box-shadow: none;
+}
+
+.materialsBrandMenu {
+  position: absolute;
+  top: calc(100% + 8px);
+  inset-inline: 0;
+  z-index: 10;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: 0 12px 32px color-mix(in srgb, var(--shadow) 40%, transparent);
+}
+
+.materialsBrandMenu ul {
+  max-height: 260px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.materialsBrandMenu li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.materialsBrandMenu li:hover,
+.materialsBrandMenu li[data-active],
+.materialsBrandMenu li[aria-selected="true"] {
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  color: var(--accent);
+}
+
+.materialsBrandMenu p {
+  padding: 12px;
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.materialsActiveFilters .materialsReset {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.materialsActiveFilters .materialsFilterChip {
+  max-width: 100%;
+  height: auto;
+  min-height: var(--control-height-m);
+  padding-block: 8px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.materialsFilters .materialsSearchField,
+.materialsFilters .materialsTextControl {
+  height: max(50px, calc(var(--icon-button-size) + 2px));
+  min-height: max(50px, calc(var(--icon-button-size) + 2px));
+}
+
+.materialsFilters .materialsSearchField input,
+.materialsFilters .materialsTextControl input {
+  height: 100%;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+.materialsKindField legend {
+  margin-bottom: 8px;
+}

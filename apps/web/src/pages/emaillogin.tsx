@@ -1,6 +1,6 @@
+import { Select, Button, FieldGroup, Input } from "@shared/ui";
 import { useId, useState, type CSSProperties } from "react";
 import { EMAIL_DOMAINS, startEmailAuth, verifyEmailAuth, type AuthFormError, type EmailDomain } from "@domains/access";
-import { Button, FieldGroup, Input } from "@shared/ui";
 import "./login.css";
 import { ErrorMessage } from "@shared/ui/error-message/error-message.tsx";
 
@@ -96,7 +96,7 @@ export function EmailLogin({ onSuccess }: { onSuccess?: () => void } = {}) {
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? errorId : undefined}
         />
-        <select
+        <Select
           value={domain}
           onChange={(event) => {
             setDomain(event.target.value as EmailDomain);
@@ -109,7 +109,7 @@ export function EmailLogin({ onSuccess }: { onSuccess?: () => void } = {}) {
               @{option}
             </option>
           ))}
-        </select>
+        </Select>
       </FieldGroup>
       {error ? <div id={errorId}><ErrorMessage {...error} /></div> : null}
       <Button className="emailLoginSubmit" type="submit" disabled={busy || !localPart.trim()} loading={busy}>

@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger } from "@nestjs/common";
+import { Inject, Injectable, Optional } from "@nestjs/common";
 import type { ProjectId, UserId } from "../../_kernel/brandedIds.ts";
 import { ProjectError } from "../domain/project.errors.ts";
 import { getAllowedEvents, getTransition, PROJECT_EVENT, type ProjectEvent, type ProjectStatus, type ProjectVisibility, type TransitionResult } from "../domain/project-lifecycle.types.ts";
@@ -6,6 +6,7 @@ import type { ProjectRepository } from "../domain/project.repository.ts";
 import { PostgresProjectRepository } from "../infrastructure/postgres-project.repository.ts";
 import { PublicationEventsService } from "./publication-events.service.ts";
 import { checkContentRestrictions, CONTENT_RESTRICTIONS_PORT, type ContentRestrictionsPort } from "../../moderation/public/index.ts";
+import { RuntimeLogger } from "../../../nest/observability/runtime-logger.ts";
 
 export class InvalidTransitionError extends ProjectError {
   constructor(from: ProjectStatus, event: ProjectEvent) {
@@ -20,10 +21,14 @@ export interface PublishCommand {
 
 @Injectable()
 export class ProjectLifecycleService {
-  private readonly logger = new Logger(ProjectLifecycleService.name);
   private readonly repository: ProjectRepository;
 
-  constructor(@Inject(PostgresProjectRepository) repository: PostgresProjectRepository, @Inject(PublicationEventsService) private readonly events: PublicationEventsService, @Inject(CONTENT_RESTRICTIONS_PORT) private readonly contentRestrictions: ContentRestrictionsPort) {
+  constructor(
+    @Inject(PostgresProjectRepository) repository: PostgresProjectRepository,
+    @Inject(PublicationEventsService) private readonly events: PublicationEventsService,
+    @Inject(CONTENT_RESTRICTIONS_PORT) private readonly contentRestrictions: ContentRestrictionsPort,
+    @Optional() @Inject(RuntimeLogger) private readonly logger: RuntimeLogger = new RuntimeLogger(),
+  ) {
     this.repository = repository;
   }
 
@@ -59,10 +64,10 @@ export class ProjectLifecycleService {
     const transition = getTransition(project.status, PROJECT_EVENT.PUBLISH);
     if (transition === null) throw new InvalidTransitionError(project.status, PROJECT_EVENT.PUBLISH);
     const publication = await this.repository.publish(actorId, projectId, version, { status: transition.toStatus, visibility: transition.toVisibility, publishedAt: new Date() });
-    void this.dispatchPublishEvents(actorId, projectId, publication.value.project_revision_id).catch((error) =>
-      this.logger.error(`afterPublish failed projectId=${projectId}: ${String(error)}`),
+    void this.dispatchPublishEvents(actorId, projectId, publication.value.project_revision_id).catch((_error) =>
+      this.logger.error({ event: "project.publish.events.failed" }, "afterPublish failed"),
     );
-    this.logger.log(`Published project=${projectId} actor=${actorId}`);
+    this.logger.info({ event: "project.published", actorId }, "Published project");
     return publication;
   }
 
@@ -72,16 +77,16 @@ export class ProjectLifecycleService {
     const transition = getTransition(project.status, PROJECT_EVENT.UNPUBLISH);
     if (transition === null) throw new InvalidTransitionError(project.status, PROJECT_EVENT.UNPUBLISH);
     const result = await this.repository.unpublish(actorId, projectId, version, { status: transition.toStatus, visibility: transition.toVisibility });
-    void this.events.afterUnpublish({ projectId, actorId, version: result }).catch((error) =>
-      this.logger.error(`afterUnpublish failed projectId=${projectId}: ${String(error)}`),
+    void this.events.afterUnpublish({ projectId, actorId, version: result }).catch((_error) =>
+      this.logger.error({ event: "project.unpublish.events.failed" }, "afterUnpublish failed"),
     );
-    this.logger.log(`Unpublished project=${projectId} actor=${actorId}`);
+    this.logger.info({ event: "project.unpublished", actorId }, "Unpublished project");
     return result;
   }
 
   async archive(actorId: UserId, projectId: ProjectId, version: number): Promise<{ readonly version: number }> {
     const result = await this.transition(actorId, projectId, PROJECT_EVENT.ARCHIVE, version);
-    this.logger.log(`Archived project=${projectId} actor=${actorId}`);
+    this.logger.info({ event: "project.archived", actorId }, "Archived project");
     return result;
   }
 
@@ -96,7 +101,7 @@ export class ProjectLifecycleService {
   private async dispatchPublishEvents(actorId: UserId, projectId: ProjectId, revisionId: string): Promise<void> {
     const published = await this.repository.getPublished(projectId);
     if (published === null || published.project_revision_id !== revisionId) {
-      this.logger.warn(`afterPublish skipped: published snapshot changed projectId=${projectId}`);
+      this.logger.warn({ event: "project.publish.events.skipped" }, "afterPublish skipped: published snapshot changed");
       return;
     }
     await this.events.afterPublish({

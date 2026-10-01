@@ -8,7 +8,6 @@ import { useGuestLogin, logout } from "@domains/access";
 // Легатное ребро platform→domains. Разрывается на Этапе 10 через pages/<route>/ + DI
 // (передача HomeHeader через props из pages вместо прямого import в доменах).
 // eslint-disable-next-line boundaries/element-types
-import { AssistantHeaderSearch } from "@domains/ai";
 import { usePrinterAlerts, mockPrinterStatusSource, useOverlay, NotificationCenterList } from "@platform/overlay";
 import { avatarEditorPath, generatePath, navigate, profilePath } from "../../router.ts";
 import { useInteractionSound } from "@platform/sound";
@@ -71,12 +70,7 @@ export function HomeHeader({
   // обычная рабочая шапка, а наличие возврата автоматически выбирает `mixed`. Это не даёт
   // новой странице случайно унаследовать компактную геометрию Дома.
   const resolvedMode: HeaderMode = mode ?? (onBack ? "mixed" : "full");
-  // Единый поиск относится к рабочему хрому: в presentation главная уже сама является
-  // поисковой сценой, поэтому в шапке он дублировал главный ввод. В full/mixed поле
-  // появляется рядом с персонажем и наследует общий route-transition оболочки.
-  const showAssistantSearch = resolvedMode === "full" || resolvedMode === "mixed";
   const [open, setOpen] = useState<"none" | "user">("none");
-  const [mascotTyping, setMascotTyping] = useState(false);
   // Персонаж-аватар (MF-446): редактор живёт на отдельном /profile/avatar.
   const [avatar, , avatarSnapshots] = useAvatar(user?.id ?? "guest");
   const capsuleRef = useRef<HTMLDivElement>(null);
@@ -180,16 +174,14 @@ export function HomeHeader({
   }, [open]);
 
   const clock = <Clock key="shell-clock" />;
-
   // Реестр маршрутов (navitems.ts) питает нав-табы в обоих режимах — добавление раздела
   // («Принтеры» и т.п.) не требует правок этого компонента (§1.3 projects.page.md). SegmentToggle
   // (ui/segmenttoggle.tsx) — общий компонент с сортировкой на /project (projectspage.tsx): один
   // скользящий DOM-якорь заливки под shared-element slide (motion.md §2), не два похожих таба.
   // className="homeSectionTabs" — Motion-хук (ui.css): свой тайминг перехода + view-transition-name
   // для моста между Дом/Проекты (разные экраны, полный ремаунт), не задевает сортировку.
-  // Переход раздела (motion.md §2, sound.md §3): tick на тап пилюли сразу (onPress), затем
-  // тихий nav-свуш через +40ms — синхронно со стартом cross-fade контента, не слитно с tick.
-  // Направление — по порядку NAV_ITEMS (тот же реестр, что App.onSectionChange), не хардкод.
+  // Переход раздела использует общий реестр NAV_ITEMS и остаётся бесшумным: шапка —
+  // навигационный хром, а не источник обратной связи главного экрана.
   const navTabs = (
     <SegmentToggle<Section>
       key="shell-nav"
@@ -202,13 +194,6 @@ export function HomeHeader({
         if (item) trackActivation("nav_item_click", { item });
         onSectionChange(next);
       }}
-      onPress={(next) => {
-        sound.tick();
-        const fromIndex = NAV_ITEMS.findIndex((item) => item.section === section);
-        const toIndex = NAV_ITEMS.findIndex((item) => item.section === next);
-        const direction = toIndex >= fromIndex ? "fwd" : "back";
-        setTimeout(() => sound.nav(direction), 40);
-      }}
     />
   );
 
@@ -220,6 +205,7 @@ export function HomeHeader({
       className="homeCapsule"
       ref={capsuleRef}
       data-open={open !== "none" || undefined}
+      data-guest={!user || undefined}
       role="group"
       aria-label="Панель пользователя"
     >
@@ -243,7 +229,7 @@ export function HomeHeader({
             active={open === "user"}
             notificationCount={overlay.notifications.unreadCount}
             suspended={false}
-            typing={mascotTyping}
+            typing={false}
           />
           {overlay.notifications.unreadCount > 0 ? (
             <span className="homeCapsuleBadge homeCapsuleBadge--avatar" aria-hidden="true">
@@ -252,8 +238,6 @@ export function HomeHeader({
           ) : null}
         </button>
       ) : (
-        // Гость: та же компактная стекло-пилюля, что «Написать пост»/«Форк» (modelGlassBtn,
-        // market/model.css) — не изобретаем третий вид кнопки под один CTA капсулы.
         <button
           type="button"
           className="modelGlassBtn pressable"
@@ -360,6 +344,17 @@ export function HomeHeader({
             Генерации
             <span className="homePopItemHint">История запросов</span>
           </button>
+          <button
+            type="button"
+            className="homePopItem pressable"
+            onClick={() => {
+              setOpen("none");
+              navigate('/profile');
+            }}
+          >
+            <PersonaIcon />
+            Личный кабинет
+          </button>
 
           <span className="homePopDivider" aria-hidden="true" />
           <span className="homePopSectionLabel">Быстрые настройки</span>
@@ -418,13 +413,11 @@ export function HomeHeader({
     </div>
   );
 
-  // Возврат — часть общего API шапки, но не её трёхколоночной сетки: иначе наличие
-  // стрелки сдвигает часы и визуально меняет оболочку при переходе между маршрутами.
+  // В рабочей шапке возврат располагается в одном ряду слева от часов.
   const backButton = onBack && (resolvedMode === "back" || resolvedMode === "mixed") ? (
     <div className="homeTopbarBack">
-      <IconButton label={backLabel ?? "Назад"} wide={Boolean(backLabel)} onClick={onBack} onPress={sound.tick}>
+      <IconButton label={backLabel ?? "Назад"} onClick={onBack} onPress={sound.tick}>
         <BackIcon />
-        {backLabel ? <span className="homeTopbarBackLabel">{backLabel}</span> : null}
       </IconButton>
     </div>
   ) : null;
@@ -455,8 +448,7 @@ export function HomeHeader({
           </span>
           <div className="homeTopbarEdge homeTopbarEdge--right" data-collapsed={chromeCollapsed || undefined}>
             <div className="homeTopbarTools">
-              {showAssistantSearch ? <AssistantHeaderSearch key="shell-search" user={user} onTypingChange={setMascotTyping} contextKey={section} /> : null}
-              {capsule}
+              <div className="homeGuestControls"><ThemeToggle silent />{capsule}</div>
             </div>
           </div>
         </div>
@@ -471,13 +463,14 @@ export function HomeHeader({
         data-has-back={Boolean(backButton) || undefined}
         data-back-wide={Boolean(backButton && backLabel) || undefined}
       >
-        {backButton}
-        <div className="homeTopbarEdge homeTopbarEdge--left">{clock}</div>
+        <div className="homeTopbarEdge homeTopbarEdge--left">
+          {backButton}
+          {clock}
+        </div>
         {navTabs}
         <div className="homeTopbarEdge homeTopbarEdge--right">
           <div className="homeTopbarTools">
-            {showAssistantSearch ? <AssistantHeaderSearch key="shell-search" user={user} onTypingChange={setMascotTyping} contextKey={section} /> : null}
-            {capsule}
+            <div className="homeGuestControls"><ThemeToggle silent />{capsule}</div>
           </div>
         </div>
       </div>
@@ -500,12 +493,12 @@ function Clock() {
   const time = now.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
   const date = now.toLocaleDateString("ru-RU", { weekday: "short", day: "numeric", month: "long" });
   return (
-    <div className="homeClock" style={{ display: "flex", alignItems: "baseline", gap: 10, userSelect: "none" }}>
+    <div className="homeClock">
       {/* Жирные часы (фидбек оператора 2026-07-18) — приложение целится и в полноэкранный
           web-ТВ (header.capsule.md § «Четыре режима»), где часы держат вес всей левой
           колонки шапки в одиночку: 300 читался как случайный тонкий текст, не как якорь. */}
-      <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 26, lineHeight: 1 }}>{time}</span>
-      <span className="homeClockDate" style={{ color: "var(--text-dim)", fontSize: 13 }}>
+      <span className="homeClockTime">{time}</span>
+      <span className="homeClockDate">
         {date}
       </span>
     </div>

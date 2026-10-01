@@ -17,7 +17,7 @@ import "./wisp.css";
 const KNOB = 24;
 const PAD = 4;
 
-export function ThemeToggle() {
+export function ThemeToggle({ silent = false, className }: { silent?: boolean; className?: string }) {
   const { theme, setTheme } = useTheme();
   const sound = useInteractionSound();
   const trackRef = useRef<HTMLButtonElement>(null);
@@ -61,7 +61,7 @@ export function ThemeToggle() {
     if (!drag.current) return;
     // Toggle-тембр (§2/§3 sound.md) — на смену состояния, синхронно с морфом заливки, не на
     // каждый пиксель drag; тап и отпускание drag — единственные моменты, где тема реально меняется.
-    sound.toggle();
+    if (!silent) sound.toggle();
     if (drag.current.moved) {
       setTheme(positionFrom(event.clientX) > 0.5 ? "dark" : "light");
       // Хвост плавности после отпускания, затем транзишены снимаем (не тормозить UI)
@@ -89,7 +89,7 @@ export function ThemeToggle() {
     <button
       ref={trackRef}
       type="button"
-      className="wispToggle"
+      className={`wispToggle${className ? ` ${className}` : ""}`}
       data-touch-target="48"
       role="switch"
       aria-checked={theme === "dark"}

@@ -4,3 +4,5 @@ export * from "./aurorabg.tsx";
 export * from "./segmenttoggle.tsx";
 export * from "./vote.tsx";
 export * from "./reasonpanel.tsx";
+export { Select } from "./select.tsx";
+export { DataSelect } from "./dataselect.tsx";

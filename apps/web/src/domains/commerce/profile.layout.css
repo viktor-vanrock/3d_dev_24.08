@@ -671,3 +671,42 @@
     animation: none;
   }
 }
+
+.profileTabsSelect {
+  display: none;
+}
+
+@media (width < 600px) {
+  .profileTabs {
+    display: none;
+  }
+
+  .profileTabsSelect {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    min-height: 48px;
+    box-sizing: border-box;
+    padding: 12px 42px 12px 16px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    appearance: none;
+    background-color: var(--surface);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath d='m4 6 4 4 4-4' fill='none' stroke='%237b817e' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    color: var(--text);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .profileTabsSelect:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: var(--focus-ring-offset);
+  }
+}
+
+@media (width >= 600px) {
+  .uiSelectHost.profileTabsSelect { display: none; }
+}

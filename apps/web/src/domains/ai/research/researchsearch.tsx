@@ -25,9 +25,12 @@ export function ResearchSearchCreate({ mode = "research" }: { mode?: ResearchApi
       setResults(null);
       return;
     }
+    setResults(null);
     const controller = new AbortController();
     debounceRef.current = setTimeout(() => {
-      searchResearchPrinters(trimmed, controller.signal, mode).then((hits) => setResults(hits ?? []));
+      searchResearchPrinters(trimmed, controller.signal, mode).then((hits) => {
+        if (!controller.signal.aborted) setResults(hits ?? []);
+      });
     }, SEARCH_DEBOUNCE_MS);
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -67,6 +70,8 @@ export function ResearchSearchCreate({ mode = "research" }: { mode?: ResearchApi
         <div className="researchSearchPanel">
           {results === null ? (
             <div className="researchSearchHint">Ищем…</div>
+          ) : results.length === 0 ? (
+            <div className="researchSearchHint" role="status">Ничего не найдено...</div>
           ) : (
             results.map((hit) => (
               <button

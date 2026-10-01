@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Button } from "@shared/ui";
-import type { ProjectAction, ProjectStatus } from "./project-lifecycle.ts";
-import { getActionLabel, STATUS_META } from "./project-lifecycle.ts";
+import { type ProjectAction, type ProjectStatus, getActionLabel, STATUS_META } from "./project-lifecycle.ts";
 import "./projectlifecycle.css";
 
 export function ProjectLifecycleActions({ status, onAction, disabled = false }: {

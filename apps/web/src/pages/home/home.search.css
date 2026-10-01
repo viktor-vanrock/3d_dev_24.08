@@ -7,7 +7,7 @@
   text-align: center;
   gap: 14px;
   /* Больше воздуха: поиск ниже, вокруг — пусто (референс Kandinsky) */
-  padding: clamp(48px, 13vh, 124px) 0 clamp(28px, 6vh, 60px);
+  padding: 0 0 clamp(28px, 6vh, 60px);
 }
 
 /* Обёртка инпута — та же ширина, что сам homeGhostInput (900px), нужна как якорь позиционирования
@@ -17,22 +17,18 @@
   position: relative;
   width: 100%;
   max-width: 860px;
-  min-height: 76px;
+  height: 76px;
   display: flex;
   align-items: center;
-  border: 1px solid color-mix(in srgb, var(--border) 68%, transparent);
+  border: 1px solid color-mix(in srgb, var(--surface) 62%, transparent);
   border-radius: 28px;
-  background:
-    linear-gradient(120deg, color-mix(in srgb, var(--surface) 86%, transparent), color-mix(in srgb, var(--surface) 64%, transparent));
+  background: color-mix(in srgb, var(--surface) 62%, transparent);
   box-shadow:
     0 18px 54px color-mix(in srgb, var(--shadow-color, #17221b) 11%, transparent),
     inset 0 1px 0 color-mix(in srgb, white 58%, transparent);
   backdrop-filter: blur(24px) saturate(1.12);
   -webkit-backdrop-filter: blur(24px) saturate(1.12);
-  transition:
-    border-color var(--dur-toggle) var(--ease-out),
-    box-shadow var(--dur-toggle) var(--ease-out),
-    transform var(--dur-toggle) var(--ease-spring);
+  transition: none;
 }
 
 .homeInputWrap:focus-within,
@@ -46,15 +42,18 @@
 
 .homeInputSearchIcon {
   position: absolute;
-  left: 24px;
+  left: 22px;
   top: 50%;
   z-index: 1;
   display: inline-flex;
   color: color-mix(in srgb, var(--text-dim) 82%, var(--accent) 18%);
   transform: translateY(-50%);
-  transition:
-    color var(--dur-toggle) var(--ease-out),
-    transform var(--dur-toggle) var(--ease-spring);
+  transition: none;
+}
+
+.homeInputSearchIcon svg {
+  width: 30px;
+  height: 30px;
 }
 
 .homeInputWrap:focus-within .homeInputSearchIcon {
@@ -73,15 +72,15 @@
   color: var(--text);
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: clamp(21px, 2.4vw, 30px);
+  font-size: clamp(15px, 2.4vw, 24px);
   line-height: 1.2;
   caret-color: var(--accent);
-  padding: 22px 68px 22px 62px;
+  padding: 22px 68px 22px 76px;
 }
 
 .homeGhostInput::placeholder {
   color: color-mix(in srgb, var(--text-dim) 55%, transparent);
-  transition: color var(--dur-toggle) var(--ease-out);
+  transition: none;
 }
 
 .homeGhostInput:focus::placeholder {
@@ -112,7 +111,7 @@
   cursor: pointer;
   opacity: 0;
   pointer-events: none;
-  transition: opacity var(--dur-tap) var(--ease-out);
+  transition: none;
 }
 
 .homeSearchIntent {
@@ -298,21 +297,33 @@
 
 @media (max-width: 760px) {
   .homeSearchHero {
-    padding-top: clamp(34px, 8vh, 72px);
-  }
-
-  .homeInputWrap {
-    min-height: 64px;
-    border-radius: 22px;
+    padding-top: clamp(10px, 3vh, 0);
   }
 
   .homeInputSearchIcon {
-    left: 18px;
+    left: 16px;
   }
 
   .homeGhostInput {
-    padding: 18px 56px 18px 50px;
-    font-size: clamp(18px, 5.5vw, 24px);
+    padding: 18px 56px 18px 64px;
   }
 
+}
+
+/* На узких экранах поле на 30% ниже, шрифт меньше на 4px. */
+@media (width < 1150px) {
+  .homeInputWrap {
+    height: calc(76px * 0.7);
+  }
+
+  .homeGhostInput {
+    padding-block: 10px;
+    font-size: calc(clamp(20px, 2.4vw, 24px) - 4px);
+  }
+}
+
+@media (max-width: 760px) {
+  .homeInputClear {
+    height: 44px;
+  }
 }

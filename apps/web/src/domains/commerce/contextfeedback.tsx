@@ -1,5 +1,5 @@
+import { Select, Chip, PopoverItem } from "@shared/ui";
 import { useId } from "react";
-import { Chip, PopoverItem } from "@shared/ui";
 import { issueNewPath, navigate, type IssueRef } from "../../router.ts";
 import "./contextfeedback.css";
 
@@ -95,7 +95,7 @@ export function TypeSelect({ value, onChange }: { value: IssueType; onChange: (v
       <label className="cfbTypeSelectLabel" htmlFor={selectId}>
         Тип обращения
       </label>
-      <select
+      <Select
         id={selectId}
         className="cfbTypeSelectControl"
         value={value}
@@ -103,7 +103,7 @@ export function TypeSelect({ value, onChange }: { value: IssueType; onChange: (v
       >
         <option value="idea">Сообщить об идее</option>
         <option value="problem">Сообщить о проблеме</option>
-      </select>
+      </Select>
       {value === "problem" ? (
         <div className="cfbTypeSelectHint">Проблема не попадает в общую ленту голосования — команда увидит её отдельно</div>
       ) : null}

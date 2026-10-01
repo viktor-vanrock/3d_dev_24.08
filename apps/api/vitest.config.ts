@@ -1,5 +1,13 @@
+import { existsSync } from "node:fs";
+import { loadEnvFile } from "node:process";
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
 import ts from "typescript";
+
+// Keep test credentials separate from the development database.
+// Explicit environment variables take precedence over .env.test.
+const testEnvFile = fileURLToPath(new URL("./.env.test", import.meta.url));
+if (existsSync(testEnvFile)) loadEnvFile(testEnvFile);
 
 export default defineConfig({
   plugins: [

@@ -1,7 +1,10 @@
-import { useCallback, useEffect, useId, useState, type ChangeEvent } from "react";
+import { BrandSelect } from "./brandselect.tsx";
+import { useCallback, useEffect, useId, useState } from "react";
 import type { SessionUser } from "@shared/types";
 import { useActivation } from "@shared/lib";
 import { HomeHeader, type Section } from "@platform/nav";
+// eslint-disable-next-line boundaries/element-types -- Существующая интеграция через публичный API домена, до переноса оркестрации в pages (MIGRATION.md).
+import { ASSISTANT_CONTEXT_SEARCH_EVENT, AssistantHeaderSearch, type AssistantContextSearchDetail } from "@domains/ai";
 // eslint-disable-next-line boundaries/element-types, boundaries/entry-point -- легатное ребро (Этап 4.5): CSS side-effect, не index.ts; home.css остаётся общим "рабочим хромом" для доменных экранов, разрядка отложена до pages/DI (Этап 10). Cм. MIGRATION.md.
 import "@pages/home/home.css";
 import { headerModeFor, materialPath, materialsPath } from "../../../router.ts";
@@ -56,6 +59,15 @@ export function MaterialsScreen({ user, section, onSectionChange }: { user: Sess
     }, 350);
     return () => window.clearTimeout(timer);
   }, [qInput]);
+
+  useEffect(() => {
+    const onContextSearch = (event: Event) => {
+      const detail = (event as CustomEvent<AssistantContextSearchDetail>).detail;
+      if (detail?.context.kind === "materials") setQInput(detail.query);
+    };
+    window.addEventListener(ASSISTANT_CONTEXT_SEARCH_EVENT, onContextSearch);
+    return () => window.removeEventListener(ASSISTANT_CONTEXT_SEARCH_EVENT, onContextSearch);
+  }, []);
 
   useEffect(() => {
     const onPopState = () => {
@@ -146,7 +158,8 @@ export function MaterialsScreen({ user, section, onSectionChange }: { user: Sess
       <div style={{ position: "relative", zIndex: 30 }}>
         <HomeHeader user={user} printers={activation.printers} section={section} onSectionChange={onSectionChange} mode={headerModeFor("materials")} />
       </div>
-      <main className="homeContent materialsContent">
+      <main className="homeContent homeWorkspaceBody materialsContent">
+        <AssistantHeaderSearch user={user} contextKey="materials" page />
         <header className="materialsIntro">
           <Eyebrow>КАТАЛОГ МАТЕРИАЛОВ</Eyebrow>
           <Heading size="md">Материалы для печати</Heading>
@@ -165,11 +178,8 @@ export function MaterialsScreen({ user, section, onSectionChange }: { user: Sess
           </aside>
 
           <section className="materialsResults" aria-labelledby="materials-results-title">
-            <div className="materialsResultsHeader">
-              <Eyebrow>РЕЗУЛЬТАТЫ</Eyebrow>
-              {hasMaterialFilters(filters) ? <Button variant="ghost" icon={null} className="materialsReset" onClick={resetFilters}>Сбросить фильтры</Button> : null}
-            </div>
-            <ActiveFilters filters={filters} onChange={updateFilter} />
+            <ActiveFilters filters={filters} onChange={updateFilter} onReset={resetFilters} />
+            <Eyebrow>РЕЗУЛЬТАТЫ</Eyebrow>
             <h2 id="materials-results-title" className="srOnly">Материалы</h2>
 
             {error && items === null ? (
@@ -261,14 +271,17 @@ function MaterialFilterControls({
   materials: MaterialRecord[];
   vendors: readonly MaterialVendor[];
 }) {
-  const controlId = useId();
   const vendorOptions = vendors.length > 0
     ? vendors
     : [...new Map(materials.map((material) => [material.vendor.slug, material.vendor])).values()];
   const types = [...new Set(materials.map((material) => material.material_type.name))];
-  function inputHandler(key: "vendor" | "type" | "color") {
-    return (event: ChangeEvent<HTMLInputElement>) => onChange(key, event.target.value);
-  }
+  const colors = [
+    ["black", "Чёрный"], ["white", "Белый"], ["red", "Красный"],
+    ["blue", "Синий"], ["green", "Зелёный"], ["yellow", "Жёлтый"],
+    ["gray", "Серый"], ["silver", "Серебристый"], ["orange", "Оранжевый"],
+    ["purple", "Фиолетовый"], ["pink", "Розовый"], ["brown", "Коричневый"],
+    ["natural", "Натуральный"], ["transparent", "Прозрачный"],
+  ].map(([slug, name]) => ({ id: slug!, slug: slug!, name: name! }));
 
   return (
     <div className="materialsFilters">
@@ -276,24 +289,15 @@ function MaterialFilterControls({
         <span className="srOnly">Поиск материалов</span>
         <SearchIcon />
         <Input value={qInput} onChange={(event) => onQueryChange(event.target.value)} placeholder="Поиск" maxLength={200} />
-        {qInput ? <IconButton label="Очистить поиск" onClick={() => onQueryChange("")}><CloseIcon /></IconButton> : null}
+        {qInput ? <IconButton variant="transparent" label="Очистить поиск" onClick={() => onQueryChange("")}><CloseIcon /></IconButton> : null}
       </label>
-      <label className="materialsField">
-        <Eyebrow>БРЕНД</Eyebrow>
-        <span className="materialsTextControl">
-          <Input value={filters.vendor} onChange={inputHandler("vendor")} placeholder="Введите бренд" list={`${controlId}-vendors`} />
-          {filters.vendor ? <IconButton label="Очистить бренд" onClick={() => onChange("vendor", "")}><CloseIcon /></IconButton> : null}
-        </span>
-        <datalist id={`${controlId}-vendors`}>{vendorOptions.map((vendor) => <option key={vendor.id} value={vendor.slug} label={vendor.name} />)}</datalist>
-      </label>
-      <label className="materialsField">
-        <Eyebrow>ТИП</Eyebrow>
-        <span className="materialsTextControl">
-          <Input value={filters.type} onChange={inputHandler("type")} placeholder="Введите тип" list={`${controlId}-types`} />
-          {filters.type ? <IconButton label="Очистить тип" onClick={() => onChange("type", "")}><CloseIcon /></IconButton> : null}
-        </span>
-        <datalist id={`${controlId}-types`}>{types.map((type) => <option key={type} value={type} />)}</datalist>
-      </label>
+      <BrandSelect value={filters.vendor} vendors={vendorOptions} onChange={(value) => onChange("vendor", value)} />
+      <BrandSelect
+        field="type"
+        value={filters.type}
+        vendors={types.map((type) => ({ id: type, slug: type, name: type }))}
+        onChange={(value) => onChange("type", value)}
+      />
       <fieldset className="materialsField materialsKindField">
         <legend><Eyebrow>КЛАСС</Eyebrow></legend>
         <div className="materialsKindGroup" role="group" aria-label="Класс материала">
@@ -304,18 +308,17 @@ function MaterialFilterControls({
           ))}
         </div>
       </fieldset>
-      <label className="materialsField">
-        <Eyebrow>ЦВЕТ</Eyebrow>
-        <span className="materialsTextControl">
-          <Input value={filters.color} onChange={inputHandler("color")} placeholder="Например, чёрный" />
-          {filters.color ? <IconButton label="Очистить цвет" onClick={() => onChange("color", "")}><CloseIcon /></IconButton> : null}
-        </span>
-      </label>
+      <BrandSelect
+        field="color"
+        value={filters.color}
+        vendors={colors}
+        onChange={(value) => onChange("color", value)}
+      />
     </div>
   );
 }
 
-function ActiveFilters({ filters, onChange }: { filters: MaterialFilters; onChange: <K extends keyof MaterialFilters>(key: K, value: MaterialFilters[K]) => void }) {
+function ActiveFilters({ filters, onChange, onReset }: { filters: MaterialFilters; onChange: <K extends keyof MaterialFilters>(key: K, value: MaterialFilters[K]) => void; onReset: () => void }) {
   if (!hasMaterialFilters(filters)) return null;
   const values: Array<{ key: keyof MaterialFilters; label: string; value: string }> = [
     { key: "q", label: "Поиск", value: filters.q },
@@ -332,6 +335,7 @@ function ActiveFilters({ filters, onChange }: { filters: MaterialFilters; onChan
           {item.label ? `${item.label}: ` : ""}{item.value} ×
         </Button>
       ))}
+      <Button variant="ghost" icon={null} className="materialsReset" onClick={onReset}>Сбросить фильтры</Button>
     </div>
   );
 }

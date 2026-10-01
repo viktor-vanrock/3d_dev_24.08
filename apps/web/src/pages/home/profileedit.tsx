@@ -1,11 +1,11 @@
+import { Select, Button, Input } from "@shared/ui";
 import { useState, type CSSProperties, type FormEvent } from "react";
 import { updateProfile, USERNAME_RE, type SessionUser } from "@domains/access";
 import { submitConsent } from "@platform/consent";
 import type { OverlayApi } from "@platform/overlay";
 import { avatarEditorPath, navigate } from "../../router.ts";
-import { Button, Input } from "@shared/ui";
 import { AvatarBubble, useAvatar } from "@shared/avatar";
-import { SessionsList } from "../../domains/auth/sessions-list.tsx";
+import { SessionsList } from "@domains/auth";
 
 // Форма правки профиля (MF-355, Фаза 2 эпика MF-14) — открывается из капсулы шапки
 // (homeheader.tsx, пункт «Профиль»), контент модалки overlay.modal(). Username/display_name/
@@ -24,7 +24,7 @@ export function ProfileEditForm({
 }) {
   const [username, setUsername] = useState(user.username);
   const [displayName, setDisplayName] = useState(user.display_name ?? "");
-  const [gender, setGender] = useState(user.gender ?? "");
+  const [gender, setGender] = useState(user.gender === "male" || user.gender === "female" ? user.gender : "");
   const [birthYear, setBirthYear] = useState(user.birth_year?.toString() ?? "");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -44,7 +44,7 @@ export function ProfileEditForm({
     const result = await updateProfile({
       username: trimmed,
       display_name: displayName.trim() || null,
-      ...(gender ? { gender } : {}),
+      ...{ gender: gender || null },
       ...(birthYear ? { birth_year: Number(birthYear) } : {}),
     });
     setBusy(false);
@@ -100,7 +100,7 @@ export function ProfileEditForm({
       </div>
       <div>
         <label style={labelStyle} htmlFor="pe-gender">Пол</label>
-        <select id="pe-gender" value={gender} onChange={(event) => setGender(event.target.value)}><option value="">Не указывать</option><option value="female">Женский</option><option value="male">Мужской</option><option value="other">Другой</option></select>
+        <Select id="pe-gender" className="uiInput" value={gender} onChange={(event) => setGender(event.target.value)}><option value="">Не указывать</option><option value="female">Женский</option><option value="male">Мужской</option></Select>
       </div>
       <div>
         <label style={labelStyle} htmlFor="pe-birth-year">Год рождения</label>

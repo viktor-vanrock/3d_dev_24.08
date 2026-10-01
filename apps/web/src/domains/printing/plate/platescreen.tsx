@@ -1,3 +1,4 @@
+import { Select, SegmentToggle, Button, StatusPill } from "@shared/ui";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { SessionUser } from "@shared/types";
 import { useActivation } from "@shared/lib";
@@ -6,7 +7,6 @@ import { HomeHeader, type Section } from "@platform/nav";
 import { modelBboxSizeMm, getModel, listModels, triggerBrowserDownload, type MarketModel, soarmFollowerBuildGuide } from "@domains/commerce";
 import { apiAssetUrl } from "@shared/api";
 import { navigate, parkAddPath, parkPath, slicePrintPath } from "../../../router.ts";
-import { SegmentToggle, Button, StatusPill } from "@shared/ui";
 import {
   createSliceJob,
   getSliceJob,
@@ -685,13 +685,13 @@ export function PlateScreen({
               {printers.length > 0 ? (
                 <label className="plateSelectField">
                   <span>Мой принтер</span>
-                  <select id="plate-printer" value={printerId ?? ""} onChange={(event) => setPrinterId(event.target.value || null)}>
+                  <Select id="plate-printer" value={printerId ?? ""} onChange={(event) => setPrinterId(event.target.value || null)}>
                     {printers.map((candidate) => (
                       <option key={candidate.id} value={candidate.id}>
                         {candidate.brand} {candidate.model}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </label>
               ) : (
                 <div className="plateInlineNotice">В парке пока нет принтера.</div>
@@ -756,7 +756,7 @@ export function PlateScreen({
               </div>
               <label className="plateSelectField">
                 <span>Филамент</span>
-                <select
+                <Select
                   id="plate-filament"
                   value={filamentId ?? MANUAL_PLA_VALUE}
                   onChange={(event) => setFilamentId(event.target.value === MANUAL_PLA_VALUE ? null : event.target.value)}
@@ -766,7 +766,7 @@ export function PlateScreen({
                   {filaments.map((filament) => (
                     <option key={filament.id} value={filament.id}>{filament.brand} {filament.name}</option>
                   ))}
-                </select>
+                </Select>
               </label>
             </section>
 
@@ -802,11 +802,11 @@ export function PlateScreen({
                   <strong>Поддержки</strong>
                   <small>Зелёные опоры на сцене — предварительные. Финальные построит Orca.</small>
                 </div>
-                <select value={supportsIntent} onChange={(event) => setSupportsIntent(event.target.value as SupportIntent)} aria-label="Поддержки">
+                <Select value={supportsIntent} onChange={(event) => setSupportsIntent(event.target.value as SupportIntent)} aria-label="Поддержки">
                   <option value="auto">Авто</option>
                   <option value="tree">Дерево</option>
                   <option value="off">Без них</option>
-                </select>
+                </Select>
               </div>
               <label className="plateSwitchRow">
                 <span>
@@ -826,7 +826,7 @@ export function PlateScreen({
                 </div>
                 <label className="plateSelectField">
                   <span>Профиль печати (слайсер)</span>
-                  <select
+                  <Select
                     id="plate-process-profile"
                     value={processProfileId ?? ""}
                     onChange={(event) => setProcessProfileId(event.target.value || null)}
@@ -834,11 +834,11 @@ export function PlateScreen({
                   >
                     <option value="">— выберите профиль —</option>
                     {processProfiles.map((profile) => <option key={profile.id} value={profile.id}>{profile.name}</option>)}
-                  </select>
+                  </Select>
                 </label>
                 <label className="plateSelectField">
                   <span>Профиль филамента (слайсер)</span>
-                  <select
+                  <Select
                     id="plate-filament-profile"
                     value={filamentProfileId ?? ""}
                     onChange={(event) => setFilamentProfileId(event.target.value || null)}
@@ -846,7 +846,7 @@ export function PlateScreen({
                   >
                     <option value="">— без профиля —</option>
                     {filamentProfiles.map((profile) => <option key={profile.id} value={profile.id}>{profile.name}</option>)}
-                  </select>
+                  </Select>
                 </label>
                 <div className="plateTransformGrid">
                   <button type="button" className="pressable" onClick={() => runAutoArrange()} disabled={items.length === 0}>Авто‑раскладка</button>
@@ -865,14 +865,14 @@ export function PlateScreen({
               // человек не обязан разбираться в именах Orca-профилей.
               <label className="plateVisuallyHidden">
                 Профиль печати (слайсер)
-                <select
+                <Select
                   value={processProfileId ?? ""}
                   onChange={(event) => setProcessProfileId(event.target.value || null)}
                   aria-label="Профиль печати (слайсер)"
                 >
                   <option value="">— выберите профиль —</option>
                   {processProfiles.map((profile) => <option key={profile.id} value={profile.id}>{profile.name}</option>)}
-                </select>
+                </Select>
               </label>
             )}
 

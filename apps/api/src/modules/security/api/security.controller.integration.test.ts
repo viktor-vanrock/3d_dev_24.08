@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+import { pool } from "../../../db/client.ts";
 import type { NestExpressApplication } from "@nestjs/platform-express";
 import { SignJWT } from "jose";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -6,7 +8,7 @@ import { createNestApp } from "../../../nest/bootstrap.ts";
 import { _resetRateLimitStateForTests, checkRateLimit } from "../application/rate-limit.ts";
 
 const JWT_SECRET = "nest-security-honeypot-test-secret";
-const USER_ID = "00000000-0000-4000-8000-0000000000f1";
+const USER_ID = randomUUID();
 
 async function sessionCookie(): Promise<string> {
   const token = await new SignJWT({ username: "honeypot-test", sv: 1 })
@@ -25,6 +27,10 @@ describe("Nest security honeypot integration", () => {
     process.env.JWT_SECRET = JWT_SECRET;
     process.env.NODE_ENV = "test";
     _resetRateLimitStateForTests();
+    await pool.query(
+      `insert into users (id, username, status, session_version) values ($1, $2, 'active', 1)`,
+      [USER_ID, `honeypot-${USER_ID}`],
+    );
     app = await createNestApp(AppModule);
     await app.listen(0, "127.0.0.1");
     const address = (app.getHttpServer() as { address(): string | { port: number } | null }).address();
@@ -33,7 +39,8 @@ describe("Nest security honeypot integration", () => {
   });
 
   afterAll(async () => {
-    await app.close();
+    await app?.close();
+    await pool.query(`delete from users where id = $1`, [USER_ID]);
     _resetRateLimitStateForTests();
     delete process.env.JWT_SECRET;
   });

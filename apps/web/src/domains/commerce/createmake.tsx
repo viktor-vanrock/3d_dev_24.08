@@ -1,5 +1,5 @@
+import { Select, Button, Eyebrow } from "@shared/ui";
 import { useEffect, useMemo, useState } from "react";
-import { Button, Eyebrow } from "@shared/ui";
 import {
   createMake,
   ISSUE_TAG_LABELS,
@@ -134,9 +134,6 @@ export function CreateMakeFlow({
           <h2>Покажите, как получилось</h2>
           <p>{modelTitle}</p>
         </div>
-        <button type="button" className="createMakeClose pressable" onClick={onClose} aria-label="Закрыть">
-          ×
-        </button>
       </header>
 
       <ol className="createMakeProgress" aria-label="Шаги публикации">
@@ -194,14 +191,14 @@ export function CreateMakeFlow({
           </div>
           <label className="createMakeField">
             <span>Принтер</span>
-            <select value={machineId} onChange={(event) => setMachineId(event.target.value)}>
+            <Select value={machineId} onChange={(event) => setMachineId(event.target.value)}>
               <option value="">Выберите свой принтер</option>
               {machines.map((machine) => (
                 <option key={machine.id} value={machine.id}>
                   {machine.label}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
           <fieldset className="createMakeMaterials">
             <legend>Материалы</legend>

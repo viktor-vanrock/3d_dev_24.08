@@ -1,3 +1,4 @@
+import { Select } from "@shared/ui";
 import { useState } from "react";
 import "./research.css";
 import { TOOLHEAD_KIND_OPTIONS } from "./schema.ts";
@@ -60,12 +61,12 @@ export function ToolheadExtrasField({ rows, onChange }: { rows: ToolheadExtraRow
       <span className="rsPlainLabel">Доп. модули головы (лазер, ЧПУ, каттер…)</span>
       {rows.map((row, index) => (
         <div key={index} className="rsToolheadRow">
-          <select className="rsSelect" value={row.kind} onChange={(e) => update(index, { kind: e.target.value })}>
+          <Select className="rsSelect" value={row.kind} onChange={(e) => update(index, { kind: e.target.value })}>
             <option value="">—</option>
             {TOOLHEAD_KIND_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
-          </select>
+          </Select>
           <input className="rsInput" value={row.spec} placeholder="напр. 10Вт диодный лазер" onChange={(e) => update(index, { spec: e.target.value })} />
           <button type="button" className="rsTagChip pressable" aria-label="Удалить строку" onClick={() => remove(index)}>✕</button>
         </div>

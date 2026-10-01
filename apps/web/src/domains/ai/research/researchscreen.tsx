@@ -1,3 +1,4 @@
+import { DataSelect, AuroraBackground, Button, EmptyState, Eyebrow, SegmentToggle } from "@shared/ui";
 import { useEffect, useState } from "react";
 import type { SessionUser } from "@shared/types";
 import { DataShell, HomeHeader, type Section, useSectionSwipeNav } from "@platform/nav";
@@ -5,7 +6,6 @@ import { DataShell, HomeHeader, type Section, useSectionSwipeNav } from "@platfo
 import "@pages/home/home.css";
 import { dataPrinterNewPath, dataPrintersPath, headerModeFor, issueNewPath, navigate, researchPath, type ResearchScope } from "../../../router.ts";
 import { useInteractionSound } from "@platform/sound";
-import { AuroraBackground, Button, EmptyState, Eyebrow, SegmentToggle } from "@shared/ui";
 import { listResearchQueue, type ResearchApiMode, type ResearchQueueItem } from "./api.ts";
 import { ResearchQueueRow, ResearchRowSkeleton } from "./researchrow.tsx";
 import { ResearchSearchCreate } from "./researchsearch.tsx";
@@ -112,9 +112,15 @@ export function ResearchScreen({
               {mode === "data" ? <Button variant="primary" onPointerDown={sound.tick} onClick={() => navigate(dataPrinterNewPath())}>Добавить принтер</Button> : null}
             </div>
           </div>
-          <div className="researchSegmentsScroll">
+          <div className={`researchSegmentsScroll${mode === "data" ? " researchSegmentsDesktop" : ""}`}>
             <SegmentToggle ariaLabel="Сегмент очереди" options={segments} value={scope} onChange={(next) => navigate(mode === "data" ? dataPrintersPath(next) : researchPath(next))} onPress={sound.toggle} />
           </div>
+          {mode === "data" ? <div className="researchSegmentsMobile">
+            <DataSelect label="Сегмент очереди" value={scope} onChange={(value) => {
+              const option = segments.find((item) => item.value === value);
+              if (option) navigate(dataPrintersPath(option.value));
+            }}>{segments.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</DataSelect>
+          </div> : null}
           {queue.status === "loading" ? <div className="researchRowList">{Array.from({ length: 5 }, (_, i) => <ResearchRowSkeleton key={i} />)}</div>
             : queue.status === "error" ? <div className="researchLoadError">Очередь не отвечает. <button type="button" className="researchRetry" onClick={() => setQueue({ status: "loading" })}>Обновить</button></div>
             : queue.items.length === 0 ? <EmptyState icon={<CheckIcon />} title="Пробелов по вашему бренду нет" action={<Button variant="secondary" onPointerDown={sound.tick} onClick={() => navigate("/printers/releases")}>Проверить анонсы</Button>} />

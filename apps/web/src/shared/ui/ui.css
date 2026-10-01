@@ -975,8 +975,9 @@
   transition:
     transform var(--dur-nav) var(--ease-out),
     width var(--dur-nav) var(--ease-out);
-  view-transition-name: nav-pill;
+  view-transition-name: none;
 }
+
 
 ::view-transition-group(nav-pill) {
   animation-duration: var(--dur-nav);
@@ -1023,6 +1024,7 @@
   font-weight: 600;
   pointer-events: none;
 }
+
 
 @media (prefers-reduced-motion: reduce) {
   .uiSegmentToggleFill,

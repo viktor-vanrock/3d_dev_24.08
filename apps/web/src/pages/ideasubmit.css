@@ -54,6 +54,16 @@
   gap: 16px;
 }
 
+.ideaSubmitBody .cfbTypeSelectControl {
+  appearance: none;
+  border-radius: 16px;
+  padding-right: 40px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath d='m4 6 4 4 4-4' fill='none' stroke='%23655f54' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 16px 16px;
+}
+
 .ideaSubmitTitleWrap {
   position: relative;
 }
@@ -63,7 +73,8 @@
    (нейро-поиск главной), меньший кегль под контекст формы (не полноэкранный hero). */
 .ideaSubmitGhostInput {
   width: 100%;
-  border: none;
+  border: 3px solid color-mix(in srgb, var(--border) 55%, white);
+  border-radius: 16px;
   background: transparent;
   outline: none;
   color: var(--text);
@@ -233,6 +244,7 @@
 }
 
 .ideaSubmitCategoryLabel {
+  margin-bottom: 8px;
   font-size: 13px;
   color: var(--text-dim);
 }
@@ -267,7 +279,7 @@
   .ideaSubmitActions {
     position: sticky;
     bottom: 0;
-    background: color-mix(in srgb, var(--bg, #0b0d12) 85%, transparent);
+    background: transparent;
     padding: 12px 0;
   }
 }

@@ -16,7 +16,7 @@ import { addModelPath, headerModeFor, navigate, printersPath } from "../../../ro
 import { useInteractionSound } from "@platform/sound";
 import { useCatalogQuery } from "./catalogstore.ts";
 // eslint-disable-next-line boundaries/element-types -- легатное междоменное ребро (Этап 9): social→ai ASSISTANT_CONTEXT_SEARCH_EVENT (проекты слушают контекстный поиск ассистента), развязка отложена до pages/DI. См. MIGRATION.md.
-import { ASSISTANT_CONTEXT_SEARCH_EVENT, type AssistantContextSearchDetail } from "@domains/ai";
+import { ASSISTANT_CONTEXT_SEARCH_EVENT, AssistantHeaderSearch, type AssistantContextSearchDetail } from "@domains/ai";
 import { HeroCarousel } from "./hero.tsx";
 import { usePullToRefresh } from "./pulltorefresh.ts";
 import { PullToRefreshIndicator } from "./pulltorefreshindicator.tsx";
@@ -122,6 +122,7 @@ export function ProjectsPage({
         }}
       >
         <PullToRefreshIndicator phase={pullToRefresh.phase} distance={pullToRefresh.distance} />
+        <AssistantHeaderSearch user={user} contextKey="projects" page />
         <HeroCarousel />
 
         <section className="projectsPromise" aria-labelledby="projectsPromiseTitle">
@@ -129,8 +130,7 @@ export function ProjectsPage({
             <Eyebrow>Проекты мастерской</Eyebrow>
             <h1 id="projectsPromiseTitle">Соберите вещь целиком</h1>
             <p>Не отдельный файл, а понятный путь от деталей до работающего результата.</p>
-            <Button className="projectsHeroAdd" onPointerDown={sound.tick} onClick={() => navigate(addModelPath())}>
-              <PlusIcon />
+            <Button className="projectsHeroAdd" icon={<PlusIcon />} iconPosition="start" onPointerDown={sound.tick} onClick={() => navigate(addModelPath())}>
               Добавить проект
             </Button>
           </div>

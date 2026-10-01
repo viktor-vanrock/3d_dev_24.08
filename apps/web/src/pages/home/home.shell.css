@@ -61,7 +61,7 @@
 .projectsWideBody.homeWorkspaceBody,
 .feedWideBody.homeWorkspaceBody {
   width: calc(100% - var(--workspace-inline) - var(--workspace-inline));
-  max-width: none;
+  max-width: var(--content-max-wide);
   margin-inline: auto;
   padding-inline: 0;
   box-sizing: border-box;
@@ -229,11 +229,3 @@ body:has(.consentBannerHost) .homePrinterFab.uiButton {
   --accent2: #34d399;
 }
 
-/* Tablet уступает дату до того, как начинает теснить центральную навигацию и капсулу
-   (header.capsule.md § «Столкновение с часами и капсулой»): на 641–1024px остаётся
-   только HH:MM, а все четыре таба и tier-1/tier-2 капсулы ещё доступны. */
-@media (max-width: 1024px) {
-  .homeClockDate {
-    display: none;
-  }
-}

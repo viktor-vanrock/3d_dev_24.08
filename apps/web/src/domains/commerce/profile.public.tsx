@@ -1,9 +1,9 @@
+import { Select, SegmentToggle, Button, Card, CubeIcon, EmptyState, Eyebrow, Heading, IconButton } from "@shared/ui";
 import type { DataCapability, SessionUser } from "@shared/types";
 // eslint-disable-next-line boundaries/element-types -- легатное междоменное ребро (микроэтап 7.6): рантайм-зависимость, не тип/utility; развязка отложена до pages/DI-этапа. См. apps/web/MIGRATION.md.
 import { FeedPostCard, FeedPostCardSkeleton, type FeedPost } from "@domains/social";
 import { AvatarBubble, deterministicAvatarConfig } from "@shared/avatar";
 import { feedNewPath, feedPostPath, navigate } from "../../router.ts";
-import { SegmentToggle, Button, Card, CubeIcon, EmptyState, Eyebrow, Heading, IconButton } from "@shared/ui";
 import { ModelTile } from "./market.tsx";
 import type { MarketModel, UserProfile } from "./models.ts";
 import "./profile.layout.css";
@@ -125,7 +125,22 @@ export function ProfileTabs({
   ];
   if (own) options.push({ value: "workshop", label: "Мастерская" });
   if (own && capabilities.length > 0) options.push({ value: "data", label: "Данные" });
-  return <SegmentToggle className="profileTabs" ariaLabel="Разделы профиля" options={options} value={value} onChange={onChange} />;
+  return (
+    <>
+      <SegmentToggle className="profileTabs" ariaLabel="Разделы профиля" options={options} value={value} onChange={onChange} />
+      <Select
+        className="profileTabsSelect"
+        aria-label="Разделы профиля"
+        value={value}
+        onChange={(event) => {
+          const option = options.find((item) => item.value === event.target.value);
+          if (option) onChange(option.value);
+        }}
+      >
+        {options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+      </Select>
+    </>
+  );
 }
 
 export function ProfileProjects({

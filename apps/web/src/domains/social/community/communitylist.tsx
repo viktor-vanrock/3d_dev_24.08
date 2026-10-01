@@ -6,6 +6,7 @@ import "@pages/home/home.css";
 import { useOverlay } from "@platform/overlay";
 import { communityPath, headerModeFor, navigate } from "../../../router.ts";
 import { useInteractionSound } from "@platform/sound";
+// eslint-disable-next-line boundaries/element-types -- Существующая интеграция через публичный API домена, до переноса оркестрации в pages (MIGRATION.md).
 import { useGuestLogin } from "@domains/access";
 import { AuroraBackground, Button, Chip, EmptyState, Input, SelectionTile } from "@shared/ui";
 import {

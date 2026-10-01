@@ -73,6 +73,7 @@ const SECTION_ICON: Record<GlobalSection, () => JSX.Element> = {
   market: ProjectsGridIcon,
   printers: PrinterIcon,
   materials: SpoolIcon,
+  communities: PrinterIcon,
 };
 
 function HouseIcon() {

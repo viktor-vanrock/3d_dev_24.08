@@ -4,7 +4,7 @@ import type { SessionUser } from "@shared/types";
 import { useGuestLogin } from "@domains/access";
 import { HomeHeader, type Section } from "@platform/nav";
 import { navigate } from "../../../../router.ts";
-import { AuroraBackground, Button, EmptyState, IconButton } from "@shared/ui";
+import { AuroraBackground, Button, EmptyState } from "@shared/ui";
 import { getMaterialDetail, type MaterialDetail, type MaterialMake, type MaterialVariant } from "./api.ts";
 import "./materialdetail.css";
 
@@ -83,12 +83,9 @@ export function MaterialDetailScreen({
     <div className="home materialDetailPage">
       <AuroraBackground />
       <div className="materialDetailHeader">
-        <HomeHeader user={user} printers={[]} section={section} onSectionChange={onSectionChange} mode="full" />
+        <HomeHeader user={user} printers={[]} section={section} onSectionChange={onSectionChange} mode="mixed" onBack={backToCatalog} backLabel="Назад к материалам" />
       </div>
       <main className="homeContent materialDetailContent">
-        <IconButton label="Назад к материалам" onClick={backToCatalog}>
-          <BackIcon />
-        </IconButton>
         {status === "loading" ? <MaterialDetailSkeleton /> : null}
         {status === "not_found" ? (
           <DetailState title="Такого материала у нас пока нет" text="Проверьте ссылку или вернитесь в каталог материалов." action={<Button variant="secondary" onClick={backToCatalog}>К материалам</Button>} />
@@ -252,13 +249,5 @@ function DetailState({ title, text, action }: { title: string; text: string; act
     <div className="materialDetailState" role="alert">
       <EmptyState icon={<span aria-hidden="true">!</span>} title={title} sub={text} action={action} />
     </div>
-  );
-}
-
-function BackIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M19 12H5m6-6-6 6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
   );
 }

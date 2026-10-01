@@ -11,4 +11,4 @@ export type HeaderMode = "presentation" | "full" | "back" | "mixed";
 // подсвечивает активным раздел "home" (см. app.tsx).
 // "issue" сохраняется в типе для прямых роутов `/issue` и `/issue/:id`, но не входит в
 // глобальный NAV_ITEMS и потому не показывается в шапке или bottom-tab.
-export type Section = "home" | "feed" | "market" | "printers" | "materials" | "issue";
+export type Section = "home" | "feed" | "market" | "printers" | "materials" | "issue" | "communities";

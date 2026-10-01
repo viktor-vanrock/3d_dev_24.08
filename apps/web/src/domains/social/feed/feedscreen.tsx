@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 // eslint-disable-next-line boundaries/element-types -- легатное междоменное ребро (микроэтап 7.6): рантайм-зависимость, не тип/utility; развязка отложена до pages/DI-этапа. См. apps/web/MIGRATION.md.
 import { useGuestLogin } from "@domains/access";
 // eslint-disable-next-line boundaries/element-types -- легатное междоменное ребро (Этап 9): social→ai ASSISTANT_CONTEXT_SEARCH_EVENT (лента слушает контекстный поиск ассистента), развязка отложена до pages/DI. См. MIGRATION.md.
-import { ASSISTANT_CONTEXT_SEARCH_EVENT, type AssistantContextSearchDetail } from "@domains/ai";
+import { ASSISTANT_CONTEXT_SEARCH_EVENT, AssistantHeaderSearch, type AssistantContextSearchDetail } from "@domains/ai";
 import type { SessionUser } from "@shared/types";
 import {
   communityMemberCountValue,
@@ -527,9 +527,12 @@ export function FeedScreen({
   // <900px левая колонка сворачивается в липкую полосу + «Фиды» открывает sheet() с тем же
   // содержимым п.3 §1.2 (feed.md §5) — тот же паттерн, что мобильный шит фильтров каталога.
   function openSubsSheet() {
-    overlay.sheet({
+    const handle = overlay.sheet({
       title: "Мои сабы",
-      content: <MySubsList items={mySubs} activeSlug={community} onDiscover={() => navigate(communitiesPath())} />,
+      content: <MySubsList items={mySubs} activeSlug={community} onDiscover={() => {
+        handle.close();
+        navigate(communitiesPath());
+      }} />,
     });
   }
 
@@ -574,6 +577,9 @@ export function FeedScreen({
         onPointerUp={swipe.onPointerUp}
         onPointerCancel={swipe.onPointerCancel}
       >
+        <div className="feedPageSearch">
+          <AssistantHeaderSearch user={user} contextKey="feed" page />
+        </div>
         <div className="feedLayout">
           <aside className="feedSideLeft">
             {!community && !singleColumn ? (

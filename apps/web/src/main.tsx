@@ -1,7 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./app.tsx";
-import { DevBanner } from "./dev/devbanner.tsx";
+// import { DevBanner } from "./dev/devbanner.tsx";
 import { initUmamiTracking } from "@platform/consent";
 import { initInputMode } from "@platform/theme";
 import "@platform/theme/brand.fonts.css";
@@ -19,7 +19,7 @@ async function bootstrap() {
   initUmamiTracking();
   createRoot(document.getElementById("app")!).render(
     <StrictMode>
-      <DevBanner />
+      {/* <DevBanner /> */}
       <App />
     </StrictMode>,
   );

@@ -1,3 +1,4 @@
+import { Select } from "@shared/ui";
 import { useEffect, useState } from "react";
 import {
   createMakeFromForm,
@@ -145,10 +146,10 @@ export function MakeCreateWizard({
         <section aria-labelledby="make-hardware-step">
           <h3 id="make-hardware-step">На чём и чем печатали</h3>
           <label>Принтер
-            <select value={machineId} onChange={(event) => setMachineId(event.target.value)} aria-label="Принтер">
+            <Select value={machineId} onChange={(event) => setMachineId(event.target.value)} aria-label="Принтер">
               <option value="">Выберите принтер</option>
               {machines.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
-            </select>
+            </Select>
           </label>
           <fieldset><legend>Филаменты</legend>
             <div className="makeMaterialChoices">

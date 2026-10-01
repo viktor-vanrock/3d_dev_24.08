@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { SessionUser } from "@domains/access";
+import type { SessionUser } from "@shared/types";
 import { HomeHeader, type Section } from "@platform/nav";
-import "../../../pages/home/home.css";
+// eslint-disable-next-line boundaries/element-types, boundaries/entry-point -- Общая оболочка страниц; существующее CSS-ребро описано в MIGRATION.md.
+import "@pages/home/home.css";
 import { useOverlay } from "@platform/overlay";
 import { navigate, parkAddPath, printerHistoryPath, printersPath } from "../../../router.ts";
 import { useInteractionSound } from "@platform/sound";

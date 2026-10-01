@@ -45,8 +45,10 @@ export class OtpEmailAdapter {
         text: `Код для входа на 3mf.tech: ${code}\n\nДействителен 10 минут. Если это были не вы — просто проигнорируйте письмо.`,
       });
       this.logger.info({ event: "auth.otp.email.sent", provider: "email" }, "OTP email sent");
-    } catch {
-      this.logger.error({ event: "auth.otp.email.failed" }, "OTP email delivery failed");
+    } catch (err) {
+      this.logger.error({ 
+        event: "auth.otp.email.failed",
+      }, `OTP email delivery failed: ${String(err)}`);
     }
   }
 }

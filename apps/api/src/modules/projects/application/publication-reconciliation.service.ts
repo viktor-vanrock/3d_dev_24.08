@@ -10,7 +10,7 @@ export class PublicationReconciliationService implements OnModuleInit, OnModuleD
 
   onModuleInit(): void {
     this.reconcileTimer = setInterval(() => {
-      void this.reconcile().catch((error) => this.logger.error(`Reconciliation failed: ${String(error)}`));
+      void this.reconcile().catch(() => this.logger.error("Reconciliation failed"));
     }, 10 * 60 * 1000);
   }
 
@@ -21,18 +21,18 @@ export class PublicationReconciliationService implements OnModuleInit, OnModuleD
   async reconcile(): Promise<{ readonly fixed: number }> {
     const missing = await this.index.missingPublished(100);
     if (missing.length === 0) return { fixed: 0 };
-    this.logger.warn(`Reconciliation: found ${missing.length} models missing search index jobs`);
+    this.logger.warn("Reconciliation found models missing search index jobs");
 
     let fixed = 0;
     for (const row of missing) {
       try {
         await this.index.enqueue(row.modelId, row.document);
         fixed += 1;
-      } catch (error) {
-        this.logger.warn(`Reconciliation: failed to enqueue modelId=${row.modelId}: ${String(error)}`);
+      } catch {
+        this.logger.warn("Reconciliation failed to enqueue search index job");
       }
     }
-    this.logger.log(`Reconciliation: fixed ${fixed} missing search index jobs`);
+    this.logger.log("Reconciliation completed");
     return { fixed };
   }
 }

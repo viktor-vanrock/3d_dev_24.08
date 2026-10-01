@@ -19,9 +19,9 @@
   }
 }
 
-@media (max-width: 760px) {
+@media (width < 1100px) {
   .avatarStudioPage {
-    padding: 92px 12px 92px;
+    padding: max(108px, calc(var(--header-safe) + 20px)) 12px 92px;
   }
 
   .avatarStudioShell {
@@ -32,7 +32,33 @@
 
   .avatarStudioPreview {
     position: static;
+    align-self: stretch;
+    align-items: center;
+    width: 100%;
     min-height: auto;
+  }
+
+  .avatarStudioIntro {
+    align-self: center;
+    flex: none;
+    display: block;
+    width: 100%;
+    text-align: center;
+  }
+
+  .avatarStudioIntro p {
+    margin-inline: auto;
+  }
+
+  .avatarStudioLook {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .avatarStudioEditor {
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .avatarStudioIntro h1 {
@@ -45,14 +71,24 @@
   }
 
   .avatarStudioStage {
+    width: min(100%, 620px);
+    box-sizing: border-box;
+    flex: none;
+    height: clamp(360px, 65vw, 520px);
     min-height: 360px;
-    margin-top: 14px;
+    margin-top: 0;
     border-radius: 28px;
   }
 
   .avatarStudioEditor {
-    padding: 18px 12px;
+    padding: 0 12px 18px;
     border-radius: 26px;
+  }
+
+  .avatarStudioEditor {
+    display: flex;
+    flex-direction: column;
+    margin-top: 20px;
   }
 
   .avatarStudioEditorHead .avatarStudioActions {
@@ -60,19 +96,18 @@
   }
 
   .avatarStudioTabs {
-    top: 70px;
+    top: auto;
     display: flex;
-    overflow-x: auto;
-    margin-top: 14px;
-    scrollbar-width: none;
-  }
-
-  .avatarStudioTabs::-webkit-scrollbar {
-    display: none;
+    flex-wrap: wrap;
+    overflow: visible;
+    margin-top: 0;
   }
 
   .avatarStudioTab {
-    flex: 0 0 auto;
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 100%;
+    white-space: normal;
   }
 
   .avatarStudioGrid {
@@ -94,8 +129,8 @@
     display: block;
     margin: 18px 0 0;
     padding: 8px;
-    background: color-mix(in srgb, var(--bg-raised) 88%, transparent);
-    backdrop-filter: blur(18px);
+    background: transparent;
+    backdrop-filter: none;
   }
 
   .avatarStudioMobileSave .avatarStudioSave {

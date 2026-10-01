@@ -12,7 +12,7 @@
   left: 0;
   right: 0;
   z-index: var(--z-header);
-  padding: max(16px, env(safe-area-inset-top)) clamp(16px, 5.6vw, 80px) 16px;
+  padding: max(16px, env(safe-area-inset-top)) 0 16px;
   background: transparent;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
@@ -25,8 +25,7 @@
 }
 
 .homeTopbar:is([data-shell="full"], [data-shell="mixed"]) {
-  padding-left: clamp(16px, 4vw, 48px);
-  padding-right: clamp(16px, 4vw, 48px);
+  padding-inline: 0;
 }
 
 .homeTopbar[data-scrolled] {
@@ -127,7 +126,7 @@
   min-height: 52px;
   box-sizing: border-box;
   padding-inline: 62px;
-  max-width: var(--content-max);
+  max-width: var(--content-max-wide);
   margin: 0 auto;
 }
 
@@ -145,7 +144,7 @@
   min-width: 0;
 }
 .homeTopbar:is([data-shell="full"], [data-shell="mixed"]) .homeTopbarInner {
-  max-width: none;
+  max-width: var(--content-max-wide);
 }
 /* В `mixed` широкий текст возврата получает симметричный резерв с обеих сторон:
    часы не наезжают на кнопку, а центральная навигация остаётся ровно по центру вьюпорта. */
@@ -207,21 +206,27 @@
 .homeSectionTabs.uiSegmentToggle {
   position: relative;
   top: 1px;
-  padding: 3px;
+  padding: 6px;
 }
 
 .homeSectionTabs .uiSegmentToggleFill {
-  top: 3px;
-  bottom: 3px;
+  top: 6px;
+  bottom: 6px;
 }
 
 .homeSectionTabs .uiSegmentToggleOption {
-  min-height: 38px;
-  padding-inline: 16px;
+  min-height: calc(var(--button-height) + 2px);
+  padding-inline: 22px;
+  font-size: 18px;
+  font-weight: 600;
   line-height: 1;
   transition:
     color var(--dur-toggle) var(--ease-out),
     background-color var(--dur-toggle) var(--ease-out);
+}
+
+.homeSectionTabs .uiSegmentToggleOption[data-active="true"] {
+  font-weight: 800;
 }
 
 @media (hover: hover) {
@@ -240,37 +245,45 @@
    четыре таба и полную capsule с 40px touch-targets: правый edge-кластер
    переполняет свою 1fr-track и заходит на навигацию. Два ряда сохраняют
    центральный якорь табов и полный набор controls, не ужимая интерактивы. */
-@media (min-width: 641px) and (max-width: 1024px) {
+@media (min-width: 801px) and (max-width: 1150px) {
   html:root {
-    --header-safe: 136px;
+    --header-safe: 128px;
   }
 
   .homeTopbarInner {
-    grid-template-rows: 62px 50px;
-    row-gap: 0;
+    grid-template-rows: 48px auto;
+    row-gap: 4px;
     min-height: 104px;
+    padding-inline: 0;
   }
 
   .homeTopbarInner > .homeTopbarEdge--left {
-    grid-column: 1;
+    grid-column: 2;
     grid-row: 1;
+    justify-self: start;
   }
 
   .homeTopbarInner > .homeSectionTabs {
-    grid-column: 1 / -1;
+    grid-column: 2;
     grid-row: 2;
     justify-self: center;
   }
 
   .homeTopbarInner > .homeTopbarEdge--right {
-    grid-column: 3;
+    grid-column: 2;
     grid-row: 1;
+    justify-self: end;
+  }
+
+  .homeSectionTabs .uiSegmentToggleOption {
+    font-size: 16px;
+    font-weight: 600;
   }
 }
 
-/* Bottom-tab перехватывает навигацию на ≤640px (touch.nav.md §1) — одна навигация на экран,
+/* Bottom-tab перехватывает навигацию на ≤800px (touch.nav.md §1) — одна навигация на экран,
    пилюля в шапке (оба режима — light/wide) на этой ширине прячется. */
-@media (max-width: 640px) {
+@media (max-width: 800px) {
   .homeSectionTabs {
     display: none;
   }
@@ -307,6 +320,13 @@
 
   .homeTopbarBackLabel {
     display: none;
+  }
+}
+
+@media (width < 800px) {
+  .homeTopbar,
+  .homeTopbar:is([data-shell="full"], [data-shell="mixed"]) {
+    padding-inline: 16px;
   }
 }
 
@@ -369,4 +389,41 @@
     animation-duration: 1ms;
     animation-delay: 0ms;
   }
+}
+
+/* Возврат входит в левую группу и всегда выровнен с часами. */
+.homeTopbar:not([data-shell="back"]) .homeTopbarEdge--left > .homeTopbarBack {
+  position: static;
+  transform: none;
+  flex-shrink: 0;
+}
+
+.homeTopbar:not([data-shell="back"]) .homeTopbarInner[data-has-back] {
+  padding-inline: 16px;
+}
+
+@media (max-width: 800px) {
+  .homeTopbar:not([data-shell="back"]) .homeTopbarInner[data-has-back] {
+    padding-inline: 0;
+  }
+
+  .homeTopbarInner[data-has-back] .homeTopbarEdge--left {
+    gap: 8px;
+  }
+}
+
+/* Навигация и меню пользователя — отдельные слои внутри общей шапки. */
+.homeTopbarInner > .homeSectionTabs,
+.homeTopbarInner > .homeTopbarNavSlot {
+  z-index: 1;
+  isolation: isolate;
+}
+
+.homeTopbarInner > .homeTopbarEdge--right {
+  position: relative;
+  z-index: 2;
+}
+
+.homeTopbarInner > .homeTopbarEdge--right:has(.homeCapsule[data-open]) {
+  z-index: 3;
 }

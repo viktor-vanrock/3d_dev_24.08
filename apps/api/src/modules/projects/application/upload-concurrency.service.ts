@@ -8,7 +8,7 @@ export class UploadConcurrencyService {
 
   acquire(): void {
     if (this.active >= this.maxConcurrent) {
-      this.logger.warn(`Upload concurrency limit reached: ${this.active}/${this.maxConcurrent}`);
+      this.logger.warn("Upload concurrency limit reached");
       throw new ServiceUnavailableException({ code: "upload.too_many_concurrent.v1", message: "Слишком много одновременных загрузок, повторите позже" });
     }
     this.active += 1;

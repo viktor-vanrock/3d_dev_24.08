@@ -1,7 +1,7 @@
+import { DataSelect, Button, EmptyState, Eyebrow, Heading, Input } from "@shared/ui";
 import { useEffect, useState, type FormEvent } from "react";
 import type { SessionUser } from "@shared/types";
 import { DataShell, type Section } from "@platform/nav";
-import { Button, EmptyState, Eyebrow, Heading, Input } from "@shared/ui";
 import { archiveAdminMaterial, createAdminMaterial, getAdminMaterial, getAdminMaterialOptions, publishAdminMaterial, restoreAdminMaterial, updateAdminMaterial, type AdminMaterialKind, type AdminMaterialOption, type AdminMaterialStatus } from "./api.ts";
 
 function materialKind(value: string): AdminMaterialKind {
@@ -124,11 +124,11 @@ export function DataMaterialEditor({ user, section, onSectionChange, id }: { use
             <div><Eyebrow>ДАННЫЕ · МАТЕРИАЛЫ</Eyebrow><Heading size="md">{id ? "Редактирование материала" : "Новый материал"}</Heading></div>
             {version === null ? <p>Загрузка карточки материала…</p> : (
               <form className="materialAdminForm" onSubmit={(event) => void submit(event)}>
-                <label>Вид материала<select disabled={status === "archived"} value={kind} onChange={(event) => setKind(materialKind(event.target.value))}><option value="filament">Филамент</option><option value="resin">Смола</option><option value="plywood">Фанера</option><option value="aluminum">Алюминий</option></select></label>
+                <label>Вид материала<DataSelect label="Вид материала" disabled={status === "archived"} value={kind} onChange={(value) => setKind(materialKind(value))}><option value="filament">Филамент</option><option value="resin">Смола</option><option value="plywood">Фанера</option><option value="aluminum">Алюминий</option></DataSelect></label>
                 <label>Название<Input required disabled={status === "archived"} value={name} onChange={(event) => setName(event.target.value)} /></label>
                 <label>Slug<Input required disabled={id !== undefined} pattern="[a-z0-9]+([.-][a-z0-9]+)*" value={slug} onChange={(event) => setSlug(event.target.value)} /></label>
-                <label>Производитель<select required value={vendorId} disabled={!optionsLoaded || status === "archived"} onChange={(event) => setVendorId(event.target.value)}><option value="">Выберите производителя</option>{vendors.map((vendor) => <option key={vendor.id} value={vendor.id}>{vendor.name}</option>)}</select></label>
-                <label>Тип материала<select required value={materialTypeId} disabled={!optionsLoaded || status === "archived"} onChange={(event) => setMaterialTypeId(event.target.value)}><option value="">Выберите тип</option>{materialTypes.map((type) => <option key={type.id} value={type.id}>{type.name}</option>)}</select></label>
+                <label>Производитель<DataSelect label="Производитель" required value={vendorId} disabled={!optionsLoaded || status === "archived"} onChange={setVendorId}><option value="">Выберите производителя</option>{vendors.map((vendor) => <option key={vendor.id} value={vendor.id}>{vendor.name}</option>)}</DataSelect></label>
+                <label>Тип материала<DataSelect label="Тип материала" required value={materialTypeId} disabled={!optionsLoaded || status === "archived"} onChange={setMaterialTypeId}><option value="">Выберите тип</option>{materialTypes.map((type) => <option key={type.id} value={type.id}>{type.name}</option>)}</DataSelect></label>
                 {id === undefined ? <p className="materialAdminLifecycle">Новый материал сохраняется как черновик и не виден в публичном каталоге. После проверки откройте карточку и опубликуйте её.</p> : null}
                 {message ? <p role="alert">{message}</p> : null}
                 <div className="materialAdminActions">

@@ -1,3 +1,4 @@
+import { Select } from "./select.tsx";
 import {
   cloneElement,
   useEffect,
@@ -351,7 +352,7 @@ export function SelectField({
     <div className={`uiField uiField--select${className ? ` ${className}` : ""}`} data-size={controlSize} data-error={Boolean(error) || undefined}>
       {label ? <label className="uiFieldLabel" htmlFor={inputId}>{label}</label> : null}
       <span className="uiFieldControl">
-        <select
+        <Select
           {...props}
           id={inputId}
           className="uiFieldInput uiFieldSelect"
@@ -359,8 +360,7 @@ export function SelectField({
           aria-describedby={[props["aria-describedby"], error || hint ? messageId : null].filter(Boolean).join(" ") || undefined}
         >
           {children}
-        </select>
-        <span className="uiFieldSelectChevron" aria-hidden="true">⌄</span>
+        </Select>
       </span>
       {error || hint ? <span id={messageId} className="uiFieldMessage">{error ?? hint}</span> : null}
     </div>

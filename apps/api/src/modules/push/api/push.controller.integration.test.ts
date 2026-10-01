@@ -55,7 +55,7 @@ describe("Nest push domain migration", () => {
   });
 
   it("preserves auth deny status and uses the versioned envelope", async () => {
-    const response = await api("/push/vapid-public-key");
+    const response = await api("/push/preferences");
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toMatchObject({ error: { code: "auth.unauthorized.v1" } });
   });

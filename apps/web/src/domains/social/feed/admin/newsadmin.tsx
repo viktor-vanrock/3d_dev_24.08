@@ -1,7 +1,7 @@
+import { DataSelect, Button, EmptyState, Eyebrow, Heading } from "@shared/ui";
 import { useEffect, useState } from "react";
 import { DataShell, type Section } from "@platform/nav";
 import type { SessionUser } from "@shared/types";
-import { Button, EmptyState, Eyebrow, Heading } from "@shared/ui";
 import { navigate } from "../../../../router.ts";
 import { listAdminNews, type NewsAdminItem, type NewsAdminSource, type NewsAdminStatus } from "./api.ts";
 import "./newsadmin.css";
@@ -31,8 +31,8 @@ export function NewsAdminScreen({ user, section, onSectionChange }: { user: Sess
     {!allowed ? <EmptyState icon={NEWS_ICON} title="Недостаточно прав" sub="Нужно разрешение на управление новостями." /> : <>
       <div className="newsAdminHeader"><div><Eyebrow>Новости</Eyebrow><Heading size="md">Редакционная очередь</Heading></div><Button variant="primary" onClick={() => navigate("/data/news/new")}>Новая новость</Button></div>
       <div className="newsAdminFilters">
-        <label>Статус<select value={status} onChange={(event) => setStatus(event.target.value === "draft" || event.target.value === "published" || event.target.value === "hidden" ? event.target.value : "all")}><option value="all">Все</option><option value="draft">Черновики</option><option value="published">Опубликованные</option><option value="hidden">Скрытые</option></select></label>
-        <label>Источник<select value={source} onChange={(event) => setSource(event.target.value === "manual" || event.target.value === "scout" ? event.target.value : "all")}><option value="all">Все</option><option value="manual">Ручные</option><option value="scout">Scout</option></select></label>
+        <label>Статус<DataSelect label="Статус" value={status} onChange={(value) => setStatus(value === "draft" || value === "published" || value === "hidden" ? value : "all")}><option value="all">Все</option><option value="draft">Черновики</option><option value="published">Опубликованные</option><option value="hidden">Скрытые</option></DataSelect></label>
+        <label>Источник<DataSelect label="Источник" value={source} onChange={(value) => setSource(value === "manual" || value === "scout" ? value : "all")}><option value="all">Все</option><option value="manual">Ручные</option><option value="scout">Scout</option></DataSelect></label>
       </div>
       {state.kind === "loading" ? <p>Загрузка…</p> : state.kind === "failure" ? <EmptyState icon={NEWS_ICON} title="Не удалось загрузить новости" action={<Button onClick={() => setRequestVersion((value) => value + 1)}>Повторить</Button>} /> : state.items.length === 0 ? <EmptyState icon={NEWS_ICON} title="Новостей нет" sub="Создайте ручной черновик или дождитесь Scout." /> : <div className="newsAdminList">{state.items.map((item) => <button type="button" className="newsAdminRow" key={item.id} onClick={() => navigate(`/data/news/${encodeURIComponent(item.id)}`)}><span><strong>{item.title}</strong><small>{new Date(item.updated_at).toLocaleString("ru-RU")}</small></span><span className="newsAdminBadges"><span>{item.source === "scout" ? "Scout" : "Вручную"}</span><span>{item.status === "published" ? "Опубликовано" : item.status === "hidden" ? "Скрыто" : "Черновик"}</span></span></button>)}</div>}
     </>}

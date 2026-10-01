@@ -134,7 +134,7 @@ export function HomeScreen({
       {/* Временно скрыто: кнопка подключения принтера на главной будет возвращена позднее.
       {activation.loading || !activation.activation || isFirstRun || activation.activation.has_printer ? null : <PrinterConnectFab />} */}
       <main
-        className="homeContent"
+        className="homeContent homeWorkspaceBody"
         style={swipe.dragX !== 0 ? { transform: `translateX(${swipe.dragX}px)` } : undefined}
         onPointerDown={swipe.onPointerDown}
         onPointerMove={swipe.onPointerMove}

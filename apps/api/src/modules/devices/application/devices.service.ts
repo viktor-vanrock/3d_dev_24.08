@@ -1,7 +1,8 @@
 import { createHash, randomUUID } from "node:crypto";
-import { BadRequestException, ConflictException, ForbiddenException, HttpException, Inject, Injectable, Logger, NotFoundException, Optional, UnauthorizedException, type OnModuleDestroy, type OnModuleInit } from "@nestjs/common";
+import { BadRequestException, ConflictException, ForbiddenException, HttpException, Inject, Injectable, NotFoundException, Optional, UnauthorizedException, type OnModuleDestroy, type OnModuleInit } from "@nestjs/common";
 import { DeviceId, UserId, type DeviceId as DeviceIdType, type UserId as UserIdType } from "../../_kernel/brandedIds.ts";
 import { PROFILE_READ_PORT, type ProfileReadPort } from "../../profile/public/index.ts";
+import { RuntimeLogger } from "../../../nest/observability/runtime-logger.ts";
 import type { OwnedUserPrinter } from "../../printers/public/index.ts";
 import {
   DEVICE_EXTERNAL_PORT,
@@ -156,7 +157,6 @@ function publicPrinter(printer: OwnedUserPrinter, state: PublicDeviceStateRow | 
 
 @Injectable()
 export class DevicesService implements DevicesPort, DeviceProfileOperationsPort, DevicePublicApiOperationsPort, DeviceAdminPort, OnModuleInit, OnModuleDestroy {
-  private readonly logger = new Logger(DevicesService.name);
   private transferExpiryTimer: NodeJS.Timeout | null = null;
   constructor(
     @Inject(DevicesRepository) private readonly repository: DevicesRepository,
@@ -164,11 +164,12 @@ export class DevicesService implements DevicesPort, DeviceProfileOperationsPort,
     @Inject(PROFILE_READ_PORT) private readonly profiles: ProfileReadPort,
     @Optional() @Inject(DEVICE_RELAY_PUSH_PORT) private readonly relayControl?: DeviceRelayPushPort,
     @Optional() @Inject(MetricsService) private readonly metrics?: MetricsService,
+    @Optional() @Inject(RuntimeLogger) private readonly logger: RuntimeLogger = new RuntimeLogger(),
   ) {}
 
   onModuleInit(): void {
     this.transferExpiryTimer = setInterval(() => {
-      void this.expireStaleTransfers().catch((error: unknown) => this.logger.error(`Transfer expiry cleanup failed: ${String(error)}`));
+      void this.expireStaleTransfers().catch((_error: unknown) => this.logger.error({ event: "device.transfer.expiry_cleanup.failed" }, "Transfer expiry cleanup failed"));
     }, 10 * 60 * 1000);
     this.transferExpiryTimer.unref();
   }
@@ -374,7 +375,7 @@ export class DevicesService implements DevicesPort, DeviceProfileOperationsPort,
   async cancelTransfer(actorId: UserIdType, id: string, transferId: string): Promise<{ readonly ok: true }> {
     const did = deviceId(id);
     if (!isUuid(transferId) || !(await this.repository.cancelTransfer(transferId, did, actorId))) throw new NotFoundException();
-    void this.relayControl?.cancelTransfers([transferId]).catch((error: unknown) => this.logger.warn(`Transfer cancel push failed transferId=${transferId}: ${String(error)}`));
+    void this.relayControl?.cancelTransfers([transferId]).catch((_error: unknown) => this.logger.warn({ event: "device.transfer.cancel_push.failed" }, "Transfer cancel push failed"));
     return { ok: true };
   }
   async expireStaleTransfers(): Promise<number> {

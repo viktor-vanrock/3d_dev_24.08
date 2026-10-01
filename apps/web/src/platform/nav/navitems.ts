@@ -19,6 +19,7 @@ export const NAV_ITEMS = [
   { section: "market", label: "Проекты" },
   { section: "printers", label: "Принтеры" },
   { section: "materials", label: "Материалы" },
+  { section: "communities", label: "Форум" },
 ] as const satisfies readonly NavItem[];
 
 // Значение для продуктовой метрики повторяет язык воронки: пункт интерфейса `market`
@@ -29,6 +30,7 @@ export const NAV_ITEM_EVENT_NAMES = {
   market: "project",
   printers: "printers",
   materials: "materials",
+  communities: 'communities',
 } as const;
 
 export function navItemEventName(section: Section): (typeof NAV_ITEM_EVENT_NAMES)[keyof typeof NAV_ITEM_EVENT_NAMES] | null {

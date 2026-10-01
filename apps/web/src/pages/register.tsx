@@ -1,7 +1,7 @@
+import { DataSelect, Button, Input } from "@shared/ui";
 import { useState } from "react";
 import { registerAccount, type AuthFormError } from "@domains/access";
 import { navigate } from "../router.ts";
-import { Button, Input } from "@shared/ui";
 import "./login.css";
 import styles from "./register.module.css";
 import { ErrorMessage } from "@shared/ui/error-message/error-message.tsx";
@@ -16,7 +16,6 @@ export function RegisterPage() {
   const [confirmation, setConfirmation] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [gender, setGender] = useState("");
-  const [genderOpen, setGenderOpen] = useState(false);
   const [birthYear, setBirthYear] = useState("");
   const [error, setError] = useState<AuthFormError | null>(null);
   const [busy, setBusy] = useState(false);
@@ -46,24 +45,11 @@ export function RegisterPage() {
     <label className="emailLoginLabel">{RequiredField('Имя')}</label>
     <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} required />
     <label className="emailLoginLabel" id="gender-label">Пол</label>
-    <div className={styles.genderMenu}>
-      <button
-        type="button"
-        className={styles.genderSelect}
-        aria-labelledby="gender-label"
-        aria-expanded={genderOpen}
-        onClick={() => setGenderOpen((open) => !open)}
-      >
-        {gender === "female" ? "Женский" : gender === "male" ? "Мужской" : "Не указывать"}
-      </button>
-      {genderOpen ? <div className={styles.genderOptions} role="listbox" aria-labelledby="gender-label">
-        {[{ value: "", label: "Не указывать" }, { value: "female", label: "Женский" }, { value: "male", label: "Мужской" }].map((option) => (
-          <button key={option.value || "none"} type="button" role="option" aria-selected={gender === option.value} onClick={() => { setGender(option.value); setGenderOpen(false); }}>
-            {option.label}
-          </button>
-        ))}
-      </div> : null}
-    </div>
+    <DataSelect label="Пол" value={gender} onChange={setGender}>
+      <option value="">Не указывать</option>
+      <option value="female">Женский</option>
+      <option value="male">Мужской</option>
+    </DataSelect>
     <label className="emailLoginLabel">Год рождения</label>
     <Input type="number" value={birthYear} onChange={(e) => setBirthYear(e.target.value)} min="1900" max={new Date().getFullYear()} />
     {error && <ErrorMessage {...error} onRetry={() => void submit()} />}

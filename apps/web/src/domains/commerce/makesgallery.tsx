@@ -1,10 +1,10 @@
+import { Select, AuroraBackground, Chip, EmptyState, Eyebrow } from "@shared/ui";
 import { useEffect, useRef, useState } from "react";
 import type { SessionUser } from "@shared/types";
 import { AvatarBubble, deterministicAvatarConfig } from "@shared/avatar";
 import { HomeHeader, type Section } from "@platform/nav";
 // eslint-disable-next-line boundaries/element-types, boundaries/entry-point -- легатное ребро (Этап 4.5): CSS side-effect, не index.ts; home.css остаётся общим "рабочим хромом" для доменных экранов, развязка отложена до pages/DI (Этап 10). См. MIGRATION.md.
 import "@pages/home/home.css";
-import { AuroraBackground, Chip, EmptyState, Eyebrow } from "@shared/ui";
 import { marketPath, modelPath, navigate, profilePath } from "../../router.ts";
 import {
   type FilterOption,
@@ -93,7 +93,7 @@ export function MakesGalleryScreen({
           <Eyebrow>Печати сообщества</Eyebrow>
 
           <div className="makesFilters">
-            <select
+            <Select
               className="makesFilterSelect"
               value={machineId}
               onChange={(event) => setMachineId(event.target.value)}
@@ -105,8 +105,8 @@ export function MakesGalleryScreen({
                   {option.label}
                 </option>
               ))}
-            </select>
-            <select
+            </Select>
+            <Select
               className="makesFilterSelect"
               value={materialId}
               onChange={(event) => setMaterialId(event.target.value)}
@@ -118,7 +118,7 @@ export function MakesGalleryScreen({
                   {option.label}
                 </option>
               ))}
-            </select>
+            </Select>
             <div className="makesSortChips">
               <Chip selected={sort === "new"} onClick={() => setSort("new")}>
                 Новые

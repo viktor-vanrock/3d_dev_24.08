@@ -35,7 +35,7 @@ interface RouteEntry {
 // Снимок новой декларативной классификации доступа. Он намеренно фиксирует
 // распределение аннотаций независимо от исторического AuthGuard manifest.
 const ACCESS_MODE_COUNTS = {
-  PUBLIC: 57,
+  PUBLIC: 61,
   USER: 198,
   USER_OR_AGENT: 2,
   INTERNAL: 28,
@@ -44,7 +44,7 @@ const ACCESS_MODE_COUNTS = {
 
 const routes = routeManifest as unknown as RouteEntry[];
 
-// Nest owns 261 of the 308 historical routes. Relay routes and the deliberately removed legacy
+// Nest owns 272 of the 319 historical routes. Relay routes and the deliberately removed legacy
 // Model product surface remain accounted for by the coverage/ledger gate, but are not replayed.
 const migratedRoutes = routes.filter((r) => !FORMALLY_REMOVED_ROUTES.has(`${r.method} ${r.path}`));
 
@@ -130,14 +130,14 @@ describe("live Nest auth-gate regression (task 5.1, Nest-only after cutover 7.4)
     delete process.env.JWT_SECRET;
   });
 
-  it("replays the migrated subset of the baseline (268 of 315; 47 formally removed)", () => {
-    expect(routes).toHaveLength(315);
-    expect(migratedRoutes).toHaveLength(268);
+  it("replays the migrated subset of the baseline (272 of 319; 47 formally removed)", () => {
+    expect(routes).toHaveLength(319);
+    expect(migratedRoutes).toHaveLength(272);
   });
 
-  it("keeps the declarative access-classification snapshot for all 308 controller methods", () => {
-    expect(ACCESS_MODE_COUNTS).toEqual({ PUBLIC: 57, USER: 198, USER_OR_AGENT: 2, INTERNAL: 28, PERMISSION: 23 });
-    expect(Object.values(ACCESS_MODE_COUNTS).reduce((total, count) => total + count, 0)).toBe(308);
+  it("keeps the declarative access-classification snapshot for all 312 controller methods", () => {
+    expect(ACCESS_MODE_COUNTS).toEqual({ PUBLIC: 61, USER: 198, USER_OR_AGENT: 2, INTERNAL: 28, PERMISSION: 23 });
+    expect(Object.values(ACCESS_MODE_COUNTS).reduce((total, count) => total + count, 0)).toBe(312);
   });
 
   const authed = migratedRoutes.filter((r) => r.authMode === "authed");

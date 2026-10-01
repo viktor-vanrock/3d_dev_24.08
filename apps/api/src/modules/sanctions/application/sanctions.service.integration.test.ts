@@ -36,7 +36,10 @@ const command = (actorId: ReturnType<typeof UserId>, targetId: ReturnType<typeof
 afterAll(async () => {
   if (sanctions.length > 0) await pool.query(`delete from outbox_events where aggregate_type='Sanction' and aggregate_id = any($1::uuid[])`, [sanctions]);
   if (sanctions.length > 0) await pool.query(`delete from sanctions where id = any($1::uuid[])`, [sanctions]);
-  if (users.length > 0) await pool.query(`delete from users where id = any($1::uuid[])`, [users]);
+  if (users.length > 0) {
+    await pool.query(`delete from permission_grants where user_id = any($1::uuid[])`, [users]);
+    await pool.query(`delete from users where id = any($1::uuid[])`, [users]);
+  }
 });
 
 describe("SanctionsService", () => {
